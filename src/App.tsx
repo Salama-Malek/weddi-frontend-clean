@@ -1,35 +1,23 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { BrowserRouter as Router, Route, Routes, Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import LanguageSwitcher from "./components/LanguageSwitcher.tsx";
 
-function App() {
-  const [count, setCount] = useState(0)
+const App = () => {
+  const { t } = useTranslation();
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
-}
+    <Router>
+      <nav className="flex space-x-4 p-4 bg-gray-100">
+        <Link to="/" className="text-blue-600">{t("home")}</Link>
+        <Link to="/dashboard" className="text-blue-600">{t("dashboard")}</Link>
+      </nav>
+      <LanguageSwitcher />
+      <Routes>
+        <Route path="/" element={<h1>{t("welcome")}</h1>} />
+        <Route path="/dashboard" element={<h1>{t("dashboard")}</h1>} />
+      </Routes>
+    </Router>
+  );
+};
 
-export default App
+export default App;
