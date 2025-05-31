@@ -1,0 +1,85 @@
+{
+    "Plaintiff_City": "الرياض",
+    "PlaintiffEstFileNumber": "1-204757",
+    "Plaintiff_ContractNumber": "",
+    "Plaintiff_CRNumber": "1010193202",
+    "Plaintiff_StatusID": "1-204757",
+    "PlaintiffType": "",
+    "PlaintiffName": "مجموعه الناهض العربيه للمقاولات",
+    "PlaintiffType_Code": "",
+    "Plaintiff_Region": "الرياض",
+    "Plaintiff_City_Code": "1",
+    "Plaintiff_Region_Code": "1",
+    "EstablishmentFullName": "مجموعه الناهض العربيه للمقاولات",
+    
+    "Defendant_Gender_Code": "GD1",
+    "Defendant_Occupation": "",
+    "Defendant_Gender": "Male",
+    "DefendantName": "KOSTAS   VIOLARIS",
+    "DefendantId": "2222222222",
+    "Defendant_Nationality": "Palestine",
+    "Defendant_PhoneNumber": "0513221521",
+    "DefendantHijiriDOB": "14461117",
+    "Defendant_Region": "",
+    "Defendant_City": "HAFAR AL BATIN",
+    
+    
+
+    
+ 
+    "Defendant_ApplicantBirthDate": "19700101",
+    "Defendant_ContractStartDate": "20250515",
+    "Defendant_ContractEndDate": "14461117",
+    
+   
+    
+    
+    
+    
+    "DefendantType_Code": "",
+    "Defendant_EmailAddress": "",
+    "Defendant_ContractType_Code": "CT1",
+    "Defendant_Occupation_Code": "",
+    "Defendant_Region_Code": "2",
+    "Defendant_StillWorking_Code": "",
+    "Defendant_Nationality_Code": "10",
+    "DefendantJobCity_Code": "0101000",
+    "Defendant_SalaryType_Code": "ST2",
+    "Defendant_JobLocation_Code": "10",
+    "Defendant_City_Code": "195",
+    
+    "InternationalCountryName": "",
+    "CertifiedBy_Code": "",
+    "SettlementID": "",
+    "Defendant_FirstLanguage": "",
+    "DefendantType": "",
+    "Defendant_MobileNumber": "0000000000",
+    "Defendant_FirstLanguage_Code": "",
+    "DownloadPDF": "",
+    "pxCreateDateTime": "20250428T180354.027 GMT",
+    "ApplicantType": "Establishment",
+    "DownloadClaimForm": "",
+    "DomesticWorker": "",
+    "UpdateCase": "",
+    "InternationalCountryCode": "",
+    "RepresentativeType": "",
+    "Reopen": "",
+    "StatusWork_Code": "Incomplete",
+    "AgentType": "",
+    "OfficeName_Code": "",
+    "CancelCase": "",
+    "CertifiedBy": "",
+    "ApplicantType_Code": "Establishment",
+    "OfficeName": "",
+    "CurrentScreen": "PlaintiffDetails",
+    "RepresentativeType_Code": "",
+    "RejectReasonDetails": "",
+    "StatusWork": "Incomplete",
+    "RejectedReason": "",
+    "IncompleteCase": "true",
+    "CaseTopics": [],
+    "ResendAppointment": "",
+    "HasInternationalNumber": "",
+    "AgentType_Code": "",
+    "InternationalNumber": ""
+}

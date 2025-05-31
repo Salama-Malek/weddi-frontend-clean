@@ -1,0 +1,17 @@
+{
+  "incomplete_case": "Incomplete Case",
+  "view_details": "View Details",
+  "incomplete_case_message": "You have an incomplete case ({{caseNumber}}). Would you like to proceed to this case?",
+  "proceed": "Proceed",
+  "cancel": "Cancel Case",
+  "cancel_success": "Case cancelled successfully",
+  "cancel_error": "Failed to cancel case",
+  "nic_error": {
+    "title": "Error Loading User Information",
+    "sign_out": "Sign Out",
+    "try_again": "Try Again",
+    "unauthorized": "Unauthorized access. Please sign in again.",
+    "server_error": "Internal server error. Please try again later.",
+    "default_error": "Failed to load user information"
+  }
+} 

@@ -1,36 +1,41 @@
-import i18n from "i18next";
-import { initReactI18next } from "react-i18next";
-import LanguageDetector from "i18next-browser-languagedetector";
-import HttpApi from "i18next-http-backend";
+import i18next from "i18next";
+import resourcesToBackend from "i18next-resources-to-backend";
+import { initReactI18next } from "react-i18next/initReactI18next";
+import { getOptions } from "./settings";
+import { match } from "ts-pattern";
 
-// Load translations
-import en from "./locales/english/en.json";
-import ar from "./locales/arabic/ar.json";
+if (!i18next.isInitialized) {
+  i18next
+    .use(initReactI18next)
+    .use(
+      resourcesToBackend(async (language: string, namespace: string) => {
+        try {
+          const module = await import(`../../src/locales/${language}/${namespace}.json`);
+          return module.default;
+        } catch (error) {
+          return {}; 
+        }
+      })
+    )
+    .init(getOptions());
+}
 
-const savedLanguage = localStorage.getItem("language") || "en";
+export function useTranslation(
+  lng: string,
+  ns: string | string[],
+  options: Record<string, string> = {}
+) {
+  i18next.changeLanguage(lng);
 
-i18n
-  .use(HttpApi)
-  .use(LanguageDetector)
-  .use(initReactI18next)
-  .init({
-    resources: {
-      en: { translation: en },
-      ar: { translation: ar },
-    },
-    fallbackLng: savedLanguage,
-    interpolation: { escapeValue: false },
-    detection: {
-      order: ["localStorage", "cookie", "navigator", "htmlTag"],
-      caches: ["localStorage", "cookie"],
-    },
-  });
-
-export const changeLanguage = (lng: string) => {
-  i18n.changeLanguage(lng);
-  localStorage.setItem("language", lng);
-  document.documentElement.dir = lng === "ar" ? "rtl" : "ltr";
-  document.documentElement.lang = lng;
-};
-
-export default i18n;
+  const isArray = Array.isArray(ns);
+  return {
+    t: i18next.getFixedT(
+      lng,
+      match(isArray)
+        .with(true, () => ns[0])
+        .otherwise(() => ns),
+      options.keyPrefix
+    ),
+    i18n: i18next,
+  };
+}
