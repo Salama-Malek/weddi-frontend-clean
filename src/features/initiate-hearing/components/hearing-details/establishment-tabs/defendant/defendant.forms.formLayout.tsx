@@ -320,6 +320,7 @@ export const useEstablishmentDefendantFormLayout = ({
             options: genderOptions || [], // Fallback empty array
             validation: { required: t("genderValidation") },
           }),
+          disabled: disableNicFields,
 
         },
         {
