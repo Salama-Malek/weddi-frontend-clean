@@ -21,6 +21,7 @@ export type AutoCompleteFieldProps = {
   validation?: any;
   control?: any;
   isLoading?: boolean;
+  disabled?: boolean;
 };
 
 const CustomDropdownIndicator = (props: any) => (
@@ -150,6 +151,7 @@ export const AutoCompleteField: React.FC<AutoCompleteFieldProps> = ({
     classNamePrefix: "react-select",
     isClearable: true,
     placeholder: t("select_title"),
+    isDisabled: disabled,
     components: {
       DropdownIndicator: CustomDropdownIndicator,
       ClearIndicator: CustomClearIndicator,

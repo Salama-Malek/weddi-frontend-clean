@@ -294,6 +294,25 @@ export const useFormLayout = ({
     workerAgentIdNumber.length === 10 &&
     workerAgentHijriDob.length === 8;
 
+  const disableNicFields = !shouldFetchNicAgent || nicAgentLoading;
+
+  useEffect(() => {
+    if (!shouldFetchNicAgent) {
+      [
+        "userName",
+        "region",
+        "city",
+        "occupation",
+        "gender",
+        "nationality",
+        "hijriDate",
+        "gregorianDate",
+        "applicant",
+        "phoneNumber",
+      ].forEach((f) => setValue(f as any, ""));
+    }
+  }, [shouldFetchNicAgent, setValue]);
+
   // 2) one NIC query, only when both inputs are valid:
   const {
     data: nicAgent,
@@ -1296,6 +1315,7 @@ export const useFormLayout = ({
                   value: watch("userName"),
                   onChange: (v: string) => setValue("userName", v),
                   validation: { required: t("nameValidation") },
+                  disabled: disableNicFields,
                 },
                 {
                   type: "autocomplete" as const,
@@ -1305,6 +1325,7 @@ export const useFormLayout = ({
                   value: watch("region"),
                   onChange: (v: string) => setValue("region", v),
                   validation: { required: t("regionValidation") },
+                  disabled: disableNicFields,
                 },
                 {
                   type: "autocomplete" as const,
@@ -1314,6 +1335,7 @@ export const useFormLayout = ({
                   value: watch("city"),
                   onChange: (v: string) => setValue("city", v),
                   validation: { required: t("cityValidation") },
+                  disabled: disableNicFields,
                 },
                 {
                   type: "input" as const,
@@ -1330,6 +1352,7 @@ export const useFormLayout = ({
                       message: t("phoneValidationMessage"),
                     },
                   },
+                  disabled: disableNicFields,
                 },
                 {
                   type: "autocomplete" as const,
@@ -1339,6 +1362,7 @@ export const useFormLayout = ({
                   value: watch("occupation"),
                   onChange: (v: string) => setValue("occupation", v),
                   validation: { required: t("occupationValidation") },
+                  disabled: disableNicFields,
                 },
                 {
                   type: "autocomplete" as const,
@@ -1348,6 +1372,7 @@ export const useFormLayout = ({
                   value: watch("gender"),
                   onChange: (v: string) => setValue("gender", v),
                   validation: { required: t("genderValidation") },
+                  disabled: disableNicFields,
                 },
                 {
                   type: "autocomplete" as const,
@@ -1357,6 +1382,7 @@ export const useFormLayout = ({
                   value: watch("nationality"),
                   onChange: (v: string) => setValue("nationality", v),
                   validation: { required: t("nationalityValidation") },
+                  disabled: disableNicFields,
                 },
               ]),
         ],
