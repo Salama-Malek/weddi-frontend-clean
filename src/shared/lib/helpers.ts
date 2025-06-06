@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { DateObject } from "react-multi-date-picker";
-
+ 
 // Map Arabic-Indic digits to ASCII
 const ARABIC_INDIC_DIGITS: Record<string, string> = {
   "٠": "0","١": "1","٢": "2","٣": "3","٤": "4",
@@ -9,7 +9,7 @@ const ARABIC_INDIC_DIGITS: Record<string, string> = {
 function toAsciiDigits(input: string): string {
   return input.replace(/[٠-٩]/g, d => ARABIC_INDIC_DIGITS[d] || d);
 }
-
+ 
 // CLDR full names and Safari abbreviations for Hijri months
 const HIJRI_MONTHS: Record<string, string> = {
   // Full CLDR names:
@@ -19,7 +19,7 @@ const HIJRI_MONTHS: Record<string, string> = {
   // Safari numeric abbreviations:
   "جما١": "05", "جما٢": "06"
 };
-
+ 
 function normalizeHijriString(str: string): string {
   let s = str;
   // Replace month names/abbrev
@@ -33,7 +33,7 @@ function normalizeHijriString(str: string): string {
   }
   return s;
 }
-
+ 
 /**
  * Convert any input (ASCII DD/MM/YYYY or Arabic-Indic/names) into
  * Hijri YYYYMMDD (or DD/MM/YYYY if friendlyFormat=true).
@@ -74,7 +74,7 @@ export function toHijri_YYYYMMDD(
     return dateString;
   }
 }
-
+ 
 export const getEnvVar = <T extends string | number | boolean>(
   key: string,
   defaultValue?: T
@@ -88,7 +88,7 @@ export const getEnvVar = <T extends string | number | boolean>(
   if (typeof defaultValue === 'boolean') return (value === 'true') as T;
   return value as T;
 };
-
+ 
 export function isObjectWithData(value: unknown): value is Record<string, unknown> {
   return typeof value==='object' && value!=null && !Array.isArray(value) && Object.keys(value).length>0;
 }
@@ -98,11 +98,11 @@ export function isObjectEmpty(value: unknown): boolean {
 export function isArrayWithData(value: unknown): value is Array<unknown> { return Array.isArray(value)&&value.length>0; }
 export function isArray(value: unknown): value is Array<unknown> { return Array.isArray(value); }
 export function isNotArray(value: unknown): boolean { return !Array.isArray(value); }
-
+ 
 export type OptionMapperParams = { data?: any[]; valueKey?: string; labelKey?: string };
 export const mapToOptions = ({ data=[], valueKey='ElementKey', labelKey='ElementValue' }: OptionMapperParams) =>
   data.map(item => ({ value: item[valueKey], label: item[labelKey] }));
-
+ 
 interface BaseFieldProps { name: string; label: string; readOnly?: boolean; }
 interface InputFieldProps extends BaseFieldProps { placeholder?: string; inputType?: string; validation?: any; }
 interface AutocompleteFieldProps extends BaseFieldProps { options: any[]; value: any; onChange: (v:any)=>void; }
@@ -113,11 +113,11 @@ export const createInputField = ({ name, label, placeholder, inputType='text', v
 export const createAutocompleteField = ({ name, label, options, value, onChange, readOnly=false }: AutocompleteFieldProps) => ({
   type: getFieldType('autocomplete', readOnly), name, label, options, value, onChange, readOnly
 });
-
+ 
 export function useLoadingStates<T extends Record<string,boolean>>(states:T):T {
   return useMemo(() => states, Object.values(states));
 }
-
+ 
 /**
  * Converts a compact Hijri date string (YYYYMMDD) to formatted date (MM/DD/YYYY)
  */
@@ -126,13 +126,13 @@ export function formatHijriDate(compact:string):string {
   const y=compact.slice(0,4), m=compact.slice(4,6), d=compact.slice(6);
   return `${m}/${d}/${y}`;
 }
-
+ 
 export function formatDateToYYYYMMDD(dateString:string):string {
   if (!dateString) return '';
   try { return new DateObject(dateString).format('YYYYMMDD'); }
   catch { return dateString; }
 }
-
+ 
 export function formatDateGMT(inputDate: string | null | undefined): string {
   if (!inputDate) return '---:---';
   const year=inputDate.slice(0,4), month=inputDate.slice(4,6), day=inputDate.slice(6,8);
@@ -140,3 +140,13 @@ export function formatDateGMT(inputDate: string | null | undefined): string {
   const dt=new Date(`${year}-${month}-${day}T${hour}:${minute}:00.000Z`);
   return dt.toLocaleString('en-US',{year:'numeric',month:'long',day:'numeric',hour:'2-digit',minute:'2-digit',timeZone:'GMT',timeZoneName:'short'});
 }
+ 
+ 
+ 
+export const formatDateString = (raw: string | undefined | null): string => {
+  if (!raw || raw.length !== 8) return "";
+  const year = raw.slice(0, 4);
+  const month = raw.slice(4, 6);
+  const day = raw.slice(6, 8);
+  return `${year}/${month}/${day}`;
+};

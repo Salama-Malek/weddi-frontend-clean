@@ -74,5 +74,8 @@
   "dateHijriofResignation": "Date (Hijri) of Resignation",
   "lastWorkingDay": "Last Working Day",
   "no_attachments": "No Attachments",
-  "no_content_found": "No Content Found"
+  "no_content_found": "No Content Found",
+  "workerType": "Worker Type",
+  "fristWorkingDayDate":"First Working Day Date",
+  "salaryType": "Salary Type"
 }

@@ -5,6 +5,7 @@ import React, { useEffect, useState } from "react";
 import { genderData } from "@/mock/genderData";
 import { options } from "@/features/initiate-hearing/config/Options";
 import { useCookieState } from "@/features/initiate-hearing/hooks/useCookieState";
+import { skipToken } from "@reduxjs/toolkit/query";
 import { useGetGenderLookupDataQuery, useGetNationalityLookupDataQuery, useGetNICDetailsQuery, useGetOccupationLookupDataQuery, useGetWorkerCityLookupDataQuery, useGetWorkerRegionLookupDataQuery } from "@/features/initiate-hearing/api/create-case/plaintiffDetailsApis";
 
 interface EstablishmentDefendantFormLayoutProps {
@@ -77,30 +78,29 @@ export const useLegelDefendantFormLayout = ({
     isFetching: nicIsLoading,
     isError,
   } = useGetNICDetailsQuery(
+    watchNationalId && watchDateOfBirth
+      ? {
+          IDNumber: watchNationalId,
+          DateOfBirth: watchDateOfBirth,
+          AcceptedLanguage: i18n.language === "ar" ? "AR" : "EN",
+          SourceSystem: "E-Services",
+        }
+      : skipToken,
     {
-      IDNumber: watchNationalId || "",
-      DateOfBirth: watchDateOfBirth || "",
-      AcceptedLanguage: i18n.language === "ar" ? "AR" : "EN",
-      SourceSystem: "E-Services",
-    },
-    {
-      skip: (!isValidCallNic)
-
+      skip: !isValidCallNic
     }
   );
 
 
   useEffect(() => {
-
     const isValid = watchNationalId?.length === 10;
-    //console.log(watchNationalId, watchDateOfBirth);
-
-    if (isValid && watchDateOfBirth) {
-      setIsValidCallNic(isValid);
+    const hasDateOfBirth = !!watchDateOfBirth;
+    setIsValidCallNic(isValid && hasDateOfBirth);
+    
+    if (isValid && hasDateOfBirth) {
       setCookie("nationalIdNumber", watchNationalId);
     }
-
-  }, [watchNationalId, watchDateOfBirth])
+  }, [watchNationalId, watchDateOfBirth, setCookie]);
 
 
 

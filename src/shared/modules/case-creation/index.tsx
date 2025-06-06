@@ -4,11 +4,11 @@ const MultiStepForm = React.lazy(() => import("./MultiStepForm/MultiStepForm"));
 
 import StepperSkeleton from "@/shared/components/loader/StepperSkeleton";
 import useCasesLogic from "@/features/initiate-hearing/hooks/useCasesLogic";
-import { useSearchParams } from "react-router-dom";
 import { useCookieState } from "@/features/initiate-hearing/hooks/useCookieState";
 const ContentRenderer = React.lazy(
   () => import("./components/ContentRenderer")
 );
+
 export interface Step {
   title: string;
   description: string;
@@ -16,11 +16,10 @@ export interface Step {
 
 const CaseCreation: React.FC = () => {
   const [getCookie, setCookie] = useCookieState({ caseId: "" });
-  const [searchParams] = useSearchParams();
   const userType = getCookie("userType");
 
   useEffect(() => {
-      setCookie("userType", userType);
+    setCookie("userType", userType);
   }, [userType]);
 
   const { t } = useTranslation("stepper");
@@ -29,7 +28,18 @@ const CaseCreation: React.FC = () => {
     { title: t("step2.title"), description: t("step2.description") },
     { title: t("step3.title"), description: t("step3.description") },
   ];
+
   const { currentStep, currentTab } = useCasesLogic();
+
+  useEffect(() => {
+    const savedStep = localStorage.getItem("step");
+    const savedTab = localStorage.getItem("tab");
+
+    if (!savedStep && !savedTab) {
+      localStorage.setItem("step", "0");
+      localStorage.setItem("tab", "0");
+    }
+  }, []);
 
   return (
     <Suspense fallback={<StepperSkeleton />}>

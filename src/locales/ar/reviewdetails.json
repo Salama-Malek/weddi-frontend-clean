@@ -72,5 +72,8 @@
   "contractExGregorianDate": "تاريخ انتهاء العقد (ميلادي)",
   "dateHijriofResignation": "تاريخ الاستقالة (هجري)",
   "lastWorkingDay": "آخر يوم عمل",
-  "no_attachments": "لا يوجد ملفات مرفقة"
+  "no_attachments": "لا يوجد ملفات مرفقة",
+  "workerType": "نوع العامل",
+  "fristWorkingDayDate":"تاريخ اول يوم عمل",
+  "salaryType": "نوع الاجر"
 }

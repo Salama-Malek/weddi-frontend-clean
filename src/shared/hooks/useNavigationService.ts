@@ -1,15 +1,46 @@
-import { useSearchParams } from "react-router-dom";
+import { useState, useEffect } from "react";
 
 export const useNavigationService = () => {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [currentStep, setCurrentStep] = useState<number>(() => {
+    const savedStep = localStorage.getItem('step');
+    return savedStep ? parseInt(savedStep) : 0;
+  });
+
+  const [currentTab, setCurrentTab] = useState<number>(() => {
+    const savedTab = localStorage.getItem('tab');
+    return savedTab ? parseInt(savedTab) : 0;
+  });
+
+  useEffect(() => {
+    const savedStep = localStorage.getItem('step');
+    const savedTab = localStorage.getItem('tab');
+
+    if (savedStep) {
+      setCurrentStep(parseInt(savedStep));
+    }
+    if (savedTab) {
+      setCurrentTab(parseInt(savedTab));
+    }
+  }, []);
 
   const updateParams = (step: number, tab?: number) => {
-    const params: Record<string, string> = { step: step.toString() };
-    if (step === 0 && tab !== undefined) {
-      params.tab = tab.toString();
+    console.log('Updating navigation params:', { step, tab });
+
+    // تحديث localStorage أولاً
+    localStorage.setItem('step', step.toString());
+    if (tab !== undefined) {
+      localStorage.setItem('tab', tab.toString());
     }
-    setSearchParams(params);
+
+    // ثم تحديث الحالة
+    setCurrentStep(step);
+    if (tab !== undefined) {
+      setCurrentTab(tab);
+    }
+
+    // إطلاق حدث التخزين
+    window.dispatchEvent(new Event('storage'));
   };
 
-  return { updateParams, searchParams };
+  return { updateParams, currentStep, currentTab };
 };

@@ -13,8 +13,7 @@ export const caseApi = api.injectEndpoints({
   endpoints: (builder) => ({
     saveClaimantDetails: builder.mutation({
       query: ({ data, isCaseCreated }) => ({
-        url: `/WeddiCreateCaseServices/V1/${isCaseCreated ? "Update" : "Create"
-          }`,
+        url: `/WeddiCreateCaseServices/V1/${isCaseCreated ? "Update" : "Create"}`,
         method: "POST",
         body: data,
       }),
@@ -60,7 +59,6 @@ export const caseApi = api.injectEndpoints({
         ModuleKey,
         ModuleName,
         AcceptedLanguage,
-        SourceSystem,
       }) => ({
         url: `/WeddiServices/V1/MainLookUp`,
         params: {
@@ -68,7 +66,6 @@ export const caseApi = api.injectEndpoints({
           ModuleKey: ModuleKey,
           ModuleName: ModuleName,
           AcceptedLanguage: AcceptedLanguage,
-          SourceSystem: SourceSystem,
         },
       }),
     }),
@@ -78,8 +75,6 @@ export const caseApi = api.injectEndpoints({
         params: {
           AttachmentKey: AttachmentKey,
           AcceptedLanguage: AcceptedLanguage,
-          SourceSystem: "E-Services",
-
         },
       }),
     }),

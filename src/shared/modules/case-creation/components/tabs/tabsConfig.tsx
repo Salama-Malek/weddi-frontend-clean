@@ -1,4 +1,3 @@
-
 import { useTranslation } from "react-i18next";
 
 export const useTabs = (): string[] => {
@@ -6,10 +5,9 @@ export const useTabs = (): string[] => {
   return [
     t("tabs.plaintiffDetails"),
     t("tabs.defendantDetails"),
-    t("tabs.workDetails")
+    t("tabs.workDetails"),
   ];
 };
-
 
 export interface Step {
   title: string;
@@ -17,7 +15,13 @@ export interface Step {
 }
 
 export const steps: Step[] = [
-  { title: "Hearing details", description: "Basic information and details of the hearing" },
+  {
+    title: "Hearing details",
+    description: "Basic information and details of the hearing",
+  },
   { title: "Hearing topics", description: "Add topics related to the hearing" },
-  { title: "Review and confirm", description: "Review the hearing details and confirm the acknowledgment" },
+  {
+    title: "Review and confirm",
+    description: "Review the hearing details and confirm the acknowledgment",
+  },
 ];

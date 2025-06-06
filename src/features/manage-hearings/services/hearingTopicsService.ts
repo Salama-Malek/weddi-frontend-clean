@@ -47,7 +47,7 @@ export const hearingTopicsApi = api.injectEndpoints({
     }),
 
     mainCategoryLookup: builder.query({
-      query: ({ LookupType, ModuleKey, ModuleName, ApplicantType, AcceptedLanguage, SourceSystem }) => ({
+      query: ({ LookupType, ModuleKey, ModuleName, ApplicantType, AcceptedLanguage }) => ({
         url: "/WeddiServices/V1/MainLookUp",
         method: "GET",
         params: {
@@ -56,13 +56,12 @@ export const hearingTopicsApi = api.injectEndpoints({
           ModuleName,
           ApplicantType,
           AcceptedLanguage,
-          SourceSystem,
         },
       }),
     }),
 
     subCategoryLookup: builder.query({
-      query: ({ LookupType, ModuleKey, ModuleName, AcceptedLanguage, SourceSystem }) => ({
+      query: ({ LookupType, ModuleKey, ModuleName, AcceptedLanguage }) => ({
         url: "/WeddiServices/V1/SubLookup",
         method: "GET",
         params: {
@@ -70,7 +69,6 @@ export const hearingTopicsApi = api.injectEndpoints({
           ModuleKey,
           ModuleName,
           AcceptedLanguage,
-          SourceSystem,
         },
       }),
     }),

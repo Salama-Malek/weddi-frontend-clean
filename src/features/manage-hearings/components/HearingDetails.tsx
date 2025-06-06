@@ -62,6 +62,8 @@ const HearingDetails = () => {
   const canResend = hearing?.ResendAppointment === "true";
   const canCancel = hearing?.CancelCase === "true";
   const canUpdate = hearing?.UpdateCase === "true";
+  // const canUpdate =  true; 
+  //#region Mario will work on this for testing
   const canComplete = hearing?.IncompleteCase === "true";
 
   const [modalType, setModalType] = useState<
@@ -76,11 +78,15 @@ const HearingDetails = () => {
   const handleCancelCase = async () => {
     try {
       setLoadingAction("cancel");
+      // Determine the appropriate ResolveStatus based on the case status
+      const isInFlight = ["Under-Investigation", "Under-Negotiations", "Under-NegotiationsCI"].includes(hearing?.StatusWork_Code || "");
+      const resolveStatus = isInFlight ? "Resolved-Waived" : "Resolved-Request Cancelled";
+
       const cancelCaseResponse: any = await resolveCase({
         CaseID: caseId!,
         AcceptedLanguage: lang === "ar" ? "AR" : "EN",
         SourceSystem,
-        ResolveStatus: "Resolved-Request Cancelled",
+        ResolveStatus: resolveStatus,
       }).unwrap();
       if (
         cancelCaseResponse.ServiceStatus === "Success" &&
@@ -89,8 +95,6 @@ const HearingDetails = () => {
         toast.success(t("cancel_success"));
         await refetch();
         setModalType(null);
-        // setShowCancelSuccess(true);
-        // navigate("/manage-hearings");
       } else {
         toast.error(t("cancel_error"));
       }
@@ -543,7 +547,7 @@ const HearingDetails = () => {
               onClick={() => {
                 setModalType(null);
                 setCookie("caseId", caseId);
-                navigate("initiate-hearing/case-creation");
+                navigate("/initiate-hearing/case-creation");
               }}
             >
               {t("yes")}

@@ -1,6 +1,17 @@
 // src/providers/FormContext.tsx
-import React, { createContext, useContext, ReactNode, useState, useMemo } from "react";
-import { useForm, UseFormReturn, UseFormProps, FormState } from "react-hook-form";
+import React, {
+  createContext,
+  useContext,
+  ReactNode,
+  useState,
+  useMemo,
+} from "react";
+import {
+  useForm,
+  UseFormReturn,
+  UseFormProps,
+  FormState,
+} from "react-hook-form";
 import { FormData } from "@/shared/components/form/form.types";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
@@ -21,7 +32,8 @@ const FormContext = createContext<FormContextType | null>(null);
 
 export const useAPIFormsData = () => {
   const ctx = useContext(FormContext);
-  if (!ctx) throw new Error("useAPIFormsData must be used within a FormProvider");
+  if (!ctx)
+    throw new Error("useAPIFormsData must be used within a FormProvider");
   return ctx;
 };
 
@@ -30,14 +42,26 @@ interface FormProviderProps {
   formOptions?: UseFormProps<FormData>;
 }
 
-export const FormProvider: React.FC<FormProviderProps> = ({ children, formOptions }) => {
-  const storeDefaults = useSelector((s: RootState) => s.DefaultValues?.values) || {};
+export const FormProvider: React.FC<FormProviderProps> = ({
+  children,
+  formOptions,
+}) => {
+  const storeDefaults =
+    useSelector((s: RootState) => s.DefaultValues?.values) || {};
 
   const mergedDefaults = useMemo<Partial<FormData>>(
     () => ({
-      applicantType: "principal",   // ← ensure this matches your radio’s `name`
-      claimantStatus: "principal",  // ← if you have legacy layouts using this too
+      applicantType: "principal",
+      claimantStatus: "principal",
       defendantStatus: "Government",
+      contractDateHijri: "",
+      contractDateGregorian: "",
+      contractExpiryDateHijri: "",
+      contractExpiryDateGregorian: "",
+      dateofFirstworkingdayHijri: "",
+      dateOfFirstWorkingDayGregorian: "",
+      dateoflastworkingdayHijri: "",
+      dateofLastworkingdayGregorian: "",
       ...storeDefaults,
     }),
     [storeDefaults]
@@ -48,7 +72,7 @@ export const FormProvider: React.FC<FormProviderProps> = ({ children, formOption
     defaultValues: mergedDefaults,
     ...formOptions,
   });
-  
+
   // local form-data state (for saving / resetting)
   const [formData, setFormDataState] = useState<FormData | null>(null);
   const [editTopic, setEditTopic] = useState<Topic | null>(null);

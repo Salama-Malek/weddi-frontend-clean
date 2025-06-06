@@ -39,7 +39,7 @@ import { DateOfBirthField } from "@/shared/components/calanders";
 import { useAPIFormsData } from "@/providers/FormContext";
 import OTPFormLayout from "./OTP.froms.formlayout";
 import { boolean } from "ts-pattern/dist/patterns";
-
+import { formatDateString } from "@/shared/lib/helpers";
 interface AgentInfo {
   Agent?: {
     MandateNumber?: string;
@@ -267,8 +267,8 @@ export const useFormLayout = ({
   const applicantType = watch("applicant");
   const workerAgentIdNumber = watch("workerAgentIdNumber") || "";
   const workerAgentHijriDob = watch("workerAgentDateOfBirthHijri") || "";
-  const claimType = watch("claimantStatus")
-  const applicant = watch("applicant")
+  const claimType = watch("claimantStatus");
+  const applicant = watch("applicant");
   // 1): Fetch All Nic Data From The Data
 
   useEffect(() => {
@@ -285,8 +285,7 @@ export const useFormLayout = ({
       "applicant",
       "phoneNumber",
     ].forEach((f) => setValue(f as any, ""));
-  }, [])
-
+  }, []);
 
   // 1) compute when we're ready to fire:
   const claimantStatus = watch("claimantStatus");
@@ -326,13 +325,19 @@ export const useFormLayout = ({
       setValue("userName", d.PlaintiffName || "");
       setValue("region", { value: d.Region_Code || "", label: d.Region || "" });
       setValue("city", { value: d.City_Code || "", label: d.City || "" });
-      setValue("occupation", { value: d.Occupation_Code || "", label: d.Occupation || "" });
+      setValue("occupation", {
+        value: d.Occupation_Code || "",
+        label: d.Occupation || "",
+      });
       setValue("gender", { value: d.Gender_Code || "", label: d.Gender || "" });
-      setValue("nationality", { value: d.Nationality_Code || "", label: d.Nationality || "" });
+      setValue("nationality", {
+        value: d.Nationality_Code || "",
+        label: d.Nationality || "",
+      });
       setValue("hijriDate", d.DateOfBirthHijri || "");
       setValue("gregorianDate", d.DateOfBirthGregorian || "");
       if (d.PhoneNumber) {
-        setValue("phoneNumber", Number(d.PhoneNumber));
+        setValue("phoneNumber", d.PhoneNumber.toString());
       }
     }
   }, [shouldFetchNicAgent, nicAgent, nicAgentError, setValue, setError, t]);
@@ -357,7 +362,6 @@ export const useFormLayout = ({
   const govRepDetail = userTypeLegalRepData?.GovRepDetails?.find(
     (item: any) => item.GOVTID === selectedMainCategory?.value
   );
-
 
   // // Define NIC parameters for the worker user
   // const nicParams: NICDetailsParams = {
@@ -391,22 +395,32 @@ export const useFormLayout = ({
 
       setValue("userName", nic.PlaintiffName || "");
 
-      setValue("region", { value: nic.Region_Code || "", label: nic.Region || "" });
+      setValue("region", {
+        value: nic.Region_Code || "",
+        label: nic.Region || "",
+      });
       setValue("city", { value: nic.City_Code || "", label: nic.City || "" });
-      setValue("occupation", { value: nic.Occupation_Code || "", label: nic.Occupation || "" });
-      setValue("gender", { value: nic.Gender_Code || "", label: nic.Gender || "" });
-      setValue("nationality", { value: nic.Nationality_Code || "", label: nic.Nationality || "" });
+      setValue("occupation", {
+        value: nic.Occupation_Code || "",
+        label: nic.Occupation || "",
+      });
+      setValue("gender", {
+        value: nic.Gender_Code || "",
+        label: nic.Gender || "",
+      });
+      setValue("nationality", {
+        value: nic.Nationality_Code || "",
+        label: nic.Nationality || "",
+      });
 
       setValue("hijriDate", nic.DateOfBirthHijri || "");
       setValue("gregorianDate", nic?.DateOfBirthGregorian || "");
       setValue("applicant", nic.Applicant || "");
       if (nic.PhoneNumber) {
-        setValue("phoneNumber", Number(nic.PhoneNumber));
+        setValue("phoneNumber", nic.PhoneNumber.toString());
       }
     }
   }, [principalNICResponse, setValue, watch, claimantStatus]);
-
-
 
   // Autofill or clear rep-plaintiff fields based on the representative response
   useEffect(() => {
@@ -423,22 +437,30 @@ export const useFormLayout = ({
       // setValue("gender", nic.Gender || "");
       // setValue("nationality", nic.Nationality || "");
 
-
-      setValue("region", { value: nic.Region_Code || "", label: nic.Region || "" });
+      setValue("region", {
+        value: nic.Region_Code || "",
+        label: nic.Region || "",
+      });
       setValue("city", { value: nic.City_Code || "", label: nic.City || "" });
-      setValue("occupation", { value: nic.Occupation_Code || "", label: nic.Occupation || "" });
-      setValue("gender", { value: nic.Gender_Code || "", label: nic.Gender || "" });
-      setValue("nationality", { value: nic.Nationality_Code || "", label: nic.Nationality || "" });
-
-
-
+      setValue("occupation", {
+        value: nic.Occupation_Code || "",
+        label: nic.Occupation || "",
+      });
+      setValue("gender", {
+        value: nic.Gender_Code || "",
+        label: nic.Gender || "",
+      });
+      setValue("nationality", {
+        value: nic.Nationality_Code || "",
+        label: nic.Nationality || "",
+      });
 
       setValue("hijriDate", nic.DateOfBirthHijri || "");
       setValue("gregorianDate", nic.DateOfBirthGregorian || "");
       setValue("applicant", nic.Applicant || "");
 
       if (nic.PhoneNumber) {
-        setValue("phoneNumber", Number(nic.PhoneNumber));
+        setValue("phoneNumber", nic.PhoneNumber.toString());
       }
     } else {
       // cleared or invalid ID => clear all
@@ -501,7 +523,6 @@ export const useFormLayout = ({
       })) || [],
     [nationalityData]
   );
-
 
   //#region OTP
   const CountryCodeOptions = useMemo(
@@ -773,27 +794,26 @@ export const useFormLayout = ({
   // ];
   //#endregion OTP
 
-
   const baseSections =
     userType === "legal_representative"
       ? [
-        {
-          isHidden: true,
-          title: LegalRep("claimantStatus"),
-          isRadio: true,
-          children: [
-            {
-              type: "radio",
-              name: "plaintiffStatus",
-              label: LegalRep("claimantStatus"),
-              options: plaintiffTypeOptions,
-              value: "",
-              onChange: (value: string) => setValue("plaintiffStatus", value),
-              validation: { required: "Region is required" },
-            },
-          ],
-        },
-      ]
+          {
+            isHidden: true,
+            title: LegalRep("claimantStatus"),
+            isRadio: true,
+            children: [
+              {
+                type: "radio",
+                name: "plaintiffStatus",
+                label: LegalRep("claimantStatus"),
+                options: plaintiffTypeOptions,
+                value: "",
+                onChange: (value: string) => setValue("plaintiffStatus", value),
+                validation: { required: "Region is required" },
+              },
+            ],
+          },
+        ]
       : [];
 
   const getWorkerSections = () => {
@@ -836,198 +856,200 @@ export const useFormLayout = ({
           // Name
           ...(pd?.PlaintiffName
             ? [
-              {
-                type: "readonly" as const,
-                label: t("nicDetails.name"),
-                value: pd.PlaintiffName,
-                isLoading: nicAgentLoading,
-              },
-            ]
+                {
+                  type: "readonly" as const,
+                  label: t("nicDetails.name"),
+                  value: pd.PlaintiffName,
+                  isLoading: nicAgentLoading,
+                },
+              ]
             : [
-              {
-                type: "input" as const,
-                name: "userName",
-                inputType: "text",
-                label: t("nicDetails.name"),
-                value: watch("userName"),
-                onChange: (v: string) => setValue("userName", v),
-                validation: { required: t("nameValidation") },
-                isLoading: nicAgentLoading,
-              },
-            ]),
+                {
+                  type: "input" as const,
+                  name: "userName",
+                  inputType: "text",
+                  label: t("nicDetails.name"),
+                  value: watch("userName"),
+                  onChange: (v: string) => setValue("userName", v),
+                  validation: { required: t("nameValidation") },
+                  isLoading: nicAgentLoading,
+                },
+              ]),
 
           // Region
           ...(pd?.Region
             ? [
-              {
-                type: "readonly" as const,
-                label: t("nicDetails.region"),
-                value: pd.Region,
-                isLoading: nicAgentLoading,
-              },
-            ]
+                {
+                  type: "readonly" as const,
+                  label: t("nicDetails.region"),
+                  value: pd.Region,
+                  isLoading: nicAgentLoading,
+                },
+              ]
             : [
-              {
-                type: "autocomplete" as const,
-                name: "region",
-                label: t("nicDetails.region"),
-                options: RegionOptions,
-                value: watch("region"),
-                onChange: (v: string) => setValue("region", v),
-                validation: { required: t("regionValidation") },
-                isLoading: nicAgentLoading,
-              },
-            ]),
+                {
+                  type: "autocomplete" as const,
+                  name: "region",
+                  label: t("nicDetails.region"),
+                  options: RegionOptions,
+                  value: watch("region"),
+                  onChange: (v: string) => setValue("region", v),
+                  validation: { required: t("regionValidation") },
+                  isLoading: nicAgentLoading,
+                },
+              ]),
 
           // City
           ...(pd?.City
             ? [
-              {
-                type: "readonly" as const,
-                label: t("nicDetails.city"),
-                value: pd.City,
-                onChange: (v: string) => setValue("city", v),
-                validation: { required: t("cityValidation") },
-                isLoading: nicAgentLoading,
-              },
-            ]
+                {
+                  type: "readonly" as const,
+                  label: t("nicDetails.city"),
+                  value: pd.City,
+                  onChange: (v: string) => setValue("city", v),
+                  validation: { required: t("cityValidation") },
+                  isLoading: nicAgentLoading,
+                },
+              ]
             : [
-              {
-                type: "autocomplete" as const,
-                name: "city",
-                label: t("nicDetails.city"),
-                options: CityOptions,
-                value: watch("city"),
-                onChange: (v: string) => setValue("city", v),
-                validation: { required: t("cityValidation") },
-                isLoading: nicAgentLoading,
-              },
-            ]),
+                {
+                  type: "autocomplete" as const,
+                  name: "city",
+                  label: t("nicDetails.city"),
+                  options: CityOptions,
+                  value: watch("city"),
+                  onChange: (v: string) => setValue("city", v),
+                  validation: { required: t("cityValidation") },
+                  isLoading: nicAgentLoading,
+                },
+              ]),
 
           // Date of Birth (Hijri)
           {
             type: "readonly" as const,
             label: t("nicDetails.dobHijri"),
-            value: pd?.DateOfBirthHijri || "",
+            value: formatDateString(pd?.DateOfBirthHijri) || "",
             isLoading: nicAgentLoading,
           },
           // Date of Birth (Gregorian)
           {
             type: "readonly" as const,
             label: t("nicDetails.dobGrog"),
-            value: pd?.DateOfBirthGregorian || "",
+            // value: pd?.DateOfBirthGregorian || "",
+
+            value: formatDateString(pd?.DateOfBirthGregorian),
             isLoading: nicAgentLoading,
           },
 
           // Phone Number
           ...(pd?.PhoneNumber
             ? [
-              {
-                type: "readonly" as const,
-                label: t("nicDetails.phoneNumber"),
-                value: pd.PhoneNumber,
-                isLoading: nicAgentLoading,
-              },
-            ]
-            : [
-              {
-                type: "input" as const,
-                name: "phoneNumber",
-                inputType: "number",
-                placeholder: "05xxxxxxxx",
-                label: t("nicDetails.phoneNumber"),
-                value: watch("phoneNumber"),
-                onChange: (v: string) => setValue("phoneNumber", Number(v)),
-                validation: {
-                  required: t("phoneNumberValidation"),
-                  pattern: {
-                    value: /^05\d{8}$/,
-                    message: t("phoneValidationMessage"),
-                  },
+                {
+                  type: "readonly" as const,
+                  label: t("nicDetails.phoneNumber"),
+                  value: pd.PhoneNumber,
+                  isLoading: nicAgentLoading,
                 },
-                isLoading: nicAgentLoading,
-              },
-            ]),
+              ]
+            : [
+                {
+                  type: "input" as const,
+                  name: "phoneNumber",
+                  inputType: "text",
+                  placeholder: "05xxxxxxxx",
+                  label: t("nicDetails.phoneNumber"),
+                  value: watch("phoneNumber"),
+                  onChange: (v: string) => setValue("phoneNumber", v),
+                  validation: {
+                    required: t("phoneNumberValidation"),
+                    pattern: {
+                      value: /^05\d{8}$/,
+                      message: t("phoneValidationMessage"),
+                    },
+                  },
+                  isLoading: nicAgentLoading,
+                },
+              ]),
 
           // Occupation
           ...(pd?.Occupation
             ? [
-              {
-                type: "readonly" as const,
-                label: t("nicDetails.occupation"),
-                value: pd.Occupation,
-                isLoading: nicAgentLoading,
-              },
-            ]
+                {
+                  type: "readonly" as const,
+                  label: t("nicDetails.occupation"),
+                  value: pd.Occupation,
+                  isLoading: nicAgentLoading,
+                },
+              ]
             : [
-              {
-                type: "autocomplete" as const,
-                name: "occupation",
-                label: t("nicDetails.occupation"),
-                options: OccupationOptions,
-                value: watch("occupation"),
-                onChange: (v: string) => setValue("occupation", v),
-                validation: { required: t("occupationValidation") },
-                isLoading: nicAgentLoading,
-              },
-            ]),
+                {
+                  type: "autocomplete" as const,
+                  name: "occupation",
+                  label: t("nicDetails.occupation"),
+                  options: OccupationOptions,
+                  value: watch("occupation"),
+                  onChange: (v: string) => setValue("occupation", v),
+                  validation: { required: t("occupationValidation") },
+                  isLoading: nicAgentLoading,
+                },
+              ]),
 
           // Gender
           ...(pd?.Gender
             ? [
-              {
-                type: "readonly" as const,
-                label: t("nicDetails.gender"),
-                value: pd.Gender,
-                isLoading: nicAgentLoading,
-              },
-            ]
+                {
+                  type: "readonly" as const,
+                  label: t("nicDetails.gender"),
+                  value: pd.Gender,
+                  isLoading: nicAgentLoading,
+                },
+              ]
             : [
-              {
-                type: "autocomplete" as const,
-                name: "gender",
-                label: t("nicDetails.gender"),
-                options: GenderOptions,
-                value: watch("gender"),
-                onChange: (v: string) => setValue("gender", v),
-                validation: { required: t("genderValidation") },
-                isLoading: nicAgentLoading,
-              },
-            ]),
+                {
+                  type: "autocomplete" as const,
+                  name: "gender",
+                  label: t("nicDetails.gender"),
+                  options: GenderOptions,
+                  value: watch("gender"),
+                  onChange: (v: string) => setValue("gender", v),
+                  validation: { required: t("genderValidation") },
+                  isLoading: nicAgentLoading,
+                },
+              ]),
 
           // Nationality
           ...(pd?.Nationality
             ? [
-              {
-                type: "readonly" as const,
-                label: t("nicDetails.nationality"),
-                value: pd.Nationality,
-                isLoading: nicAgentLoading,
-              },
-            ]
+                {
+                  type: "readonly" as const,
+                  label: t("nicDetails.nationality"),
+                  value: pd.Nationality,
+                  isLoading: nicAgentLoading,
+                },
+              ]
             : [
-              {
-                type: "autocomplete" as const,
-                name: "nationality",
-                label: t("nicDetails.nationality"),
-                options: NationalityOptions,
-                value: watch("nationality"),
-                onChange: (v: string) => setValue("nationality", v),
-                validation: { required: t("nationalityValidation") },
-                isLoading: nicAgentLoading,
-              },
-            ]),
+                {
+                  type: "autocomplete" as const,
+                  name: "nationality",
+                  label: t("nicDetails.nationality"),
+                  options: NationalityOptions,
+                  value: watch("nationality"),
+                  onChange: (v: string) => setValue("nationality", v),
+                  validation: { required: t("nationalityValidation") },
+                  isLoading: nicAgentLoading,
+                },
+              ]),
 
           // Applicant (if present)
           ...(pd?.Applicant
             ? [
-              {
-                type: "readonly" as const,
-                label: t("nicDetails.applicant"),
-                value: pd.Applicant,
-                isLoading: nicAgentLoading,
-              },
-            ]
+                {
+                  type: "readonly" as const,
+                  label: t("nicDetails.applicant"),
+                  value: pd.Applicant,
+                  isLoading: nicAgentLoading,
+                },
+              ]
             : []),
         ],
       });
@@ -1056,7 +1078,7 @@ export const useFormLayout = ({
         className: "agent-data-section",
         gridCols: 3,
         children: [
-          // Agent’s own ID (readonly)
+          // Agent's own ID (readonly)
           {
             type: "readonly" as const,
             label: t("nicDetails.idNumber"),
@@ -1080,14 +1102,14 @@ export const useFormLayout = ({
           {
             type: "input" as const,
             name: "agencyNumber",
-            inputType: "number",
+            inputType: "text",
             label: t("nicDetails.agencyNumber"),
             placeholder: "10xxxxxxxx",
             value: watch("agencyNumber"),
             onChange: (v: string) => {
               // always keep form state up to date
               setValue("agencyNumber", v);
-              // only fetch when it’s exactly 9 digits and a local agency
+              // only fetch when it's exactly 9 digits and a local agency
               if (agentType === "local_agency" && v.length === 9) {
                 onAgencyNumberChange(v);
               } else {
@@ -1157,16 +1179,16 @@ export const useFormLayout = ({
           // External-agency only: Occupation dropdown
           ...(agentType === "external_agency"
             ? [
-              {
-                type: "autocomplete" as const,
-                name: "occupation",
-                label: t("nicDetails.occupation"),
-                options: OccupationOptions,
-                value: watch("occupation"),
-                onChange: (v: string) => setValue("occupation", v),
-                validation: { required: t("occupationValidation") },
-              },
-            ]
+                {
+                  type: "autocomplete" as const,
+                  name: "occupation",
+                  label: t("nicDetails.occupation"),
+                  options: OccupationOptions,
+                  value: watch("occupation"),
+                  onChange: (v: string) => setValue("occupation", v),
+                  validation: { required: t("occupationValidation") },
+                },
+              ]
             : []),
         ],
       });
@@ -1216,127 +1238,127 @@ export const useFormLayout = ({
           // 3) Fetched or fallback fields:
           ...(rd
             ? [
-              {
-                type: "readonly" as const,
-                label: t("nicDetails.name"),
-                value: rd.PlaintiffName,
-                isLoading: nicAgentLoading,
-              },
-              {
-                type: "readonly" as const,
-                label: t("nicDetails.region"),
-                value: rd.Region,
-                isLoading: nicAgentLoading,
-              },
-              {
-                type: "readonly" as const,
-                label: t("nicDetails.city"),
-                value: rd.City,
-                isLoading: nicAgentLoading,
-              },
-              {
-                type: "readonly" as const,
-                label: t("nicDetails.dobGrog"),
-                value: rd.DateOfBirthGregorian,
-                isLoading: nicAgentLoading,
-              },
-              {
-                type: "readonly" as const,
-                label: t("nicDetails.phoneNumber"),
-                value: rd.PhoneNumber,
-                isLoading: nicAgentLoading,
-              },
-              {
-                type: "readonly" as const,
-                label: t("nicDetails.occupation"),
-                value: rd.Occupation,
-                isLoading: nicAgentLoading,
-              },
-              {
-                type: "readonly" as const,
-                label: t("nicDetails.gender"),
-                value: rd.Gender,
-                isLoading: nicAgentLoading,
-              },
-              {
-                type: "readonly" as const,
-                label: t("nicDetails.nationality"),
-                value: rd.Nationality,
-                isLoading: nicAgentLoading,
-              },
-            ]
+                {
+                  type: "readonly" as const,
+                  label: t("nicDetails.name"),
+                  value: rd.PlaintiffName,
+                  isLoading: nicAgentLoading,
+                },
+                {
+                  type: "readonly" as const,
+                  label: t("nicDetails.region"),
+                  value: rd.Region,
+                  isLoading: nicAgentLoading,
+                },
+                {
+                  type: "readonly" as const,
+                  label: t("nicDetails.city"),
+                  value: rd.City,
+                  isLoading: nicAgentLoading,
+                },
+                {
+                  type: "readonly" as const,
+                  label: t("nicDetails.dobGrog"),
+                  value: rd.DateOfBirthGregorian,
+                  isLoading: nicAgentLoading,
+                },
+                {
+                  type: "readonly" as const,
+                  label: t("nicDetails.phoneNumber"),
+                  value: rd.PhoneNumber,
+                  isLoading: nicAgentLoading,
+                },
+                {
+                  type: "readonly" as const,
+                  label: t("nicDetails.occupation"),
+                  value: rd.Occupation,
+                  isLoading: nicAgentLoading,
+                },
+                {
+                  type: "readonly" as const,
+                  label: t("nicDetails.gender"),
+                  value: rd.Gender,
+                  isLoading: nicAgentLoading,
+                },
+                {
+                  type: "readonly" as const,
+                  label: t("nicDetails.nationality"),
+                  value: rd.Nationality,
+                  isLoading: nicAgentLoading,
+                },
+              ]
             : [
-              {
-                type: "input" as const,
-                name: "userName",
-                inputType: "text",
-                label: t("nicDetails.name"),
-                value: watch("userName"),
-                onChange: (v: string) => setValue("userName", v),
-                validation: { required: t("nameValidation") },
-              },
-              {
-                type: "autocomplete" as const,
-                name: "region",
-                label: t("nicDetails.region"),
-                options: RegionOptions,
-                value: watch("region"),
-                onChange: (v: string) => setValue("region", v),
-                validation: { required: t("regionValidation") },
-              },
-              {
-                type: "autocomplete" as const,
-                name: "city",
-                label: t("nicDetails.city"),
-                options: CityOptions,
-                value: watch("city"),
-                onChange: (v: string) => setValue("city", v),
-                validation: { required: t("cityValidation") },
-              },
-              {
-                type: "input" as const,
-                name: "phoneNumber",
-                inputType: "number",
-                placeholder: "05xxxxxxxx",
-                label: t("nicDetails.phoneNumber"),
-                value: watch("phoneNumber"),
-                onChange: (v: string) => setValue("phoneNumber", Number(v)),
-                validation: {
-                  required: t("phoneNumberValidation"),
-                  pattern: {
-                    value: /^05\d{8}$/,
-                    message: t("phoneValidationMessage"),
+                {
+                  type: "input" as const,
+                  name: "userName",
+                  inputType: "text",
+                  label: t("nicDetails.name"),
+                  value: watch("userName"),
+                  onChange: (v: string) => setValue("userName", v),
+                  validation: { required: t("nameValidation") },
+                },
+                {
+                  type: "autocomplete" as const,
+                  name: "region",
+                  label: t("nicDetails.region"),
+                  options: RegionOptions,
+                  value: watch("region"),
+                  onChange: (v: string) => setValue("region", v),
+                  validation: { required: t("regionValidation") },
+                },
+                {
+                  type: "autocomplete" as const,
+                  name: "city",
+                  label: t("nicDetails.city"),
+                  options: CityOptions,
+                  value: watch("city"),
+                  onChange: (v: string) => setValue("city", v),
+                  validation: { required: t("cityValidation") },
+                },
+                {
+                  type: "input" as const,
+                  name: "phoneNumber",
+                  inputType: "text",
+                  placeholder: "05xxxxxxxx",
+                  label: t("nicDetails.phoneNumber"),
+                  value: watch("phoneNumber"),
+                  onChange: (v: string) => setValue("phoneNumber", v),
+                  validation: {
+                    required: t("phoneNumberValidation"),
+                    pattern: {
+                      value: /^05\d{8}$/,
+                      message: t("phoneValidationMessage"),
+                    },
                   },
                 },
-              },
-              {
-                type: "autocomplete" as const,
-                name: "occupation",
-                label: t("nicDetails.occupation"),
-                options: OccupationOptions,
-                value: watch("occupation"),
-                onChange: (v: string) => setValue("occupation", v),
-                validation: { required: t("occupationValidation") },
-              },
-              {
-                type: "autocomplete" as const,
-                name: "gender",
-                label: t("nicDetails.gender"),
-                options: GenderOptions,
-                value: watch("gender"),
-                onChange: (v: string) => setValue("gender", v),
-                validation: { required: t("genderValidation") },
-              },
-              {
-                type: "autocomplete" as const,
-                name: "nationality",
-                label: t("nicDetails.nationality"),
-                options: NationalityOptions,
-                value: watch("nationality"),
-                onChange: (v: string) => setValue("nationality", v),
-                validation: { required: t("nationalityValidation") },
-              },
-            ]),
+                {
+                  type: "autocomplete" as const,
+                  name: "occupation",
+                  label: t("nicDetails.occupation"),
+                  options: OccupationOptions,
+                  value: watch("occupation"),
+                  onChange: (v: string) => setValue("occupation", v),
+                  validation: { required: t("occupationValidation") },
+                },
+                {
+                  type: "autocomplete" as const,
+                  name: "gender",
+                  label: t("nicDetails.gender"),
+                  options: GenderOptions,
+                  value: watch("gender"),
+                  onChange: (v: string) => setValue("gender", v),
+                  validation: { required: t("genderValidation") },
+                },
+                {
+                  type: "autocomplete" as const,
+                  name: "nationality",
+                  label: t("nicDetails.nationality"),
+                  options: NationalityOptions,
+                  value: watch("nationality"),
+                  onChange: (v: string) => setValue("nationality", v),
+                  validation: { required: t("nationalityValidation") },
+                },
+              ]),
         ],
       });
     }
@@ -1414,7 +1436,6 @@ export const useFormLayout = ({
   }
   const methods = useForm<FormData>();
 
-
   const OTPSection = OTPFormLayout({
     watch,
     setValue,
@@ -1424,7 +1445,6 @@ export const useFormLayout = ({
     isNotVerified,
     setIsNotVerified,
   });
-
 
   const formLayout: SectionLayout[] = [
     ...baseSections,

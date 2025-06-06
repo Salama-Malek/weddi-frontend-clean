@@ -1,6 +1,6 @@
 import GenericSkeleton from "@/shared/components/loader/GenericSkeleton";
 import TableLoader from "@/shared/components/loader/TableLoader";
-import React, { lazy, Suspense } from "react";
+import React, { lazy, Suspense, useEffect, useState } from "react";
 
 const ClaimantDetails = lazy(
   () =>
@@ -34,45 +34,88 @@ interface ContentRendererProps {
 }
 
 const ContentRenderer: React.FC<ContentRendererProps> = ({
-  currentStep,
-  currentTab,
+  currentStep = 0,
+  currentTab = 0,
 }) => {
-  if (currentStep === 0) {
-    switch (currentTab) {
-      case 0:
-        return (
-          <Suspense fallback={<TableLoader />}>
-            <ClaimantDetails />
-          </Suspense>
-        );
-      case 1:
-        return (
-          <Suspense fallback={<TableLoader />}>
-            <DefendantDetails />
-          </Suspense>
-        );
-      case 2:
-        return (
-          <Suspense fallback={<TableLoader />}>
-            <WorkDetails />
-          </Suspense>
-        );
-      default:
-        return null;
+  const [step, setStep] = useState(currentStep);
+  const [tab, setTab] = useState(currentTab);
+
+  useEffect(() => {
+    const savedStep = localStorage.getItem("step");
+    const savedTab = localStorage.getItem("tab");
+
+    if (savedStep) {
+      const newStep = parseInt(savedStep);
+      setStep(newStep);
     }
-  } else if (currentStep === 1) {
-    return (
-      <Suspense fallback={<GenericSkeleton />}>
-        <AddHearing displayFooter={true} />
-      </Suspense>
-    );
-  } else {
-    return (
-      <Suspense fallback={<TableLoader />}>
-        <ReviewDetails />
-      </Suspense>
-    );
-  }
+    if (savedTab) {
+      const newTab = parseInt(savedTab);
+      setTab(newTab);
+    }
+  }, [currentStep, currentTab]);
+
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const savedStep = localStorage.getItem("step");
+      const savedTab = localStorage.getItem("tab");
+
+      if (savedStep) {
+        const newStep = parseInt(savedStep);
+        setStep(newStep);
+      }
+      if (savedTab) {
+        const newTab = parseInt(savedTab);
+        setTab(newTab);
+      }
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, []);
+
+  const renderContent = () => {
+    console.log("Rendering content with step:", step, "tab:", tab);
+
+    if (step === 0) {
+      switch (tab) {
+        case 0:
+          return (
+            <Suspense fallback={<TableLoader />}>
+              <ClaimantDetails />
+            </Suspense>
+          );
+        case 1:
+          return (
+            <Suspense fallback={<TableLoader />}>
+              <DefendantDetails />
+            </Suspense>
+          );
+        case 2:
+          return (
+            <Suspense fallback={<TableLoader />}>
+              <WorkDetails />
+            </Suspense>
+          );
+        default:
+          return null;
+      }
+    } else if (step === 1) {
+      return (
+        <Suspense fallback={<GenericSkeleton />}>
+          <AddHearing displayFooter={true} />
+        </Suspense>
+      );
+    } else if (step === 2) {
+      return (
+        <Suspense fallback={<TableLoader />}>
+          <ReviewDetails />
+        </Suspense>
+      );
+    }
+    return null;
+  };
+
+  return renderContent();
 };
 
 export default ContentRenderer;

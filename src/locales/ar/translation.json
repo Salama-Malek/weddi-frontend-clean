@@ -28,6 +28,7 @@
   "Seconds": "ثانية",
   "time_desc": "لديك دعوة متبقي علي ",
   "time_desc_start": "الوقت المتبقي للجلسة",
+  "session_expired_or_ended": "يوجد جلسة جارية ",
   "time_desc_end": "",
   "attend_session": "حضور الجلسة",
   "time": "01:10 م | ",
@@ -71,5 +72,15 @@
   "success": "تم تنفيذ العملية بنجاح",
   "AM": "صباحًا",
   "PM": "مساءًا",
-  "loading_spinner":"جاري جلب البيانات..."
+  "loading_spinner":"جاري جلب البيانات...",
+  "settings": "الإعدادات",
+  "switch_account": "تبديل الحساب",
+  "logout": "تسجيل الخروج",
+  "worker": "عامل",
+  "worker_desc": "المتابعة كعامل لإدارة قضاياك",
+  "legal_representative": "ممثل قانوني",
+  "legal_desc": "المتابعة كممثل قانوني لإدارة القضايا نيابة عن الآخرين",
+  "select_account_type": "اختر نوع الحساب",
+  "login": "تسجيل الدخول",
+  "login_desc": "الرجاء اختيار نوع حسابك للمتابعة"
 }

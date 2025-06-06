@@ -9,13 +9,70 @@ const InfoBanner = lazy(
 import TableLoader from "@/shared/components/loader/TableLoader";
 import { useGetMySchedulesQuery, useLazyGetMySchedulesQuery } from "../api/api";
 import { TokenClaims } from "@/features/login/components/AuthProvider";
+import { useUser } from "@/shared/context/userTypeContext";
 
 interface BannerProps {
   isEstablishment?: boolean;
   isLegalRep?: boolean;
+  showInfoBanner?: boolean;
+  onCloseInfoBanner?: () => void;
 }
 
-const Banner: React.FC<BannerProps> = ({ isEstablishment, isLegalRep }) => {
+const Banner: React.FC<BannerProps> = ({
+  isEstablishment,
+  isLegalRep,
+  showInfoBanner = false,
+  onCloseInfoBanner
+}) => {
+  // const { t, i18n } = useTranslation();
+  // const isRTL = i18n.language === "ar";
+  // const [hasHearing, setHasHearing] = useState(false);
+  // const [hasLegalRepresentative, setHasLegalRepresentative] = useState(true);
+  // const [getCookie] = useCookieState({});
+  // const userClaims = getCookie("userClaims");
+  // const uerType = getCookie("userType");
+
+  // const [nearestSession, setNearestSession] = useState<null | {
+  //   minutesRemaining: number;
+  //   webexLink: string;
+  // }>(null);
+  // const [triggerGetMySchedules, { data: mySchedualData, isLoading: mySchedualLoading }] =
+  //   useLazyGetMySchedulesQuery();
+  // const [timeLeft, setTimeLeft] = useState<number>(0);
+  /*
+   const getMySchedualDataFun = async () => {
+      if (!userClaims?.UserID || !uerType) return; // Don't proceed if we don't have required data
+      
+      setTimeLeft(0);
+      const result = await triggerGetMySchedules({
+        AcceptedLanguage: i18n.language.toUpperCase(),
+        SourceSystem: "E-Services",
+        IDNumber: userClaims.UserID,
+        UserType: uerType,
+        FileNumber: userClaims?.File_Number && userClaims?.File_Number
+      });
+      const data = result?.data;
+      if (data?.PlaintiffCases?.length > 0) {
+        const upcomingSessions = data.PlaintiffCases
+          .map((s: any) => ({
+            minutesRemaining: parseFloat(s?.ScheduleTimeRemaining),
+            webexLink: s?.ScheduleWebexLink
+          }))
+          .filter((s: any) => s.minutesRemaining >= 0)
+          .sort((a: any, b: any) => a.minutesRemaining - b.minutesRemaining);
+  
+        if (upcomingSessions.length > 0) {
+          setTimeLeft(upcomingSessions?.[0].minutesRemaining * 60);
+          setNearestSession(upcomingSessions[0]);
+        } else {
+          setNearestSession(null);
+        }
+      } else {
+        setNearestSession(null);
+      }
+    };
+  
+  */
   const { t, i18n } = useTranslation();
   const isRTL = i18n.language === "ar";
   const [hasHearing, setHasHearing] = useState(false);
@@ -23,7 +80,9 @@ const Banner: React.FC<BannerProps> = ({ isEstablishment, isLegalRep }) => {
   const [getCookie] = useCookieState({});
   const userClaims: TokenClaims = getCookie("userClaims");
   const uerType = getCookie("userType");
-
+  const {
+    selected: selectedUser
+  } = useUser();
 
   const [nearestSession, setNearestSession] = useState<null | {
     minutesRemaining: number;
@@ -32,67 +91,46 @@ const Banner: React.FC<BannerProps> = ({ isEstablishment, isLegalRep }) => {
   const [triggerGetMySchedules, { data: mySchedualData, isLoading: mySchedualLoading }] =
     useLazyGetMySchedulesQuery();
   const [timeLeft, setTimeLeft] = useState<number>(0);
-  // useEffect(() => {
-  //   let intervalId: NodeJS.Timeout;
-
-  //   const fetchAndCheckData = async () => {
-  //     const result = await triggerGetMySchedules({
-  //       AcceptedLanguage: i18n.language.toUpperCase(),
-  //       SourceSystem: "E-Services",
-  //       IDNumber: userClaims.UserID,
-  //       UserType: uerType,
-  //       FileNumber: userClaims?.File_Number && userClaims?.File_Number
-  //     });
-
-  //     const data = result?.data;
-
-  //     if (data?.PlaintiffCases?.length > 0) {
-  //       const upcomingSessions = data.PlaintiffCases
-  //         .map((s: any) => ({
-  //           minutesRemaining: parseFloat(s?.ScheduleTimeRemaining),
-  //           webexLink: s?.ScheduleWebexLink
-  //         }))
-  //         .filter((s: any) => s.minutesRemaining >= 0)
-  //         .sort((a: any, b: any) => a.minutesRemaining - b.minutesRemaining);
-
-  //       if (upcomingSessions.length > 0) {
-  //         setNearestSession(upcomingSessions[0]);
-
-  //         if (!intervalId) {
-  //           intervalId = setInterval(fetchAndCheckData, 60000);
-  //         }
-  //       } else {
-  //         setNearestSession(null);
-  //       }
-  //     }
-  //   };
-
-  //   if (uerType) {
-  //     fetchAndCheckData();
-  //   }
-
-  //   return () => {
-  //     if (intervalId) clearInterval(intervalId);
-  //   };
-  // }, [uerType]);
-
-
-  /**
-   1- call the api 
-   2- compare the now time to the remind mints
-   3- diaplay count down with the remaind timer for it 
-   -- call api each time user refresh or the timer is zero
-   */
 
   const getMySchedualDataFun = async () => {
+ // هنا باقي جزاء بسيط محتاج يتهندل 
+ // في حالة وجود سيشن ولاكن بالسالب وحصل ندائ للapis 
+ // يجب عرض السيشن ايضا 
+
+    const userID = getCookie("userClaims").UserID;
+    const fileNumber = getCookie("userClaims")?.File_Number;
+    const mainCategory = getCookie("mainCategory")?.value;
+    const subCategory = getCookie("subCategory")?.value;
+    const goveDetails = getCookie("storeAllUserTypeData");
+    const uerType = getCookie("userType");
+
+    const userConfigs: any = {
+      Worker: {
+        UserType: uerType,
+        IDNumber: userID,
+      },
+      Establishment: {
+        UserType: uerType,
+        IDNumber: userID,
+        FileNumber: fileNumber,
+      },
+      "Legal representative": {
+        UserType: uerType,
+        IDNumber: userID,
+        MainGovernment: mainCategory || "",
+        SubGovernment: subCategory || "",
+      },
+    } as const;
+
     setTimeLeft(0);
     const result = await triggerGetMySchedules({
+      ...userConfigs[uerType],
       AcceptedLanguage: i18n.language.toUpperCase(),
       SourceSystem: "E-Services",
-      IDNumber: userClaims.UserID,
-      UserType: uerType,
-      FileNumber: userClaims?.File_Number && userClaims?.File_Number
+
     });
+
+
     const data = result?.data;
     if (data?.PlaintiffCases?.length > 0) {
       const upcomingSessions = data.PlaintiffCases
@@ -103,11 +141,7 @@ const Banner: React.FC<BannerProps> = ({ isEstablishment, isLegalRep }) => {
         .filter((s: any) => s.minutesRemaining >= 0)
         .sort((a: any, b: any) => a.minutesRemaining - b.minutesRemaining);
 
-      //console.log(upcomingSessions);
-
       if (upcomingSessions.length > 0) {
-        //console.log(upcomingSessions?.[0]);
-
         setTimeLeft(upcomingSessions?.[0].minutesRemaining * 60);
         setNearestSession(upcomingSessions[0]);
       } else {
@@ -117,17 +151,19 @@ const Banner: React.FC<BannerProps> = ({ isEstablishment, isLegalRep }) => {
       setNearestSession(null);
     }
   }
-
   useEffect(() => {
-    if (timeLeft <= 0) {
-      return
-    };
+    if (timeLeft <= 1500) {
+      return;
+    }
 
     const interval = setInterval(() => {
       setTimeLeft(prev => {
+        if (prev === 1500) {
+          getMySchedualDataFun();
+        }
+
         if (prev <= 1) {
           clearInterval(interval);
-          getMySchedualDataFun();
           return 0;
         }
         return prev - 1;
@@ -136,6 +172,41 @@ const Banner: React.FC<BannerProps> = ({ isEstablishment, isLegalRep }) => {
 
     return () => clearInterval(interval);
   }, [nearestSession]);
+
+
+
+
+  // // Timer effect for countdown
+  // useEffect(() => {
+  //   let timer: NodeJS.Timeout;
+  //   if (timeLeft > 0) {
+  //     timer = setInterval(() => {
+  //       setTimeLeft(prev => prev - 1);
+  //     }, 1000);
+  //   }
+  //   return () => {
+  //     if (timer) clearInterval(timer);
+  //   };
+  // }, [timeLeft]);
+
+  // // Schedule data effect
+  // useEffect(() => {
+  //   let intervalId: NodeJS.Timeout;
+
+  //   const fetchData = async () => {
+  //     await getMySchedualDataFun();
+  //     // Set up interval for next fetch
+  //     intervalId = setInterval(getMySchedualDataFun, 60000); // Fetch every minute
+  //   };
+
+  //   if (userClaims?.UserID && uerType) {
+  //     fetchData();
+  //   }
+
+  //   return () => {
+  //     if (intervalId) clearInterval(intervalId);
+  //   };
+  // }, [userClaims?.UserID, uerType]);
 
   const formatTime = (seconds: number) => {
     const h = Math.floor(seconds / 3600);
@@ -155,28 +226,20 @@ const Banner: React.FC<BannerProps> = ({ isEstablishment, isLegalRep }) => {
 
   useEffect(() => {
     getMySchedualDataFun();
-  }, [uerType])
-
-
-
-
-
-
-
-
+  }, [uerType, selectedUser])
 
 
   return (
     <>
-      {isLegalRep && (
+      {isLegalRep && showInfoBanner && (
         <Suspense fallback={<TableLoader />}>
-          <InfoBanner onClose={() => setHasLegalRepresentative(false)} />
+          <InfoBanner onClose={onCloseInfoBanner} />
         </Suspense>
       )}
 
       <section
         dir={t("dir")}
-        className={`relative w-full mt-4 overflow-hidden border border-gray-300 rounded-md`}
+        className={`relative w-full mt-4 overflow-hidden border border-gray-300 rounded-md z-0`}
       >
         <img
           src={BannerBg}
@@ -193,23 +256,26 @@ const Banner: React.FC<BannerProps> = ({ isEstablishment, isLegalRep }) => {
           }}
         ></div>
 
-        <div className="relative z-10 p-6 flex flex-col justify-between h-full">
+        <div className="relative z-0 p-6 flex flex-col justify-between h-full">
           {nearestSession && (
             <div className="mb-4 bg-primary-960 rounded-md text-gray-100 p-4 flex justify-between items-center">
-              <p className="text-1822">
-                <b>
-                  {t("time_desc_start")} {":  "}
-                </b>
-                {formatTime(timeLeft)} {" "}
-                {/* {t("time_desc_end")} */}
-              </p>
+              {timeLeft > 0 ? (
+                <p className="text-1822">
+                  <b>{t("time_desc_start")} {":  "}</b>
+                  {formatTime(timeLeft)} {" "}
+                </p>
+              ) : (
+                <p className="text-1822">
+                  {t("session_expired_or_ended")}
+                </p>
+              )}
               <Button variant="secondary" typeVariant="solid" onClick={() => window.open(nearestSession.webexLink, "_blank")}>
                 {t("attend_session")}
               </Button>
             </div>
           )}
 
-          <div className="relative z-10 flex justify-between items-center">
+          <div className="relative z-0 flex justify-between items-center">
             <div className="space-y-4">
               <h6 className="text-2436 bold text-primary-900 lg:text-2xl text-lg">
                 {t("welcome_text")} {userClaims?.UserName}

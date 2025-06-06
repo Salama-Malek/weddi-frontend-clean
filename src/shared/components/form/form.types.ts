@@ -190,7 +190,7 @@ export type FormData = {
   gender: Option | null;
   hijriDate: string;
   gregorianDate: string;
-  phoneNumber: number;
+  phoneNumber: string;
   interPhoneNumber?: null | string;
   claimantStatus: string;
   defendantStatus?: string;
@@ -217,10 +217,14 @@ export type FormData = {
   worker_city?: { value: string };
   Agent_ResidencyAddress?: string;
   Agent_CurrentPlaceOfWork?: string;
-  // hassan add this 
-  Defendant_Establishment_data?: EstablishmentDetails,
-  Defendant_Establishment_data_NON_SELECTED?: EstablishmentDetails,
-
+  // hassan add this
+  Defendant_Establishment_data?: EstablishmentDetails;
+  Defendant_Establishment_data_NON_SELECTED?: EstablishmentDetails;
+  contractDateHijri?: string;
+  contractExpiryDateHijri?: string;
+  dateofFirstworkingdayHijri?: string;
+  acknowledge?: boolean;
+  dateoflastworkingdayHijri?: string;
 };
 
 export interface UseFormLayoutParams {
@@ -261,8 +265,6 @@ export interface UseFormLayoutParams {
   subCategoryValue?: any;
 }
 
-
-
 interface EstablishmentDetails {
   EconomicActivity?: string;
   ZipCode?: string;
@@ -281,4 +283,3 @@ interface EstablishmentDetails {
   region: Option | null;
   city: Option | null;
 }
-

@@ -1,32 +1,65 @@
 import BannerSkeleton from "@/shared/components/loader/BannerSkeleton";
-import { lazy, Suspense, useState } from "react";
+import { lazy, Suspense, useState, useEffect } from "react";
 import TableLoader from "@/shared/components/loader/TableLoader";
 import AuthProvider from "../login/components/AuthProvider";
+import { useCookieState } from "@/features/initiate-hearing/hooks/useCookieState";
+import { useUser } from "@/shared/context/userTypeContext";
 
 const Banner = lazy(() => import("./components/HearingBanner"));
 const HearingContent = lazy(() => import("./components/HearingContent"));
 
 const Main = () => {
-  const [isEstablishment, setIsEstablishment] = useState(false);
-  const [isLegalRep, setIsLegalRep] = useState(false);
-
+  // const [isEstablishment, setIsEstablishment] = useState(false);
+  // const [isLegalRep, setIsLegalRep] = useState(false);
+  const [showInfoBanner, setShowInfoBanner] = useState(false);
+  const [getCookie] = useCookieState({});
+  const {
+    isLegalRep,
+    isEstablishment,
+    isLegalRepstate,
+    isEstablishmentstate,
+    openModule,
+    setOpenModule,
+    setLegelRepState,
+    setEstablishmentState
+  } = useUser();
   const popupHandler = () => {
-    setIsLegalRep(true);
+    const selectedUserType = getCookie("selectedUserType");
+
+
+    // Only show banner if user selected "Legal representative" and clicked continue
+    if (selectedUserType === "Legal representative") {
+      setShowInfoBanner(true);
+      setLegelRepState(true);
+    } else {
+      setShowInfoBanner(false);
+      setLegelRepState(false);
+    }
   };
 
   const popuoStablishment = () => {
-    setIsEstablishment(true);
+    setEstablishmentState(true);
   };
+
+  const handleCloseInfoBanner = () => {
+    setShowInfoBanner(false);
+  };
+
   return (
     <AuthProvider
       popupHandler={popupHandler}
       popuoStablishment={popuoStablishment}
-      setIsLegalRep={setIsLegalRep}
+      setIsLegalRep={setLegelRepState}
     >
       <main className="!space-y-[16px] bg-gray-100">
         <div className="container">
           <Suspense fallback={<BannerSkeleton />}>
-            <Banner isLegalRep={isLegalRep} isEstablishment={isEstablishment} />
+            <Banner
+              isLegalRep={isLegalRep}
+              isEstablishment={isEstablishment}
+              showInfoBanner={showInfoBanner}
+              onCloseInfoBanner={handleCloseInfoBanner}
+            />
           </Suspense>
         </div>
         <Suspense fallback={<TableLoader />}>

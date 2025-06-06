@@ -12,8 +12,8 @@ const userTypes = [
 ];
 
 const LanguageArray = [
-  { value: "Ar", label: "Arabic" },
-  { value: "En", label: "English" },
+  { value: "AR", label: "Arabic" },
+  { value: "EN", label: "English" },
 ];
 
 interface InputFieldProps {

@@ -200,36 +200,28 @@ const ClaimantDetailsContainer: React.FC<
 
   // --- NIC details ---
   const {
-    data: nicSelf,
-    isFetching: nicSelfLoading,
-    isSuccess: nicSelfSuccess,
-    refetch: nisSlefRefetch,
+    data: nicDetails,
+    isFetching: nicLoading,
+    isSuccess: nicSuccess,
+    refetch: refetchNicDetails,
   } = useGetNICDetailsQuery(
-    {
-      IDNumber: userId,
-      DateOfBirth: userClaims.UserDOB,
-      AcceptedLanguage: lang,
-      SourceSystem: "E-Services",
-    },
-    { skip: !userId || !userClaims.UserDOB || applicantType !== "principal" }
-  );
-  const {
-    data: nicAgent,
-    isFetching: nicAgentLoading,
-    isSuccess: nicAgentSuccess,
-    refetch: refetchNicAgent,
-  } = useGetNICDetailsQuery(
-    {
-      IDNumber: plaintiffId || "",
-      DateOfBirth: plaintiffHijriDOB,
-      AcceptedLanguage: lang,
-      SourceSystem: "E-Services",
-    },
+    applicantType === "principal"
+      ? {
+          IDNumber: userId,
+          DateOfBirth: userClaims.UserDOB,
+          AcceptedLanguage: lang,
+          SourceSystem: "E-Services",
+        }
+      : {
+          IDNumber: plaintiffId || "",
+          DateOfBirth: plaintiffHijriDOB,
+          AcceptedLanguage: lang,
+          SourceSystem: "E-Services",
+        },
     {
       skip:
-        applicantType !== "representative" ||
-        !plaintiffId ||
-        !plaintiffHijriDOB,
+        (applicantType === "principal" && (!userId || userId.length !== 10 || !userClaims.UserDOB)) ||
+        (applicantType === "representative" && (!plaintiffId || plaintiffId.length !== 10 || !plaintiffHijriDOB))
     }
   );
 
@@ -255,51 +247,6 @@ const ClaimantDetailsContainer: React.FC<
       refetchOnMountOrArgChange: true, // ← ensure a fresh fetch even if the same number is entered again
     }
   );
-
-  // Update the agent info effect
-  // useEffect(() => {
-  //   if (!agentInfo && !isAgentFetching) return;
-
-  //   if (isAgentFetching) {
-  //     setIsAgencyValidating(true);
-  //     return;
-  //   }
-
-  //   setIsAgencyValidating(false);
-
-  //   // Handle error response
-  //   if (
-  //     agentInfo?.Agent?.ErrorDescription === "SuccessNoData" ||
-  //     (Array.isArray(agentInfo?.ErrorDetails) &&
-  //       agentInfo?.ErrorDetails?.length > 0)
-  //   ) {
-  //     const errorDetails = (agentInfo?.ErrorDetails || []) as Array<{
-  //       ErrorDesc?: string;
-  //     }>;
-  //     const errorDesc = errorDetails.find((item) => item.ErrorDesc)?.ErrorDesc;
-  //     if (errorDesc) {
-  //       toast.error(errorDesc);
-  //     }
-  //     setValue("agencyNumber", "");
-  //     setValue("agentName", "");
-  //     setValue("agencyStatus", "");
-  //     setValue("agencySource", "");
-  //     setError("agencyNumber", {
-  //       type: "validate",
-  //       message: errorDesc || t("error.invalidAgencyNumber"),
-  //     });
-  //     return;
-  //   }
-
-  //   // Handle success response
-  //   if (agentInfo?.Agent?.ErrorDescription === "Success") {
-  //     setValue("agentName", agentInfo?.Agent?.AgentName || "");
-  //     setValue("agencyStatus", agentInfo?.Agent?.MandateStatus || "");
-  //     setValue("agencySource", agentInfo?.Agent?.MandateSource || "");
-  //     toast.success(t("agencyFound"));
-  //     clearErrors("agencyNumber");
-  //   }
-  // }, [agentInfo, isAgentFetching, setValue, setError, clearErrors, t]);
 
   useEffect(() => {
     if (!agentInfo && !isAgentFetching) return;
@@ -430,7 +377,7 @@ const ClaimantDetailsContainer: React.FC<
 
   const apiLoadingStates = {
     agent: isAgencyValidating,
-    nic: applicantType === "principal" ? nicSelfLoading : nicAgentLoading,
+    nic: applicantType === "principal" ? nicLoading : nicLoading,
     estab: false,
     incomplete: false,
   };
@@ -461,7 +408,7 @@ const ClaimantDetailsContainer: React.FC<
     agentInfoData: (agentInfo ?? {}) as AgentInfo,
     apiLoadingStates: {
       agent: isAgencyValidating,
-      nic: applicantType === "principal" ? nicSelfLoading : nicAgentLoading,
+      nic: applicantType === "principal" ? nicLoading : nicLoading,
       estab: false,
       incomplete: false,
     },
@@ -495,9 +442,8 @@ const ClaimantDetailsContainer: React.FC<
     isVerify: isVerified,
 
     // ← NEW NIC data props →
-    principalNICResponse: nicSelf,
-    principalNICRefetch: nisSlefRefetch,
-    representativeNICResponse: nicAgent,
+    principalNICResponse: nicDetails,
+    principalNICRefetch: refetchNicDetails,
   });
 
   const formLayoutEst = useEstablishmentPlaintiffFormLayout({
@@ -524,6 +470,7 @@ const ClaimantDetailsContainer: React.FC<
 
   return (
     <>
+      {(nicLoading) && <Loader />}
       {isAgencyValidating && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-25 backdrop-blur-sm z-[9999]">
           <Loader />
@@ -549,10 +496,10 @@ const ClaimantDetailsContainer: React.FC<
 
       <div
         className={`relative ${
-          isAgencyValidating ? "pointer-events-none" : ""
+          isAgencyValidating || nicLoading ? "pointer-events-none" : ""
         }`}
       >
-        <div className={isAgencyValidating ? "blur-sm" : ""}>
+        <div className={isAgencyValidating || nicLoading ? "blur-sm" : ""}>
           <PureClaimantDetails
             register={register}
             errors={errors}

@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { SubmitHandler } from "react-hook-form";
+import React, { useState, useEffect } from "react";
+import { SubmitHandler, useWatch } from "react-hook-form";
 import StepNavigation from "@/shared/modules/case-creation/components/StepNavigation";
 import useCasesLogic from "@/features/initiate-hearing/hooks/useCasesLogic";
 import { FormData } from "@/shared/components/form/form.types";
@@ -8,6 +8,7 @@ import { useSubmitFinalReviewMutation } from "@/features/initiate-hearing/api/cr
 import { useCookieState } from "@/features/initiate-hearing/hooks/useCookieState";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
+import Loader from "@/shared/components/loader";
 
 import Modal from "@/shared/components/modal/Modal";
 import Button from "@/shared/components/button";
@@ -46,17 +47,19 @@ const withStepNavigation = <P extends object>(
     } = useCasesLogic();
 
     const [isVerifiedInput, setIsPhoneVerify] = useState<boolean | undefined>();
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [getCookie] = useCookieState();
     const { i18n } = useTranslation();
     const language = i18n.language === "ar" ? "AR" : "EN";
 
     const navigate = useNavigate();
 
-    // Lifted state for acknowledgements & language selection
-    const [acknowledgementsState, setAcknowledgementsState] = useState<any[]>([]);
-    const [selectedLanguageState, setSelectedLanguageState] = useState<string>(language);
+    const [acknowledgementsState, setAcknowledgementsState] = useState<any[]>(
+      []
+    );
+    const [selectedLanguageState, setSelectedLanguageState] =
+      useState<string>(language);
 
-    // Extract form methods and states from FormContext
     const {
       formData,
       getValues,
@@ -66,21 +69,28 @@ const withStepNavigation = <P extends object>(
       formState,
       setValue,
       watch,
-      trigger,
       control,
+      trigger,
       forceValidateForm,
       clearErrors,
       setError,
     } = useAPIFormsData();
 
     const { errors, isValid, isSubmitting: isFormSubmitting } = formState;
+    const acknowledgeValue = useWatch({
+      control,
+      name: "acknowledge",
+      defaultValue: false,
+    });
+    console.log("Debug ack:", acknowledgeValue, "currentStep:", currentStep);
 
-    const [submitFinalReview, { isLoading: isSubmitting }] = useSubmitFinalReviewMutation();
+    const [submitFinalReview, { isLoading: isSubmittingFinalReview }] = useSubmitFinalReviewMutation();
 
     const onSubmit: SubmitHandler<FormData> = async (data) => {
       try {
         const caseId = getCookie("caseId");
         if (currentStep === 2) {
+          setIsSubmitting(true);
           // Build acknowledgment list based on selected language
           const ackList = acknowledgementsState.map((item: any) => ({
             ElementKey: selectedLanguageState === "EN" ? "English" : "Arabic",
@@ -96,27 +106,72 @@ const withStepNavigation = <P extends object>(
               AckAggrements: ackList,
             };
 
-            const response = await submitFinalReview(payload).unwrap();            
+            const response = await submitFinalReview(payload).unwrap();
             if (response?.SuccessCode == "200") {
-              // Show success toast
+              // Log the response for debugging
+              console.log("Final review response:", response);
+
+              localStorage.removeItem("step");
+              localStorage.removeItem("tab");
+
               toast.success("Submission successful!");
 
-              // Open service link in new tab
+              // Handle survey link
               const serviceLink = response?.S2Cservicelink;
               if (serviceLink) {
-                const caseSurveyLink = document.createElement("a");
-                caseSurveyLink.href = serviceLink;
-                caseSurveyLink.target = "_blank";
-                caseSurveyLink.click();
+                try {
+                  // Navigate to manage-hearings first
+                  navigate("/manage-hearings");
+
+                  // Show persistent toast with survey link
+                  toast.info(
+                    <div>
+                      <p>Please complete the survey:</p>
+                      <a 
+                        href={serviceLink} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:text-blue-800 underline"
+                      >
+                        {serviceLink}
+                      </a>
+                    </div>,
+                    {
+                      autoClose: false,
+                      closeOnClick: false,
+                      position: "top-center",
+                      onClick: () => window.open(serviceLink, '_blank')
+                    }
+                  );
+
+                  // Also try to open the survey directly
+                  window.open(serviceLink, '_blank');
+                } catch (error) {
+                  console.error("Failed to open survey link:", error);
+                  toast.error(
+                    <div>
+                      <p>Failed to open survey automatically. Please click the link below:</p>
+                      <a 
+                        href={serviceLink} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:text-blue-800 underline"
+                      >
+                        {serviceLink}
+                      </a>
+                    </div>,
+                    {
+                      autoClose: false,
+                      closeOnClick: false
+                    }
+                  );
+                }
+              } else {
+                console.warn("Survey link missing from successful response:", response);
+                // Navigate to manage-hearings even if survey link is missing
+                navigate("/manage-hearings");
               }
               
-              // Navigate to case details after short delay
-              setTimeout(() => {
-                if (caseId) {
-                  navigate(`/manage-hearings/${caseId}`);
-                }
-              }, 2000);
-
               return;
             }
           }
@@ -125,15 +180,13 @@ const withStepNavigation = <P extends object>(
         setFormData(data);
       } catch (error: any) {
         console.error("❌ Final Submit Failed:", error);
-
-        // Use error message from API response if available
         const message =
           error?.data?.message ||
           error?.message ||
           "Submission failed! Please try again.";
-
-        // Show error toast
         toast.error(message);
+      } finally {
+        setIsSubmitting(false);
       }
     };
 
@@ -142,6 +195,8 @@ const withStepNavigation = <P extends object>(
     };
 
     return (
+      <>
+      {isSubmitting && <Loader />}
       <StepNavigation<FormData>
         onSubmit={handleSubmit(onSubmit, onInvalid)}
         isValid={isValid}
@@ -149,15 +204,21 @@ const withStepNavigation = <P extends object>(
         isVerifiedInput={isVerifiedInput}
         isFirstStep={currentStep === 0 && currentTab === 0}
         isLastStep={currentStep === 2}
-        currentStep={currentStep}
         goToNextStep={handleNext}
         isFormSubmitting={isFormSubmitting}
         goToPrevStep={handlePrevious}
-        resetSteps={() => updateParams(0, 0)}
+        resetSteps={() => {
+          localStorage.removeItem("step");
+          localStorage.removeItem("tab");
+          updateParams(0, 0);
+        }}
         handleSave={handleSave}
         isButtonDisabled={(direction: "prev" | "next") =>
-          direction === "prev" ? currentStep === 0 && currentTab === 0 : false
+          direction === "prev"
+            ? currentStep === 0 && currentTab === 0
+            : currentStep === 2
         }
+        canProceed={currentStep === 2 && acknowledgeValue}
       >
         <WrappedComponent
           {...props}
@@ -177,6 +238,8 @@ const withStepNavigation = <P extends object>(
           setSelectedLanguage={setSelectedLanguageState}
         />
       </StepNavigation>
+      </>
+
     );
   };
 

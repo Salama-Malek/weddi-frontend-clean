@@ -1,8 +1,22 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { AutoCompleteField } from "@/shared/components/form/AutoComplete";
-import { useGetUserTypeLegalRepQuery } from "@/features/login/api/loginApis";
 import { useCookieState } from "@/features/initiate-hearing/hooks/useCookieState";
+
+interface GovRepDetail {
+  GovernmentName: string;
+  SubGOVTID: string;
+  SubGovernmentName: string;
+  GOVTID: string;
+  RepMobileNumber: string;
+  RepNationalid: string;
+  EmailAddress: string;
+  RepName: string;
+}
+
+interface UserTypeData {
+  GovRepDetails: GovRepDetail[];
+}
 
 interface LegalEntitySelectionProps {
   isLegalRep?: boolean;
@@ -12,8 +26,6 @@ interface LegalEntitySelectionProps {
   selectedMainCategory?: any;
 }
 
-type OptionType = { value: string; label: string };
-
 const LegalEntitySelection = ({
   isLegalRep,
   setSelectedSubCategory,
@@ -21,26 +33,14 @@ const LegalEntitySelection = ({
   setSelectedMainCategory,
   selectedMainCategory,
 }: LegalEntitySelectionProps) => {
-  const { t, i18n } = useTranslation("login");
+  const { t } = useTranslation("login");
   const [getCookie] = useCookieState();
-  const userId = getCookie("userClaims").UserID;
-  const userType = getCookie("userClaims").UserType;
+  const userTypeData = getCookie("storeAllUserTypeData") as UserTypeData;
 
-  const { data: userTypeLegalRepData, isFetching } =
-    useGetUserTypeLegalRepQuery(
-      {
-        IDNumber: userId,
-        UserType: userType,
-        AcceptedLanguage: i18n.language === "ar" ? "AR" : "EN",
-        SourceSystem: "E-Services",
-      },
-      { skip: !isLegalRep }
-    );
-  // //console.log("userTypeLegalRepData", userTypeLegalRepData);
-
+  // If there's exactly one GovRepDetail, pre-select both main & sub
   useEffect(() => {
-    if (userTypeLegalRepData?.GovRepDetails?.length === 1) {
-      const singleItem = userTypeLegalRepData.GovRepDetails[0];
+    if (userTypeData?.GovRepDetails?.length === 1) {
+      const singleItem = userTypeData.GovRepDetails[0];
       setSelectedMainCategory({
         value: singleItem.GOVTID,
         label: singleItem.GovernmentName,
@@ -50,32 +50,40 @@ const LegalEntitySelection = ({
         label: singleItem.SubGovernmentName,
       });
     }
-  }, [userTypeLegalRepData]);
+  }, [userTypeData]);
 
-  const mainCategories: any[] = userTypeLegalRepData?.GovRepDetails
+  // Build unique "main" list from all GovRepDetails
+  const mainCategories = userTypeData?.GovRepDetails
     ? Array.from(
         new Set(
-          userTypeLegalRepData.GovRepDetails.map((item) => item.GovernmentName)
-        )
+          userTypeData.GovRepDetails.map((item: GovRepDetail) => ({
+            name: item.GovernmentName,
+            id: item.GOVTID
+          }))
+        ),
+        (item) => item.name
       ).map((name) => {
-        const firstItem = userTypeLegalRepData.GovRepDetails.find(
-          (item) => item.GovernmentName === name
+        const matchingItem = userTypeData.GovRepDetails.find(
+          (item: GovRepDetail) => item.GovernmentName === name
         );
         return {
-          value: firstItem?.GOVTID ?? "",
+          value: matchingItem?.GOVTID ?? "",
           label: name,
         };
       })
     : [];
 
-  const subCategories: any[] =
-    selectedMainCategory && userTypeLegalRepData?.GovRepDetails
-      ? userTypeLegalRepData.GovRepDetails.filter(
-          (item) => item.GOVTID === selectedMainCategory.value
-        ).map((item) => ({
-          value: item.SubGOVTID,
-          label: item.SubGovernmentName,
-        }))
+  // Build "sub" list based on selectedMainCategory
+  const subCategories =
+    selectedMainCategory && userTypeData?.GovRepDetails
+      ? userTypeData.GovRepDetails
+          .filter(
+            (item: GovRepDetail) => item.GOVTID === selectedMainCategory.value
+          )
+          .map((item: GovRepDetail) => ({
+            value: item.SubGOVTID,
+            label: item.SubGovernmentName,
+          }))
       : [];
 
   const handleMainCategoryChange = (option: any | null) => {
@@ -87,73 +95,38 @@ const LegalEntitySelection = ({
     setSelectedSubCategory(option);
   };
 
-  if (isFetching) {
-    return (
-      <>
-        <div className="flex gap-4">
-          <div className="wave-loading h-8 w-72 rounded-xs"></div>
-          <div className="wave-loading h-8 w-72 rounded-xs"></div>
-        </div>
-      </>
-    );
-  }
-
-  if (!userTypeLegalRepData?.GovRepDetails) {
+  // If there's no GovRepDetails at all, show a "no data" message
+  if (!userTypeData?.GovRepDetails) {
     return <div>{t("no_data_available")}</div>;
   }
 
-  const isSingleItem = userTypeLegalRepData.GovRepDetails.length === 1;
+  const isSingleItem = userTypeData.GovRepDetails.length === 1;
 
+  // If there's exactly one, we've already auto-selected; no need to render either dropdown.
+  if (isSingleItem) {
+    return null;
+  }
+
+  // Otherwise: render two AutoCompleteField side by side
   return (
-    <>
-      <p className="text-sm28 text-gray-500 normal">{t("entity_select")}</p>
-      <div className="grid grid-cols-2 gap-4 mb-6">
-        <div>
-          {isSingleItem ? (
-            <div className="form-group">
-              <label className="text-sm !leading-5 normal">
-                {t("main_category")}
-              </label>
-              <div className="medium text-2md">
-                {selectedMainCategory?.label}
-              </div>
-            </div>
-          ) : (
-            <AutoCompleteField
-              options={mainCategories}
-              label={t("main_category")}
-              value={selectedMainCategory}
-              onChange={handleMainCategoryChange}
-              invalidFeedback={
-                selectedMainCategory === null ? t("select_main_category") : ""
-              }
-            />
-          )}
-        </div>
-        <div>
-          {isSingleItem ? (
-            <div className="form-group">
-              <label className="text-sm !leading-5 normal">
-                {t("sub_category")}
-              </label>
-              <div className="medium text-2md">
-                {selectedSubCategory?.label}
-              </div>
-            </div>
-          ) : (
-            <AutoCompleteField
-              options={subCategories}
-              label={t("sub_category")}
-              value={selectedSubCategory}
-              onChange={handleSubCategoryChange}
-              invalidFeedback={
-                selectedSubCategory === null ? t("select_sub_category") : ""
-              }
-            />
-          )}
-        </div>
+    <div className="flex gap-4">
+      <div className="flex-1">
+        <AutoCompleteField
+          label={t("main_category")}
+          options={mainCategories}
+          value={selectedMainCategory}
+          onChange={handleMainCategoryChange}
+        />
       </div>
-    </>
+      <div className="flex-1">
+        <AutoCompleteField
+          label={t("sub_category")}
+          options={subCategories}
+          value={selectedSubCategory}
+          onChange={handleSubCategoryChange}
+        />
+      </div>
+    </div>
   );
 };
 

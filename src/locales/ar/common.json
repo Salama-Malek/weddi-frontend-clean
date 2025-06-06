@@ -1,5 +1,23 @@
 {
-  "incomplete_case": "دعوى غير مكتملة",
+  "incomplete_case": {
+    "title": "تأكيد",
+    "yes": "نعم",
+    "no": "لا",
+    "error": "حدث خطأ أثناء إلغاء القضية",
+    "success": "تم إلغاء القضية بنجاح",
+    "action": "هل تريد المتابعة مع هذه القضية؟",
+    "view_details": "عرض التفاصيل"
+  },
+  "review": {
+    "title": "مراجعة",
+    "acknowledgement": "إقرار",
+    "acknowledgement_text": "أقر بأن جميع المعلومات المقدمة صحيحة وكاملة",
+    "reopen_ack_checkbox": "أقر بأنني أريد إعادة فتح القضية",
+    "submit": "إرسال",
+    "cancel": "إلغاء",
+    "error": "حدث خطأ أثناء إرسال المراجعة",
+    "success": "تم إرسال المراجعة بنجاح"
+  },
   "view_details": "عرض التفاصيل",
   "incomplete_case_message": "لديك دعوى غير مكتملة ({{caseNumber}}). هل ترغب في المتابعة إلى هذه الدعوى؟",
   "proceed": "متابعة",

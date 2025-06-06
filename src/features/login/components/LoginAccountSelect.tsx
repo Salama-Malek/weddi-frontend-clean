@@ -6,6 +6,7 @@ import TableLoader from "@/shared/components/loader/TableLoader";
 import { useNavigate } from "react-router-dom";
 import { useCookieState } from "@/features/initiate-hearing/hooks/useCookieState";
 import { useUserType } from "@/providers/UserTypeContext";
+import { useUser } from "@/shared/context/userTypeContext";
 
 const LegalEntitySelection = lazy(
   () => import("@/shared/components/ui/legal-entity-selection")
@@ -35,7 +36,9 @@ const CaseRecordsModal = ({
   userSetCookie,
 }: CaseRecordsModalProps) => {
   const { setUserType } = useUserType();
-
+  const {
+    setSelected: setSelectedUser
+  } = useUser();
   // //console.log('propSelected', propSelected)
   const navigate = useNavigate();
   const { t } = useTranslation("login");
@@ -83,6 +86,16 @@ const CaseRecordsModal = ({
   const handleContinue = () => {
     //console.log(localSelected);
     setCookie("userType", localSelected);
+    setCookie("selectedUserType", localSelected);
+
+// hassan add thsi here (flage to know the selected user type from the login popup)
+    if (localSelected === "Legal representative") {
+      setSelectedUser("legal_representative");
+    } else {
+      setSelectedUser("leg_rep_worker");
+    }
+
+    // Store the selected type in a separate cookie
     handleCloseModal();
     // only fire the global popupHandler *after* they chose Legal
     if (localSelected === "Legal representative") {
@@ -114,11 +127,10 @@ const CaseRecordsModal = ({
         {loginOptions.map((option) => (
           <div
             key={option.type}
-            className={`border rounded-sl px-2 cursor-pointer pb-8 ${
-              localSelected === option.type
+            className={`border rounded-sl px-2 cursor-pointer pb-8 ${localSelected === option.type
                 ? "border-primary-600 bg-primary-50"
                 : "border-gray-400"
-            }`}
+              }`}
             onClick={() => handleSelection(option.type)}
           >
             <div className="flex flex-col items-center">
@@ -148,7 +160,7 @@ const CaseRecordsModal = ({
         <Button
           typeVariant={
             propSelected === "Legal representative" &&
-            !selectedSubCategory?.value
+              !selectedSubCategory?.value
               ? "freeze"
               : "solid"
           }
@@ -156,7 +168,7 @@ const CaseRecordsModal = ({
           onClick={handleContinue}
           variant={
             propSelected === "Legal representative" &&
-            !selectedSubCategory?.value
+              !selectedSubCategory?.value
               ? "freeze"
               : "solid"
           }

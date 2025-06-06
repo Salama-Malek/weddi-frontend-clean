@@ -4,7 +4,7 @@ export const caseApi = api.injectEndpoints({
   endpoints: (builder) => ({
     genericLookup: builder.query({
       query: (params) => ({
-        url: "/WeddiServices/V1/MainLookUp", // Or adjust URL based on params if needed
+        url: "/WeddiServices/V1/MainLookUp",
         params,
       }),
       keepUnusedDataFor: 60,

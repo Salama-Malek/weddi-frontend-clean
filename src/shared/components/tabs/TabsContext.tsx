@@ -1,4 +1,10 @@
-import { createContext, useContext, ReactNode, useState } from "react";
+import {
+  createContext,
+  useContext,
+  ReactNode,
+  useState,
+  useEffect,
+} from "react";
 
 interface TabsContextType {
   activeTab: string;
@@ -8,7 +14,14 @@ interface TabsContextType {
 const TabsContext = createContext<TabsContextType | undefined>(undefined);
 
 export const TabsProvider = ({ children }: { children: ReactNode }) => {
-  const [activeTab, setActiveTab] = useState("claimant");
+  const [activeTab, setActiveTab] = useState(() => {
+    const savedTab = localStorage.getItem("tab");
+    return savedTab ? savedTab : "claimant";
+  });
+
+  useEffect(() => {
+    localStorage.setItem("tab", activeTab);
+  }, [activeTab]);
 
   return (
     <TabsContext.Provider value={{ activeTab, setActiveTab }}>

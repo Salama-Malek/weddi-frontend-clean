@@ -20,17 +20,50 @@ const useHearingDetail = () => {
   const [getCookie, setCookie] = useCookieState();
   const UserClaims: TokenClaims = getCookie("userClaims");
   const userType = getCookie("userType");
+  const mainCategory = getCookie("mainCategory")?.value;
+  const subCategory = getCookie("subCategory")?.value;
+  const userID = getCookie("userClaims").UserID;
+  const fileNumber = getCookie("userClaims")?.File_Number;
 
-  const { data, isLoading, isError, refetch } = useGetCaseDetailsQuery(
-    {
-      CaseID: caseId ?? "",
-      AcceptedLanguage: i18n.language === "ar" ? "AR" : "EN",
-      SourceSystem: "E-Services",
-      IDNumber: UserClaims.UserID || "",
-      UserType: userType || "",
+  const userConfigs: any = {
+    Worker: {
+      UserType: userType,
+      IDNumber: userID,
     },
-    { skip: !caseId }
-  );
+    Establishment: {
+      UserType: userType,
+      IDNumber: userID,
+      FileNumber: fileNumber,
+    },
+    "Legal representative": {
+      UserType: userType,
+      IDNumber: userID,
+      MainGovernment:mainCategory ||  "",
+      SubGovernment: subCategory ||  "",
+    },
+  } as const;
+
+ 
+
+  const { data,  isLoading, isError, refetch } = useGetCaseDetailsQuery({
+    ...userConfigs[userType],
+    AcceptedLanguage: i18n.language === "ar" ? "AR" : "EN",
+    SourceSystem: "E-Services",
+    CaseID: caseId ?? "",
+  },
+  { skip: !caseId });
+
+  // const { data, isLoading, isError, refetch } = useGetCaseDetailsQuery(
+  //   {
+  //     CaseID: caseId ?? "",
+  //     AcceptedLanguage: i18n.language === "ar" ? "AR" : "EN",
+  //     SourceSystem: "E-Services",
+  //     IDNumber: UserClaims.UserID || "",
+  //     UserType: userType || "",
+
+  //   },
+  //   { skip: !caseId }
+  // );
 
   useEffect(() => {
     if (caseId) {

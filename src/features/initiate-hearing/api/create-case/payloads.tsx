@@ -23,14 +23,24 @@ export type CasePayload = {
 // Base payload for all Create/Update calls
 const getBasePayload = (
   userClaims: TokenClaims,
-  language: string
-): CasePayload => ({
-  CreatedBy: userClaims?.UserID,
-  PlaintiffId: userClaims?.UserID,
-  SourceSystem: "E-Services",
-  Flow_CurrentScreen: "PlaintiffDetails",
-  AcceptedLanguage: language,
-});
+  language: string,
+  userType?: string
+): CasePayload => {
+  const basePayload: CasePayload = {
+    CreatedBy: userClaims?.UserID,
+    SourceSystem: "E-Services",
+    Flow_CurrentScreen: "PlaintiffDetails",
+    AcceptedLanguage: language,
+  };
+
+  // Only add PlaintiffId for Worker and Agent user types
+  const lowUserType = userType?.toLowerCase();
+  if (lowUserType === 'worker' || lowUserType === 'agent') {
+    basePayload.PlaintiffId = userClaims?.UserID;
+  }
+
+  return basePayload;
+};
 
 /**
  * Build payload for the PlaintiffDetails step, including Agent flow.
@@ -47,7 +57,7 @@ export const claimantDetailsPayload = (
   language: string = "EN"
 ): CasePayload => {
   const payload: CasePayload = {
-    ...getBasePayload(userClaims, language),
+    ...getBasePayload(userClaims, language, userType),
     Flow_ButtonName: buttonName,
     CaseID: caseId,
   };
@@ -104,7 +114,7 @@ export const claimantDetailsPayload = (
       console.log("jhdfjh", payload);
 
       return {
-        ...getBasePayload(userClaims, language || "EN"),
+        ...getBasePayload(userClaims, language || "EN", userType),
         RepresentativeType: "Legal representative",
         MainGovtDefendant: formData?.MainGovtDefendant,
         SubGovtDefendant: formData?.SubGovtDefendant,
@@ -114,18 +124,15 @@ export const claimantDetailsPayload = (
         LegalRepID: formData?.LegalRepID || userClaims?.UserID,
         LegalRepMobileNumber: formData?.LegalRepMobileNumber || "",
         LegalRepEmail: formData?.LegalRepEmail || "",
-        // ApplicantType: "",
-        // PlaintiffType: "",
         Flow_CurrentScreen: "PlaintiffDetails",
         CaseID: caseId,
       };
 
     case "establishment":
       return {
-        ...getBasePayload(userClaims, language || "EN"),
+        ...getBasePayload(userClaims, language || "EN", userType),
         ApplicantType: "Establishment",
         PlaintiffType: "",
-        DefandantType: "",
         EstId: extractValue(formData?.PlaintiffsEstablishmentID),
         Plaintiff_CRNumber: extractValue(formData?.PlaintiffsCRNumber),
         PlaintiffEstFileNumber: extractValue(formData?.PlaintiffsFileNumber),
@@ -136,7 +143,7 @@ export const claimantDetailsPayload = (
         EstablishmentName: extractValue(formData?.PlaintiffsEstablishmentName),
         Plaintiff_PhoneNumber: extractValue(formData?.Plaintiff_PhoneNumber) || extractValue(formData?.phoneNumber),
         Plaintiff_Region: extractValue(formData?.region?.value),
-        Plaintiff_City: extractValue(formData?.city?.value),
+        Plaintiff_City: extractValue(formData?.city?.value), //the value is being sent empty in create
         EstablishmentType: "Establishment",
         CaseID: caseId,
       };
@@ -146,21 +153,21 @@ export const claimantDetailsPayload = (
       console.log("ffffffffffsadas2dasd2asd", formData);
 
       const payload: CasePayload = {
-        ...getBasePayload(userClaims, language || "EN"),
+        ...getBasePayload(userClaims, language || "EN", userType),
         Flow_ButtonName: buttonName,
         CaseID: caseId,
         PlaintiffType: formData?.applicantType === "Agent" ? "Agent" : "Self(Worker)",
         PlaintiffName: formData?.userName || nicDetailObj?.PlaintiffName || userClaims?.UserName,
         PlaintiffHijiriDOB: formData?.hijriDate || nicDetailObj?.DateOfBirthHijri || userClaims?.UserDOB || "",
         Plaintiff_ApplicantBirthDate: nicDetailObj?.DateOfBirthGregorian || formData?.gregorianDate,
-        Plaintiff_PhoneNumber: formData?.phoneNumber || "",
+        Plaintiff_PhoneNumber: formData?.phoneNumber?.toString() || "",
         Plaintiff_Region: nicDetailObj?.Region_Code || formData?.region?.value,
         Plaintiff_City: nicDetailObj?.City_Code || formData?.city?.value,
         JobPracticing: nicDetailObj?.Occupation_Code || formData?.occupation?.value,
         Gender: nicDetailObj?.Gender_Code || formData?.gender?.value,
         Worker_Nationality: nicDetailObj?.Nationality_Code || formData?.nationality?.value,
         Plaintiff_JobLocation: nicDetailObj?.Region_Code || formData?.region?.value,
-        Plaintiff_ClosestLaborOffice: formData?.laborOffice?.value, //??// check
+        Plaintiff_ClosestLaborOffice: formData?.laborOffice?.value,
 
         IsGNRequired: formData?.isPhone || false,
         CountryCode: formData?.phoneCode?.value || "",
@@ -168,22 +175,6 @@ export const claimantDetailsPayload = (
         IsGNOtpVerified: formData?.isVerified || false,
 
       };
-      // const payload: CasePayload = {
-      //   ...getBasePayload(userClaims, language || "EN"),
-      //   Flow_ButtonName: buttonName,
-      //   CaseID: caseId,
-      //   PlaintiffName: formData?.userName || nicDetailObj?.PlaintiffName || userClaims?.UserName,
-      //   PlaintiffHijiriDOB: formData?.hijriDate || nicDetailObj?.DateOfBirthHijri || userClaims?.UserDOB || "",
-      //   Plaintiff_ApplicantBirthDate: formData?.gregorianDate || nicDetailObj?.DateOfBirthGregorian,
-      //   Plaintiff_PhoneNumber: formData?.phoneNumber || "",
-      //   Plaintiff_Region: formData?.region?.value || nicDetailObj?.Region_Code,
-      //   Plaintiff_City: formData?.city?.value || nicDetailObj?.City_Code,
-      //   JobPracticing: formData?.occupation?.value || nicDetailObj?.Occupation_Code,
-      //   Gender: formData?.gender?.value || nicDetailObj?.Gender_Code,
-      //   Worker_Nationality: formData?.nationality?.value || nicDetailObj?.Nationality_Code,
-      //   Plaintiff_JobLocation: formData?.region?.value || nicDetailObj?.Region_Code,
-      //   Plaintiff_ClosestLaborOffice: formData?.laborOffice?.value, //??// check
-      // };
 
       if (isAgentApplicant) {
         Object.assign(payload, {
@@ -258,11 +249,11 @@ export const defendantDetailsPayload = (
   switch (lowUserType) {
     case "legal representative": {
       return {
-        ...getBasePayload(userClaims, language),
+        ...getBasePayload(userClaims, language, userType),
         Flow_ButtonName: buttonName,
         CaseID: getCaseId,
         Flow_CurrentScreen: "DefendantDetails",
-        DefandantType: "",
+        // DefendantType: "",
         DefendantID: extractValue(formData?.DefendantsEstablishmentPrisonerId),
         Defendant_HijiriDOB: extractValue(
           formatDateToYYYYMMDD(formData?.def_date_hijri)
@@ -283,10 +274,10 @@ export const defendantDetailsPayload = (
 
     case "establishment": {
       return {
-        ...getBasePayload(userClaims, language),
+        ...getBasePayload(userClaims, language, userType),
         Flow_CurrentScreen: "DefendantDetails",
         CaseID: getCaseId,
-        DefandantType: "",
+        DefendantType: "",
         DefendantID: extractValue(formData?.DefendantsEstablishmentPrisonerId),
         Defendant_HijiriDOB: extractValue(
           formatDateToYYYYMMDD(formData?.def_date_hijri)
@@ -323,7 +314,7 @@ export const defendantDetailsPayload = (
       if (formData?.defendantStatus === "Government") {
 
         return {
-          ...getBasePayload(userClaims, language),
+          ...getBasePayload(userClaims, language, userType),
           Flow_ButtonName: buttonName,
           CaseID: getCaseId,
           Flow_CurrentScreen: "DefendantDetails",
@@ -337,7 +328,7 @@ export const defendantDetailsPayload = (
       if (formData.defendantDetails === "Others") {
 
         return {
-          ...getBasePayload(userClaims, language),
+          ...getBasePayload(userClaims, language, userType),
           Flow_ButtonName: buttonName,
           CaseID: getCaseId,
           Flow_CurrentScreen: "DefendantDetails",
@@ -358,7 +349,7 @@ export const defendantDetailsPayload = (
       }
       /// if def is Est *(worked in it)
       return {
-        ...getBasePayload(userClaims, language),
+        ...getBasePayload(userClaims, language, userType),
         Flow_ButtonName: buttonName,
         CaseID: getCaseId,
         Flow_CurrentScreen: "DefendantDetails",
@@ -404,7 +395,7 @@ export const workDetailsPayload = (
     case "legal representative": {
 
       return {
-        ...getBasePayload(userClaims, language || "EN"),
+        ...getBasePayload(userClaims, language || "EN", userType),
         Flow_ButtonName: buttonName,
         CaseID: getCaseId,
         Flow_CurrentScreen: "LastJobDetails",
@@ -447,7 +438,7 @@ export const workDetailsPayload = (
     case "establishment": {
 
       return {
-        ...getBasePayload(userClaims, language || "EN"),
+        ...getBasePayload(userClaims, language || "EN", userType),
         DefendantType: "Worker",
         Flow_ButtonName: buttonName,
         Flow_CurrentScreen: "LastJobDetails",
@@ -493,7 +484,7 @@ export const workDetailsPayload = (
     default: {
       if (lowUserType === "establishment") {
         return {
-          ...getBasePayload(userClaims, language),
+          ...getBasePayload(userClaims, language, userType),
           Flow_ButtonName: buttonName,
           CaseID: getCaseId,
           Flow_CurrentScreen: "LastJobDetails",
@@ -536,7 +527,7 @@ export const workDetailsPayload = (
 
       // Default case for other user types
       return {
-        ...getBasePayload(userClaims, language),
+        ...getBasePayload(userClaims, language, userType),
         Flow_ButtonName: buttonName,
         CaseID: getCaseId,
         Flow_CurrentScreen: "LastJobDetails",
@@ -588,9 +579,10 @@ export const hearingTopicsPayload = (
   getCaseId?: any,
   caseTopics?: any,
   userClaims?: any,
-  language: string = "EN"
+  language: string = "EN",
+  userType?: string
 ): CasePayload => ({
-  ...getBasePayload(userClaims, language),
+  ...getBasePayload(userClaims, language, userType),
   Flow_ButtonName: buttonName,
   CaseID: getCaseId,
   Flow_CurrentScreen: "HearingTopics",
@@ -602,9 +594,10 @@ export const reviewPayload = (
   formData: any,
   getCaseId?: any,
   userClaims?: any,
-  language: string = "EN"
+  language: string = "EN",
+  userType?: string
 ): CasePayload => ({
-  ...getBasePayload(userClaims, language),
+  ...getBasePayload(userClaims, language, userType),
   Flow_ButtonName: buttonName,
   CaseID: getCaseId,
   Flow_CurrentScreen: "Review",

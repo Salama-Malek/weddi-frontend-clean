@@ -44,13 +44,13 @@ type FileType = {
 
 type SectionData =
   | {
-    type: "radio";
-    name: string;
-    label: string;
-    options: RadioOption[];
-    value: string;
-    onChange: (value: string) => void;
-  }
+      type: "radio";
+      name: string;
+      label: string;
+      options: RadioOption[];
+      value: string;
+      onChange: (value: string) => void;
+    }
   | { type: "readonly"; fields: ReadOnlyDetail[] }
   | { type: "file"; files: FileDetail[] }
   | { type: "table"; records: Topic[] };
@@ -64,8 +64,12 @@ type ReviewSection = {
 const ReviewDetails = ({
   control,
   setAcknowledgements,
-  setSelectedLanguage }: WithStepNavigationProps) => {
-  const [selectedLang, setSelectedLang] = useState({ label: "English", value: "EN" });
+  setSelectedLanguage,
+}: WithStepNavigationProps) => {
+  const [selectedLang, setSelectedLang] = useState({
+    label: "English",
+    value: "EN",
+  });
 
   const [getCookie] = useCookieState();
   const [fileKey, setFileKey] = useState("");
@@ -75,21 +79,49 @@ const ReviewDetails = ({
   const { isRTL } = useLanguageDirection();
   const { t, i18n } = useTranslation("reviewdetails");
   const userClaims: TokenClaims = getCookie("userClaims");
-  const userType = getCookie("userType");
   const caseId = getCookie("caseId");
-  const [mainCategory, subCategory] = [getCookie("mainCategory"), getCookie("subCategory")]
+
+  const UserClaims: TokenClaims = getCookie("userClaims");
+  const userType = getCookie("userType");
+  const mainCategory = getCookie("mainCategory")?.value;
+  const subCategory = getCookie("subCategory")?.value;
+  const userID = getCookie("userClaims").UserID;
+  const fileNumber = getCookie("userClaims")?.File_Number;
+  const defendantStatus = getCookie("defendantStatus");
+
+  const userConfigs: any = {
+    Worker: {
+      UserType: userType,
+      IDNumber: userID,
+    },
+    Establishment: {
+      UserType: userType,
+      IDNumber: userID,
+      FileNumber: fileNumber,
+    },
+    "Legal representative": {
+      UserType: userType,
+      IDNumber: userID,
+      MainGovernment: mainCategory || "",
+      SubGovernment: subCategory || "",
+    },
+  } as const;
 
   const queryArg = caseId
     ? {
-      CaseID: caseId,
-      AcceptedLanguage: isRTL ? "AR" : "EN",
-      SourceSystem: "E-Services",
-      IDNumber: `${userClaims?.UserID}`,
-      UserType: userType,
-    }
+        ...userConfigs[userType],
+        CaseID: caseId,
+        AcceptedLanguage: isRTL ? "AR" : "EN",
+        SourceSystem: "E-Services",
+      }
     : skipToken;
 
-  const { data: caseDetailsData } = useGetCaseDetailsQuery(queryArg);
+  const { data: caseDetailsData, refetch } = useGetCaseDetailsQuery(queryArg);
+
+  useEffect(() => {
+    refetch();
+  }, []);
+
   const details = caseDetailsData?.CaseDetails || {};
   console.log("details", details);
 
@@ -104,7 +136,6 @@ const ReviewDetails = ({
   const [triggerFileDetailsQuery, { data: fileBase64 }] =
     useLazyGetFileDetailsQuery();
 
-
   useEffect(() => {
     if (ackData?.DataElements && setAcknowledgements) {
       setAcknowledgements(ackData.DataElements);
@@ -115,14 +146,17 @@ const ReviewDetails = ({
     setFileKey(fileKey);
     setFileName(fileName);
     setPreviewFile(true);
-    await triggerFileDetailsQuery({ AttachmentKey: fileKey, AcceptedLanguage: i18n.language.toUpperCase() });
+    await triggerFileDetailsQuery({
+      AttachmentKey: fileKey,
+      AcceptedLanguage: i18n.language.toUpperCase(),
+    });
   };
 
   useEffect(() => {
     if (ackData?.DataElements && setAcknowledgements) {
       setAcknowledgements(ackData.DataElements);
     }
-  }, [ackData, setAcknowledgements])
+  }, [ackData, setAcknowledgements]);
 
   const hearingColumns: ColumnDef<Topic>[] = [
     {
@@ -142,7 +176,6 @@ const ReviewDetails = ({
     },
   ];
 
-
   const attachments = [
     ...(details?.CaseTopicAttachments || []),
     ...(details?.OtherAttachments || []),
@@ -151,7 +184,6 @@ const ReviewDetails = ({
     fileName: f.FileName || "Unnamed File",
     fileKey: f.FileKey,
   }));
-
 
   const reviewSections: ReviewSection[] = [
     {
@@ -173,7 +205,7 @@ const ReviewDetails = ({
           },
         ],
         value: details?.ApplicantType || "",
-        onChange: () => { },
+        onChange: () => {},
       },
     },
     {
@@ -185,10 +217,13 @@ const ReviewDetails = ({
           { label: t("name"), value: details?.PlaintiffName || "" },
           { label: t("region"), value: details?.Plaintiff_Region || "" },
           { label: t("city"), value: details?.Plaintiff_City || "" },
-          { label: t("hijriDate"), value: details?.PlaintiffHijiriDOB || "" },
+          {
+            label: t("hijriDate"),
+            value: formatDate(details?.PlaintiffHijiriDOB) || "",
+          },
           {
             label: t("gregorianDate"),
-            value: details?.Plaintiff_Gregorian || "",
+            value: formatDate(details?.Plaintiff_ApplicantBirthDate) || "",
           },
           {
             label: t("phoneNumber"),
@@ -200,7 +235,7 @@ const ReviewDetails = ({
           },
           {
             label: t("gender"),
-            value: details?.Plaintiff_Gender || ""
+            value: details?.Plaintiff_Gender || "",
           },
           {
             label: t("nationality"),
@@ -229,9 +264,8 @@ const ReviewDetails = ({
           { label: t("nationality"), value: details?.Agent_Nationality || "" },
         ],
       },
-    }
-    , {
-
+    },
+    {
       title: t("defendantDetails"),
       data: {
         type: "radio",
@@ -242,7 +276,7 @@ const ReviewDetails = ({
           { label: t("establishments"), value: "Governmental Entities" },
         ],
         value: details?.DefendantType || "",
-        onChange: () => { },
+        onChange: () => {},
       },
     },
     {
@@ -290,7 +324,7 @@ const ReviewDetails = ({
           fileKey: f.FileKey,
         })),
       },
-    }
+    },
   ];
 
   const reviewSectionWorkerGov: ReviewSection[] = [
@@ -309,13 +343,22 @@ const ReviewDetails = ({
           },
           { label: t("region"), value: details?.Plaintiff_Region || "" },
           { label: t("city"), value: details?.Plaintiff_City || "" },
-          { label: t("hijriDate"), value: details?.PlaintiffHijiriDOB || "" },
+          {
+            label: t("hijriDate"),
+            value: formatDate(details?.PlaintiffHijiriDOB) || "",
+          },
           {
             label: t("gregorianDate"),
-            value: details?.Plaintiff_Gregorian || "",
+            value: formatDate(details?.Plaintiff_ApplicantBirthDate) || "",
           },
-          { label: t("occupation"), value: details?.Plaintiff_Occupation || "" },
-          { label: t("nationality"), value: details?.Plaintiff_Nationality || "" },
+          {
+            label: t("occupation"),
+            value: details?.Plaintiff_Occupation || "",
+          },
+          {
+            label: t("nationality"),
+            value: details?.Plaintiff_Nationality || "",
+          },
           { label: t("gender"), value: details?.Plaintiff_Gender || "" },
           { label: t("workerType"), value: details?.PlaintiffType || "" },
         ],
@@ -326,8 +369,14 @@ const ReviewDetails = ({
       data: {
         type: "readonly",
         fields: [
-          { label: t("mainCategory"), value: details?.DefendantType || "" },
-          { label: t("subCategory"), value: details?.DefendantName || "" },
+          {
+            label: t("mainCategory"),
+            value: details?.Defendant_MainGovtDefend || "",
+          },
+          {
+            label: t("subCategory"),
+            value: details?.DefendantSubGovtDefend || "",
+          },
         ],
       },
     },
@@ -338,6 +387,446 @@ const ReviewDetails = ({
         fields: [
           {
             label: t("salaryType"),
+            value: details?.Plaintiff_SalaryType || "",
+          },
+          { label: t("currentSalary"), value: details?.Plaintiff_Salary || "" },
+          {
+            label: t("contractType"),
+            value: details?.Plaintiff_ContractType || "",
+          },
+          {
+            label: t("contractNumber"),
+            value: details?.Plaintiff_ContractNumber || "",
+          },
+          {
+            label: t("contractDateHijri"),
+            value: formatDate(details?.Plaintiff_ContractStartDateHijri) || "",
+          },
+          {
+            label: t("contractDateGregorian"),
+            value: formatDate(details?.Plaintiff_ContractStartDate) || "",
+          },
+          {
+            label: t("contractExpiryDateHijri"),
+            value: formatDate(details?.Plaintiff_ContractEndDateHijri) || "",
+          },
+          {
+            label: t("contractExpiryDateGregorian"),
+            value: formatDate(details?.Plaintiff_ContractEndDate) || "",
+          },
+          {
+            label: t("stillEmployed"),
+            value: details?.Plaintiff_StillWorking || "",
+          },
+          {
+            label: t("fristWorkingDayDate"),
+            value: formatDate(details?.Plaintiff_JobStartDate) || "",
+          },
+          {
+            label: t("lastWorkingDayDate"),
+            value: formatDate(details?.Plaintiff_JobEndDate) || "",
+          },
+        ],
+      },
+    },
+    {
+      title: t("workLocationDetails"),
+      data: {
+        type: "readonly",
+        fields: [
+          { label: t("region"), value: details?.Plaintiff_JobLocation || "" },
+          { label: t("city"), value: details?.PlaintiffJobCity || "" },
+          { label: t("nearestLabourOffice"), value: details?.OfficeName || "" },
+        ],
+      },
+    },
+    {
+      title: t("hearingTopics"),
+      data: {
+        type: "table",
+        records: (details?.CaseTopics || []).map(
+          (topic: any, index: number) => ({
+            id: index + 1,
+            mainCategory: topic.TopicName || "",
+            subCategory: topic.SubTopicName || "",
+          })
+        ),
+      },
+    },
+    {
+      title: t("attachedFiles"),
+      data: {
+        type: "file",
+        files: attachments,
+      },
+    },
+  ];
+
+  const reviewSectionWorkerEstablishment: ReviewSection[] = [
+    {
+      title: t("claimantDetails"),
+      data: {
+        type: "readonly",
+        fields: [
+          {
+            label: t("name"),
+            value: details?.PlaintiffName || "",
+          },
+          {
+            label: t("idNumber"),
+            value: details?.PlaintiffId || "",
+          },
+          { label: t("region"), value: details?.Plaintiff_Region || "" },
+          { label: t("city"), value: details?.Plaintiff_City || "" },
+          {
+            label: t("hijriDate"),
+            value: formatDate(details?.PlaintiffHijiriDOB) || "",
+          },
+          {
+            label: t("gregorianDate"),
+            value: formatDate(details?.Plaintiff_ApplicantBirthDate) || "",
+          },
+          {
+            label: t("occupation"),
+            value: details?.Plaintiff_Occupation || "",
+          },
+          {
+            label: t("nationality"),
+            value: details?.Plaintiff_Nationality || "",
+          },
+          { label: t("gender"), value: details?.Plaintiff_Gender || "" },
+          { label: t("workerType"), value: details?.PlaintiffType || "" },
+        ],
+      },
+    },
+    {
+      title: t("defendantDetails"),
+      data: {
+        type: "readonly",
+        fields: [
+          {
+            label: t("mainCategory"),
+            value: details?.Defendant_MainGovtDefend || "",
+          },
+        ],
+      },
+    },
+    {
+      data: {
+        type: "readonly",
+        fields: [
+          {
+            label: t("establishmentName"),
+            value: details?.DefendantName || "",
+          },
+          {
+            label: t("fileNumber"),
+            value: details?.DefendantEstFileNumber || "",
+          },
+          {
+            label: t("commercialRegistrationNumber"),
+            value: details?.Defendant_CRNumber || "",
+          },
+          {
+            label: t("phoneNumber"),
+            value: details?.Defendant_PhoneNumber || "",
+          },
+          { label: t("region"), value: details?.Defendant_Region || "" },
+          { label: t("city"), value: details?.Defendant_City || "" },
+        ],
+      },
+    },
+    {
+      title: t("workDetails"),
+      data: {
+        type: "readonly",
+        fields: [
+          {
+            label: t("salaryType"),
+            value: details?.Plaintiff_SalaryType || "",
+          },
+          { label: t("currentSalary"), value: details?.Plaintiff_Salary || "" },
+          {
+            label: t("contractType"),
+            value: details?.Plaintiff_ContractType || "",
+          },
+          {
+            label: t("contractNumber"),
+            value: details?.Plaintiff_ContractNumber || "",
+          },
+          {
+            label: t("contractDateHijri"),
+            value: formatDate(details?.Plaintiff_ContractStartDateHijri) || "",
+          },
+          {
+            label: t("contractDateGregorian"),
+            value: formatDate(details?.Plaintiff_ContractStartDate) || "",
+          },
+          {
+            label: t("contractExpiryDateHijri"),
+            value: formatDate(details?.Plaintiff_ContractEndDateHijri) || "",
+          },
+          {
+            label: t("contractExpiryDateGregorian"),
+            value: formatDate(details?.Plaintiff_ContractEndDate) || "",
+          },
+          {
+            label: t("stillEmployed"),
+            value: details?.Plaintiff_StillWorking || "",
+          },
+          {
+            label: t("fristWorkingDayDate"),
+            value: formatDate(details?.Plaintiff_JobStartDate) || "",
+          },
+          {
+            label: t("lastWorkingDayDate"),
+            value: formatDate(details?.Plaintiff_JobEndDate) || "",
+          },
+        ],
+      },
+    },
+    {
+      title: t("workLocationDetails"),
+      data: {
+        type: "readonly",
+        fields: [
+          { label: t("region"), value: details?.Plaintiff_JobLocation || "" },
+          { label: t("city"), value: details?.PlaintiffJobCity || "" },
+          { label: t("nearestLabourOffice"), value: details?.OfficeName || "" },
+        ],
+      },
+    },
+    {
+      title: t("hearingTopics"),
+      data: {
+        type: "table",
+        records: (details?.CaseTopics || []).map(
+          (topic: any, index: number) => ({
+            id: index + 1,
+            mainCategory: topic.TopicName || "",
+            subCategory: topic.SubTopicName || "",
+          })
+        ),
+      },
+    },
+    {
+      title: t("attachedFiles"),
+      data: {
+        type: "file",
+        files: attachments,
+      },
+    },
+  ];
+
+  // still working
+  // hassan add this
+  const reviewSectionLegRep: ReviewSection[] = [
+    {
+      title: t("claimantDetails"),
+      data: {
+        type: "readonly",
+        fields: [
+          { 
+            label: t("mainCategory"), 
+            value: details?.Plaintiff_MainGovt || "" 
+          },
+          { 
+            label: t("subCategory"), 
+            value: details?.Plaintiff_SubGovt || "" 
+          },
+        ],
+      },
+    },
+    {
+      title: t("legalRepDetails"),
+      data: {
+        type: "readonly",
+        fields: [
+          { label: t("idNumber"), value: details?.RepresentativeID || "" },
+          { label: t("name"), value: details?.RepresentativeName || "" },
+          {
+            label: t("hijriDate"),
+            value: details?.Rep_BirthDate ? formatDate(details.Rep_BirthDate) : "-",
+          },
+          { label: t("phoneNumber"), value: details?.Rep_PhoneNumber || "" },
+          { label: t("E-mail"), value: details?.Rep_EmailAddress || "" },
+        ],
+      },
+    },
+    {
+      title: t("defendantDetails"),
+      data: {
+        type: "readonly",
+        fields: [
+          { label: t("idNumber"), value: details?.DefendantId || "" },
+          { label: t("name"), value: details?.DefendantName || "" },
+          {
+            label: t("hijriDate"),
+            value: formatDate(details?.DefendantHijiriDOB) || "",
+          },
+          {
+            label: t("gregorianDate"),
+            value: formatDate(details?.DefendantGregorianDOB) || "",
+          },
+          {
+            label: t("phoneNumber"),
+            value: details?.Defendant_PhoneNumber || "",
+          },
+          { label: t("region"), value: details?.Defendant_Region || "" },
+          { label: t("city"), value: details?.Defendant_City || "" },
+        ],
+      },
+    },
+    {
+      title: t("workDetails"),
+      data: {
+        type: "readonly",
+        fields: [
+          // { label: t("typeOfWage"), value: details?.DefendantId || "" },
+
+          { label: t("currentSalary"), value: details?.Defendant_Salary || "" },
+          {
+            label: t("contractType"),
+            value: details?.Defendant_SalaryType || "",
+          },
+          {
+            label: t("contractNumber"),
+            value: details?.Defendant_ContractNumber || "",
+          },
+
+          // { label: t("contractDateHijri"), value: details?.Defendant_PhoneNumber || "" },
+          {
+            label: t("contractDateGregorian"),
+            value: formatDate(details?.Defendant_ContractStartDate) || "",
+          },
+
+          // { label: t("contractExpiryDateHijri"), value: details?.Defendant_City || "" },
+          {
+            label: t("contractExpiryDateGregorian"),
+            value: formatDate(details?.Defendant_ContractEndDate) || "",
+          },
+
+          {
+            label: t("stillEmployed"),
+            value: details?.Defendant_StillWorking ? t("yes") : t("no") || "",
+          },
+          //{ label: t("dateOfFristtWorkHijri"), value: formatDate(details?.Defendant_JobStartDateHijjari) || "" },
+          //{ label: t("dateOfLeavingWorkHijri"), value: formatDate(details?.Defendant_JobEndDateHijjari) || "" },
+          //{ label: t("nearestLabourOffice"), value: details?.OfficeName || "" },
+          {
+            label: t("fristWorkingDayDate"),
+            value: formatDate(details?.Defendant_JobStartDate) || "",
+          },
+
+          // { label: t("dateOfLeavingWorkHijri"), value:  formatDate(details?.Defendant_JobEndDateHijjari)|| "" },
+          {
+            label: t("lastWorkingDayDate"),
+            value: formatDate(details?.Defendant_JobEndDate) || "",
+          },
+        ],
+      },
+    },
+    {
+      title: t("workLocationDetails"),
+      data: {
+        type: "readonly",
+        fields: [
+          { label: t("region"), value: details?.Defendant_JobLocation || "" },
+          { label: t("city"), value: details?.DefendantJobCity || "" },
+          { label: t("nearestLabourOffice"), value: details?.OfficeName || "" },
+        ],
+      },
+    },
+    {
+      title: t("hearingTopics"),
+      data: {
+        type: "table",
+        records: (details?.CaseTopics || []).map(
+          (topic: any, index: number) => ({
+            id: index + 1,
+            mainCategory: topic.TopicName || "",
+            subCategory: topic.SubTopicName || "",
+          })
+        ),
+      },
+    },
+    {
+      title: t("attachedFiles"),
+      data: {
+        type: "file",
+        files: [
+          ...(details?.CaseTopicAttachments || []),
+          ...(details?.OtherAttachments || []),
+          ...(details?.RegionalAttachments || []),
+        ].map((f: FileType) => ({
+          fileName: f.FileName || "Unnamed File",
+          fileKey: f.FileKey,
+        })),
+      },
+    },
+  ];
+
+  // hassan add this
+  const reviewSectionEstablishment: ReviewSection[] = [
+    {
+      title: t("claimantDetails"),
+      data: {
+        type: "readonly",
+        fields: [
+          {
+            label: t("establishmentName"),
+            value: details?.PlaintiffName || "",
+          },
+          {
+            label: t("fileNumber"),
+            value: details?.PlaintiffEstFileNumber || "",
+          },
+          {
+            label: t("commercialRegistrationNumber"),
+            value: details?.Plaintiff_CRNumber || "",
+          },
+          { label: t("region"), value: details?.Plaintiff_Region || "" },
+          { label: t("city"), value: details?.Plaintiff_City || "" },
+          {
+            label: t("phoneNumber"),
+            value: details?.PlaintiffPhoneNumber || "",
+          },
+        ],
+      },
+    },
+    {
+      title: t("defendantDetails"),
+      data: {
+        type: "readonly",
+        fields: [
+          { label: t("idNumber"), value: details?.DefendantId || "" },
+          { label: t("name"), value: details?.DefendantName || "" },
+          {
+            label: t("hijriDate"),
+            value: formatDate(details?.DefendantHijiriDOB) || "",
+          },
+          // { label: t("gregorianDate"), value: formatDate(details?.DefendantHijiriDOB) || "" },
+          {
+            label: t("phoneNumber"),
+            value: details?.Defendant_PhoneNumber || "",
+          },
+          { label: t("gender"), value: details?.Defendant_Gender || "" },
+          {
+            label: t("nationality"),
+            value: details?.Defendant_Nationality || "",
+          },
+          { label: t("region"), value: details?.Defendant_Region || "" },
+          { label: t("city"), value: details?.Defendant_City || "" },
+        ],
+      },
+    },
+    {
+      title: t("workDetails"),
+      data: {
+        type: "readonly",
+        fields: [
+          {
+            label: t("typeOfWage"),
             value: details?.Defendant_SalaryType || "",
           },
           { label: t("currentSalary"), value: details?.Defendant_Salary || "" },
@@ -349,12 +838,12 @@ const ReviewDetails = ({
             label: t("contractNumber"),
             value: details?.Defendant_ContractNumber || "",
           },
-          { label: t("contractDateHijri"), value: details?.Defendant_PhoneNumber || "" },
+          // { label: t("contractDateHijri"), value: details?.Defendant_PhoneNumber || "" },
           {
             label: t("contractDateGregorian"),
             value: formatDate(details?.Defendant_ContractStartDate) || "",
           },
-          { label: t("contractExpiryDateHijri"), value: details?.Defendant_City || "" },
+          // { label: t("contractExpiryDateHijri"), value: details?.Defendant_City || "" },
           {
             label: t("contractExpiryDateGregorian"),
             value: formatDate(details?.Defendant_ContractEndDate) || "",
@@ -363,11 +852,11 @@ const ReviewDetails = ({
             label: t("stillEmployed"),
             value: details?.Defendant_StillWorking || "",
           },
+          // { label: t("dateOfLeavingWorkHijri"), value: formatDate(details?.Defendant_JobEndDateHijjari) || "" },
           {
             label: t("fristWorkingDayDate"),
             value: formatDate(details?.Defendant_JobStartDate) || "",
           },
-          { label: t("dateOfLeavingWorkHijri"), value: formatDate(details?.Defendant_JobEndDateHijjari) || "" },
 
           // { label: t("dateOfLeavingWorkHijri"), value:  formatDate(details?.Defendant_JobEndDateHijjari)|| "" },
           {
@@ -410,247 +899,26 @@ const ReviewDetails = ({
     },
   ];
 
-  // still working 
-  // hassan add this 
-  const reviewSectionLegRep: ReviewSection[] =
-    [
-      {
-        title: t("claimantDetails"),
-        data: {
-          type: "readonly",
-          fields: [
-            { label: t("mainCategory"), value: mainCategory?.label || "" },
-            { label: t("subCategory"), value: subCategory?.label || "" }
-          ],
-        },
-      },
-      {
-        title: t("legalRepDetails"),
-        data: {
-          type: "readonly",
-          fields: [
-            { label: t("idNumber"), value: details?.RepresentativeID || "" },
-            { label: t("name"), value: details?.RepresentativeName || "" },
-            { label: t("hijriDate"), value: formatDate(details?.Rep_BirthDate) || "" },
-            { label: t("phoneNumber"), value: details?.Rep_PhoneNumber || "" },
-            { label: t("E-mail"), value: details?.Rep_EmailAddress || "" }
-          ],
-        },
-      },
-      {
-        title: t("defendantDetails"),
-        data: {
-          type: "readonly",
-          fields: [
-
-            { label: t("idNumber"), value: details?.DefendantId || "" },
-            { label: t("name"), value: details?.DefendantName || "" },
-            { label: t("hijriDate"), value: formatDate(details?.DefendantHijiriDOB) || "" },
-            { label: t("gregorianDate"), value: formatDate(details?.DefendantHijiriDOB) || "" },
-            { label: t("phoneNumber"), value: details?.Defendant_PhoneNumber || "" },
-            { label: t("region"), value: details?.Defendant_Region || "" },
-            { label: t("city"), value: details?.Defendant_City || "" },
-
-
-          ],
-        },
-      },
-      {
-        title: t("workDetails"),
-        data: {
-          type: "readonly",
-          fields: [
-
-            // { label: t("typeOfWage"), value: details?.DefendantId || "" },
-
-            { label: t("currentSalary"), value: details?.Defendant_Salary || "" },
-            { label: t("contractType"), value: details?.Defendant_SalaryType || "" },
-            { label: t("contractNumber"), value: details?.Defendant_ContractNumber || "" },
-
-            // { label: t("contractDateHijri"), value: details?.Defendant_PhoneNumber || "" },
-            { label: t("contractDateGregorian"), value: formatDate(details?.Defendant_ContractStartDate) || "" },
-
-            // { label: t("contractExpiryDateHijri"), value: details?.Defendant_City || "" },
-            { label: t("contractExpiryDateGregorian"), value: formatDate(details?.Defendant_ContractEndDate) || "" },
-
-            { label: t("stillEmployed"), value: details?.Defendant_StillWorking ? t("yes") : t("no") || "" },
-            //{ label: t("dateOfFristtWorkHijri"), value: formatDate(details?.Defendant_JobStartDateHijjari) || "" },
-            //{ label: t("dateOfLeavingWorkHijri"), value: formatDate(details?.Defendant_JobEndDateHijjari) || "" },
-            //{ label: t("nearestLabourOffice"), value: details?.OfficeName || "" },
-            { label: t("fristWorkingDayDate"), value: formatDate(details?.Defendant_JobStartDate) || "" },
-
-            // { label: t("dateOfLeavingWorkHijri"), value:  formatDate(details?.Defendant_JobEndDateHijjari)|| "" },
-            { label: t("lastWorkingDayDate"), value: formatDate(details?.Defendant_JobEndDate) || "" },
-
-
-
-          ],
-        },
-      },
-      {
-        title: t("workLocationDetails"),
-        data: {
-          type: "readonly",
-          fields: [
-
-            { label: t("region"), value: details?.Defendant_JobLocation || "" },
-            { label: t("city"), value: details?.DefendantJobCity || "" },
-            { label: t("nearestLabourOffice"), value: details?.OfficeName || "" },
-
-
-
-          ],
-        },
-      },
-      {
-        title: t("hearingTopics"),
-        data: {
-          type: "table",
-          records: (details?.CaseTopics || []).map(
-            (topic: any, index: number) => ({
-              id: index + 1,
-              mainCategory: topic.TopicName || "",
-              subCategory: topic.SubTopicName || "",
-            })
-          ),
-        },
-      },
-      {
-        title: t("attachedFiles"),
-        data: {
-          type: "file",
-          files: [
-            ...(details?.CaseTopicAttachments || []),
-            ...(details?.OtherAttachments || []),
-            ...(details?.RegionalAttachments || []),
-          ].map((f: FileType) => ({
-            fileName: f.FileName || "Unnamed File",
-            fileKey: f.FileKey,
-          })),
-        },
-      }
-
-    ];
-
-
-  // hassan add this 
-  const reviewSectionEstablishment: ReviewSection[] =
-    [
-
-      {
-        title: t("claimantDetails"),
-        data: {
-          type: "readonly",
-          fields: [
-            { label: t("establishmentName"), value: details?.PlaintiffName || "" },
-            { label: t("fileNumber"), value: details?.PlaintiffEstFileNumber || "" },
-            { label: t("commercialRegistrationNumber"), value: details?.Plaintiff_CRNumber || "" },
-            { label: t("region"), value: details?.Plaintiff_Region || "" },
-            { label: t("city"), value: details?.Plaintiff_City || "" },
-            { label: t("phoneNumber"), value: details?.PlaintiffPhoneNumber || "" }
-
-          ],
-        },
-      },
-      {
-        title: t("defendantDetails"),
-        data: {
-          type: "readonly",
-          fields: [
-
-            { label: t("idNumber"), value: details?.DefendantId || "" },
-            { label: t("name"), value: details?.DefendantName || "" },
-            { label: t("hijriDate"), value: formatDate(details?.DefendantHijiriDOB) || "" },
-            // { label: t("gregorianDate"), value: formatDate(details?.DefendantHijiriDOB) || "" },
-            { label: t("phoneNumber"), value: details?.Defendant_PhoneNumber || "" },
-            { label: t("gender"), value: details?.Defendant_Gender || "" },
-            { label: t("nationality"), value: details?.Defendant_Nationality || "" },
-            { label: t("region"), value: details?.Defendant_Region || "" },
-            { label: t("city"), value: details?.Defendant_City || "" },
-
-
-          ],
-        },
-      },
-      {
-        title: t("workDetails"),
-        data: {
-          type: "readonly",
-          fields: [
-
-
-            { label: t("typeOfWage"), value: details?.Defendant_SalaryType || "" },
-            { label: t("currentSalary"), value: details?.Defendant_Salary || "" },
-            { label: t("contractType"), value: details?.Defendant_ContractType || "" },
-            { label: t("contractNumber"), value: details?.Defendant_ContractNumber || "" },
-            // { label: t("contractDateHijri"), value: details?.Defendant_PhoneNumber || "" },
-            { label: t("contractDateGregorian"), value: formatDate(details?.Defendant_ContractStartDate) || "" },
-            // { label: t("contractExpiryDateHijri"), value: details?.Defendant_City || "" },
-            { label: t("contractExpiryDateGregorian"), value: formatDate(details?.Defendant_ContractEndDate) || "" },
-            { label: t("stillEmployed"), value: details?.Defendant_StillWorking || "" },
-            // { label: t("dateOfLeavingWorkHijri"), value: formatDate(details?.Defendant_JobEndDateHijjari) || "" },
-            { label: t("fristWorkingDayDate"), value: formatDate(details?.Defendant_JobStartDate) || "" },
-
-            // { label: t("dateOfLeavingWorkHijri"), value:  formatDate(details?.Defendant_JobEndDateHijjari)|| "" },
-            { label: t("lastWorkingDayDate"), value: formatDate(details?.Defendant_JobEndDate) || "" },
-
-
-
-          ],
-        },
-      },
-      {
-        title: t("workLocationDetails"),
-        data: {
-          type: "readonly",
-          fields: [
-
-            { label: t("region"), value: details?.Defendant_JobLocation || "" },
-            { label: t("city"), value: details?.DefendantJobCity || "" },
-            { label: t("nearestLabourOffice"), value: details?.OfficeName || "" },
-
-          ],
-        },
-      },
-      {
-        title: t("hearingTopics"),
-        data: {
-          type: "table",
-          records: (details?.CaseTopics || []).map((topic: any, index: number) => ({
-            id: index + 1,
-            mainCategory: topic.TopicName || "",
-            subCategory: topic.SubTopicName || "",
-          })),
-        },
-      },
-      {
-        title: t("attachedFiles"),
-        data: {
-          type: "file",
-          files: attachments,
-        },
-      },
-
-    ];
-
-  // hassan add this 
+  // hassan add this
   const reviewSectionsMemo: ReviewSection[] = useMemo(() => {
     const tyoeOfUser = userType.toLowerCase();
     //console.log("this sishdjshd", tyoeOfUser);
 
     switch (tyoeOfUser) {
       case "legal representative":
-        return reviewSectionLegRep
+        return reviewSectionLegRep;
       case "establishment":
-        return reviewSectionEstablishment
+        return reviewSectionEstablishment;
       case "worker":
-        return reviewSectionWorkerGov
+        if (defendantStatus == "Government") {
+          return reviewSectionWorkerGov;
+        } else {
+          return reviewSectionWorkerEstablishment;
+        }
       default:
         return reviewSections;
     }
   }, [caseDetailsData]);
-
-
 
   return (
     <div className={classes("w-full space-y-6 !mb-0")}>
@@ -658,10 +926,11 @@ const ReviewDetails = ({
         <Section
           key={title || idx}
           title={hideTitle ? "" : title}
-          className={`${data.type === "radio" || data.type === "table"
-            ? "grid grid-cols-1 gap-x-6 gap-y-6"
-            : "grid grid-cols-1 md:grid-cols-2  lg:grid-cols-3 gap-x-6 gap-y-6"
-            }`}
+          className={`${
+            data.type === "radio" || data.type === "table"
+              ? "grid grid-cols-1 gap-x-6 gap-y-6"
+              : "grid grid-cols-1 md:grid-cols-2  lg:grid-cols-3 gap-x-6 gap-y-6"
+          }`}
         >
           {data.type === "radio" && (
             <RadioGroup
@@ -685,7 +954,7 @@ const ReviewDetails = ({
                 columns={hearingColumns}
                 page={1}
                 totalPages={10}
-                onPageChange={() => { }}
+                onPageChange={() => {}}
                 hidePagination
               />
             </Suspense>
@@ -711,12 +980,10 @@ const ReviewDetails = ({
         </Section>
       ))}
 
-
       <Section
         title={t("acknowledgment")}
         className="grid-cols-1 gap-x-6 gap-y-6"
       >
-
         <AutoCompleteField
           className="!w-80"
           notRequired
@@ -744,7 +1011,6 @@ const ReviewDetails = ({
           name="acknowledge"
           label={t("acknowledge_desc")}
           control={control}
-
           rules={{ required: true }}
           defaultValue={false}
         />

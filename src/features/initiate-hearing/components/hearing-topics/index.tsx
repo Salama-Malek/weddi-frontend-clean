@@ -35,6 +35,7 @@ import { useFormLayout as useFormLayoutEstablishment } from "./config/forms.layo
 import { useFormLayout as useFormLayoutWorker } from "./config/forms.layout.worker";
 import { getPayloadBySubTopicID } from "./api/establishment.add.case.payload";
 import { useGetCaseDetailsQuery, useLazyGetCaseDetailsQuery } from "@/features/manage-hearings/api/myCasesApis";
+import { TokenClaims } from "@/features/login/components/AuthProvider";
 
 const Modal = lazy(() => import("@/shared/components/modal/Modal"));
 const ReusableTable = lazy(() =>
@@ -85,27 +86,51 @@ function HearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
   } = useForm<any>();
   // //console.log("isValid HearingTopicsDetails", isValid);
   const [getCookie] = useCookieState();
-  const userType = getCookie("userType");
   const [caseId] = useState(getCookie("caseId"));
   const [lastSaved, setLastSaved] = useState(false);
-  const { updateParams, searchParams } = useNavigationService();
+  const { updateParams, currentStep, currentTab } = useNavigationService();
   const [saveHearingTopics, { isLoading: addHearingLoading }] =
     useSaveHearingTopicsMutation();
     const { i18n } = useTranslation();
     const currentLanguage = i18n.language.toUpperCase();
     const userClaims = getCookie("userClaims");
     const [caseTopics, setCaseTopics] = useState<any[]>([]);
-  
+    const UserClaims: TokenClaims = getCookie("userClaims");
+  const userType = getCookie("userType");
+  const mainCategory2 = getCookie("mainCategory")?.value;
+  const subCategory2 = getCookie("subCategory")?.value;
+  const userID = getCookie("userClaims").UserID;
+  const fileNumber = getCookie("userClaims")?.File_Number;
+
+
+
 const [triggerCaseDetailsQuery, { data: caseDetailsData }] = useLazyGetCaseDetailsQuery();
 
 useEffect(() => {
   if (caseId) {
+    const userConfigs: any = {
+      Worker: {
+        UserType: userType,
+        IDNumber: userID,
+      },
+      Establishment: {
+        UserType: userType,
+        IDNumber: userID,
+        FileNumber: fileNumber,
+      },
+      "Legal representative": {
+        UserType: userType,
+        IDNumber: userID,
+        MainGovernment:mainCategory2 ||  "",
+        SubGovernment: subCategory2 ||  "",
+      },
+    } ;
+
     triggerCaseDetailsQuery({
+      ...userConfigs[userType],
       CaseID: caseId,
       AcceptedLanguage: currentLanguage,
       SourceSystem: "E-Services",
-      IDNumber: `${userClaims?.UserID}`,
-      UserType: userType
     });
   }
 }, [caseId, userClaims?.UserID, currentLanguage, triggerCaseDetailsQuery]);
@@ -118,16 +143,8 @@ useEffect(() => {
 }, [caseDetailsData]);
 
   
-  const currentStep: number = useMemo(
-    () => Number(searchParams.get("step")) || 0,
-    [searchParams]
-  );
-  const currentTab: number = useMemo(
-    () => Number(searchParams.get("tab")) || 0,
-    [searchParams]
-  );
-
-
+  console.log("currentStep", currentStep);
+  console.log("currentTab", currentTab);
 
   // Submit handler
   const onSubmit = (data: TopicFormValues) => {};
@@ -244,13 +261,15 @@ useEffect(() => {
   };
 
   const handleSend = () => {
-    saveTopic();
+   let fillingForm = saveTopic();
+   if(fillingForm){
     reset();
     setDate({ hijri: null, gregorian: null, dateObject: null });
     setShowLegalSection(false);
     setShowTopicData(false);
     setEditTopic(null);
     close();
+  }
   };
 
   const handleAddTopic = async () => {
@@ -444,20 +463,24 @@ useEffect(() => {
     }
   }, [currentStep, currentTab, updateParams]);
 
-  const saveTopic = () => {
+  const saveTopic = ():number => {
     const newTopic = getValues();
 
-    
-    // acknowledged :  true
-    // amount :  undefined
-    // amountOfCompensation :  undefined
-    // damagedType :  undefined
-    // damagedValue :  undefined
-    // loanAmount :  undefined
-    // mainCategory :  {value: 'EDO', label: 'دعوى اعتراض على قرار المنشأة الإداري'}
-    // request_date_hijri :  undefined
-    // subCategory: {value: 'EDO-1', label: 'النقل المكاني'}
-    // typeOfCustody: undefined
+    console.log(newTopic);
+
+    for (const [key, value] of Object.entries(newTopic)) {
+       if (
+            value === "" &&
+            key !== "housingSpecificationsInContract" &&
+            key !== "actualHousingSpecifications" &&
+            key !== "housingSpecificationInByLaws"
+          ) {
+        return 0;
+      }
+    }
+
+    console.log(newTopic);
+
     const topicToSave = {
       ...newTopic,
       MainTopicID: newTopic.mainCategory.value,
@@ -510,7 +533,9 @@ useEffect(() => {
       TravelingWay: newTopic.travelingWay,
       PenalityType: newTopic.typesOfPenalties,
     };
+    
     setCaseTopics((prev) => [...prev, topicToSave]);
+    return 1;
   };
 
   const isStep3 = showTopicData;
@@ -640,10 +665,16 @@ useEffect(() => {
     closePreview,
   } = useAttachments();
 
+  useEffect(() => {
+    if (mainCategory) {
+      setValue("subCategory", null);
+    }
+  }, [mainCategory, setValue]);
+
   return (
     <Suspense fallback={<TableLoader />}>
       <StepNavigation<FormData>
-        onSubmit={handleSubmit(onSubmit)} // ✅ both valid/invalid handlers
+        onSubmit={handleSubmit(onSubmit)} 
         isValid={isValid && caseTopics.length > 0}
         isFirstStep={currentStep === 0 && currentTab === 0}
         isLastStep={currentStep === 3 - 1}

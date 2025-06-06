@@ -10,9 +10,17 @@ export const caseApi = api.injectEndpoints({
       }),
     }),
     getIncompleteCase: builder.query<any, any>({
-      query: (params) => ({
+      query: ({ UserType, IDNumber, FileNumber, MainGovernment, SubGovernment, AcceptedLanguage, SourceSystem }) => ({
         url: `/WeddiCreateCaseServices/V1/GetIncompleteCase`,
-        params,
+        params: {
+          UserType,
+          IDNumber,
+          ...(FileNumber && { FileNumber }),
+          ...(MainGovernment && { MainGovernment }),
+          ...(SubGovernment && { SubGovernment }),
+          AcceptedLanguage,
+          SourceSystem
+        },
       }),
     }),
     saveUINotification: builder.query({
@@ -25,7 +33,7 @@ export const caseApi = api.injectEndpoints({
     getMySchedules: builder.query({
       query: (params) => ({
         url: `/WeddiServices/V1/MySchedules`,
-        params: params,
+        params,
       }),
     }),
  

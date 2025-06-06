@@ -12,6 +12,7 @@ import { AuctionIcon, LegalDocument02Icon } from "hugeicons-react";
 import { lazy, Suspense, useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 import HelpCenterSkeleton from "@/shared/components/loader/HelpCenterSkeleton";
 import HearingCardSkeleton from "@/shared/components/loader/HearingCardSkeleton";
 import CaseRecordsSkeleton from "@/shared/components/loader/CaseRecordsSkeleton";
@@ -19,6 +20,7 @@ import { useLazyGetIncompleteCaseQuery } from "../api/api";
 import { useCookieState } from "@/features/initiate-hearing/hooks/useCookieState";
 import IncompleteCaseModal from "./IncompleteCaseModal";
 import TableLoader from "@/shared/components/loader/TableLoader";
+import { useUser } from "@/shared/context/userTypeContext";
 
 const HearingCards = lazy(() => import("./HearingCards"));
 const HelpCenter = lazy(() => import("./HelpCenter"));
@@ -59,11 +61,28 @@ const HearingContent = ({
   const navigate = useNavigate();
   const [getCookie, setCookie] = useCookieState();
   const userClaims = getCookie("userClaims");
+  const userType = getCookie("userType");
+  const storeAllUserTypeData = getCookie("storeAllUserTypeData");
   const [showIncompleteModal, setShowIncompleteModal] = useState(false);
   const [incompleteCaseNumber, setIncompleteCaseNumber] = useState("");
   const [incompleteCaseMessage, setIncompleteCaseMessage] = useState("");
   const [isCheckingIncomplete, setIsCheckingIncomplete] = useState(false);
+  const {
+    isEstablishmentstate,
+    selected:selectedUser
+  } = useUser();
+  const [isUserClaimsReady, setIsUserClaimsReady] = useState(false);
 
+  // Wait for userClaims to be available
+  useEffect(() => {
+    if (userClaims?.UserID) {
+      setIsUserClaimsReady(true);
+    }
+  }, [userClaims]);
+
+useEffect(() => {
+  console.log(selectedUser);
+}, [selectedUser]);
   // Lazy query for incomplete case
   const [triggerIncompleteCase, { data: incompleteCase }] = useLazyGetIncompleteCaseQuery();
 
@@ -184,17 +203,43 @@ const HearingContent = ({
   ];
   const handleRedirect = (isHearing?: string, isHearingManage?: string) => {
     if (isHearing === "hearing") {
+      if (!isUserClaimsReady) {
+        toast.error(t("error.userClaimsNotAvailable"));
+        return;
+      }
       setIsCheckingIncomplete(true);
       // Check for incomplete case only when starting a new hearing
+      const govRepDetails = storeAllUserTypeData?.GovRepDetails?.[0];
+      const userConfigs: any = {
+        Worker: {
+          UserType: userType,
+          IDNumber: userClaims?.UserID,
+        },
+        Establishment: {
+          UserType: userType,
+          IDNumber: userClaims?.UserID,
+          FileNumber: userClaims?.File_Number,
+        },
+        "Legal representative": {
+          UserType: userType,
+          IDNumber: userClaims?.UserID,
+          MainGovernment: govRepDetails?.GOVTID || "",
+          SubGovernment: govRepDetails?.SubGOVTID || "",
+        },
+      };
+
       triggerIncompleteCase({
-        AcceptedLanguage: i18n.language.toUpperCase(),
+        ...userConfigs[userType],
         SourceSystem: "E-Services",
-        PlaintiffId: userClaims?.UserID || "",
+        AcceptedLanguage: i18n.language.toUpperCase(),
       }).then((result: { data?: { CaseInfo?: Array<{ CaseNumber: string; pyMessage?: string }> } }) => {
         setIsCheckingIncomplete(false);
         if (result.data?.CaseInfo?.length) {
           setShowIncompleteModal(true);
         } else {
+          // Initialize local storage before navigation
+          localStorage.setItem("step", "0");
+          localStorage.setItem("tab", "0");
           navigate("/initiate-hearing/case-creation", { replace: true });
         }
       });
@@ -229,7 +274,7 @@ const HearingContent = ({
         <div style={{ gridArea: "asid" }}>
           <div>
        <Suspense fallback={<CaseRecordsSkeleton />}>
-         {isEstablishment ? (
+         {isEstablishment || selectedUser === "legal_representative" ? (
            <Statistics />
          ) : (
            <CaseRecords
@@ -258,10 +303,9 @@ const HearingContent = ({
 
       {showIncompleteModal && (
         <IncompleteCaseModal
+          isOpen={showIncompleteModal}
           onClose={handleCloseModal}
-          onProceed={handleProceedToCase}
-          caseNumber={incompleteCaseNumber}
-          message={incompleteCaseMessage}
+          incompleteCaseData={incompleteCase}
         />
       )}
       {isCheckingIncomplete && (

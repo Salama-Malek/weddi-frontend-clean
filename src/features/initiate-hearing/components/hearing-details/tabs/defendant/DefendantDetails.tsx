@@ -23,6 +23,7 @@ import { useFormLayout } from "./defendant.forms.formLayout";
 import { FieldErrors } from "react-hook-form";
 import { useEstablishmentDefendantFormLayout } from "../../establishment-tabs/defendant/defendant.forms.formLayout";
 import { useLegelDefendantFormLayout } from "../../establishment-tabs/legal-representative/defendant/legdefendant.forms.formLayout";
+import Loader from "@/shared/components/loader";
 
 const DefendantDetailsContainer: React.FC = () => {
   const { t, i18n } = useTranslation("hearingdetails");
@@ -102,7 +103,7 @@ const DefendantDetailsContainer: React.FC = () => {
         AcceptedLanguage: lang,
         SourceSystem: "E-Services",
       }
-      : nationalIdNumber && defHijriDOB
+      : nationalIdNumber && defHijriDOB && nationalIdNumber.length === 10
         ? {
           IDNumber: nationalIdNumber,
           DateOfBirth: defHijriDOB,
@@ -193,7 +194,7 @@ const DefendantDetailsContainer: React.FC = () => {
     switch (getUserType) {
       case "legal representative":
         return memoizedLegleFormLayout;
-      case "establishment?step=0":
+      case "establishment":
         return memoizedEstablishmentFormLayout;
       case "establishment":
         //console.log("hereh2");
@@ -235,15 +236,22 @@ const DefendantDetailsContainer: React.FC = () => {
     );
   */
   return (
-    <DynamicForm
-      formLayout={getFormLayout(userType)}
-      register={register}
-      errors={errors}
-      setValue={setValue}
-      watch={watch}
-      control={control}
-      isLoading={isEstablishmentLoading || nicLoading}
-    />
+    <>
+      {nicLoading && <Loader />}
+      <div className={`relative ${nicLoading ? "pointer-events-none" : ""}`}>
+        <div className={nicLoading ? "blur-sm" : ""}>
+          <DynamicForm
+            formLayout={getFormLayout(userType)}
+            register={register}
+            errors={errors}
+            setValue={setValue}
+            watch={watch}
+            control={control}
+            isLoading={isEstablishmentLoading || nicLoading}
+          />
+        </div>
+      </div>
+    </>
   );
 };
 

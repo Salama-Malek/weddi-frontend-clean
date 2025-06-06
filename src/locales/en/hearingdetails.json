@@ -20,9 +20,9 @@
     "currentWorkingPlace": "Current Working Place",
     "residenceAddress": "Residence Address",
     "agentData": "Agent Data",
-    "plaintiffData": "Plaintiff’s Data",
+    "plaintiffData": "Plaintiff's Data",
     "plaintiffDataRequiredText": "(To proceed, please provide your National ID Number and Date of Birth to retrieve the required information.)",
-    "agentDataRequiredText": "(Please enter the agency number to inquire about its status and source.)"
+    "agentDataRequiredText": "(Please enter the agency number to inquire about its status and source.)"
   },
   "sendOtp":"Send OTP",
   "verufyOtp":"Please Verify OTP",
@@ -34,7 +34,6 @@
   "salaryTypeValidation":"Please select salary type.",
   "currentSalaryValidation":"Please enter current salary.",
   "firstWorkingDateValidation":"Please select first working date in Hijri.",
-  "contractDateValidation":"Please select contract date in Hijri.",
   "nationalIdValidation":"Please enter national id.",
   "defendantNameValidation":"Please enter name.",
   "dateOfBirthValidation":"Please select date of birth Hijri.",
@@ -58,15 +57,15 @@
   "firstWorkingDayGregorian": "First Working Day (Gregorian)",
   "plaintiff_type": "Plaintiff's Type",
   "title": "Hearing Details",
-  "tab1_title": "Plaintiff’s Details",
+  "tab1_title": "Plaintiff's Details",
   "tab3_title": "Work Details",
-  "tab1": "1. Claimant’s Details",
-  "tab2": "2. Defendant’s Details",
+  "tab1": "1. Claimant's Details",
+  "tab2": "2. Defendant's Details",
   "tab3": "3. Work Details",
   "formWrapper": {
     "description": "To complete the Case Details, please enter the information in all the tabs before proceeding to the next step."
   },
-  "claimantStatus": "Plaintiff’s Status",
+  "claimantStatus": "Plaintiff's Status",
   "representative": "Agent",
   "principal": "Principal",
   "idNumber": "ID Number",
@@ -92,7 +91,7 @@
   "add_btn": "Add Attachment",
   "attach_desc": "Please attach the document",
   "attach_title": "Attachments",
-  "defendantDetails": "Defendant’s Details",
+  "defendantDetails": "Defendant's Details",
   "typeOfDefendant": "Type of Defendant:",
   "governmentEntities": "Government Entities",
   "nonGovernmentalEntities": "Non-Governmental Entities",
@@ -119,7 +118,7 @@
   "contractExpiryDateHijri": "Contract Expiry Date (Hijri)",
   "contractExpiryDateGregorian": "Contract Expiry Date (Gregorian)",
   "dateoflastworkingdayHijri": "Date of last working day (Hijri)",
-  "dateoflastworkingdayGregorian": "Date of last working day (Gregorian)",
+  "dateofLastworkingdayGregorian": "Date of last working day (Gregorian)",
   "dateofFirstworkingdayHijri": "Date of First working day (Hijri)",
   "dateofFirstworkingdayGregorian": "Date of First working day (Gregorian)",
   "stillEmployed": "Still Employed",
@@ -134,7 +133,7 @@
   "attachFile": "Drag and drop files here to upload",
   "maxSize": "All attachments must have one of the following extensions and not exceed 5 MB in size (PDF, JPG, JPEG, TIF, PNG)",
   "add_attachment": "Add an Attachment",
-  "tab2_title": "Defendant’s Details",
+  "tab2_title": "Defendant's Details",
   "type_of_defendant": "Type of Defendant:",
   "main_category_of_the_government_entity": "Main Category of the Government Entity",
   "subcategory_of_the_government_entity": "Subcategory of the Government Entity",
@@ -167,13 +166,13 @@
     "mobileNumber": "Mobile Number",
     "dobHijri": "Date of Birth (Hijri)",
     "dobGrog": "Date of Birth (Gregorian)",
-    "plaintiffCapacity": "Plaintiff’s Capacity"
+    "plaintiffCapacity": "Plaintiff's Capacity"
   },
 
   "agent": "Agent",
   "agent_desc": "Representative of the plaintiff",
   "principle_description": "plaintiff",
-  "agentTab1_title": "Plaintiff’s Information",
+  "agentTab1_title": "Plaintiff's Information",
   "certified_title": "Certified by",
   "localAgency": "Local Agency",
   "externalAgency": "External Agency",
@@ -183,5 +182,29 @@
   "sourceofthePowerofAttorney": "Source of the Power of Attorney ",
 
   "emailAddress": " Email Address ",
-  "plaintifNativeLanguage": "Plaintiff's Native Language  "
+  "plaintifNativeLanguage": "Plaintiff's Native Language  ",
+  "error": {
+    "invalidAgencyNumber": "Invalid agency number",
+    "agencyNumberNotBelong": "ID number not authorized in agency"
+  },
+
+  "dateValidationDesc": "Please enter a valid date in YYYYMMDD format",
+
+
+
+  "workDateValidation": {
+    "endBeforeStart": "Last working date must be after the first working date",
+    "startDateFuture": "Work start date cannot be in future",
+    "endAfterContract": "Work end date cannot be after contract end date",
+    "startAfterContract": "Work start date cannot be after contract end date",
+    "endDateFuture": "Work end date cannot be in future"
+  },
+  "contractDateValidation": {
+    "startDateFuture": "Start contract date cannot be in future",
+    "endDatePast": "End contract date cannot be in past",
+    "startAfterEnd": "Start date must be before end date",
+    "endBeforeStart": "End date must be after start date",
+    "pastEndDateOkIfAfterStart": "End date can be in the past but must be after the contract start date"
+  }
+
 }

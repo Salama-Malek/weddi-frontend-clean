@@ -36,20 +36,18 @@ export const DatePickerField: React.FC<DatePickerFieldProps> = ({
       return;
     }
 
-    const formatted = date.format("YYYYMMDD");
     let hijri = "";
     let gregorianStr = "";
 
+    // Inside handleDateChange
     if (calendarType === "hijri") {
-      hijri = formatted;
+      hijri = date.format("YYYY/MM/DD"); // forces 4-digit Hijri year
       gregorianStr = date
         .convert(gregorian, gregorian_locale)
-        .format("YYYYMMDD");
+        .format("YYYY/MM/DD");
     } else {
-      gregorianStr = formatted;
-      hijri = date
-        .convert(arabic, arabic_locale)
-        .format("YYYYMMDD");
+      gregorianStr = date.format("YYYY/MM/DD");
+      hijri = date.convert(arabic, arabic_locale).format("YYYY/MM/DD");
     }
 
     onDateChange?.({
@@ -71,15 +69,29 @@ export const DatePickerField: React.FC<DatePickerFieldProps> = ({
           id={uniqueId}
           calendar={calendarType === "hijri" ? arabic : gregorian}
           locale={calendarType === "hijri" ? arabic_locale : gregorian_locale}
-          format="YYYYMMDD"
-          placeholder="YYYYMMDD"
-          value={value}
+          // format="YYYY/MM/DD"
+          format={calendarType === "hijri" ? "YYYY/MM/DD" : "YYYY/MM/DD"}
+          placeholder="YYYY/MM/DD"
+          value={
+            value && /^\d{4}\/\d{2}\/\d{2}$/.test(value.toString())
+              ? new DateObject({
+                  date: value,
+                  calendar: calendarType === "hijri" ? arabic : gregorian,
+                  locale:
+                    calendarType === "hijri" ? arabic_locale : gregorian_locale,
+                  format:
+                    calendarType === "hijri" ? "YYYY/MM/DD" : "YYYY/MM/DD",
+                })
+              : undefined
+          }
           onChange={handleDateChange}
           inputClass={`
             w-full p-2 border rounded text-sm focus:ring-1 focus:outline-none pr-8
-            ${invalidFeedback
-              ? "border-red-500 focus:ring-red-500"
-              : "border-gray-400 focus:ring-blue-500"}
+            ${
+              invalidFeedback
+                ? "border-red-500 focus:ring-red-500"
+                : "border-gray-400 focus:ring-blue-500"
+            }
           `}
         />
         <div className="absolute right-2 top-1/2 transform -translate-y-1/2 pointer-events-none">

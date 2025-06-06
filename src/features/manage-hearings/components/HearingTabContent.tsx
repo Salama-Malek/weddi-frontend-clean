@@ -65,8 +65,8 @@ const HearingTabContent = ({ role, caseType }: HearingTabContentProps) => {
     "Legal representative": {
       UserType: userType,
       IDNumber: userID,
-      MainGovernment: GOVTID || "",
-      SubGovernment: SubGOVTID || "",
+      MainGovernment:mainCategory || GOVTID || "",
+      SubGovernment: subCategory || SubGOVTID || "",
     },
   } as const;
 

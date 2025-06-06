@@ -1,5 +1,6 @@
-import { UseFormSetValue, UseFormWatch } from "react-hook-form";
+import { UseFormSetValue, UseFormWatch, Control, UseFormTrigger } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import DatePickerField from "@/shared/components/calanders/NewDatePicker";  
 
 import {
   Option,
@@ -8,9 +9,7 @@ import {
 } from "@/shared/components/form/form.types";
 import React, { useEffect } from "react";
 import { options } from "@/features/initiate-hearing/config/Options";
-import { formatDateGMT, formatHijriDate } from "@/shared/lib/helpers";
 import { useCookieState } from "@/features/initiate-hearing/hooks/useCookieState";
-import { placeholderCSS } from "react-select/dist/declarations/src/components/Placeholder";
 import {
   useGetLaborOfficeLookupDataQuery,
   useGetWorkerCityLookupDataQuery,
@@ -24,69 +23,46 @@ import {
 
 export const legRepVsWorkerUseFormLayout = (
   setValue: UseFormSetValue<FormData>,
-  watch: UseFormWatch<FormData>
+  control: Control<FormData>,
+  watch: UseFormWatch<FormData>,
+  // trigger: UseFormTrigger<FormData>
 ): SectionLayout[] => {
   const isStillEmployed: any = watch("isStillEmployed" as any);
   const { t, i18n } = useTranslation("hearingdetails");
   const selectedWorkerRegion = watch("region");
   const selectedWorkerCity = watch("city");
-  // const [getCookie] = useCookieState({ caseId: "" });
-  // const userType = getCookie("userType") || "";
-  // const defendantStatus = getCookie("defendantStatus") || "";
   const currentLanguage = i18n.language.toUpperCase();
-
-  //#region Calling Apis
 
   const { data: salaryTypeData } = useGetSalaryTypeLookupQuery({
     AcceptedLanguage: i18n.language.toUpperCase(),
   });
 
-
-const [getCookie] = useCookieState({ caseId: "" });
-const userType = getCookie("userType") || "";
-// const rawUserType = getCookie("userType") || "";
-// const userType = decodeURIComponent(rawUserType).toLowerCase();
-
-const defendantStatus = getCookie("defendantStatus") || "";
+  const [getCookie] = useCookieState({ caseId: "" });
+  const userType = getCookie("userType") || "";
+  const defendantStatus = getCookie("defendantStatus") || "";
   const legalRepType = getCookie("legalRepType");
 
-const [
-  triggerContractType,
-  { data: contractTypeData, isFetching: isContractTypeLoading }
-] = useLazyGetContractTypeLookupQuery();
+  const [
+    triggerContractType,
+    { data: contractTypeData, isFetching: isContractTypeLoading },
+  ] = useLazyGetContractTypeLookupQuery();
 
-// 2. Fire it once our cookies are decoded
-useEffect(() => {
-  if (userType || legalRepType || defendantStatus) {
-    triggerContractType({
-      userType,
-      legalRepType,
-      defendantStatus,
-      AcceptedLanguage: currentLanguage,
-    });
-  }
-}, [
-  userType,
-  legalRepType,
-  defendantStatus,
-  currentLanguage,
-  triggerContractType,
-]);
-
-
-  // —————— Fixed “Gov’t / Legal rep” call ——————
-  // const { data: contractTypeData, refetch } = useGetContractTypeLookupQuery(
-  //   {
-  //     AcceptedLanguage: i18n.language.toUpperCase(),
-  //     SourceSystem: "E-Services",
-  //     userType: "Legal representative",
-  //     defendantStatus: "Government"
-  //   },
-  //   {
-  //     // always run
-  //     skip: false
-  //   }
-  // );
+  useEffect(() => {
+    if (userType || legalRepType || defendantStatus) {
+      triggerContractType({
+        userType,
+        legalRepType,
+        defendantStatus,
+        AcceptedLanguage: currentLanguage,
+      });
+    }
+  }, [
+    userType,
+    legalRepType,
+    defendantStatus,
+    currentLanguage,
+    triggerContractType,
+  ]);
 
   const { data: regionData, isFetching: isRegionLoading } =
     useGetWorkerRegionLookupDataQuery({
@@ -107,7 +83,6 @@ useEffect(() => {
       { skip: !selectedWorkerRegion }
     );
 
-  //<=============================API CALLS===================================>
   const { data: laborOfficeData, isFetching: isLaborLoading } =
     useGetLaborOfficeLookupDataQuery(
       {
@@ -118,62 +93,56 @@ useEffect(() => {
       { skip: !selectedWorkerCity }
     );
 
-  //#endregion Calling Apis
-
   const TypeOfWageOptions = React.useMemo(() => {
-    return (
-      (salaryTypeData &&
-        salaryTypeData?.DataElements?.map((item: any) => ({
-          value: item.ElementKey,
-          label: item.ElementValue,
-        }))) ||
-      options
-    );
+    if (!salaryTypeData?.DataElements) return options;
+    return salaryTypeData.DataElements.map((item: any) => ({
+      value: item.ElementKey,
+      label: item.ElementValue,
+    }));
   }, [salaryTypeData]);
 
   const ContractTypeOptions = React.useMemo(() => {
-    return (
-      (contractTypeData &&
-        contractTypeData?.DataElements?.map((item: any) => ({
-          value: item.ElementKey,
-          label: item.ElementValue,
-        }))) ||
-      options
-    );
+    if (!contractTypeData?.DataElements) return options;
+    return contractTypeData.DataElements.map((item: any) => ({
+      value: item.ElementKey,
+      label: item.ElementValue,
+    }));
   }, [contractTypeData]);
 
-  const LaborOfficeTypeOptions = React.useMemo(() => {
-    return (
-      (laborOfficeData &&
-        laborOfficeData?.DataElements?.map((item: any) => ({
-          value: item.ElementKey,
-          label: item.ElementValue,
-        }))) ||
-      []
-    );
-  }, [laborOfficeData]);
-
   const RegionOptions = React.useMemo(() => {
-    return (
-      (regionData &&
-        regionData?.DataElements?.map((item: any) => ({
-          value: item.ElementKey,
-          label: item.ElementValue,
-        }))) ||
-      []
-    );
+    if (!regionData?.DataElements) return [];
+    return regionData.DataElements.map((item: any) => ({
+      value: item.ElementKey,
+      label: item.ElementValue,
+    }));
   }, [regionData]);
 
   const CityOptions = React.useMemo(() => {
-    return (
-      (cityData &&
-        cityData?.DataElements?.map((item: any) => ({
-          value: item.ElementKey,
-          label: item.ElementValue,
-        }))) ||
-      []
-    );
+    if (!cityData?.DataElements) return [];
+    return cityData.DataElements.map((item: any) => ({
+      value: item.ElementKey,
+      label: item.ElementValue,
+    }));
   }, [cityData]);
+
+  // Add watchers for dependent fields
+  const contractEndDate = watch("contractExpiryDateHijri");
+  const workStartDate = watch("dateofFirstworkingdayHijri");
+  const workEndDate = watch("dateoflastworkingdayHijri");
+
+  // // Trigger validation when contract end date changes
+  // useEffect(() => {
+  //   if (workEndDate) {
+  //     trigger("dateoflastworkingdayHijri");
+  //   }
+  // }, [contractEndDate, trigger]);
+
+  // // Trigger validation when work start date changes
+  // useEffect(() => {
+  //   if (workEndDate) {
+  //     trigger("dateoflastworkingdayHijri");
+  //   }
+  // }, [workStartDate, trigger]);
 
   return [
     {
@@ -184,7 +153,6 @@ useEffect(() => {
           name: "typeOfWage",
           label: t("typeOfWage"),
           options: TypeOfWageOptions,
-          //@ts-ignore
           onChange: (value: Option) => {
             setValue("typeOfWage", value);
           },
@@ -199,19 +167,14 @@ useEffect(() => {
           min: 0,
           validation: { required: t("currentSalaryValidation") },
         },
-
         {
           type: "autocomplete",
           name: "contractType",
           label: t("contractType"),
           options: ContractTypeOptions,
-          //@ts-ignore
           onChange: (value: Option) => setValue("contractType", value),
-          validation: {
-            required: t("contractTypeValidation"),
-          },
+          validation: { required: t("contractTypeValidation") },
         },
-
         {
           type: "input",
           name: "contractNumber",
@@ -220,56 +183,42 @@ useEffect(() => {
           placeholder: "123457543",
           notRequired: true,
           validation: {
-            maxLength: {
-              value: 10,
-              message: t("max10Validation"),
-            },
-            pattern: {
-              value: /^\d{0,10}$/,
-              message: t("max10ValidationDesc"),
-            },
+            maxLength: { value: 10, message: t("max10Validation") },
+            pattern: { value: /^\d{0,10}$/, message: t("max10ValidationDesc") },
           },
         },
-        // {
-        //   type: "input",
-        //   name: "contractNumber",
-        //   label: t("contractNumber"),
-        //   inputType: "number",
-        //   placeholder: "123457543",
-        //   validation: {
-        //     // required: t("contractNumberValidation"),
-        //     maxLength: {
-        //       value: 10,
-        //       message: t("max10Validation"),
-        //     },
-        //     pattern: {
-        //       value: /^\d{0,10}$/,
-        //       message: t("max10ValidationDesc"),
-        //     },
-        //   },
-
-        // },
-
         {
-          name: "contractDateHijri",
-          type: "dateOfBirth",
-          hijriLabel: t("contractDateHijri"),
-          gregorianLabel: t("contractDateGregorian"),
-          hijriFieldName: "contractDateHijri",
-          gregorianFieldName: "contractDateGregorian",
-          validation: { required: t("contractDateValidation") },
+          type: "custom",
+          name: "contractStartDate",
+          component: (
+            <DatePickerField 
+              control={control}
+              setValue={setValue}
+              hijriFieldName="contractDateHijri"
+              gregorianFieldName="contractDateGregorian"
+              hijriLabel={t("contractDateHijri")}
+              gregorianLabel={t("contractDateGregorian")}
+              type="contract-start"
+              relatedEndDate={watch("contractExpiryDateHijri") as string}
+            />
+          ),
         },
-
         {
-          name: "contractExpiryDateHijri",
-          type: "dateOfBirth",
-          hijriLabel: t("contractExpiryDateHijri"),
-          gregorianLabel: t("contractExpiryDateGregorian"),
-          hijriFieldName: "contractExpiryDateHijri",
-          gregorianFieldName: "contractExpiryDateGregorian",
-          validation: { required: "Contract Expiry Date is required" },
+          type: "custom",
+          name: "contractEndDate",
+          component: (
+            <DatePickerField 
+              control={control}
+              setValue={setValue}
+              hijriFieldName="contractExpiryDateHijri"
+              gregorianFieldName="contractExpiryDateGregorian"
+              hijriLabel={t("contractExpiryDateHijri")}
+              gregorianLabel={t("contractExpiryDateGregorian")}
+              type="contract-end"
+              relatedStartDate={watch("contractDateHijri") as string}
+            />
+          ),
         },
-
         {
           type: "checkbox",
           name: "isStillEmployed",
@@ -277,38 +226,45 @@ useEffect(() => {
           checked: isStillEmployed,
           onChange: (checked) => setValue("isStillEmployed" as any, checked),
         },
-
         {
-          name: "dateofFirstworkingdayHijri",
-          type: "dateOfBirth",
-          hijriLabel: t("dateofFirstworkingdayHijri"),
-          gregorianLabel: t("dateofFirstworkingdayGregorian"),
-          hijriFieldName: "dateofFirstworkingdayHijri",
-          gregorianFieldName: "dateOfFirstWorkingDayGregorian",
-          validation: {
-            required: t("firstWorkingDateValidation"),
-          },
+          type: "custom",
+          name: "firstWorkingDate",
+          component: (
+            <DatePickerField 
+              control={control}
+              setValue={setValue}
+              hijriFieldName="dateofFirstworkingdayHijri"
+              gregorianFieldName="dateOfFirstWorkingDayGregorian"
+              hijriLabel={t("dateofFirstworkingdayHijri")}
+              gregorianLabel={t("dateofFirstworkingdayGregorian")}
+              type="work-start"
+              relatedEndDate={watch("contractExpiryDateHijri")}
+            />
+          ),
         },
-
-        ,
         ...(!isStillEmployed
           ? [
               {
-                name: "dateoflastworkingdayHijri",
-                type: "dateOfBirth",
-                hijriLabel: t("dateoflastworkingdayHijri"),
-                gregorianLabel: t("dateofLastworkingdayGregorian"),
-                hijriFieldName: "dateoflastworkingdayHijri",
-                gregorianFieldName: "dateofLastworkingdayGregorian",
-                validation: {
-                  required: t("lastWorkingDateValidation"),
-                },
+                type: "custom",
+                name: "lastWorkingDate",
+                component: (
+                  <DatePickerField 
+                    control={control}
+                    setValue={setValue}
+                    hijriFieldName="dateoflastworkingdayHijri"
+                    gregorianFieldName="dateofLastworkingdayGregorian"
+                    hijriLabel={t("dateoflastworkingdayHijri")}
+                    gregorianLabel={t("dateofLastworkingdayGregorian")}
+                    type="work-end"
+                    relatedStartDate={watch("dateofFirstworkingdayHijri")}
+                    relatedEndDate={watch("contractExpiryDateHijri")}
+                  />
+                ),
               },
             ]
           : []),
       ],
     },
-
     {
       title: t("workLocationDetails"),
       children: [
@@ -321,7 +277,6 @@ useEffect(() => {
           onChange: (value: Option) => setValue("region", value),
           validation: { required: t("regionValidation") },
         },
-
         {
           type: "autocomplete",
           name: "city",

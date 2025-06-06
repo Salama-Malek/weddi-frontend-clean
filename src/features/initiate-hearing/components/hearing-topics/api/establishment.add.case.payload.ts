@@ -20,18 +20,18 @@ export function getPayloadBySubTopicID(
       switch (topic?.SubTopicID) {
 
         /***************************Establishment Topics***************************/
-        case "CR-2":
+        case "CR-1": //done
           topicPayload = {
             ...basePayload,
-            CompensationAmount: topic?.CompensationAmount ?? "0",
+            Amount: topic?.amount ?? "0",
             CompensationReason: topic?.CompensationReason ?? "",
           };
           break;
 
-        case "LCUTE-1":
+        case "LCUTE-1": //done
           topicPayload = {
             ...basePayload,
-            LoanAmount: topic?.LoanAmount ?? "0",
+            AmountOfCompensation: topic?.amountOfCompensation ?? "0",
             ItemsToHandover: topic?.ItemsToHandover ?? [],
           };
           break;
@@ -43,15 +43,15 @@ export function getPayloadBySubTopicID(
           };
           break;
 
-        case "DPVR-1":
+        case "DPVR-1": //done
           topicPayload = {
             ...basePayload,
-            PropertyDescription: topic?.PropertyDescription ?? "",
-            EstimatedValue: topic?.EstimatedValue ?? "0",
+            SpoilerType: topic?.damagedType ?? "",
+            DamagedValue: topic?.damagedValue ?? "0",
           };
           break;
 
-        case "AWRW-1":
+        case "AWRW-1": //done
           topicPayload = {
             ...basePayload,
             AllowanceAmount: topic?.AllowanceAmount ?? "0",
@@ -59,7 +59,7 @@ export function getPayloadBySubTopicID(
           }
           break;
         
-        case "AWRW-2":
+        case "AWRW-2": //done
           topicPayload = {
             ...basePayload,
             AllowanceAmount: topic?.AllowanceAmount ?? "0",
@@ -70,8 +70,29 @@ export function getPayloadBySubTopicID(
         case "RLRAHI-1":
           topicPayload = {
             ...basePayload,
-            HijriReEntryDate: topic?.HijriReEntryDate ?? "",
-            ReEntryReason: topic?.ReEntryReason ?? "",
+            TypeOfCustody: topic?.typeOfCustody ?? "",
+            SpoilerType: topic?.typeOfRequest?.label ?? "",
+            Date_New: topic?.request_date_hijri ?? "",
+            RequestDate_New: topic?.ReEntryReason ?? "",
+          };
+          break;
+
+        case "RLRAHI-2":
+          topicPayload = {
+            ...basePayload,
+            TypeOfCustody: topic?.typeOfCustody ?? "",
+            SpoilerType: topic?.typeOfRequest?.label ?? "",
+            Date_New: topic?.HijriReEntryDate ?? "",
+            RequestDate_New: topic?.ReEntryReason ?? "",
+          };
+          break;
+
+        case "RUF-1":
+          topicPayload = {
+            ...basePayload,
+            RefundType: topic?.RefundType ?? "",
+            SpoilerType: topic?.sploilerType ?? "",
+            Amount: topic?.amount ?? "",
           };
           break;
 

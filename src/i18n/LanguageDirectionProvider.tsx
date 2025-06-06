@@ -1,4 +1,3 @@
-import Loader from "@/shared/components/loader";
 import { createContext, useContext, useState, useLayoutEffect, ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -25,12 +24,6 @@ export const LanguageDirectionProvider = ({ children }: { children: ReactNode })
       loading: false, 
     });
   }, [i18n.language]);
-
-  if (direction.loading) {
-    return (
-      <Loader/>
-    );
-  }
 
   return (
     <LanguageDirectionContext.Provider value={direction}>

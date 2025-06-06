@@ -74,6 +74,51 @@ const sectionOrder: SectionOrder = {
     fields: ["OfficeName", "Defendant_JobLocation", "DefendantJobCity"],
   },
 };
+// Legel Rep Review As Defendent
+const legelRepSectionOrderAsDef: SectionOrder = {
+  plaintiff: {
+    title: "plaintiff_details",
+    fields: [
+      "PlaintiffId",
+      "PlaintiffName",
+      "Plaintiff_PhoneNumber",
+      "Plaintiff_MobileNumber",
+      "PlaintiffHijiriDOB",
+      "Plaintiff_ApplicantBirthDate",
+      "Plaintiff_Nationality",
+      "Plaintiff_FirstLanguage",
+      "Plaintiff_Occupation",
+      "Plaintiff_Gender",
+      "Plaintiff_Region",
+      "Plaintiff_City"],
+  },
+  
+  defendant: {
+    title: "defendant_details",
+    fields: [
+      "Defendant_MainGovtDefend",
+      "DefendantSubGovtDefend"
+    ],
+  },
+  work: {
+    title: "work_details",
+    fields: [
+      "Plaintiff_SalaryType",
+      "Plaintiff_Salary",
+      "Plaintiff_ContractType",
+      "Plaintiff_ContractNumber",
+      "Plaintiff_ContractStartDate",
+      "Plaintiff_ContractEndDate",
+      "Plaintiff_StillWorking",
+      "Plaintiff_JobStartDate",
+      "Plaintiff_JobEndDate",
+    ],
+  },
+  location: {
+    title: "work_location_details",
+    fields: ["OfficeName", "Plaintiff_JobLocation", "PlaintiffJobCity"],
+  },
+};
 // Establishments Review
 const sectionForEstablishmentOrder: SectionOrder = {
   plaintiff: {
@@ -124,14 +169,201 @@ const sectionForEstablishmentOrder: SectionOrder = {
     fields: ["OfficeName", "Defendant_JobLocation", "DefendantJobCity"],
   },
 };
+
+const EstablishmentSectionOrderAsDef: SectionOrder = {
+  plaintiff: {
+    title: "plaintiff_details",
+    fields: [
+     "PlaintiffId",
+      "PlaintiffName",
+      "Plaintiff_PhoneNumber",
+      "Plaintiff_MobileNumber",
+      "PlaintiffHijiriDOB",
+      "Plaintiff_ApplicantBirthDate",
+      "Plaintiff_Nationality",
+      "Plaintiff_FirstLanguage",
+      "Plaintiff_Occupation",
+      "Plaintiff_Gender",
+      "Plaintiff_Region",
+      "Plaintiff_City"],
+  },
+  
+  defendant: {
+    title: "defendant_details",
+    fields: [
+      "DefendantEstFileNumber",
+      "Defendant_CRNumber",
+      "DefendantName",
+      "EstablishmentFullName",
+      "Defendant_Region",
+      "Defendant_City",
+    ],
+  },
+  work: {
+    title: "work_details",
+    fields: [
+      "Plaintiff_SalaryType",
+      "Plaintiff_Salary",
+      "Plaintiff_ContractType",
+      "Plaintiff_ContractNumber",
+      "Plaintiff_ContractStartDate",
+      "Plaintiff_ContractEndDate",
+      "Plaintiff_StillWorking",
+      "Plaintiff_JobStartDate",
+      "Plaintiff_JobEndDate",
+    ],
+  },
+  location: {
+    title: "work_location_details",
+    fields: ["OfficeName", "Plaintiff_JobLocation", "PlaintiffJobCity"],
+  },
+};
+
+const workerSectionOrderAgainistGover: SectionOrder={
+   plaintiff: {
+    title: "plaintiff_details",
+    fields: [
+     "PlaintiffId",
+      "PlaintiffName",
+      "Plaintiff_PhoneNumber",
+      "Plaintiff_MobileNumber",
+      "PlaintiffHijiriDOB",
+      "Plaintiff_ApplicantBirthDate",
+      "Plaintiff_Nationality",
+      "Plaintiff_FirstLanguage",
+      "Plaintiff_Occupation",
+      "Plaintiff_Gender",
+      "Plaintiff_Region",
+      "Plaintiff_City"],
+  },
+  defendant: {
+    title: "defendant_details",
+     fields: [
+      "DefendantName",
+      "Defendant_ApplicantBirthDate",
+      "DefendantHijiriDOB",
+      "Defendant_PhoneNumber",
+      "Defendant_EmailAddress",
+      "Defendant_Occupation",
+      "Defendant_Region",
+      "Defendant_City",
+      "Defendant_Gender",
+      "Defendant_Nationality",
+    ],
+  },
+  work: {
+    title: "work_details",
+    fields: [
+      "Plaintiff_SalaryType",
+      "Plaintiff_Salary",
+      "Plaintiff_ContractType",
+      "Plaintiff_ContractNumber",
+      "Plaintiff_ContractStartDate",
+      "Plaintiff_ContractEndDate",
+      "Plaintiff_StillWorking",
+      "Plaintiff_JobStartDate",
+      "Plaintiff_JobEndDate",
+    ],
+  },
+  location: {
+    title: "work_location_details",
+    fields: ["OfficeName", "Plaintiff_JobLocation", "PlaintiffJobCity"],
+  },
+
+}
+const workerSectionOrderAgainistEsta: SectionOrder={
+   plaintiff: {
+    title: "plaintiff_details",
+    fields: [
+     "PlaintiffId",
+      "PlaintiffName",
+      "Plaintiff_PhoneNumber",
+      "Plaintiff_MobileNumber",
+      "PlaintiffHijiriDOB",
+      "Plaintiff_ApplicantBirthDate",
+      "Plaintiff_Nationality",
+      "Plaintiff_FirstLanguage",
+      "Plaintiff_Occupation",
+      "Plaintiff_Gender",
+      "Plaintiff_Region",
+      "Plaintiff_City"],
+  },
+    defendant: {
+    title: "defendant_details",
+    fields: [
+      "DefendantEstFileNumber",
+      "Defendant_CRNumber",
+      "DefendantName",
+      "EstablishmentFullName",
+      "Defendant_Region",
+      "Defendant_City",
+    ],
+  },
+  work: {
+    title: "work_details",
+    fields: [
+      "Plaintiff_SalaryType",
+      "Plaintiff_Salary",
+      "Plaintiff_ContractType",
+      "Plaintiff_ContractNumber",
+      "Plaintiff_ContractStartDate",
+      "Plaintiff_ContractEndDate",
+      "Plaintiff_StillWorking",
+      "Plaintiff_JobStartDate",
+      "Plaintiff_JobEndDate",
+    ],
+  },
+  location: {
+    title: "work_location_details",
+    fields: ["OfficeName", "Plaintiff_JobLocation", "PlaintiffJobCity"],
+  },
+
+}
 // Hassan Add This  for legel rep
 const filterAndOrderData = (data: any, userType?: string) => {
+  // console.log("this is case data ",data);
+/*
+hassan is thinking here 
+
+"ApplicantType": "Establishment" . "Worker",
+"PlaintiffType": "Self(Worker)" , "Agent",
+"RepresentativeType": "Legal representative",
+"DefendantType": "Establishment" . "Government"
+
+
+for the legel rep 
+if case as plantif -> "RepresentativeType": "Legal representative",
+if case as defend -> "DefendantType": "Government"
+
+
+*/
+// console.log(data);
+// console.log("typeeeeeeee",userType);
+  
   let selected_Section: SectionOrder = {};
   if (userType?.toLowerCase() === "legal representative") {
-    selected_Section = sectionOrder;
+    if(data["DefendantType_Code"]==="Government"){
+      selected_Section = legelRepSectionOrderAsDef;
+    }else{
+      selected_Section = sectionOrder;
+    }
   }
   if (userType?.toLowerCase() === "establishment") {
-    selected_Section = sectionForEstablishmentOrder;
+    if(data["DefendantType_Code"]==="Establishment"){
+      selected_Section = EstablishmentSectionOrderAsDef;
+    }else{
+      selected_Section = sectionForEstablishmentOrder;
+    }
+  }
+  
+  if (userType?.toLowerCase() === "worker") {
+    // console.log(data['DefendantType']);
+    
+    if(data['DefendantType'] === "Government"){
+      selected_Section = workerSectionOrderAgainistGover;
+    } else {
+      selected_Section = workerSectionOrderAgainistEsta;
+    }
   }
 
   const orderedSections = Object.entries(selected_Section).map(
@@ -139,8 +371,8 @@ const filterAndOrderData = (data: any, userType?: string) => {
       const filteredFields = section?.fields
         .map((fieldName) => {
           let value = data[fieldName];
-          if (fieldName === "Defendant_StillWorking") {
-            value = data[fieldName] ? "Yes" : "No";
+          if (fieldName === "Defendant_StillWorking" ||fieldName === "Plaintiff_StillWorking" ) {
+            value = (data[fieldName] ==="Yes" || data[fieldName] ==="SW1" ) ? "Yes" : "No";
           }
           // Only include fields that have values
           if (value !== null && value !== undefined && value !== "") {
@@ -160,9 +392,13 @@ const filterAndOrderData = (data: any, userType?: string) => {
   return orderedSections;
 };
 
+
+
 const DataDetails: React.FC<DataDetailsProps> = ({ hearing }) => {
   const { t } = useTranslation("manageHearingDetails");
   const caseData = hearing || {};
+  // console.log(hearing);
+  
 
   // hassan add this
   const [getCookie] = useCookieState();
@@ -255,6 +491,7 @@ const DataDetails: React.FC<DataDetailsProps> = ({ hearing }) => {
       ...mergedRepFields,
     ].map(([key]) => key)
   );
+  // console.log(defendantFields);
 
   const additionalFields = entries.filter(([key]) => !usedKeys.has(key));
 

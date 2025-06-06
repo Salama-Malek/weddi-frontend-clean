@@ -11,14 +11,57 @@ import { useLazySaveUINotificationQuery } from "@/features/dashboard/api/api";
 import { useCookieState } from "@/features/initiate-hearing/hooks/useCookieState";
 import TableLoader from "../../loader/TableLoader";
 import { toHijri_YYYYMMDD } from "@/shared/lib/helpers";
+import MyDropdown from "@/providers";
+import { lazy } from "react";
+import Modal from "@/shared/components/modal/Modal";
+import { useUser } from "@/shared/context/userTypeContext";
+
+const LoginAccountSelect = lazy(() => import("@/features/login/components/LoginAccountSelect"));
 
 const Header = () => {
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
   const currentLanguage = i18n.language;
-  const [getCookie, , removeCookie, removeAll] = useCookieState();
+  const [getCookie, setCookie, removeCookie, removeAll] = useCookieState();
+  // const [showAccountPopup, setShowAccountPopup] = useState(false);
+ const [selected, setSelected] = useState<string | null>(null);
+  const [selectedMainCategory, setSelectedMainCategory] = useState<any | null>(getCookie("mainCategory"));
+  const [selectedSubCategory, setSelectedSubCategory] = useState<any | null>(getCookie("subCategory"));
 
   const [currentDateTime, setCurrentDateTime] = useState(new Date());
+  const {
+    isLegalRep,
+    isEstablishment,
+    isLegalRepstate,
+    isEstablishmentstate,
+    openModule,
+    setOpenModule,
+    setLegelRepState,
+    setEstablishmentState,
+    selected:selectedUser
+  } = useUser();
+
+  useEffect(() => {
+    console.log("openModule", {
+      isLegalRep,
+      isEstablishment,
+      isLegalRepstate,
+      isEstablishmentstate,
+      openModule,
+      setOpenModule,
+      setLegelRepState,
+      setEstablishmentState,
+      selectedUser
+    });
+
+  }, [isLegalRep,
+    isEstablishment,
+    isLegalRepstate,
+    isEstablishmentstate,
+    openModule, selectedUser]);
+
+
+
   useEffect(() => {
     const id = setInterval(() => setCurrentDateTime(new Date()), 60_000);
     return () => clearInterval(id);
@@ -55,6 +98,8 @@ const Header = () => {
       skipPollingIfUnfocused: true,
     });
   const userClaims = getCookie("userClaims");
+  const userType = getCookie("userType");
+
   useEffect(() => {
     const payload = {
       IDNumber: userClaims?.UserID || "",
@@ -63,37 +108,68 @@ const Header = () => {
       CaseID: getCookie("caseId") ? getCookie("caseId") : "",
       UserID: "satya",
     };
-    triggerSave(payload); // Will only trigger when called
+    triggerSave(payload);
   }, [currentLanguage]);
-
-  const handleItemClick = (label: string) => {
-    // //console.log("label", label);
-  };
-
-  const handleNotificationClick = () => { };
 
   const handleLogout = () => {
     removeAll();
     window.location.href = `${process.env.VITE_REDIRECT_URL}`;
   };
 
-  const dropdownItems = [
-    {
-      label: t("items.item4"),
-      onClick: () => {
-        removeAll();
-        window.location.href = `${process.env.VITE_REDIRECT_URL}`;
-      },
-    }
-  ];
+  const handleSwitchAccount = () => {
+    // setShowAccountPopup(true);
+    setOpenModule(true);
+    setSelected(null);
+  };
 
+  const handleAccountSelection = () => {
+    if (selected === "Legal representative" && selectedMainCategory && selectedSubCategory) {
+      setCookie("userType", selected);
+      setCookie("mainCategory", selectedMainCategory);
+      setCookie("subCategory", selectedSubCategory);
+      setOpenModule(false);
+      window.location.reload();
+    } else if (selected === "Worker") {
+      setCookie("userType", selected);
+      setOpenModule(false);
+      window.location.reload();
+    }
+  };
+
+  const handleClosePopup = () => {
+    //setShowAccountPopup(false);
+    setSelected(null);
+    setOpenModule(false);
+
+  };
+
+  const settingsItems = isLegalRepstate
+    ? [
+      {
+        label: t("switch_account"),
+        value: "switch_account",
+        onClick: handleSwitchAccount,
+      },
+      {
+        label: t("logout"),
+        value: "logout",
+        onClick: handleLogout,
+      }
+    ]
+    : [
+      {
+        label: t("logout"),
+        value: "logout",
+        onClick: handleLogout,
+      }
+    ];
 
   const notificationItems =
     notificationData?.UINotificationList?.length > 0
       ? notificationData?.UINotificationList.map(
         (notif: any, index: number) => ({
           label: notif.NotificationText,
-          onClick: () => handleNotificationClick(),
+          onClick: () => { },
         })
       )
       : [
@@ -111,61 +187,94 @@ const Header = () => {
   };
 
   return (
-    <header className="header-shadow bg-light-alpha-white h-auto lg:h-20 py-3 " >
-      <div className="h-full w-full flex flex-wrap gap-y-2 justify-between items-center max-w-full px-2 md:px-6">
-        <div className="col-span-3 md:col-span-6 lg:order-1 order-1 cursor-pointer" onClick={() => navigate("")}>
-          <img src={currentLanguage === "ar" ? logoar : logo} alt="Logo" className="lg:h-12 md:h-12 sm:h-12 h-10" />
-        </div>
-        <div className="col-span-6 md:col-span-12 lg:order-2 order-3 flex lg:justify-end md:justify-end  justify-between items-center 700 lg:ms-auto md:ms-auto ms-0 lg:w-auto w-full ">
-          {/* <span
-            className="!text-default-color text-sm md:text-md medium lg:flex md:flex hidden justify-center items-center gap-1 cursor-pointer "
-            onClick={() =>
-              changeLanguage(currentLanguage === "en" ? "ar" : "en")
-            }
-          >
-            {t("language")}{" "}
-            <GoChevronDown size={20} className="text-default-color" />
-          </span> */}
-          <PiLineVerticalThin size={32} className="text-gray-300 lg:flex md:flex hidden " />
-          <span className="!text-default-color text-sm mt-sm-5 md:text-md medium flex justify-center w-full">
-            <time>
-              {formattedTime}&nbsp;&nbsp;|&nbsp;&nbsp;
-              <span className="text-success-600">
-                {formattedDate}
-              </span>
-            </time>
-          </span>
-
-
-          {/* Notification Dropdown
-          <Suspense fallback={<TableLoader />}>
-            <div className="relative ml-4">
-              <MyDropdown
-                isFetching={isFetching}
-                items={notificationItems}
-                trigger={
-                  <div className="relative cursor-pointer">
-                    <Notification02Icon className="text-primary-960 m-0  lg:mr-6 md:mr-6" />
-                    <span className="absolute top-0 lg:right-[26px] md:right-[26px] right-[0] w-2.5 h-2.5 bg-info-960 rounded-full"></span>
-                  </div>
-                }
-              />
-            </div>
-          </Suspense> */}
-
-        </div>
-        <div className="ms-5 col-span-3 md:col-span-6 lg:order-3 order-2 flex justify-end items-center 700">
-          <span>
-            <Button
-              className="!w-auto !h-10 border-0 text-light-alpha-white text-md medium"
-              onClick={handleLogout}
+    <>
+      <header className="header-shadow bg-light-alpha-white h-auto lg:h-20 py-3 " >
+        <div className="h-full w-full flex flex-wrap gap-y-2 justify-between items-center max-w-full px-2 md:px-6">
+          <div className="col-span-3 md:col-span-6 lg:order-1 order-1 cursor-pointer" onClick={() => navigate("")}>
+            <img src={currentLanguage === "ar" ? logoar : logo} alt="Logo" className="lg:h-12 md:h-12 sm:h-12 h-10" />
+          </div>
+          <div className="col-span-6 md:col-span-12 lg:order-2 order-3 flex lg:justify-end md:justify-end  justify-between items-center 700 lg:ms-auto md:ms-auto ms-0 lg:w-auto w-full ">
+            {/* <span
+              className="!text-default-color text-sm md:text-md medium lg:flex md:flex hidden justify-center items-center gap-1 cursor-pointer "
+              onClick={() =>
+                changeLanguage(currentLanguage === "en" ? "ar" : "en")
+              }
             >
-              {t("items.item4")}
-            </Button>
-          </span>
+              {t("language")}{" "}
+              <GoChevronDown size={20} className="text-default-color" />
+            </span> */}
+            <PiLineVerticalThin size={32} className="text-gray-300 lg:flex md:flex hidden " />
+            <span className="!text-default-color text-sm mt-sm-5 md:text-md medium flex justify-center w-full">
+              <time>
+                {formattedTime}&nbsp;&nbsp;|&nbsp;&nbsp;
+                <span className="text-success-600">
+                  {formattedDate}
+                </span>
+              </time>
+            </span>
+
+
+            {/* Notification Dropdown
+            <Suspense fallback={<TableLoader />}>
+              <div className="relative ml-4">
+                <MyDropdown
+                  isFetching={isFetching}
+                  items={notificationItems}
+                  trigger={
+                    <div className="relative cursor-pointer">
+                      <Notification02Icon className="text-primary-960 m-0  lg:mr-6 md:mr-6" />
+                      <span className="absolute top-0 lg:right-[26px] md:right-[26px] right-[0] w-2.5 h-2.5 bg-info-960 rounded-full"></span>
+                    </div>
+                  }
+                />
+              </div>
+            </Suspense> */}
+
+          </div>
+          <div className="ms-5 col-span-3 md:col-span-6 lg:order-3 order-2 flex justify-end items-center 700">
+            <MyDropdown
+              items={settingsItems}
+              trigger={
+                <Button
+                  className="!w-auto !h-10 border-0 text-light-alpha-white text-md medium"
+                >
+                  {t("settings")}
+                </Button>
+              }
+              onChange={(option) => {
+                if (option.value === "switch_account") {
+                  handleSwitchAccount();
+                } else if (option.value === "logout") {
+                  handleLogout();
+                }
+              }}
+            />
+          </div>
         </div>
-      </div>
-    </header>
+      </header>
+
+      {openModule && (
+        <Modal
+          close={handleClosePopup}
+          header={t("select_account_type")}
+          modalWidth={600}
+        >
+          <div className="w-full space-y-4">
+            <Suspense fallback={<TableLoader />}>
+              <LoginAccountSelect
+                selected={selected}
+                setSelected={setSelected}
+                selectedOption={null}
+                handleChange={(opt) => setSelected(opt as any)}
+                handleCloseModal={handleClosePopup}
+                popupHandler={() => { }}
+                isLegalRep={selected === "Legal representative"}
+              />
+            </Suspense>
+          </div>
+        </Modal>
+      )}
+    </>
   );
 };
 

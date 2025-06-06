@@ -4,112 +4,131 @@ import { createApi, fetchBaseQuery, BaseQueryFn, FetchArgs, FetchBaseQueryError,
 import cookie from "react-cookies";
 import { useTranslation } from 'react-i18next';
 import { toast } from 'react-toastify';
+import { startLoading, stopLoading } from '@/redux/slices/loadingSlice';
 
 const customBaseQuery: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQueryError, {}, FetchBaseQueryMeta> = async (args, api, extraOptions) => {
-  const result = await fetchBaseQuery({
-    baseUrl: process.env.VITE_API_URL,
-    prepareHeaders: (headers) => {
-      const username = process.env.VITE_API_USERNAME;
-      const password = process.env.VITE_API_PASSWORD;
-      const encodedCredentials = btoa(`${username}:${password}`);
+  // Start loading
+  api.dispatch(startLoading());
 
+  try {
+    const result = await fetchBaseQuery({
+      baseUrl: process.env.VITE_API_URL,
+      prepareHeaders: (headers) => {
+        const username = process.env.VITE_API_USERNAME;
+        const password = process.env.VITE_API_PASSWORD;
+        const encodedCredentials = btoa(`${username}:${password}`);
 
+        // Token Should Be Send In The Header
+        headers.set('Content-Type', 'application/json');
+        if (encodedCredentials) {
+          headers.set('Authorization', `Basic ${encodedCredentials}`);
+        }
+        // Token Should Be Send In The Header
+        const token = cookie.load("token");
+        if (token) {
+          headers.set('accesstoken', `${token}`);
+        }
 
-      // Token Should Be Send In The Header
-      headers.set('Content-Type', 'application/json');
-      if (encodedCredentials) {
-        headers.set('Authorization', `Basic ${encodedCredentials}`);
+        return headers;
+      },
+    })(args, api, extraOptions);
+
+    handleAuthTokenError(result);
+    if (result.error) {
+      try {
+        handleApiError(result.error);
+      } catch (error) {
+        // Dispatch the error to your global error state if needed
+        api.dispatch({
+          type: 'api/globalError',
+          payload: error,
+        });
+        throw error;
       }
-      // Token Should Be Send In The Header
-      const token = cookie.load("token");
-      if (token) {
-        headers.set('accesstoken', `${token}`);
-      }
-
-      return headers;
-    },
-  })(args, api, extraOptions);
-
-  handleAuthTokenError(result);
-  if (result.error) {
-    try {
-      handleApiError(result.error);
-    } catch (error) {
-      // Dispatch the error to your global error state if needed
-      api.dispatch({
-        type: 'api/globalError',
-        payload: error,
-      });
-      throw error;
     }
-  }
 
-  return result;
+    return result;
+  } finally {
+    // Stop loading regardless of success or failure
+    api.dispatch(stopLoading());
+  }
 };
 
 const transformRequest = (args: FetchArgs): FetchArgs => {
+  const userClaims = cookie.load("userClaims") as TokenClaims;
+  const isNICDetailsRequest = args.url?.includes('GetNICDetails');
+  const isIncompleteCaseRequest = args.url?.includes('GetIncompleteCase');
+  const userType = userClaims?.UserType?.toLowerCase();
 
-  const isNICDetailsEndpoint = typeof args.url === 'string' && args.url.includes('GetNICDetails');
+  // Skip incomplete case request if userClaims is not available
+  if (isIncompleteCaseRequest && !userClaims?.UserID) {
+    throw new Error("User claims not available");
+  }
 
-  if (isNICDetailsEndpoint) {
+  // For NIC details API, add LoggedInUserID while preserving original IDNumber
+  if (isNICDetailsRequest) {
+    if (args.params) {
+      args.params = {
+        ...args.params,
+        LoggedInUserID: userClaims?.UserID,
+        SourceSystem: "E-Services",
+        AcceptedLanguage: userClaims?.AcceptedLanguage?.toUpperCase() || 'EN',
+      };
+    }
     return args;
   }
 
-
+  // For all other requests, add common parameters
   if (args.method === 'POST' || args.method === 'PUT' || args.method === 'PATCH') {
-    if (typeof args.body === 'object' && args.body !== null) {
-      const userClaims: TokenClaims = cookie.load("userClaims");
-
-      const bodyExtras: Record<string, string> = {
+    if (args.body) {
+      const commonParams: {
+        SourceSystem: string;
+        IDNumber?: string;
+        PlaintiffId?: string;
+        AcceptedLanguage: string;
+      } = {
         SourceSystem: "E-Services",
+        IDNumber: userClaims?.UserID,
+        AcceptedLanguage: userClaims?.AcceptedLanguage?.toUpperCase() || 'EN',
       };
 
-      if (userClaims?.UserID) {
-        bodyExtras.IDNumber = userClaims.UserID;
+      // Only add PlaintiffId for Worker and Agent user types
+      if (userType === 'worker' || userType === 'agent') {
+        commonParams.PlaintiffId = userClaims?.UserID;
       }
 
-      if (userClaims?.File_Number) {
-        bodyExtras.FileNumber = userClaims.File_Number;
-      }
-
-      return {
-        ...args,
-        body: {
-          ...args.body,
-          ...bodyExtras,
-        },
+      args.body = {
+        ...args.body,
+        ...commonParams,
       };
     }
   } else {
+    if (args.params) {
+      const commonParams: {
+        SourceSystem: string;
+        IDNumber?: string;
+        PlaintiffId?: string;
+        AcceptedLanguage: string;
+      } = {
+        SourceSystem: "E-Services",
+        IDNumber: userClaims?.UserID,
+        AcceptedLanguage: userClaims?.AcceptedLanguage?.toUpperCase() || 'EN',
+      };
 
-    //console.log("kdslksdjfl");
-    //console.log("kdslksdjfl", args.params);
-    const userClaims: TokenClaims = cookie.load("userClaims");
-
-    const bodyExtras: Record<string, string> = {
-      SourceSystem: "E-Services",
-    };
-
-    if (userClaims?.UserID) {
-      bodyExtras.IDNumber = userClaims.UserID;
-    }
-
-    if (userClaims?.File_Number) {
-      bodyExtras.FileNumber = userClaims.File_Number;
-    }
-
-    return {
-      ...args,
-      params: {
-        ...args.params,
-        ...bodyExtras
+      // Only add PlaintiffId for Worker and Agent user types
+      if (userType === 'worker' || userType === 'agent') {
+        commonParams.PlaintiffId = userClaims?.UserID;
       }
+
+      args.params = {
+        ...args.params,
+        ...commonParams,
+      };
     }
+  }
 
-  };
   return args;
-
-}
+};
 
 export const api = createApi({
   baseQuery: (args, api, extraOptions) => {

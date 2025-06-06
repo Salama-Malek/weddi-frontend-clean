@@ -15,6 +15,7 @@ import { getStep1FormFields } from "./Step1From";
 import { getStep2FormFields } from "./Step2From";
 import { subCategoryValue } from "@/mock/genderData";
 import { DateOfBirthField } from "@/shared/components/calanders";
+import { useTranslation } from "react-i18next";
 
 export const useFormLayout = ({
   t: t,
@@ -52,12 +53,15 @@ export const useFormLayout = ({
   editTopic: editTopic,
   caseTopics: caseTopics,
 }: UseFormLayoutParams): SectionLayout[] => {
+  const { t: tHearingTopics } = useTranslation("hearingtopics");
+
   // //console.log('matchedSubCategory', matchedSubCategory)
   const amount = watch("amount");
   const loanAmount = watch("loanAmount");
   const typeOfCustody = watch("typeOfCustody");
   const damagedValue = watch("damagedValue");
   const damagedType = watch("damagedType");
+  const sploilerType = watch("sploilerType");
   const amountOfCompensation = watch("amountOfCompensation");
   const subCategoryValue = watch("subCategory");
   const request_date_hijri = watch("request_date_hijri");
@@ -74,6 +78,7 @@ export const useFormLayout = ({
   const amountOfReduction = watch("amountOfReduction");
   const date_new = watch("date_new");
   const manDecsDate = watch("manDecsDate");
+  const RefundType = watch("RefundType");
   initFormConfig({
     isEditing,
     handleAddTopic,
@@ -251,7 +256,7 @@ export const useFormLayout = ({
       setValue("typesOfPenalties", editTopic.typesOfPenalties);
       setValue("payDue", editTopic.payDue);
       setValue(
-        "doesBylawsIncludeAddingAccommodations",
+        "doesContractIncludeAddingAccommodations",
         editTopic.doesBylawsIncludeAddingAccommodations
       );
       setValue(
@@ -278,6 +283,14 @@ export const useFormLayout = ({
         "doesContractIncludeAdditionalUpgrade",
         editTopic.doesContractIncludeAdditionalUpgrade
       );
+      setValue(
+        "sploilerType",
+        editTopic.sploilerType
+      );
+      setValue(
+        "RefundType",
+        editTopic.RefundType
+      );
     }
   }, [editTopic, setValue]);
 
@@ -292,13 +305,13 @@ export const useFormLayout = ({
           {
             type: "input",
             name: "amountOfCompensation",
-            label: t("amountOfCompensation"),
+            label: tHearingTopics("amountOfCompensation"),
             inputType: "text",
             value: isEditing
               ? editTopic?.amountOfCompensation
               : amountOfCompensation,
             onChange: (value) => setValue("amountOfCompensation", value),
-            validation: { required: t("amountOfCompensation") },
+            validation: { required: tHearingTopics("amountOfCompensation") },
           },
         ]);
       case "CR-1":
@@ -306,11 +319,11 @@ export const useFormLayout = ({
           {
             type: "input",
             name: "amount",
-            label: t("amount"),
+            label: tHearingTopics("amount"),
             inputType: "number",
             value: isEditing ? editTopic?.amount : amount,
             onChange: (value) => setValue("amount", value),
-            validation: { required: t("amount") },
+            validation: { required: tHearingTopics("amount") },
           },
         ]);
       case "DPVR-1":
@@ -318,20 +331,20 @@ export const useFormLayout = ({
           {
             type: "input",
             name: "damagedType",
-            label: t("damagedType"),
+            label: tHearingTopics("damagedType"),
             inputType: "text",
             value: isEditing ? editTopic?.damagedType : damagedType,
             onChange: (value) => setValue("damagedType", value),
-            validation: { required: t("damagedType") },
+            validation: { required: tHearingTopics("damagedType") },
           },
           {
             type: "input",
             name: "damagedValue",
-            label: t("damagedValue"),
+            label: tHearingTopics("damagedValue"),
             inputType: "number",
             value: isEditing ? editTopic?.damagedValue : damagedValue,
             onChange: (value) => setValue("damagedValue", value),
-            validation: { required: t("damagedValue") },
+            validation: { required: tHearingTopics("damagedValue") },
           },
         ]);
       case "RLRAHI-1":
@@ -339,12 +352,12 @@ export const useFormLayout = ({
           {
             type: "autocomplete" as const,
             name: "typeOfRequest",
-            label: t("typeOfRequest"),
+            label: tHearingTopics("typeOfRequest"),
             options: TypeOfRequestLookUpOptions,
             value: editTopic?.typeOfRequest?.value,
             onChange: (option: Option | null) =>
               setValue("typeOfRequest", option),
-            validation: { required: t("typeOfRequest") },
+            validation: { required: tHearingTopics("typeOfRequest") },
           },
         ];
 
@@ -354,8 +367,8 @@ export const useFormLayout = ({
               name: "requestDate",
               type: "dateOfBirth",
               value: isEditing && formatHijriDate(request_date_hijri),
-              hijriLabel: t("hijriLabel"),
-              gregorianLabel: t("gregorianLabel"),
+              hijriLabel: tHearingTopics("hijriLabel"),
+              gregorianLabel: tHearingTopics("gregorianLabel"),
               hijriFieldName: "request_date_hijri",
               gregorianFieldName: "request_date_gregorian",
               showWhen: "RLRAHI1",
@@ -363,11 +376,11 @@ export const useFormLayout = ({
             {
               type: "input",
               name: "typeOfCustody",
-              label: t("typeOfCustody"),
+              label: tHearingTopics("typeOfCustody"),
               inputType: "text",
               value: isEditing ? editTopic?.typeOfCustody : typeOfCustody,
               onChange: (value: string) => setValue("typeOfCustody", value),
-              validation: { required: t("typeOfCustody") },
+              validation: { required: tHearingTopics("typeOfCustody") },
               showWhen: "RLRAHI1",
             }
           );
@@ -375,16 +388,48 @@ export const useFormLayout = ({
           fields.push({
             type: "input",
             name: "loanAmount",
-            label: t("loanAmount"),
+            label: tHearingTopics("loanAmount"),
             inputType: "number",
             value: isEditing ? editTopic?.loanAmount : loanAmount,
             onChange: (value: string) => setValue("loanAmount", value),
-            validation: { required: t("loanAmount") },
+            validation: { required: tHearingTopics("loanAmount") },
           });
         }
 
         return buildForm(fields);
-      default:
+    
+      case "RUF-1":
+        return buildForm([
+          {
+            type: "input",
+            name: "sploilerType",
+            label: tHearingTopics("sploilerType"),
+            inputType: "text",
+            value: isEditing ? editTopic?.sploilerType : sploilerType,
+            onChange: (value) => setValue("sploilerType", value),
+            validation: { required: tHearingTopics("sploilerType") },
+          },
+          {
+            type: "input",
+            name: "RefundType",
+            label: tHearingTopics("RefundType"),
+            inputType: "text",
+            value: isEditing ? editTopic?.RefundType : RefundType,
+            onChange: (value) => setValue("RefundType", value),
+            validation: { required: tHearingTopics("RefundType") },
+          },
+          {
+            type: "input",
+            name: "amount",
+            label: tHearingTopics("amount"),
+            inputType: "number",
+            value: isEditing ? editTopic?.amount : amount,
+            onChange: (value) => setValue("amount", value),
+            validation: { required: tHearingTopics("amount") },
+          },
+        ]);
+
+        default:
         return [];
     }
   };
@@ -393,7 +438,7 @@ export const useFormLayout = ({
     gridCols: 2,
     ...(getFormBySubCategory().filter(Boolean).length > 0
       ? {
-          title: t("topics_data"),
+          title: tHearingTopics("topics_data"),
           children: [
             ...(getFormBySubCategory().filter(Boolean) as FormElement[]),
             ...getCommonElements(isValid), // Only show when there's content
@@ -405,7 +450,7 @@ export const useFormLayout = ({
               type: "custom",
               component: (
                 <div className="p-4 bg-green-50 text-green-700 rounded-md">
-                  {t("no_content_found")}
+                  {tHearingTopics("no_content_found")}
                 </div>
               ),
             },

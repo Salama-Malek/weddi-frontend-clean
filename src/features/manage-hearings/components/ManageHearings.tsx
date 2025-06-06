@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Tab, TabList, TabPanel, TabPanels } from "@/shared/components/tabs";
 import { HiMiniChevronRight } from "react-icons/hi2";
@@ -15,6 +15,21 @@ export default function ManageHearings() {
   const { caseType = "individual", role = "defendant" } = useParams();
   const navigate = useNavigate();
   const { t } = useTranslation("managehearings");
+
+  // Set default tab based on localStorage or redirect to stored tab
+  useEffect(() => {
+    const storedCaseRole = localStorage.getItem("caseRoleTab");
+    if (!role && storedCaseRole) {
+      navigate(`/${caseType}/${storedCaseRole}`, { replace: true });
+    } else if (!role) {
+      // If no stored role, default to claimant
+      localStorage.setItem("caseRoleTab", "claimant");
+      navigate(`/${caseType}/claimant`, { replace: true });
+    } else {
+      // Store the current role
+      localStorage.setItem("caseRoleTab", role);
+    }
+  }, [role, caseType, navigate]);
 
   const breadcrumbs = [
     { label: t("breadcrumbs.home"), href: "/" },
@@ -33,13 +48,19 @@ export default function ManageHearings() {
           <TabList>
             <Tab
               id="claimant"
-              onClick={() => navigate(`/${caseType}/claimant`)}
+              onClick={() => {
+                localStorage.setItem("caseRoleTab", "claimant");
+                navigate(`/${caseType}/claimant`);
+              }}
             >
               {t("tabs.claimant")}
             </Tab>
             <Tab
               id="defendant"
-              onClick={() => navigate(`/${caseType}/defendant`)}
+              onClick={() => {
+                localStorage.setItem("caseRoleTab", "defendant");
+                navigate(`/${caseType}/defendant`);
+              }}
             >
               {t("tabs.defendant")}
             </Tab>

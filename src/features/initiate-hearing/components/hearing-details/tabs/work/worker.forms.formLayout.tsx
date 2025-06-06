@@ -1,4 +1,4 @@
-import { UseFormSetValue, UseFormWatch } from "react-hook-form";
+import { UseFormSetValue, UseFormWatch, Control, UseFormTrigger } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 import {
@@ -11,10 +11,13 @@ import { options } from "@/features/initiate-hearing/config/Options";
 import { formatDateGMT, formatHijriDate } from "@/shared/lib/helpers";
 import { useCookieState } from "@/features/initiate-hearing/hooks/useCookieState";
 import { placeholderCSS } from "react-select/dist/declarations/src/components/Placeholder";
+import HijriDateField from "@/shared/components/calanders/NewDatePicker"; 
 
 export const useFormLayout = (
   setValue: UseFormSetValue<FormData>,
+  control: Control<FormData>,
   watch: UseFormWatch<FormData>,
+  // trigger: UseFormTrigger<FormData>,
   salaryTypeData: any,
   contractTypeData: any,
   ExtractEstbAData: any,
@@ -31,56 +34,70 @@ export const useFormLayout = (
   const isStillEmployed: any = watch("isStillEmployed" as any);
   const { t } = useTranslation("hearingdetails");
   const contractType: any = watch("contractType");
+
   const TypeOfWageOptions = React.useMemo(() => {
-    return (
-      salaryTypeData?.map((item: any) => ({
-        value: item.ElementKey,
-        label: item.ElementValue,
-      })) || options
-    );
+    if (!salaryTypeData?.DataElements) return options;
+    return salaryTypeData.DataElements.map((item: any) => ({
+      value: item.ElementKey,
+      label: item.ElementValue,
+    }));
   }, [salaryTypeData]);
 
   const ContractTypeOptions = React.useMemo(() => {
-    return (
-      contractTypeData?.map((item: any) => ({
-        value: item.ElementKey,
-        label: item.ElementValue,
-      })) || options
-    );
+    if (!contractTypeData?.DataElements) return options;
+    return contractTypeData.DataElements.map((item: any) => ({
+      value: item.ElementKey,
+      label: item.ElementValue,
+    }));
   }, [contractTypeData]);
 
   const LaborOfficeTypeOptions = React.useMemo(() => {
-    return (
-      laborOfficeData?.map((item: any) => ({
-        value: item.ElementKey,
-        label: item.ElementValue,
-      })) || []
-    );
+    if (!laborOfficeData?.DataElements) return [];
+    return laborOfficeData.DataElements.map((item: any) => ({
+      value: item.ElementKey,
+      label: item.ElementValue,
+    }));
   }, [laborOfficeData]);
 
   const RegionOptions = React.useMemo(() => {
-    return (
-      regionData?.map((item: any) => ({
-        value: item.ElementKey,
-        label: item.ElementValue,
-      })) || []
-    );
+    if (!regionData?.DataElements) return [];
+    return regionData.DataElements.map((item: any) => ({
+      value: item.ElementKey,
+      label: item.ElementValue,
+    }));
   }, [regionData]);
 
   const CityOptions = React.useMemo(() => {
-    return (
-      cityData?.map((item: any) => ({
-        value: item.ElementKey,
-        label: item.ElementValue,
-      })) || []
-    );
+    if (!cityData?.DataElements) return [];
+    return cityData.DataElements.map((item: any) => ({
+      value: item.ElementKey,
+      label: item.ElementValue,
+    }));
   }, [cityData]);
+
   const isNonGovrnEstab =
     getCookie("defendantDetails") === "Others" &&
     (getCookie("defendantTypeInfo") === "Establishment" ||
       getCookie("defendantTypeInfo") === "Government");
 
-  // //console.log("isNonGovrnEstab", isNonGovrnEstab);
+  // Add watchers for dependent fields
+  const contractEndDate = watch("contractExpiryDateHijri");
+  const workStartDate = watch("dateofFirstworkingdayHijri");
+  const workEndDate = watch("dateoflastworkingdayHijri");
+
+  // // Trigger validation when contract end date changes
+  // useEffect(() => {
+  //   if (workEndDate) {
+  //     trigger("dateoflastworkingdayHijri");
+  //   }
+  // }, [contractEndDate, trigger]);
+
+  // // Trigger validation when work start date changes
+  // useEffect(() => {
+  //   if (workEndDate) {
+  //     trigger("dateoflastworkingdayHijri");
+  //   }
+  // }, [workStartDate, trigger]);
 
   return [
     {
@@ -91,7 +108,6 @@ export const useFormLayout = (
           name: "typeOfWage",
           label: t("typeOfWage"),
           options: TypeOfWageOptions,
-          //@ts-ignore
           onChange: (value: Option) => {
             setValue("typeOfWage", value);
           },
@@ -112,7 +128,6 @@ export const useFormLayout = (
           name: "contractType",
           label: t("contractType"),
           options: ContractTypeOptions,
-          //@ts-ignore
           onChange: (value: Option) => setValue("contractType", value),
           validation: {
             required: t("contractTypeValidation"),
@@ -139,176 +154,112 @@ export const useFormLayout = (
           },
         },
 
-
         {
-          name: "contractDateHijri",
-          type: "dateOfBirth",
-          hijriLabel: t("contractDateHijri"),
-          gregorianLabel: t("contractDateGregorian"),
-          hijriFieldName: "contractDateHijri",
-          gregorianFieldName: "contractDateGregorian",
-          validation: { required: t("contractDateValidation") },
+          type: "custom",
+          name: "contractStartDate",
+          component: (
+            <HijriDateField
+              control={control}
+              setValue={setValue}
+              hijriFieldName="contractDateHijri"
+              gregorianFieldName="contractDateGregorian"
+              hijriLabel={t("contractDateHijri")}
+              gregorianLabel={t("contractDateGregorian")}
+              type="contract-start"
+              relatedEndDate={watch("contractExpiryDateHijri") as string}
+            />
+          ),
         },
 
-        ...((ContractTypeOptions.length === 2 &&
-          contractType?.value !== "CT2") ||
-          ContractTypeOptions.length > 2
-          ? [
-            {
-              name: "contractExpiryDateHijri",
-              type: "dateOfBirth",
-              hijriLabel: t("contractExpiryDateHijri"),
-              gregorianLabel: t("contractExpiryDateGregorian"),
-              hijriFieldName: "contractExpiryDateHijri",
-              gregorianFieldName: "contractExpiryDateGregorian",
-            },
-          ]
-          : []),
+        {
+          type: "custom",
+          name: "contractEndDate",
+          component: (
+            <HijriDateField
+              control={control}
+              setValue={setValue}
+              hijriFieldName="contractExpiryDateHijri"
+              gregorianFieldName="contractExpiryDateGregorian"
+              hijriLabel={t("contractExpiryDateHijri")}
+              gregorianLabel={t("contractExpiryDateGregorian")}
+              type="contract-end"
+              relatedStartDate={watch("contractDateHijri") as string}
+            />
+          ),
+        },
 
         ...(contractType?.value === "CT4"
           ? [
-            {
-              type: "input",
-              name: "salaryOtherType",
-              label: t("contractType"),
-              inputType: "text",
-              placeholder: t("otherSalaryPlaceholder"),
-              validation: { required: t("contractOtherTypeValidation") },
-            },
-          ]
+              {
+                type: "input",
+                name: "salaryOtherType",
+                label: t("contractType"),
+                inputType: "text",
+                placeholder: t("otherSalaryPlaceholder"),
+                validation: { required: t("contractOtherTypeValidation") },
+              },
+            ]
           : []),
-
-
-
-        /*
-        حسن شغال هنا ولسة ما خصلتش
-        المقروض اني اعرف بينات العامل لو كان اشتغل قبل كدة واعرض التاريخ بداية ونهاية 
-        */
-
-
 
         !!isNonGovrnEstab
           ? {
-            type: "checkbox",
-            name: "isStillEmployed",
-            label: t("stillEmployed"),
-            checked: isStillEmployed,
-            onChange: (checked) =>
-              setValue("isStillEmployed" as any, checked),
-          }
+              type: "checkbox",
+              name: "isStillEmployed",
+              label: t("stillEmployed"),
+              checked: isStillEmployed,
+              onChange: (checked) =>
+                setValue("isStillEmployed" as any, checked),
+            }
           : {
-            title: t(""),
-            type: "readonly",
-            label: t("stillEmployed"),
-            value: ExtractEstbAData?.StillWorking === "Y" ? "YES" : "NO",
-          },
-        ...(ExtractEstbAData?.StillWorking === "N" || !isStillEmployed
-          ? [
-            !!isNonGovrnEstab
-              ? {
-                name: "dateofFirstworkingdayHijri",
-                type: "dateOfBirth",
-                hijriLabel: t("dateofFirstworkingdayHijri"),
-                gregorianLabel: t("dateofFirstworkingdayGregorian"),
-                hijriFieldName: "dateofFirstworkingdayHijri",
-                gregorianFieldName: "dateOfFirstWorkingDayGregorian",
-                onChange: (value: Option) =>
-                  setValue(
-                    "contractType",
-                    ExtractEstbAData?.ServiceEndDate
-                  ),
-                ...(((ExtractEstbAData &&
-                  ExtractEstbAData?.ServiceEndDate) ||
-                  ExtractEstbAData?.StillWorking !== "Y") && {
-                  validation: {
-                    required: t("firstWorkingDateValidation"),
-                  },
-                }),
-              }
-              : {
-                title: t(""),
-                type: "readonly",
-                label: t("firstWorkingDayGregorian"),
-                value: formatDateGMT(ExtractEstbAData?.ServiceEndDate),
-              },
-            ExtractEstbAData?.StillWorking == "N" && {
               title: t(""),
               type: "readonly",
-              label: t("lastWorkingDayGregorian"),
-              value: formatDateGMT(ExtractEstbAData?.ServiceEndDate),
+              label: t("stillEmployed"),
+              value: ExtractEstbAData?.StillWorking === "Y" ? "YES" : "NO",
             },
-
-            ,
-            ...(ExtractEstbAData?.StillWorking === "N" || !isStillEmployed
-              ? [
-                !!isNonGovrnEstab
-                  ? {
-                    name: "dateoflastworkingdayHijri",
-                    type: "dateOfBirth",
-                    hijriLabel: t("dateoflastworkingdayHijri"),
-                    gregorianLabel: t("dateoflastworkingdayGregorian"),
-                    hijriFieldName: "dateoflastworkingdayHijri",
-                    gregorianFieldName: "dateOfLastWorkingDayGregorian",
-                    onChange: (value: Option) =>
-                      setValue(
-                        "contractType",
-                        ExtractEstbAData?.ServiceEndDate
-                      ),
-                    ...(((ExtractEstbAData &&
-                      ExtractEstbAData?.ServiceEndDate) ||
-                      ExtractEstbAData?.StillWorking !== "Y") && {
-                      validation: {
-                        required: t("lastWorkingDateValidation"),
-                      },
-                    }),
+        ...(ExtractEstbAData?.StillWorking === "N" || !isStillEmployed
+          ? [
+              !!isNonGovrnEstab
+                ? {
+                    type: "custom",
+                    name: "firstWorkingDate",
+                    component: (
+                      <HijriDateField
+                        control={control}
+                        setValue={setValue}
+                        hijriFieldName="dateofFirstworkingdayHijri"
+                        gregorianFieldName="dateOfFirstWorkingDayGregorian"
+                        hijriLabel={t("dateofFirstworkingdayHijri")}
+                        gregorianLabel={t("dateofFirstworkingdayGregorian")}
+                        type="work-start"
+                        relatedEndDate={watch("contractExpiryDateHijri")}
+                      />
+                    ),
                   }
-                  : null,
-              ].filter(Boolean) // This will remove any null values from the array
-              : ExtractEstbAData?.StillWorking === "Y"
-                ? []
-                : [
-                  {
+                : {
                     title: t(""),
                     type: "readonly",
-                    label: t("lastWorkingDayGregorian"),
+                    label: t("firstWorkingDayGregorian"),
                     value: formatDateGMT(ExtractEstbAData?.ServiceEndDate),
                   },
-                ]),
-          ]
-          : [
-            !!isNonGovrnEstab
-              ? {
-                name: "dateofFirstworkingdayHijri",
-                type: "dateOfBirth",
-                hijriLabel: t("dateofFirstworkingdayHijri"),
-                gregorianLabel: t("dateofFirstworkingdayGregorian"),
-                hijriFieldName: "dateofFirstworkingdayHijri",
-                gregorianFieldName: "dateofFirstWorkingDayGregorian",
-                onChange: (value: Option) =>
-                  setValue(
-                    "contractType",
-                    ExtractEstbAData?.ServiceEndDate
-                  ),
-                ...(((ExtractEstbAData &&
-                  ExtractEstbAData?.ServiceEndDate) ||
-                  ExtractEstbAData?.StillWorking !== "Y") && {
-                  validation: {
-                    required: t("firstWorkingDateValidation"),
-                  },
-                }),
-              }
-              : {
-                title: t(""),
-                type: "readonly",
-                label: t("firstWorkingDayGregorian"),
-                value: formatDateGMT(ExtractEstbAData?.ServiceEndDate),
+              ExtractEstbAData?.StillWorking == "N" && {
+                type: "custom",
+                name: "lastWorkingDate",
+                component: (
+                  <HijriDateField
+                    control={control}
+                    setValue={setValue}
+                    hijriFieldName="dateoflastworkingdayHijri"
+                    gregorianFieldName="dateofLastworkingdayGregorian"
+                    hijriLabel={t("dateoflastworkingdayHijri")}
+                    gregorianLabel={t("dateofLastworkingdayGregorian")}
+                    type="work-end"
+                    relatedStartDate={watch("dateofFirstworkingdayHijri")}
+                    relatedEndDate={watch("contractExpiryDateHijri")}
+                  />
+                ),
               },
-          ]),
-
-
-
-
-
+            ]
+          : []),
       ],
     },
     {

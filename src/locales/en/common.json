@@ -1,5 +1,14 @@
 {
-  "incomplete_case": "Incomplete Case",
+  "incomplete_case": {
+    "title": "Confirmation",
+    "yes": "Yes",
+    "no": "No",
+    "error": "Error processing your request",
+    "cancel_success": "Case cancelled successfully",
+    "cancel_error": "Failed to cancel case",
+    "view_details": "View Details",
+    "cancel": "Cancel"
+  },
   "view_details": "View Details",
   "incomplete_case_message": "You have an incomplete case ({{caseNumber}}). Would you like to proceed to this case?",
   "proceed": "Proceed",

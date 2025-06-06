@@ -152,6 +152,7 @@ useEffect(() => {
 
   const formLayout = useFormLayout(
     setValue,
+    control,
     watch,
     data?.DataElements,
     contractTypeData?.DataElements,
@@ -164,11 +165,11 @@ useEffect(() => {
     isCityLoading,
     isLaborLoading,
     defendantStatus
-    // DefendantType
   );
 
   const legRepVsWorkerLayouForm = legRepVsWorkerUseFormLayout(
     setValue,
+    control,
     watch);
 
 

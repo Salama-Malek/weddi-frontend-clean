@@ -17,12 +17,19 @@ export const Tab = ({ id, children }: { id: string; children: ReactNode }) => {
   const { activeTab, setActiveTab } = useTabs();
   const isActive = activeTab === id;
 
+  const handleTabClick = () => {
+    setActiveTab(id);
+    localStorage.setItem("tab", id);
+  };
+
   return (
     <button
       className={`py-2 px-4 border-b-2 ${
-        isActive ? "border-blue-500 text-blue-500" : "border-transparent text-gray-500"
+        isActive
+          ? "border-blue-500 text-blue-500"
+          : "border-transparent text-gray-500"
       }`}
-      onClick={() => setActiveTab(id)}
+      onClick={handleTabClick}
     >
       {children}
     </button>
@@ -33,7 +40,13 @@ export const TabPanels = ({ children }: { children: ReactNode }) => {
   return <div className="py-4">{children}</div>;
 };
 
-export const TabPanel = ({ id, children }: { id: string; children: ReactNode }) => {
+export const TabPanel = ({
+  id,
+  children,
+}: {
+  id: string;
+  children: ReactNode;
+}) => {
   const { activeTab } = useTabs();
   return activeTab === id ? <div>{children}</div> : null;
 };

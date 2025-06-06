@@ -1,75 +1,107 @@
-import React, { useState } from "react";
+import React from "react";
 import { useTranslation } from "react-i18next";
 import Modal from "@/shared/components/modal/Modal";
 import Button from "@/shared/components/button";
-import { useResolveCaseMutation } from "@/features/manage-hearings/services/hearingActionsService";
-import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 import { useCookieState } from "@/features/initiate-hearing/hooks/useCookieState";
 
-interface IncompleteCaseModalProps {
-  onClose: () => void;
-  onProceed: () => void;
-  caseNumber: string;
-  message: string;
+interface CaseInfoItem {
+  RequestDate: string;
+  PlaintiffName: string;
+  CaseNumber: string;
+  pyMessage: string;
+  PlaintiffId: string;
 }
 
-interface ApiResponse {
+interface IncompleteCaseData {
+  CaseInfo: CaseInfoItem[];
   ServiceStatus: string;
-  ErrorCodeList: Array<{ ErrorCode: string; ErrorDesc: string }>;
+  SuccessCode: string;
+  ErrorCodeList: unknown[];
+}
+
+interface IncompleteCaseModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  incompleteCaseData: IncompleteCaseData;
 }
 
 const IncompleteCaseModal: React.FC<IncompleteCaseModalProps> = ({
+  isOpen,
   onClose,
-  onProceed,
-  caseNumber,
-  message,
+  incompleteCaseData,
 }) => {
-  const { t, i18n } = useTranslation("common");
-  const [resolveCase] = useResolveCaseMutation();
-  const [getCookie, setCookie, removeCookie] = useCookieState();
-  const [isLoading, setIsLoading] = useState(false);
+  const { t } = useTranslation("common");
+  const navigate = useNavigate();
+  const [getCookie, setCookie] = useCookieState();
 
-  const handleCancel = async () => {
-    setIsLoading(true);
-    try {
-      const response = await resolveCase({
-        CaseID: caseNumber,
-        AcceptedLanguage: i18n.language.toUpperCase(),
-        SourceSystem: "E-Services",
-        ResolveStatus: "Resolved-Request Cancelled",
-      }).unwrap();
+  // Grab the first CaseInfo entry (if it exists)
+  const firstCase = incompleteCaseData.CaseInfo[0];
+  const caseNumber = firstCase?.CaseNumber || "";
+  const rawMessage = firstCase?.pyMessage || "";
 
-      const apiResponse = response as ApiResponse;
-      if (apiResponse.ServiceStatus === "Success" && apiResponse.ErrorCodeList.length === 0) {
-        // Clear only incomplete case related cookies
-        removeCookie("caseId");
-        removeCookie("incompleteCaseMessage");
-        removeCookie("incompleteCaseNumber");
-
-        toast.success(t("cancel_success"));
-        onClose();
-      } else {
-        toast.error(t("cancel_error"));
-      }
-    } catch (error) {
-      toast.error(t("cancel_error"));
-    } finally {
-      setIsLoading(false);
+  // Render the API‐provided message, but split out the caseNumber to be clickable
+  const renderMessage = () => {
+    if (!rawMessage || !caseNumber || !rawMessage.includes(caseNumber)) {
+      return <span>{rawMessage}</span>;
     }
+
+    // Split on the first occurrence of caseNumber
+    const [before, after] = rawMessage.split(caseNumber);
+    return (
+      <>
+        {before}
+        <button
+          type="button"
+          onClick={() => {
+            navigate(`/manage-hearings/${caseNumber}`);
+            onClose();
+          }}
+          className="text-primary-700 underline hover:no-underline bg-transparent p-0"
+        >
+          {caseNumber}
+        </button>
+        {after}
+      </>
+    );
   };
 
+  // "No" simply closes the modal
+  const handleNo = () => {
+    onClose();
+  };
+
+  // "Yes" navigates to complete‐case then closes
+  const handleYes = () => {
+    if (!caseNumber) {
+      onClose();
+      return;
+    }
+    // Store the case ID in cookies for the case creation flow to use
+    setCookie("caseId", caseNumber);
+    // Navigate to the case creation flow
+    navigate("/initiate-hearing/case-creation");
+    onClose();
+  };
+
+  if (!isOpen) return null;
+
   return (
-    <Modal header={t("incomplete_case")} modalWidth={500} close={onClose} preventOutsideClick={true}>
-      <div className="p-4">
-        <p className="text-sm text-gray-700 mb-4">
-          {message || t("incomplete_case_message", { caseNumber })}
-        </p>
-        <div className="flex justify-end gap-3">
-          <Button variant="secondary" onClick={handleCancel} disabled={isLoading}>
-            {isLoading ? t("loading_spinner") : t("cancel")}
+    <Modal close={onClose} header={t("incomplete_case.title")} modalWidth={500}>
+      <div className="space-y-6">
+        <p className="text-sm text-gray-700">{renderMessage()}</p>
+
+        <div className="flex justify-between gap-3">
+          <Button variant="secondary" onClick={handleNo}>
+            {t("incomplete_case.no")}
           </Button>
-          <Button variant="primary" onClick={onProceed} disabled={isLoading}>
-            {t("view_details")}
+
+          <Button
+            variant="primary"
+            onClick={handleYes}
+            className="bg-green-600 hover:bg-green-700"
+          >
+            {t("incomplete_case.yes")}
           </Button>
         </div>
       </div>
@@ -77,4 +109,4 @@ const IncompleteCaseModal: React.FC<IncompleteCaseModalProps> = ({
   );
 };
 
-export default IncompleteCaseModal; 
+export default IncompleteCaseModal;

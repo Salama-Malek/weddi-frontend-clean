@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState, useEffect } from "react";
 import { useNavigationService } from "@/shared/hooks/useNavigationService";
 import { useCaseApiService } from "./useCaseApiService";
 import { usePayloadService } from "./payloadService";
@@ -47,7 +47,7 @@ export const useCasesLogic = () => {
   const [actionButtonName, setActionButtonName] = useState<string>("");
   const [lastSaved, setLastSaved] = useState(false);
   const { clearFormData } = useAPIFormsData();
-  const { updateParams, searchParams } = useNavigationService();
+  const { updateParams, currentStep, currentTab } = useNavigationService();
   const { handleSaveOrSubmit } = useCaseApiService();
   const [getCookie] = useCookieState({ caseId: "" });
   const getCaseId = getCookie("caseId");
@@ -57,6 +57,23 @@ export const useCasesLogic = () => {
   const storeAllNicData = getCookie("storeAllNicData");
   const extractEstablishmentObject = getCookie("defendantDetails");
   const GetCookieEstablishmentData = getCookie("defendantDetails");
+
+  const [localStep, setLocalStep] = useState(currentStep);
+  const [localTab, setLocalTab] = useState(currentTab);
+
+  useEffect(() => {
+    const savedStep = localStorage.getItem("step");
+    const savedTab = localStorage.getItem("tab");
+
+    if (savedStep) {
+      const newStep = parseInt(savedStep);
+      setLocalStep(newStep);
+    }
+    if (savedTab) {
+      const newTab = parseInt(savedTab);
+      setLocalTab(newTab);
+    }
+  }, [currentStep, currentTab]);
 
   /*Get User Data From Cookies  */
   const isRTL = i18n.language === "ar" ? "AR" : "EN";
@@ -71,53 +88,22 @@ export const useCasesLogic = () => {
     defendantStatus,
     defendantDetails,
   });
-  const currentStep: number = useMemo(
-    () => Number(searchParams.get("step")) || 0,
-    [searchParams]
-  );
-  const currentTab: number = useMemo(
-    () => Number(searchParams.get("tab")) || 0,
-    [searchParams]
-  );
+
+  console.log("currentStep", currentStep);
+  console.log("currentTab", currentTab);
+  console.log("tabs", tabs);
 
   const currentLanguage = i18n.language.toUpperCase();
 
   const handleNext = async () => {
     if (!isValid) return;
-    const latestFormValues = getValues(); // always fresh
-    setFormData(latestFormValues); // keep in sync
+    const latestFormValues = getValues();
+    setFormData(latestFormValues);
     setActionButtonName("Next");
-    //console.log(
-    //   "Frist Step , current Tap , Last Data ",
-    //   currentStep,
-    //   currentTab,
-    //   latestFormValues,
-    //   "Next",
-    //   getCaseId,
-    //   attorneyData,
-    //   userClaims,
-    //   isRTL
-    // );
-
-    /*
-    
-    currentStep: number,
-    currentTab: number,
-    buttonName: "Next" | "Save",
-    formData: any,
-    userClaims: TokenClaims,
-    userType: string,
-    language?: string,
-    getCaseId?: any,
-    extractEstablishmentObject?: any,
-    caseTopics?: any,
-    attorneyData?: any,
-    watch?: any
-    */
 
     const payload: any = getPayload(
-      currentStep,
-      currentTab,
+      localStep,
+      localTab,
       "Next",
       latestFormValues,
       userClaims,
@@ -129,42 +115,51 @@ export const useCasesLogic = () => {
 
     if (latestFormValues && payload && Object.keys(payload).length > 0) {
       try {
+        await handleSaveOrSubmit(localStep, localTab, payload);
 
-        //Hassan Comment This  
-        // payload.PlaintiffId = userClaims?.UserID;
-        // payload.CreatedBy = userClaims?.UserID;
-        // payload.PlaintiffName = storeAllNicData?.NICDetails?.PlaintiffName;
-        // payload.PlaintiffHijiriDOB =
-        //   storeAllNicData?.NICDetails?.DateOfBirthHijri;
-        // payload.Plaintiff_City = storeAllNicData?.NICDetails?.City;
-        // payload.Plaintiff_Region = storeAllNicData?.NICDetails?.Region;
-        // //console.log("payload", payload);
-        await handleSaveOrSubmit(currentStep, currentTab, payload);
+        let nextStep = localStep;
+        let nextTab = localTab;
 
-        updateParams(
-          currentStep === 0 && currentTab < tabs.length - 1
-            ? currentStep
-            : Math.min(currentStep + 1, steps.length - 1),
-          currentStep === 0 && currentTab < tabs.length - 1
-            ? currentTab + 1
-            : undefined
-        );
+        if (localStep === 0) {
+          if (localTab < 2) {
+            nextTab = localTab + 1;
+          } else {
+            nextStep = 1;
+            nextTab = 0;
+          }
+        } else if (localStep === 1) {
+          nextStep = 2;
+          nextTab = 0;
+        }
+
+        console.log("Moving to next step/tab:", { nextStep, nextTab });
+
+        localStorage.setItem("step", nextStep.toString());
+        localStorage.setItem("tab", nextTab.toString());
+
+        setLocalStep(nextStep);
+        setLocalTab(nextTab);
+
+        updateParams(nextStep, nextTab);
+
         setActionButtonName("");
         setLastSaved(false);
+
+        window.dispatchEvent(new Event("storage"));
       } catch (error) {
-        // Handle error
+        console.error("Error in handleNext:", error);
       }
     }
   };
 
   const handleSave = async () => {
-    const latestFormValues = getValues(); // always fresh
-    setFormData(latestFormValues); // keep in sync
+    const latestFormValues = getValues();
+    setFormData(latestFormValues);
     setActionButtonName("Save");
     try {
       const payload = getPayload(
-        currentStep,
-        currentTab,
+        localStep,
+        localTab,
         "Save",
         latestFormValues,
         userClaims,
@@ -173,37 +168,48 @@ export const useCasesLogic = () => {
         getCaseId,
         attorneyData
       );
-      // //console.log("From Handle Save", payload);
 
       if (payload && Object.keys(payload).length > 0) {
-        await handleSaveOrSubmit(currentStep, currentTab, payload);
+        await handleSaveOrSubmit(localStep, localTab, payload);
         setLastSaved(true);
         setActionButtonName("");
       }
     } catch (error) {
-      // Handle error
+      console.error("Error in handleSave:", error);
     }
   };
 
   const handlePrevious = useCallback(() => {
-    if (currentStep === 1) {
-      updateParams(0, tabs.length - 1);
-    } else {
-      updateParams(
-        currentStep === 0 ? 0 : currentStep - 1,
-        Math.max(currentTab - 1, 0)
-      );
+    let prevStep = localStep;
+    let prevTab = localTab;
+
+    if (localStep === 1) {
+      prevStep = 0;
+      prevTab = 2;
+    } else if (localStep === 0) {
+      prevTab = Math.max(localTab - 1, 0);
+    } else if (localStep === 2) {
+      prevStep = 1;
+      prevTab = 0;
     }
-  }, [currentStep, currentTab, updateParams]);
+
+    console.log("Moving to previous step/tab:", { prevStep, prevTab });
+
+    updateParams(prevStep, prevTab);
+    setLocalStep(prevStep);
+    setLocalTab(prevTab);
+  }, [localStep, localTab, updateParams]);
 
   const getCases = async (queryParams: Record<string, string> = {}) => {
     try {
       const params = new URLSearchParams({
         ...queryParams,
         AcceptedLanguage: currentLanguage,
-        SourceSystem: "E-Services"
+        SourceSystem: "E-Services",
       });
-      const response = await fetch(`WeddiServices/V1/Cases?${params.toString()}`);
+      const response = await fetch(
+        `WeddiServices/V1/Cases?${params.toString()}`
+      );
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -218,8 +224,8 @@ export const useCasesLogic = () => {
   };
 
   return {
-    currentStep,
-    currentTab,
+    currentStep: localStep,
+    currentTab: localTab,
     tabs,
     updateParams,
     handleNext,

@@ -7,17 +7,32 @@ export const useTabNavigation = (tabIds: string[], goToNextStep: () => void) => 
 
   const goToNextTab = () => {
     if (currentIndex < tabIds.length - 1) {
-      setActiveTab(tabIds[currentIndex + 1]); 
+      const nextTabIndex = currentIndex + 1;
+      localStorage.setItem('tab', nextTabIndex.toString());
+      setActiveTab(tabIds[nextTabIndex]);
     } else {
-      goToNextStep(); 
+      localStorage.setItem('tab', '0');
+      goToNextStep();
     }
   };
 
   const goToPrevTab = () => {
     if (currentIndex > 0) {
-      setActiveTab(tabIds[currentIndex - 1]); 
+      const prevTabIndex = currentIndex - 1;
+      localStorage.setItem('tab', prevTabIndex.toString());
+      setActiveTab(tabIds[prevTabIndex]);
     }
   };
 
-  return { goToNextTab, goToPrevTab };
+  const initializeTab = () => {
+    const savedTab = localStorage.getItem('tab');
+    if (savedTab !== null) {
+      const tabIndex = parseInt(savedTab);
+      if (tabIndex >= 0 && tabIndex < tabIds.length) {
+        setActiveTab(tabIds[tabIndex]);
+      }
+    }
+  };
+
+  return { goToNextTab, goToPrevTab, initializeTab };
 };

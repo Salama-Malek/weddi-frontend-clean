@@ -35,14 +35,20 @@ const CaseRecords: React.FC<CaseRecordsProps> = ({ isLegalRep, popupHandler }) =
   const [currentCaseIndex, setCurrentCaseIndex] = useState(0);
   const [selected, setSelected] = useState<string | null>(null);
 
-  // Fetch cases...
-  const { data, isError, isFetching } = useGetCaseAduitQuery({
-    IDNumber: userClaims?.UserID || "",
-    SourceSystem: "E-Services",
-    AcceptedLanguage: isRTL ? "AR" : "EN",
-    PageNumber: 1,
-    PageSize: 3,
-  });
+  // Only fetch cases if we have user type data
+  const { data, isError, isFetching } = useGetCaseAduitQuery(
+    {
+      IDNumber: userClaims?.UserID || "",
+      SourceSystem: "E-Services",
+      AcceptedLanguage: isRTL ? "AR" : "EN",
+      PageNumber: 1,
+      PageSize: 3,
+    },
+    {
+      skip: !userType, // Skip if we don't have user type
+    }
+  );
+
   const cases = data?.PlaintiffCases ?? [];
   const current = cases[currentCaseIndex] ?? {
     CaseStatusAudit: [] as ICaseStatusAudit[],

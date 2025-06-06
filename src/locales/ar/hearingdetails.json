@@ -4,7 +4,7 @@
     "name": " الاسم",
     "region": " المنطقة",
     "city": "المدينة ",
-    "dobHijri": "تاريخ الميلاد (بالهجري)",
+    "dobHijri": "تاريخ الميلاد (هجري)",
     "dobGrog": "تاريخ الميلاد(ميلادي)",
     "phoneNumber": "رقم الجوال",
     "occupation": "المهنة",
@@ -31,6 +31,7 @@
     "phoneCode": "رمز الدولة"
   },
   "lastWorkingDayGregorian": "آخر يوم عمل (الميلادي)",
+  "dateofLastworkingdayGregorian": "تاريخ أخر يوم عمل (ميلادي)",
   "firstWorkingDayGregorian": "أول يوم عمل (الميلادي)",
   "dateofFirstworkingdayHijri": "تاريخ أول يوم عمل (هجري)",
   "dateofFirstworkingdayGregorian": "تاريخ أول يوم عمل (ميلادي)",
@@ -94,7 +95,7 @@
   "contractDateGregorian": " تاريخ بداية العقد (ميلادي) ",
   "contractExpiryDateHijri": "تاريخ انتهاء العقد (هجري)",
   "contractExpiryDateGregorian": "تاريخ انتهاء العقد (ميلادي)",
-  "dateoflastworkingdayHijri": "تاريخ اخر يوم عمل (بالهجري)",
+  "dateoflastworkingdayHijri": "تاريخ اخر يوم عمل (هجري)",
   "dateoflastworkingdayGregorian": "تاريخ اخر يوم عمل  (ميلادي)",
   "stillEmployed": " ما زال على رأس العمل    ",
   "reason": "السبب",
@@ -160,7 +161,14 @@
   "salaryTypeValidation": "الرجاء اختيار نوع الاجر.",
   "currentSalaryValidation": "الرجاء إدخال الراتب الحالي.",
   "firstWorkingDateValidation": "الرجاء ادخال تاريخ أول يوم عمل بالتقويم الهجري",
-  "contractDateValidation": "الرجاء ادخال تاريخ العقد بالتقويم الهجري.",
+  "dateValidationDesc": "الرجاء إدخال تاريخ صحيح بتنسيق YYYYMMDD",
+  "contractDateValidation": {
+  "pastEndDateOkIfAfterStart": "يمكن أن يكون تاريخ انتهاء العقد في الماضي، ولكن يجب أن يكون بعد تاريخ بدء العقد",
+    "startDateFuture": "لا يمكن أن يكون تاريخ بدء العقد في المستقبل",
+    "endDatePast": "لا يمكن أن يكون تاريخ انتهاء العقد في الماضي",
+    "startAfterEnd": "يجب أن يكون تاريخ البداية قبل تاريخ النهاية",
+    "endBeforeStart": "يجب أن يكون تاريخ النهاية بعد تاريخ البداية"
+  },
   "nationalIdValidation": "الرجاء إدخال رقم الهوية الوطنية.",
   "defendantNameValidation": "الرجاء إدخال الاسم.",
   "dateOfBirthValidation": "الرجاء ادخال تاريخ الميلاد بالتقويم الهجري.",
@@ -188,5 +196,13 @@
   "error": {
     "invalidAgencyNumber": "خطأ في رقم الوكالة",
     "agencyNumberNotBelong": "رقم الهوية غير معتمد في الوكالة"
+  },
+
+  "workDateValidation": {
+    "endBeforeStart": "تاريخ آخر يوم عمل يجب أن يكون بعد تاريخ أول يوم عمل",
+    "startDateFuture": "لا يمكن أن يكون تاريخ بدء العمل في المستقبل",
+    "endAfterContract": "لا يمكن أن يكون تاريخ انتهاء العمل بعد تاريخ انتهاء العقد",
+    "startAfterContract": "لا يمكن أن يكون تاريخ بدء العمل بعد تاريخ انتهاء العقد",
+    "endDateFuture": "لا يمكن أن يكون تاريخ انتهاء العمل في المستقبل"
   }
 }
