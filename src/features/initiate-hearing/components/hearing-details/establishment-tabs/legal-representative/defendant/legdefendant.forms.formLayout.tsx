@@ -1,4 +1,4 @@
-import { UseFormSetValue, UseFormWatch } from "react-hook-form";
+import { UseFormSetValue, UseFormWatch, UseFormTrigger } from "react-hook-form";
 import { SectionLayout, FormData } from "@/shared/components/form/form.types";
 import { useTranslation } from "react-i18next";
 import React, { useEffect, useState } from "react";
@@ -11,17 +11,17 @@ import { useGetGenderLookupDataQuery, useGetNationalityLookupDataQuery, useGetNI
 interface EstablishmentDefendantFormLayoutProps {
   setValue?: UseFormSetValue<FormData>;
   watch?: UseFormWatch<FormData>;
+  trigger?: UseFormTrigger<FormData>;
   applicantType?: string;
   data?: any;
-  nationalIdNumber?: any
+  nationalIdNumber?: any;
 }
 
 export const useLegelDefendantFormLayout = ({
-
   setValue,
-
-  watch
-}: any): SectionLayout[] => {
+  watch,
+  trigger,
+}: EstablishmentDefendantFormLayoutProps): SectionLayout[] => {
 
   const { t, i18n } = useTranslation("hearingdetails");
   const [, setCookie] = useCookieState();
@@ -90,6 +90,29 @@ export const useLegelDefendantFormLayout = ({
       skip: !isValidCallNic
     }
   );
+
+  const disableNicFields = !isValidCallNic || nicIsLoading;
+
+  useEffect(() => {
+    if (!nicIsLoading) {
+      trigger && trigger();
+    }
+  }, [nicIsLoading, trigger]);
+
+  useEffect(() => {
+    if (!isValidCallNic) {
+      [
+        "DefendantsEstablishmentPrisonerName",
+        "mobileNumber",
+        "region",
+        "city",
+        "occupation",
+        "gender",
+        "nationality",
+        "DefendantsEstablishmentPrisonerId",
+      ].forEach((f) => setValue(f as any, ""));
+    }
+  }, [isValidCallNic, setValue]);
 
 
   useEffect(() => {
@@ -168,22 +191,22 @@ export const useLegelDefendantFormLayout = ({
     //console.log("this is newwww", nicData?.NICDetails);
 
     setValue("DefendantsEstablishmentPrisonerName", nicData?.NICDetails?.PlaintiffName, {
-      shouldValidate: nicData?.NICDetails?.PlaintiffName,
+      shouldValidate: true,
     });
     setValue("DefendantsEstablishmentRegion", nicData?.NICDetails?.Region_Code, {
-      shouldValidate: nicData?.NICDetails?.Region_Code,
+      shouldValidate: true,
     });
     setValue("DefendantsEstablishmentCity", nicData?.NICDetails?.City_Code, {
-      shouldValidate: nicData?.NICDetails?.City_Code,
+      shouldValidate: true,
     });
     setValue("DefendantsEstablishOccupation", nicData?.NICDetails?.Occupation_Code, {
-      shouldValidate: nicData?.NICDetails?.Occupation_Code,
+      shouldValidate: true,
     });
     setValue("DefendantsEstablishmentGender", nicData?.NICDetails?.Gender_Code, {
-      shouldValidate: nicData?.NICDetails?.Gender_Code,
+      shouldValidate: true,
     });
     setValue("DefendantsEstablishmentNationality", nicData?.NICDetails?.Nationality_Code, {
-      shouldValidate: nicData?.NICDetails?.Nationality_Code,
+      shouldValidate: true,
     });
     setValue("DefendantsEstablishmentPrisonerId", watchNationalId)
 
@@ -236,6 +259,7 @@ export const useLegelDefendantFormLayout = ({
           ...(!nicData?.NICDetails?.PlaintiffName && {
             validation: { required: t("defendantNameValidation") },
           }),
+          disabled: disableNicFields,
         },
         {
           type: "input",
@@ -250,6 +274,7 @@ export const useLegelDefendantFormLayout = ({
               message: t("phoneValidationMessage"),
             },
           },
+          disabled: disableNicFields,
         },
         {
           type: nicData?.NICDetails?.Region ? "readonly" : "autocomplete",
@@ -262,6 +287,7 @@ export const useLegelDefendantFormLayout = ({
             options: RegionOptions || [],
             validation: { required: t("regionValidation") },
           }),
+          disabled: disableNicFields,
         },
         {
           type: nicData?.NICDetails?.City ? "readonly" : "autocomplete",
@@ -273,6 +299,7 @@ export const useLegelDefendantFormLayout = ({
             options: CityOptions || [],
             validation: { required: t("cityValidation") },
           }),
+          disabled: disableNicFields,
         },
         {
           isLoading: nicIsLoading,
@@ -284,6 +311,7 @@ export const useLegelDefendantFormLayout = ({
             options: occupationOptions || [], // Fallback empty array
             validation: { required: t("occupationValidation") },
           }),
+          disabled: disableNicFields,
         },
         {
           isLoading: nicIsLoading,
@@ -295,6 +323,7 @@ export const useLegelDefendantFormLayout = ({
             options: genderOptions || [], // Fallback empty array
             validation: { required: t("genderValidation") },
           }),
+          disabled: disableNicFields,
 
         },
         {
@@ -307,6 +336,7 @@ export const useLegelDefendantFormLayout = ({
             options: nationalityOptions || [], // Fallback empty array
             validation: { required: t("nationalityValidation") },
           }),
+          disabled: disableNicFields,
         },
 
 
