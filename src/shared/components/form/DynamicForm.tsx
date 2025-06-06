@@ -87,6 +87,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
                         notRequired={child.notRequired}
                         placeholder={child.placeholder}
                         onBlur={child.onBlur}
+                        disabled={child.disabled}
                       />
                     </div>
                   );
@@ -105,6 +106,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
                         invalidFeedback={errors[child.name]}
                         validation={child.validation}
                         control={control}
+                        disabled={child.disabled}
                       />
                     </div>
                   );

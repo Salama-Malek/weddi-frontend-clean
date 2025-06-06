@@ -71,6 +71,7 @@ export type FormElement =
     colSpan?: number;
     maxLength?: number;
     isLoading?: boolean;
+    disabled?: boolean;
     condition?: boolean;
   }
   | {
@@ -84,6 +85,7 @@ export type FormElement =
     notRequired?: boolean;
     colSpan?: number;
     isLoading?: boolean;
+    disabled?: boolean;
     condition?: boolean;
   }
   | {
