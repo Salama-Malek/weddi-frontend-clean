@@ -18,12 +18,12 @@ const customBaseQuery: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQueryEr
         const password = process.env.VITE_API_PASSWORD;
         const encodedCredentials = btoa(`${username}:${password}`);
 
-        // Token Should Be Send In The Header
+        // Token should be sent in the header
         headers.set('Content-Type', 'application/json');
         if (encodedCredentials) {
           headers.set('Authorization', `Basic ${encodedCredentials}`);
         }
-        // Token Should Be Send In The Header
+        // Token should be sent in the header
         const token = cookie.load("token");
         if (token) {
           headers.set('accesstoken', `${token}`);

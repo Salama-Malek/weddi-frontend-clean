@@ -11,7 +11,7 @@ import { OfflineLayout } from "./shared/layouts/OfflineLayout";
 import StepperWithTabs from "./Test";
 import MainLayout from "./shared/layouts/MainLayout";
 import StepperSkeleton from "./shared/components/loader/StepperSkeleton";
-import { TokenExpirationProvider } from "./providers/TokenExpiratinProvider";
+import { TokenExpirationProvider } from "./providers/TokenExpirationProvider";
 import { ToastContainer } from "react-toastify";
 
 const LoginLazy = lazy(() => import("./features/login/Index"));
