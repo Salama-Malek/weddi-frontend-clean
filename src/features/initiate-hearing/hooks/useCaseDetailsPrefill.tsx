@@ -1,18 +1,31 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useCookieState } from "./useCookieState";
 import { useLazyGetCaseDetailsQuery } from "@/features/manage-hearings/api/myCasesApis";
 
-export const useCaseDetailsPrefill = (setValue: (field: string, value: any) => void) => {
+export const useCaseDetailsPrefill = (
+  setValue: (field: string, value: any) => void
+) => {
   const [getCookie] = useCookieState();
-  const caseId = getCookie("caseId");
-  const userType = getCookie("userType");
-  const userClaims = getCookie("userClaims") || {};
-  const mainCategory = getCookie("mainCategory")?.value;
-  const subCategory = getCookie("subCategory")?.value;
 
-  const [triggerCaseDetailsQuery, { data: caseDetailsData }] = useLazyGetCaseDetailsQuery();
+  // Memoize the cookie values once to prevent infinite loop
+  const cookieData = useMemo(() => {
+    return {
+      caseId: getCookie("caseId"),
+      userType: getCookie("userType"),
+      userClaims: getCookie("userClaims") || {},
+      mainCategory: getCookie("mainCategory")?.value,
+      subCategory: getCookie("subCategory")?.value,
+    };
+  }, []);
 
+  const [triggerCaseDetailsQuery, { data: caseDetailsData }] =
+    useLazyGetCaseDetailsQuery();
+
+  // Initial fetch only once with stable cookie values
   useEffect(() => {
+    const { caseId, userType, userClaims, mainCategory, subCategory } =
+      cookieData;
+
     if (!caseId || userType !== "Legal representative") return;
 
     const userConfigs: any = {
@@ -39,8 +52,9 @@ export const useCaseDetailsPrefill = (setValue: (field: string, value: any) => v
       AcceptedLanguage: userClaims?.AcceptedLanguage?.toUpperCase() || "EN",
       SourceSystem: "E-Services",
     });
-  }, [caseId, userType, userClaims, mainCategory, subCategory, triggerCaseDetailsQuery]);
+  }, [cookieData, triggerCaseDetailsQuery]);
 
+  // Populate form values from fetched data
   useEffect(() => {
     if (caseDetailsData?.CaseDetails) {
       const details = caseDetailsData.CaseDetails as Record<string, any>;
