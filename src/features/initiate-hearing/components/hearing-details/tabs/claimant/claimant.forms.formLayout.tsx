@@ -879,6 +879,14 @@ export const useFormLayout = ({
   const getWorkerSections = () => {
     const sections: any[] = [];
 
+    // Set default claimant status to "principal" on mount
+    useEffect(() => {
+      if (!incompleteCaseType) {
+        setValue("claimantStatus", "principal");
+      }
+    }, []); // Empty dependency array means this runs once on mount
+
+
     // Set default agent type to "local_agency" when representative is selected
     useEffect(() => {
       if (claimantStatus === "representative") {
