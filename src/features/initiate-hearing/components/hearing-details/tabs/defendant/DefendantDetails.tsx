@@ -18,6 +18,7 @@ import {
   useGetNICDetailsQuery,
 } from "@/features/initiate-hearing/api/create-case/plaintiffDetailsApis";
 import { useCookieState } from "@/features/initiate-hearing/hooks/useCookieState";
+import useCaseDetailsPrefill from "@/features/initiate-hearing/hooks/useCaseDetailsPrefill";
 import { useAPIFormsData } from "@/providers/FormContext";
 import { useFormLayout } from "./defendant.forms.formLayout";
 import { FieldErrors } from "react-hook-form";
@@ -43,6 +44,9 @@ const DefendantDetailsContainer: React.FC = () => {
       "phoneNumber",
     ].forEach((f) => setValue(f as any, ""));
   }, [])
+
+  // Prefill form fields when continuing an incomplete case for Legal representative
+  useCaseDetailsPrefill(setValue as any);
 
   // Watch fields
   const defendantStatus = watch("defendantStatus");

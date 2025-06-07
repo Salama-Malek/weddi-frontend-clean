@@ -79,6 +79,9 @@ const IncompleteCaseModal: React.FC<IncompleteCaseModalProps> = ({
     }
     // Store the case ID in cookies for the case creation flow to use
     setCookie("caseId", caseNumber);
+    // Reset navigation to the first step and tab
+    localStorage.setItem("step", "0");
+    localStorage.setItem("tab", "0");
     // Navigate to the case creation flow
     navigate("/initiate-hearing/case-creation");
     onClose();

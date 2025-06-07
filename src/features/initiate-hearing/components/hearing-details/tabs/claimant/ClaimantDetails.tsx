@@ -28,6 +28,7 @@ import { useGetIncompleteCaseQuery } from "@/features/dashboard/api/api";
 import { useGetUserTypeLegalRepQuery } from "@/features/login/api/loginApis";
 import { useOtpVerification } from "@/features/initiate-hearing/hooks/useOtpVerification";
 import { useCookieState } from "@/features/initiate-hearing/hooks/useCookieState";
+import useCaseDetailsPrefill from "@/features/initiate-hearing/hooks/useCaseDetailsPrefill";
 import { useSaveClaimantDetailsMutation } from "@/features/initiate-hearing/api/create-case/apis";
 import { useAPIFormsData } from "@/providers/FormContext";
 
@@ -124,6 +125,9 @@ const ClaimantDetailsContainer: React.FC<
     setValue("region", { value: "", label: "" });
     setValue("city", { value: "", label: "" });
   }, []);
+
+  // Prefill form when continuing an incomplete case for Legal representative
+  useCaseDetailsPrefill(setValue as any);
 
   // --- Form-state watchers ---
   const applicantType = watch("applicantType") as
