@@ -137,26 +137,33 @@ export const useFormLayout = ({
   const [getCookie] = useCookieState();
   
   // Get incomplete case type from cookie
-  const incompleteCaseType = getCookie('incompleteCaseType');
-  const claimantStatus = watch('claimantStatus');
+  const incompleteCaseType = getCookie("incompleteCaseType");
+
+  // Determine enforced claimant status based on incomplete case type
+  const enforcedStatus = useMemo(() => {
+    if (incompleteCaseType?.PlaintiffType === "Self(Worker)") return "principal";
+    if (incompleteCaseType?.PlaintiffType === "Agent") return "representative";
+    return null;
+  }, [incompleteCaseType]);
+
+  // Current claimant status from form state with sensible default
+  const claimantStatus = watch("claimantStatus") || enforcedStatus || "principal";
+
+  // Ensure form state matches enforced status or default
+  useEffect(() => {
+    if (enforcedStatus && claimantStatus !== enforcedStatus) {
+      setValue("claimantStatus", enforcedStatus);
+    } else if (!enforcedStatus && !watch("claimantStatus")) {
+      setValue("claimantStatus", "principal");
+    }
+  }, [claimantStatus, enforcedStatus, setValue, watch]);
 
   // Determine if we should show the claimant status selection
-  const shouldShowClaimantStatus = !incompleteCaseType;
+  const shouldShowClaimantStatus = !enforcedStatus;
 
-  // Determine which fields to show based on case type
-  const showPrincipalFields = claimantStatus === "principal" || incompleteCaseType?.PlaintiffType === "Self(Worker)";
-  const showRepresentativeFields = claimantStatus === "representative" || incompleteCaseType?.PlaintiffType === "Agent";
-
-  // If there's an incomplete case, set the appropriate status
-  useEffect(() => {
-    if (incompleteCaseType) {
-      if (incompleteCaseType.PlaintiffType === "Self(Worker)") {
-        setValue('claimantStatus', 'principal');
-      } else if (incompleteCaseType.PlaintiffType === "Agent") {
-        setValue('claimantStatus', 'representative');
-      }
-    }
-  }, [incompleteCaseType, setValue]);
+  // Determine which fields to show based on status
+  const showPrincipalFields = claimantStatus === "principal";
+  const showRepresentativeFields = claimantStatus === "representative";
 
   useEffect(() => {
     register("userName");
@@ -872,11 +879,6 @@ export const useFormLayout = ({
   const getWorkerSections = () => {
     const sections: any[] = [];
 
-    // Set default claimant status to "principal" on mount
-    useEffect(() => {
-      setValue("claimantStatus", "principal");
-    }, []); // Empty dependency array means this runs once on mount
-
     // Set default agent type to "local_agency" when representative is selected
     useEffect(() => {
       if (claimantStatus === "representative") {
@@ -891,7 +893,7 @@ export const useFormLayout = ({
       }
     }, [claimantStatus, idNumber, setValue]);
 
-    if (claimantStatus === "principal") {
+    if (showPrincipalFields) {
       const pd = principalNICResponse?.NICDetails;
       sections.push({
         title: t("nicDetails.personalInfo"),
@@ -1019,7 +1021,7 @@ export const useFormLayout = ({
         ],
       });
     }
-    if (claimantStatus === "representative") {
+    if (showRepresentativeFields) {
       // 1) Agent-Type radio
       sections.push({
         title: t("nicDetails.agentType"),
@@ -1340,7 +1342,10 @@ export const useFormLayout = ({
 
   const ClaimantSelectSection = [];
 
-  if (userType === "Worker" || plaintiffStatus === "leg_rep_worker") {
+  if (
+    shouldShowClaimantStatus &&
+    (userType === "Worker" || plaintiffStatus === "leg_rep_worker")
+  ) {
     ClaimantSelectSection.push({
       isRadio: true,
       children: [
