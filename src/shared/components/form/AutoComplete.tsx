@@ -62,6 +62,7 @@ export const AutoCompleteField: React.FC<AutoCompleteFieldProps> = ({
   validation,
   control,
   isLoading,
+  disabled,
 }) => {
   const { t } = useTranslation();
   const errorMessage = invalidFeedback?.message || invalidFeedback;

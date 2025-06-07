@@ -72,16 +72,22 @@ export const useLegelDefendantFormLayout = ({
 
 
 
+  // Ensure DateOfBirth is a string (e.g., if using a date picker that returns an array)
+  const formattedDateOfBirth =
+    Array.isArray(watchDateOfBirth) && watchDateOfBirth.length > 0
+      ? watchDateOfBirth[0]
+      : watchDateOfBirth;
+
   const {
     data: nicData,
     isSuccess: nicIsSuccess,
     isFetching: nicIsLoading,
     isError,
   } = useGetNICDetailsQuery(
-    watchNationalId && watchDateOfBirth
+    watchNationalId && formattedDateOfBirth
       ? {
           IDNumber: watchNationalId,
-          DateOfBirth: watchDateOfBirth,
+          DateOfBirth: formattedDateOfBirth,
           AcceptedLanguage: i18n.language === "ar" ? "AR" : "EN",
           SourceSystem: "E-Services",
         }
@@ -110,7 +116,7 @@ export const useLegelDefendantFormLayout = ({
         "gender",
         "nationality",
         "DefendantsEstablishmentPrisonerId",
-      ].forEach((f) => setValue(f as any, ""));
+      ].forEach((f) => setValue && setValue(f as any, ""));
     }
   }, [isValidCallNic, setValue]);
 
@@ -210,7 +216,7 @@ export const useLegelDefendantFormLayout = ({
     });
     setValue("DefendantsEstablishmentPrisonerId", watchNationalId)
 
-    setValue("region", { value: nicData?.NICDetails?.Region_Code || "", label: nicData?.NICDetails?.Region || "" });
+    setValue && setValue("region", { value: nicData?.NICDetails?.Region_Code || "", label: nicData?.NICDetails?.Region || "" });
     setValue("city", { value: nicData?.NICDetails?.City_Code || "", label: nicData?.NICDetails?.City || "" });
     setValue("occupation", { value: nicData?.NICDetails?.Occupation_Code || "", label: nicData?.NICDetails?.Occupation || "" });
     setValue("gender", { value: nicData?.NICDetails?.Gender_Code || "", label: nicData?.NICDetails?.Gender || "" });
