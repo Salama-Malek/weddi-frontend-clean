@@ -1,4 +1,4 @@
-import { UseFormSetValue, UseFormWatch, UseFormTrigger } from "react-hook-form";
+import { UseFormSetValue, UseFormWatch } from "react-hook-form";
 import { SectionLayout, FormData } from "@/shared/components/form/form.types";
 import { useTranslation } from "react-i18next";
 import React, { useEffect, useState } from "react";
@@ -11,17 +11,17 @@ import { useGetGenderLookupDataQuery, useGetNationalityLookupDataQuery, useGetNI
 interface EstablishmentDefendantFormLayoutProps {
   setValue?: UseFormSetValue<FormData>;
   watch?: UseFormWatch<FormData>;
-  trigger?: UseFormTrigger<FormData>;
   applicantType?: string;
   data?: any;
-  nationalIdNumber?: any;
+  nationalIdNumber?: any
 }
 
 export const useLegelDefendantFormLayout = ({
+
   setValue,
-  watch,
-  trigger,
-}: EstablishmentDefendantFormLayoutProps): SectionLayout[] => {
+
+  watch
+}: any): SectionLayout[] => {
 
   const { t, i18n } = useTranslation("hearingdetails");
   const [, setCookie] = useCookieState();
@@ -72,22 +72,16 @@ export const useLegelDefendantFormLayout = ({
 
 
 
-  // Ensure DateOfBirth is a string (e.g., if using a date picker that returns an array)
-  const formattedDateOfBirth =
-    Array.isArray(watchDateOfBirth) && watchDateOfBirth.length > 0
-      ? watchDateOfBirth[0]
-      : watchDateOfBirth;
-
   const {
     data: nicData,
     isSuccess: nicIsSuccess,
     isFetching: nicIsLoading,
     isError,
   } = useGetNICDetailsQuery(
-    watchNationalId && formattedDateOfBirth
+    watchNationalId && watchDateOfBirth
       ? {
           IDNumber: watchNationalId,
-          DateOfBirth: formattedDateOfBirth,
+          DateOfBirth: watchDateOfBirth,
           AcceptedLanguage: i18n.language === "ar" ? "AR" : "EN",
           SourceSystem: "E-Services",
         }
@@ -100,12 +94,6 @@ export const useLegelDefendantFormLayout = ({
   const disableNicFields = !isValidCallNic || nicIsLoading;
 
   useEffect(() => {
-    if (!nicIsLoading) {
-      trigger && trigger();
-    }
-  }, [nicIsLoading, trigger]);
-
-  useEffect(() => {
     if (!isValidCallNic) {
       [
         "DefendantsEstablishmentPrisonerName",
@@ -116,7 +104,7 @@ export const useLegelDefendantFormLayout = ({
         "gender",
         "nationality",
         "DefendantsEstablishmentPrisonerId",
-      ].forEach((f) => setValue && setValue(f as any, ""));
+      ].forEach((f) => setValue(f as any, ""));
     }
   }, [isValidCallNic, setValue]);
 
@@ -197,26 +185,26 @@ export const useLegelDefendantFormLayout = ({
     //console.log("this is newwww", nicData?.NICDetails);
 
     setValue("DefendantsEstablishmentPrisonerName", nicData?.NICDetails?.PlaintiffName, {
-      shouldValidate: true,
+      shouldValidate: nicData?.NICDetails?.PlaintiffName,
     });
     setValue("DefendantsEstablishmentRegion", nicData?.NICDetails?.Region_Code, {
-      shouldValidate: true,
+      shouldValidate: nicData?.NICDetails?.Region_Code,
     });
     setValue("DefendantsEstablishmentCity", nicData?.NICDetails?.City_Code, {
-      shouldValidate: true,
+      shouldValidate: nicData?.NICDetails?.City_Code,
     });
     setValue("DefendantsEstablishOccupation", nicData?.NICDetails?.Occupation_Code, {
-      shouldValidate: true,
+      shouldValidate: nicData?.NICDetails?.Occupation_Code,
     });
     setValue("DefendantsEstablishmentGender", nicData?.NICDetails?.Gender_Code, {
-      shouldValidate: true,
+      shouldValidate: nicData?.NICDetails?.Gender_Code,
     });
     setValue("DefendantsEstablishmentNationality", nicData?.NICDetails?.Nationality_Code, {
-      shouldValidate: true,
+      shouldValidate: nicData?.NICDetails?.Nationality_Code,
     });
     setValue("DefendantsEstablishmentPrisonerId", watchNationalId)
 
-    setValue && setValue("region", { value: nicData?.NICDetails?.Region_Code || "", label: nicData?.NICDetails?.Region || "" });
+    setValue("region", { value: nicData?.NICDetails?.Region_Code || "", label: nicData?.NICDetails?.Region || "" });
     setValue("city", { value: nicData?.NICDetails?.City_Code || "", label: nicData?.NICDetails?.City || "" });
     setValue("occupation", { value: nicData?.NICDetails?.Occupation_Code || "", label: nicData?.NICDetails?.Occupation || "" });
     setValue("gender", { value: nicData?.NICDetails?.Gender_Code || "", label: nicData?.NICDetails?.Gender || "" });

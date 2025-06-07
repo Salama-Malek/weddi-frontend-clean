@@ -119,7 +119,7 @@ const ClaimantDetailsContainer: React.FC<
   const userType = getCookie("userType");
 
   // Clean The Form Data On load The Component
-  const { clearFormData, trigger } = useAPIFormsData();
+  const { clearFormData } = useAPIFormsData();
   useEffect(() => {
     setValue("region", { value: "", label: "" });
     setValue("city", { value: "", label: "" });
@@ -224,12 +224,6 @@ const ClaimantDetailsContainer: React.FC<
         (applicantType === "representative" && (!plaintiffId || plaintiffId.length !== 10 || !plaintiffHijriDOB))
     }
   );
-
-  useEffect(() => {
-    if (!nicLoading) {
-      trigger();
-    }
-  }, [nicLoading, trigger]);
 
   // --- Agent info ---
   const {
@@ -476,11 +470,7 @@ const ClaimantDetailsContainer: React.FC<
 
   return (
     <>
-      {nicLoading && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-25 backdrop-blur-sm z-[9999]">
-          <Loader />
-        </div>
-      )}
+      {(nicLoading) && <Loader />}
       {isAgencyValidating && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-25 backdrop-blur-sm z-[9999]">
           <Loader />

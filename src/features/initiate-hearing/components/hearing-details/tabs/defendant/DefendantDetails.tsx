@@ -33,7 +33,7 @@ const DefendantDetailsContainer: React.FC = () => {
   const lang = i18n.language.toUpperCase();
 
   // Form context including errors
-  const { register, clearFormData, setValue, watch, control, formState, trigger } = useAPIFormsData();
+  const { register, clearFormData, setValue, watch, control, formState } = useAPIFormsData();
   const errors = formState.errors;
   // Cleare The Form Data Before The Componet load 
   useEffect(() => {
@@ -113,12 +113,6 @@ const DefendantDetailsContainer: React.FC = () => {
         : skipToken
   );
 
-  useEffect(() => {
-    if (!nicLoading) {
-      trigger();
-    }
-  }, [nicLoading, trigger]);
-
   // Region/City/Occupation/Nationality lookups
   const { data: regionData } = useGetWorkerRegionLookupDataQuery({
     AcceptedLanguage: lang,
@@ -170,14 +164,12 @@ const DefendantDetailsContainer: React.FC = () => {
     setValue,
     selectedWorkerRegion2,
     watch,
-    trigger,
   });
 
   // hassan add this 
   const legelDefendantFormLayout = useLegelDefendantFormLayout({
     setValue,
     watch,
-    trigger,
   });
 
   // Memoize form layouts
@@ -245,11 +237,7 @@ const DefendantDetailsContainer: React.FC = () => {
   */
   return (
     <>
-      {nicLoading && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-25 backdrop-blur-sm z-[9999]">
-          <Loader />
-        </div>
-      )}
+      {nicLoading && <Loader />}
       <div className={`relative ${nicLoading ? "pointer-events-none" : ""}`}>
         <div className={nicLoading ? "blur-sm" : ""}>
           <DynamicForm

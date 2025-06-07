@@ -192,8 +192,7 @@ export const usePlaintiffFormLayout = (): SectionLayout[] => {
                     label: t("occupation"),
                     options: OccupationOptions,
                     value: nicData?.NICDetails?.Occupation || "",
-                    onChange: (value: any) => setValue("plaintiffOccupation", value),
-                    validation: { required: t("occupationValidation") }
+                    onChange: (value: any) => setValue("plaintiffOccupation", value)
                   },
                   {
                     type: "autocomplete" as const,
@@ -243,8 +242,7 @@ export const usePlaintiffFormLayout = (): SectionLayout[] => {
                     label: t("occupation"),
                     options: OccupationOptions,
                     value: watch("plaintiffOccupation"),
-                    onChange: (value: any) => setValue("plaintiffOccupation", value),
-                    validation: { required: t("occupationValidation") }
+                    onChange: (value: any) => setValue("plaintiffOccupation", value)
                   },
                   {
                     type: "autocomplete" as const,
@@ -280,18 +278,17 @@ export const usePlaintiffFormLayout = (): SectionLayout[] => {
                     value: watch("plaintiffCountryCode"),
                     onChange: (value: any) => setValue("plaintiffCountryCode", value)
                   },
-                {
-                  type: "input" as const,
-                  name: "plaintiffMobileIntl",
-                  label: t("mobileNumber"),
-                  inputType: "text",
-                  value: watch("plaintiffMobileIntl"),
-                  onChange: (value: string) => setValue("plaintiffMobileIntl", value),
-                  validation: { required: t("phoneNumberValidation") }
-                },
-                {
-                  type: "input" as const,
-                  name: "plaintiffOtp",
+                  {
+                    type: "input" as const,
+                    name: "plaintiffMobileIntl",
+                    label: t("mobileNumber"),
+                    inputType: "text",
+                    value: watch("plaintiffMobileIntl"),
+                    onChange: (value: string) => setValue("plaintiffMobileIntl", value)
+                  },
+                  {
+                    type: "input" as const,
+                    name: "plaintiffOtp",
                     label: t("otp"),
                     inputType: "text",
                     value: watch("plaintiffOtp"),
@@ -443,8 +440,7 @@ export const usePlaintiffFormLayout = (): SectionLayout[] => {
                   label: t("occupation"),
                   options: OccupationOptions,
                   value: nicData?.NICDetails?.Occupation || "",
-                  onChange: (value: any) => setValue("plaintiffOccupation", value),
-                  validation: { required: t("occupationValidation") }
+                  onChange: (value: any) => setValue("plaintiffOccupation", value)
                 },
                 {
                   type: "autocomplete" as const,
@@ -494,8 +490,7 @@ export const usePlaintiffFormLayout = (): SectionLayout[] => {
                   label: t("occupation"),
                   options: OccupationOptions,
                   value: watch("plaintiffOccupation"),
-                  onChange: (value: any) => setValue("plaintiffOccupation", value),
-                  validation: { required: t("occupationValidation") }
+                  onChange: (value: any) => setValue("plaintiffOccupation", value)
                 },
                 {
                   type: "autocomplete" as const,
@@ -537,8 +532,7 @@ export const usePlaintiffFormLayout = (): SectionLayout[] => {
                   label: t("mobileNumber"),
                   inputType: "text",
                   value: watch("plaintiffMobileIntl"),
-                  onChange: (value: string) => setValue("plaintiffMobileIntl", value),
-                  validation: { required: t("phoneNumberValidation") }
+                  onChange: (value: string) => setValue("plaintiffMobileIntl", value)
                 },
                 {
                   type: "input" as const,
@@ -613,8 +607,7 @@ export const usePlaintiffFormLayout = (): SectionLayout[] => {
           label: t("occupation"),
           inputType: "text",
           value: watch("plaintiffOccupation"),
-          onChange: (value: string) => setValue("plaintiffOccupation", value),
-          validation: { required: t("occupationValidation") }
+          onChange: (value: string) => setValue("plaintiffOccupation", value)
         },
         {
           type: "input" as const,

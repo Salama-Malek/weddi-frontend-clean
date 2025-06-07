@@ -76,17 +76,12 @@ export function useCookieState(defaults?: Record<string, any>, options: CookieOp
     [options.path]
   );
 
-  const removeAll = useCallback(
-    (path: string = options.path || "/") => {
-      const all = cookie.loadAll();
-      for (const key in all) {
-        cookie.remove(key, { path });
-        cookieEventTarget.dispatchEvent(new Event(key));
-      }
-      setCookieState({});
-    },
-    [options.path]
-  );
+  const removeAll = useCallback((path: string = "/") => {
+    const all = cookie.loadAll();
+    for (let obj in all) {
+      removeCookie(obj);
+    }
+  }, []);
 
   useEffect(() => {
     const handlers: { [key: string]: () => void } = {};

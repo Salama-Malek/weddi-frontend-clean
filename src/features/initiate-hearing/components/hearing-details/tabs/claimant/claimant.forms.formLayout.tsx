@@ -294,8 +294,6 @@ export const useFormLayout = ({
     workerAgentIdNumber.length === 10 &&
     workerAgentHijriDob.length === 8;
 
-  const disableNicFields = !shouldFetchNicAgent || nicAgentLoading;
-
   useEffect(() => {
     if (!shouldFetchNicAgent) {
       [
@@ -327,6 +325,8 @@ export const useFormLayout = ({
     },
     { skip: !shouldFetchNicAgent }
   );
+
+  const disableNicFields = !shouldFetchNicAgent || nicAgentLoading;
 
   // 3) effect to populate or error exactly once per fetch:
   useEffect(() => {

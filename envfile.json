@@ -1,0 +1,26 @@
+# VITE_API_URL="https://weddiqa.hrsd.gov.sa/prweb/api"
+# VITE_API_URL="https://weddipreprod.hrsd.gov.sa/prweb/api"
+VITE_API_URL="https://weddi.hrsd.gov.sa/prweb/api"
+# VITE_API_URL="https://jsonplaceholder.typicode.com/"
+VITE_API_SECRET_ALG='HS256'
+VITE_API_SECRET=Your_Secure_Key_1234567890_ABCDEFGH
+VITE_REDIRECT_URL="https://www.mol.gov.sa/SecureSSL/Login.aspx"
+# VITE_REDIRECT_URL="https://mol-stage-app3.molstagedom.net/SecureSSL/Login.aspx"
+VITE_REDIRECT_URL_LOCAL="https://www.mol.gov.sa/SecureSSL/Login.aspx"
+# VITE_REDIRECT_URL_LOCAL="https://mol-stage-app3.molstagedom.net/SecureSSL/Login.aspx"
+VITE_LOGIN_SWITCH="true"
+ 
+ 
+VITE_API_ISSUSER='MyClients'
+VITE_API_AUDIENCE='WEDDI_PORTAL'
+VITE_API_EXPIR_TIME='1d'
+ 
+VITE_API_USER_TYPE= Individual
+VITE_API_ID_NUMBER=2222222222
+VITE_API_USERNAME='EServiceUser'
+VITE_API_PASSWORD='Rules@1234'
+VITE_API_USERNAME='WeddiCreateCase'
+VITE_API_PASSWORD='Rules@1234'
+# VITE_API_USERNAME='arabicuser'
+# VITE_API_PASSWORD='rules'
+NODE_ENV="development"

@@ -12,12 +12,12 @@ export type CaseAttachment = {
 
 export type CasePayload = {
   [key: string]:
-  | string
-  | number
-  | boolean
-  | string[]
-  | CaseAttachment[]
-  | undefined;
+    | string
+    | number
+    | boolean
+    | string[]
+    | CaseAttachment[]
+    | undefined;
 };
 
 // Base payload for all Create/Update calls
@@ -35,7 +35,7 @@ const getBasePayload = (
 
   // Only add PlaintiffId for Worker and Agent user types
   const lowUserType = userType?.toLowerCase();
-  if (lowUserType === 'worker' || lowUserType === 'agent') {
+  if (lowUserType === "worker" || lowUserType === "agent") {
     basePayload.PlaintiffId = userClaims?.UserID;
   }
 
@@ -65,23 +65,25 @@ export const claimantDetailsPayload = (
   payload.PlaintiffName = nicDetailObj?.PlaintiffName || userClaims?.UserName;
   payload.PlaintiffHijiriDOB =
     nicDetailObj?.DateOfBirthHijri || userClaims?.UserDOB || "";
-  payload.Plaintiff_ApplicantBirthDate = nicDetailObj?.DateOfBirthGregorian || formData?.gregorianDate;
+  payload.Plaintiff_ApplicantBirthDate =
+    nicDetailObj?.DateOfBirthGregorian || formData?.gregorianDate;
   payload.Plaintiff_PhoneNumber = formData?.phoneNumber || "";
-  payload.Plaintiff_Region = nicDetailObj?.Region_Code || formData?.region?.value;
+  payload.Plaintiff_Region =
+    nicDetailObj?.Region_Code || formData?.region?.value;
   payload.Plaintiff_City = nicDetailObj?.City_Code || formData?.city?.value;
-  payload.JobPracticing = nicDetailObj?.Occupation_Code || formData?.occupation?.value;
+  payload.JobPracticing =
+    nicDetailObj?.Occupation_Code || formData?.occupation?.value;
   payload.Gender = nicDetailObj?.Gender_Code || formData?.gender?.value;
-  payload.Worker_Nationality = nicDetailObj?.Nationality_Code || formData?.nationality?.value;
-  payload.Plaintiff_JobLocation = nicDetailObj?.Region_Code || formData?.region?.value;
+  payload.Worker_Nationality =
+    nicDetailObj?.Nationality_Code || formData?.nationality?.value;
+  payload.Plaintiff_JobLocation =
+    nicDetailObj?.Region_Code || formData?.region?.value;
   // payload.PlaintiffJobCity = formData?.city?.value; // check again
   payload.Plaintiff_ClosestLaborOffice = formData?.laborOffice?.value;
-
   const applicantType = formData?.applicantType;
   const isAgent = applicantType === "Agent";
-
   payload.ApplicantType = "Worker";
   payload.PlaintiffType = isAgent ? "Agent" : "Self(Worker)";
-
 
   if (isAgent) {
     payload.Agent_AgentID = attorneyData?.agentId || userClaims?.UserID;
@@ -89,8 +91,8 @@ export const claimantDetailsPayload = (
       formData?.certifiedAgency === "localAgency"
         ? "CB1"
         : formData?.certifiedAgency === "externalAgency"
-          ? "CB2"
-          : "";
+        ? "CB2"
+        : "";
     payload.Agent_Name = attorneyData?.agentName || formData?.agentName;
     payload.Agent_MandateNumber = formData?.agentMandateNumber;
     payload.Agent_PhoneNumber = formData?.phoneNumber;
@@ -126,10 +128,14 @@ export const claimantDetailsPayload = (
       EstId: extractValue(formData?.PlaintiffsEstablishmentID),
       Plaintiff_CRNumber: extractValue(formData?.PlaintiffsCRNumber),
       PlaintiffEstFileNumber: extractValue(formData?.PlaintiffsFileNumber),
-      EstablishmentFullName: extractValue(formData?.PlaintiffsEstablishmentName),
+      EstablishmentFullName: extractValue(
+        formData?.PlaintiffsEstablishmentName
+      ),
       Activity: formData?.Activity || "",
       EstablishmentName: extractValue(formData?.PlaintiffsEstablishmentName),
-      Plaintiff_PhoneNumber: extractValue(formData?.Plaintiff_PhoneNumber) || extractValue(formData?.phoneNumber),
+      Plaintiff_PhoneNumber:
+        extractValue(formData?.Plaintiff_PhoneNumber) ||
+        extractValue(formData?.phoneNumber),
       Plaintiff_Region: extractValue(formData?.region?.value),
       Plaintiff_City: extractValue(formData?.city?.value),
       EstablishmentType: "Establishment",
@@ -143,17 +149,29 @@ export const claimantDetailsPayload = (
       ...getBasePayload(userClaims, language || "EN", userType),
       Flow_ButtonName: buttonName,
       CaseID: caseId,
-      PlaintiffType: formData?.applicantType === "Agent" ? "Agent" : "Self(Worker)",
-      PlaintiffName: formData?.userName || nicDetailObj?.PlaintiffName || userClaims?.UserName,
-      PlaintiffHijiriDOB: formData?.hijriDate || nicDetailObj?.DateOfBirthHijri || userClaims?.UserDOB || "",
-      Plaintiff_ApplicantBirthDate: nicDetailObj?.DateOfBirthGregorian || formData?.gregorianDate,
+      PlaintiffType:
+        formData?.applicantType === "Agent" ? "Agent" : "Self(Worker)",
+      PlaintiffName:
+        formData?.userName ||
+        nicDetailObj?.PlaintiffName ||
+        userClaims?.UserName,
+      PlaintiffHijiriDOB:
+        formData?.hijriDate ||
+        nicDetailObj?.DateOfBirthHijri ||
+        userClaims?.UserDOB ||
+        "",
+      Plaintiff_ApplicantBirthDate:
+        nicDetailObj?.DateOfBirthGregorian || formData?.gregorianDate,
       Plaintiff_PhoneNumber: formData?.phoneNumber?.toString() || "",
       Plaintiff_Region: nicDetailObj?.Region_Code || formData?.region?.value,
       Plaintiff_City: nicDetailObj?.City_Code || formData?.city?.value,
-      JobPracticing: nicDetailObj?.Occupation_Code || formData?.occupation?.value,
+      JobPracticing:
+        nicDetailObj?.Occupation_Code || formData?.occupation?.value,
       Gender: nicDetailObj?.Gender_Code || formData?.gender?.value,
-      Worker_Nationality: nicDetailObj?.Nationality_Code || formData?.nationality?.value,
-      Plaintiff_JobLocation: nicDetailObj?.Region_Code || formData?.region?.value,
+      Worker_Nationality:
+        nicDetailObj?.Nationality_Code || formData?.nationality?.value,
+      Plaintiff_JobLocation:
+        nicDetailObj?.Region_Code || formData?.region?.value,
       Plaintiff_ClosestLaborOffice: formData?.laborOffice?.value,
       IsGNRequired: formData?.isPhone || false,
       CountryCode: formData?.phoneCode?.value || "",
@@ -168,8 +186,8 @@ export const claimantDetailsPayload = (
           formData?.agentType === "local_agency"
             ? "CB1"
             : formData?.agentType === "external_agency"
-              ? "CB2"
-              : "",
+            ? "CB2"
+            : "",
         Agent_Name: attorneyData?.agentName,
         Agent_MandateNumber: formData?.agencyNumber,
         Agent_PhoneNumber: formData?.mobileNumber,
@@ -190,14 +208,14 @@ export const claimantDetailsPayload = (
       payload.DomesticWorker = "true";
       payload.CaseAttachments = formData?.attachment
         ? [
-          {
-            FileType: formData?.attachment.fileType,
-            AttachmentRequired: "true",
-            FileName: formData?.attachment.fileName,
-            FileData: formData?.base64,
-            Attachmentdescription: "Unprofessional Letter",
-          },
-        ]
+            {
+              FileType: formData?.attachment.fileType,
+              AttachmentRequired: "true",
+              FileName: formData?.attachment.fileName,
+              FileData: formData?.base64,
+              Attachmentdescription: "Unprofessional Letter",
+            },
+          ]
         : [];
     } else if (isDomestic !== undefined) {
       payload.DomesticWorker = "false";
@@ -208,8 +226,6 @@ export const claimantDetailsPayload = (
 
   const builder = builders[lowUserType ?? ""] || defaultBuilder;
   return builder();
-
-
 };
 
 export const defendantDetailsPayload = (
@@ -227,8 +243,6 @@ export const defendantDetailsPayload = (
 ): CasePayload => {
   const lowUserType = userType?.toLocaleLowerCase();
 
-
-
   console.log("this is deff", formData);
 
   const builders: Record<string, () => CasePayload> = {
@@ -242,7 +256,9 @@ export const defendantDetailsPayload = (
         formatDateToYYYYMMDD(formData?.def_date_hijri)
       ),
       DefendantType: "",
-      DefendantName: extractValue(formData?.DefendantsEstablishmentPrisonerName),
+      DefendantName: extractValue(
+        formData?.DefendantsEstablishmentPrisonerName
+      ),
       Defendant_PhoneNumber: extractValue(formData?.mobileNumber),
       Defendant_Region: extractValue(formData?.region?.value),
       Defendant_City: extractValue(formData?.city?.value),
@@ -257,7 +273,9 @@ export const defendantDetailsPayload = (
       Defendant_HijiriDOB: extractValue(
         formatDateToYYYYMMDD(formData?.def_date_hijri)
       ),
-      DefendantName: extractValue(formData?.DefendantsEstablishmentPrisonerName),
+      DefendantName: extractValue(
+        formData?.DefendantsEstablishmentPrisonerName
+      ),
       Defendant_PhoneNumber: extractValue(formData?.mobileNumber),
       Defendant_Region: extractValue(formData?.region?.value),
       Defendant_City: extractValue(formData?.city?.value),
@@ -277,8 +295,10 @@ export const defendantDetailsPayload = (
         CaseID: getCaseId,
         Flow_CurrentScreen: "DefendantDetails",
         DefendantType: "Government",
-        Defendant_MainGovtDefend: formData?.main_category_of_the_government_entity?.value,
-        DefendantSubGovtDefend: formData?.subcategory_of_the_government_entity?.value,
+        Defendant_MainGovtDefend:
+          formData?.main_category_of_the_government_entity?.value,
+        DefendantSubGovtDefend:
+          formData?.subcategory_of_the_government_entity?.value,
       };
     }
 
@@ -290,9 +310,12 @@ export const defendantDetailsPayload = (
         Flow_CurrentScreen: "DefendantDetails",
         DefendantType: "Establishment",
         Defendant_EstablishmentNameDetails:
-          formData?.Defendant_Establishment_data_NON_SELECTED?.EstablishmentName,
-        DefendantEstFileNumber: formData?.Defendant_Establishment_data_NON_SELECTED?.FileNumber,
-        Defendant_CRNumber: formData?.Defendant_Establishment_data_NON_SELECTED?.CRNumber,
+          formData?.Defendant_Establishment_data_NON_SELECTED
+            ?.EstablishmentName,
+        DefendantEstFileNumber:
+          formData?.Defendant_Establishment_data_NON_SELECTED?.FileNumber,
+        Defendant_CRNumber:
+          formData?.Defendant_Establishment_data_NON_SELECTED?.CRNumber,
         Defendant_PhoneNumber: formData?.phoneNumber,
         Defendant_Region: formData?.region?.value,
         Defendant_City: formData?.city?.value,
@@ -315,7 +338,8 @@ export const defendantDetailsPayload = (
       Defendant_CRNumber:
         formData?.Defendant_Establishment_data?.CRNumber ||
         formData?.Defendant_Establishment_data_NON_SELECTED?.CRNumber,
-      Defendant_Region: formData?.Defendant_Establishment_data?.Region_Code || "1",
+      Defendant_Region:
+        formData?.Defendant_Establishment_data?.Region_Code || "1",
       Defendant_City: formData?.Defendant_Establishment_data?.City_Code || "1",
       Defendant_PhoneNumber: formData?.phoneNumber,
       Defendant_MobileNumber: formData?.phoneNumber,
@@ -325,7 +349,6 @@ export const defendantDetailsPayload = (
   const builder = builders[lowUserType ?? ""] || defaultBuilder;
   return builder();
 };
-
 
 export const workDetailsPayload = (
   buttonName: "Next" | "Save",
