@@ -132,6 +132,31 @@ export const useFormLayout = ({
   representativeNICResponse,
 }: FormLayoutProps): SectionLayout[] => {
   const { register } = useForm<FormData>();
+  const { t, i18n } = useTranslation("hearingdetails");
+  const { t: LegalRep } = useTranslation("legal_rep");
+  const [getCookie] = useCookieState();
+  
+  // Get incomplete case type from cookie
+  const incompleteCaseType = getCookie('incompleteCaseType');
+  const claimantStatus = watch('claimantStatus');
+
+  // Determine if we should show the claimant status selection
+  const shouldShowClaimantStatus = !incompleteCaseType;
+
+  // Determine which fields to show based on case type
+  const showPrincipalFields = claimantStatus === "principal" || incompleteCaseType?.PlaintiffType === "Self(Worker)";
+  const showRepresentativeFields = claimantStatus === "representative" || incompleteCaseType?.PlaintiffType === "Agent";
+
+  // If there's an incomplete case, set the appropriate status
+  useEffect(() => {
+    if (incompleteCaseType) {
+      if (incompleteCaseType.PlaintiffType === "Self(Worker)") {
+        setValue('claimantStatus', 'principal');
+      } else if (incompleteCaseType.PlaintiffType === "Agent") {
+        setValue('claimantStatus', 'representative');
+      }
+    }
+  }, [incompleteCaseType, setValue]);
 
   useEffect(() => {
     register("userName");
@@ -146,7 +171,6 @@ export const useFormLayout = ({
     register("workerAgentDateOfBirthHijri");
   }, [register]);
 
-  const [getCookie] = useCookieState();
   const userClaims = getCookie("userClaims") as TokenClaims;
   const idNumber = userClaims?.UserID || "";
   const dobirth = userClaims?.UserDOB || "";
@@ -156,8 +180,10 @@ export const useFormLayout = ({
   const { plaintiffTypeOptions, AgentTypeOptions } = useLegalRepFormOptions();
   const { clearFormData } = useAPIFormsData();
 
-  const { t } = useTranslation("hearingdetails");
-  const { t: LegalRep } = useTranslation("legal_rep");
+  // Use incompleteCaseType directly
+  const showOnlyPrincipal = incompleteCaseType?.PlaintiffType === "Self(Worker)";
+  const showOnlyRepresentative = incompleteCaseType?.PlaintiffType === "Agent";
+
   // --- Field watchers for NIC trigger ---
   // const workerAgentIdNumber = watch("workerAgentIdNumber") || "";
   // const workerAgentHijriDob = watch("workerAgentDateOfBirthHijri") || "";
@@ -288,14 +314,18 @@ export const useFormLayout = ({
   }, []);
 
   // 1) compute when we're ready to fire:
-  const claimantStatus = watch("claimantStatus");
-  const shouldFetchNicAgent =
-    claimantStatus === "representative" &&
-    workerAgentIdNumber.length === 10 &&
-    workerAgentHijriDob.length === 8;
+  const shouldFetchNic = claimantStatus === "representative" && workerAgentIdNumber.length === 10 && workerAgentHijriDob.replace(/\//g, '').length === 8;
+
+  console.log("Claimant Status:", claimantStatus);
+  console.log("Worker Agent ID Number:", workerAgentIdNumber);
+  console.log("Worker Agent Hijri DOB:", workerAgentHijriDob);
+  console.log("Should Fetch NIC:", shouldFetchNic);
+  console.log("Claimant Status Check:", claimantStatus === "representative");
+  console.log("ID Number Length Check:", workerAgentIdNumber.length === 10);
+  console.log("Hijri DOB Length Check:", workerAgentHijriDob.replace(/\//g, '').length === 8);
 
   useEffect(() => {
-    if (!shouldFetchNicAgent) {
+    if (!shouldFetchNic) {
       [
         "userName",
         "region",
@@ -309,7 +339,7 @@ export const useFormLayout = ({
         "phoneNumber",
       ].forEach((f) => setValue(f as any, ""));
     }
-  }, [shouldFetchNicAgent, setValue]);
+  }, [shouldFetchNic, setValue]);
 
   // 2) one NIC query, only when both inputs are valid:
   const {
@@ -323,14 +353,18 @@ export const useFormLayout = ({
       AcceptedLanguage: "EN",
       SourceSystem: "E-Services",
     },
-    { skip: !shouldFetchNicAgent }
+    { skip: !shouldFetchNic }
   );
 
-  const disableNicFields = !shouldFetchNicAgent || nicAgentLoading;
+  console.log("NIC Agent Data:", nicAgent);
+  console.log("NIC Agent Loading:", nicAgentLoading);
+  console.log("NIC Agent Error:", nicAgentError);
+
+  const disableNicFields = !shouldFetchNic || nicAgentLoading;
 
   // 3) effect to populate or error exactly once per fetch:
   useEffect(() => {
-    if (!shouldFetchNicAgent) return;
+    if (!shouldFetchNic) return;
 
     if (nicAgentError || !nicAgent?.NICDetails) {
       if (typeof setError === "function") {
@@ -359,7 +393,7 @@ export const useFormLayout = ({
         setValue("phoneNumber", d.PhoneNumber.toString());
       }
     }
-  }, [shouldFetchNicAgent, nicAgent, nicAgentError, setValue, setError, t]);
+  }, [shouldFetchNic, nicAgent, nicAgentError, setValue, setError, t]);
 
   // –––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
   const plaintiffStatus = watch("plaintiffStatus");
@@ -872,76 +906,43 @@ export const useFormLayout = ({
             isLoading: nicAgentLoading,
           },
 
-          // Name
-          ...(pd?.PlaintiffName
-            ? [
-                {
-                  type: "readonly" as const,
-                  label: t("nicDetails.name"),
-                  value: pd.PlaintiffName,
-                  isLoading: nicAgentLoading,
-                },
-              ]
-            : [
-                {
-                  type: "input" as const,
-                  name: "userName",
-                  inputType: "text",
-                  label: t("nicDetails.name"),
-                  value: watch("userName"),
-                  onChange: (v: string) => setValue("userName", v),
-                  validation: { required: t("nameValidation") },
-                  isLoading: nicAgentLoading,
-                },
-              ]),
+          // Name field - readonly if from NIC, input if not
+          {
+            type: pd?.PlaintiffName ? "readonly" : "input",
+            name: "userName",
+            label: t("nicDetails.name"),
+            value: pd?.PlaintiffName || "",
+            isLoading: nicAgentLoading,
+            ...(!pd?.PlaintiffName && {
+              validation: { required: t("nameValidation") }
+            })
+          },
 
-          // Region
-          ...(pd?.Region
-            ? [
-                {
-                  type: "readonly" as const,
-                  label: t("nicDetails.region"),
-                  value: pd.Region,
-                  isLoading: nicAgentLoading,
-                },
-              ]
-            : [
-                {
-                  type: "autocomplete" as const,
-                  name: "region",
-                  label: t("nicDetails.region"),
-                  options: RegionOptions,
-                  value: watch("region"),
-                  onChange: (v: string) => setValue("region", v),
-                  validation: { required: t("regionValidation") },
-                  isLoading: nicAgentLoading,
-                },
-              ]),
+          // Region field - readonly if from NIC, autocomplete if not
+          {
+            type: pd?.Region ? "readonly" : "autocomplete",
+            name: "region",
+            label: t("nicDetails.region"),
+            value: pd?.Region || "",
+            options: RegionOptions,
+            isLoading: nicAgentLoading,
+            ...(!pd?.Region && {
+              validation: { required: t("regionValidation") }
+            })
+          },
 
-          // City
-          ...(pd?.City
-            ? [
-                {
-                  type: "readonly" as const,
-                  label: t("nicDetails.city"),
-                  value: pd.City,
-                  onChange: (v: string) => setValue("city", v),
-                  validation: { required: t("cityValidation") },
-                  isLoading: nicAgentLoading,
-                },
-              ]
-            : [
-                {
-                  type: "autocomplete" as const,
-                  name: "city",
-                  label: t("nicDetails.city"),
-                  options: CityOptions,
-                  value: watch("city"),
-                  onChange: (v: string) => setValue("city", v),
-                  validation: { required: t("cityValidation") },
-                  isLoading: nicAgentLoading,
-                },
-              ]),
+          // City field - readonly if from NIC, autocomplete if not
+          {
+            type: pd?.City ? "readonly" : "autocomplete",
+            name: "city",
+            label: t("nicDetails.city"),
+            value: pd?.City || "",
+            options: CityOptions,
+            isLoading: nicAgentLoading,
+            ...(!pd?.City && {
+              validation: { required: t("cityValidation") }
+            })
+          },
 
           // Date of Birth (Hijri)
           {
@@ -950,126 +951,71 @@ export const useFormLayout = ({
             value: formatDateString(pd?.DateOfBirthHijri) || "",
             isLoading: nicAgentLoading,
           },
+
           // Date of Birth (Gregorian)
           {
             type: "readonly" as const,
             label: t("nicDetails.dobGrog"),
-            // value: pd?.DateOfBirthGregorian || "",
-
-            value: formatDateString(pd?.DateOfBirthGregorian),
+            value: formatDateString(pd?.DateOfBirthGregorian) || "",
             isLoading: nicAgentLoading,
           },
 
-          // Phone Number
-          ...(pd?.PhoneNumber
-            ? [
-                {
-                  type: "readonly" as const,
-                  label: t("nicDetails.phoneNumber"),
-                  value: pd.PhoneNumber,
-                  isLoading: nicAgentLoading,
-                },
-              ]
-            : [
-                {
-                  type: "input" as const,
-                  name: "phoneNumber",
-                  inputType: "text",
-                  placeholder: "05xxxxxxxx",
-                  label: t("nicDetails.phoneNumber"),
-                  value: watch("phoneNumber"),
-                  onChange: (v: string) => setValue("phoneNumber", v),
-                  validation: {
-                    required: t("phoneNumberValidation"),
-                    pattern: {
-                      value: /^05\d{8}$/,
-                      message: t("phoneValidationMessage"),
-                    },
-                  },
-                  isLoading: nicAgentLoading,
-                },
-              ]),
+          // Phone Number field - readonly if from NIC, input if not
+          {
+            type: pd?.PhoneNumber ? "readonly" : "input",
+            name: "phoneNumber",
+            label: t("nicDetails.phoneNumber"),
+            value: pd?.PhoneNumber || "",
+            isLoading: nicAgentLoading,
+            ...(!pd?.PhoneNumber && {
+              validation: {
+                required: t("phoneNumberValidation"),
+                pattern: {
+                  value: /^05\d{8}$/,
+                  message: t("phoneValidationMessage")
+                }
+              }
+            })
+          },
 
-          // Occupation
-          ...(pd?.Occupation
-            ? [
-                {
-                  type: "readonly" as const,
-                  label: t("nicDetails.occupation"),
-                  value: pd.Occupation,
-                  isLoading: nicAgentLoading,
-                },
-              ]
-            : [
-                {
-                  type: "autocomplete" as const,
-                  name: "occupation",
-                  label: t("nicDetails.occupation"),
-                  options: OccupationOptions,
-                  value: watch("occupation"),
-                  onChange: (v: string) => setValue("occupation", v),
-                  validation: { required: t("occupationValidation") },
-                  isLoading: nicAgentLoading,
-                },
-              ]),
+          // Occupation field - readonly if from NIC, autocomplete if not
+          {
+            type: pd?.Occupation ? "readonly" : "autocomplete",
+            name: "occupation",
+            label: t("nicDetails.occupation"),
+            value: pd?.Occupation || "",
+            options: OccupationOptions,
+            isLoading: nicAgentLoading,
+            ...(!pd?.Occupation && {
+              validation: { required: t("occupationValidation") }
+            })
+          },
 
-          // Gender
-          ...(pd?.Gender
-            ? [
-                {
-                  type: "readonly" as const,
-                  label: t("nicDetails.gender"),
-                  value: pd.Gender,
-                  isLoading: nicAgentLoading,
-                },
-              ]
-            : [
-                {
-                  type: "autocomplete" as const,
-                  name: "gender",
-                  label: t("nicDetails.gender"),
-                  options: GenderOptions,
-                  value: watch("gender"),
-                  onChange: (v: string) => setValue("gender", v),
-                  validation: { required: t("genderValidation") },
-                  isLoading: nicAgentLoading,
-                },
-              ]),
+          // Gender field - readonly if from NIC, autocomplete if not
+          {
+            type: pd?.Gender ? "readonly" : "autocomplete",
+            name: "gender",
+            label: t("nicDetails.gender"),
+            value: pd?.Gender || "",
+            options: GenderOptions,
+            isLoading: nicAgentLoading,
+            ...(!pd?.Gender && {
+              validation: { required: t("genderValidation") }
+            })
+          },
 
-          // Nationality
-          ...(pd?.Nationality
-            ? [
-                {
-                  type: "readonly" as const,
-                  label: t("nicDetails.nationality"),
-                  value: pd.Nationality,
-                  isLoading: nicAgentLoading,
-                },
-              ]
-            : [
-                {
-                  type: "autocomplete" as const,
-                  name: "nationality",
-                  label: t("nicDetails.nationality"),
-                  options: NationalityOptions,
-                  value: watch("nationality"),
-                  onChange: (v: string) => setValue("nationality", v),
-                  validation: { required: t("nationalityValidation") },
-                  isLoading: nicAgentLoading,
-                },
-              ]),
-
-          // Applicant (if present)
-          ...(pd?.Applicant
-            ? [
-                {
-                  type: "readonly" as const,
-                  label: t("nicDetails.applicant"),
-                  value: pd.Applicant,
-                  isLoading: nicAgentLoading,
-                },
-              ]
-            : []),
+          // Nationality field - readonly if from NIC, autocomplete if not
+          {
+            type: pd?.Nationality ? "readonly" : "autocomplete",
+            name: "nationality",
+            label: t("nicDetails.nationality"),
+            value: pd?.Nationality || "",
+            options: NationalityOptions,
+            isLoading: nicAgentLoading,
+            ...(!pd?.Nationality && {
+              validation: { required: t("nationalityValidation") }
+            })
+          }
         ],
       });
     }

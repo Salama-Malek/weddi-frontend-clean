@@ -31,6 +31,7 @@ import { useCookieState } from "@/features/initiate-hearing/hooks/useCookieState
 import useCaseDetailsPrefill from "@/features/initiate-hearing/hooks/useCaseDetailsPrefill";
 import { useSaveClaimantDetailsMutation } from "@/features/initiate-hearing/api/create-case/apis";
 import { useAPIFormsData } from "@/providers/FormContext";
+import { useIncompleteCaseHandler } from '@/features/initiate-hearing/hooks/useIncompleteCaseHandler';
 
 import { useFormLayout } from "./claimant.forms.formLayout";
 import { useEstablishmentPlaintiffFormLayout } from "../../establishment-tabs/plaintiff/plaintiff.forms.formLayout";
@@ -125,6 +126,9 @@ const ClaimantDetailsContainer: React.FC<
     setValue("region", { value: "", label: "" });
     setValue("city", { value: "", label: "" });
   }, []);
+
+  // Handle incomplete case navigation and data population
+  useIncompleteCaseHandler(setValue);
 
   // Prefill form when continuing an incomplete case for Legal representative
   useCaseDetailsPrefill(setValue as any);
