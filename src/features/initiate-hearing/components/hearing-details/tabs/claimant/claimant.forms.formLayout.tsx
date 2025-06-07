@@ -874,7 +874,9 @@ export const useFormLayout = ({
 
     // Set default claimant status to "principal" on mount
     useEffect(() => {
-      setValue("claimantStatus", "principal");
+      if (!incompleteCaseType) {
+        setValue("claimantStatus", "principal");
+      }
     }, []); // Empty dependency array means this runs once on mount
 
     // Set default agent type to "local_agency" when representative is selected
@@ -891,7 +893,7 @@ export const useFormLayout = ({
       }
     }, [claimantStatus, idNumber, setValue]);
 
-    if (claimantStatus === "principal") {
+    if (showPrincipalFields) {
       const pd = principalNICResponse?.NICDetails;
       sections.push({
         title: t("nicDetails.personalInfo"),
@@ -1019,7 +1021,7 @@ export const useFormLayout = ({
         ],
       });
     }
-    if (claimantStatus === "representative") {
+    if (showRepresentativeFields) {
       // 1) Agent-Type radio
       sections.push({
         title: t("nicDetails.agentType"),
@@ -1340,7 +1342,10 @@ export const useFormLayout = ({
 
   const ClaimantSelectSection = [];
 
-  if (userType === "Worker" || plaintiffStatus === "leg_rep_worker") {
+  if (
+    shouldShowClaimantStatus &&
+    (userType === "Worker" || plaintiffStatus === "leg_rep_worker")
+  ) {
     ClaimantSelectSection.push({
       isRadio: true,
       children: [
