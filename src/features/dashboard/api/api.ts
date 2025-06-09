@@ -1,9 +1,9 @@
 import { api } from "@/config/api";
-import { ICaseRecord } from "../types/caseRecord.modal";
+import { ICaseRecord } from "../types/caseRecord.model";
  
 export const caseApi = api.injectEndpoints({
   endpoints: (builder) => ({
-    getCaseAduit: builder.query<ICaseRecord, any>({
+    getCaseAudit: builder.query<ICaseRecord, any>({
       query: (params) => ({
         url: `/WeddiServices/V1/GetCasesAudit`,
         params,
@@ -40,7 +40,7 @@ export const caseApi = api.injectEndpoints({
   }),
 });
  
-export const { useGetCaseAduitQuery,
+export const { useGetCaseAuditQuery,
   useLazySaveUINotificationQuery,
   useGetIncompleteCaseQuery,
   useLazyGetIncompleteCaseQuery,

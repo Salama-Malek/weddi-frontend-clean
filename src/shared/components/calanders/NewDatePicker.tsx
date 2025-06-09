@@ -120,7 +120,7 @@ const validateDate = (value: string): true | string => {
 
 
   return (
-    <div className="contents flex-wrap col gap-4">
+    <div className="flex flex-col md:flex-row flex-wrap gap-4">
       <FieldWrapper
         notRequired={notRequired}
         invalidFeedback={invalidFeedback}

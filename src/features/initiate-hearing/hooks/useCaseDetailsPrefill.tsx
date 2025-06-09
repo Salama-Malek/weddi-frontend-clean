@@ -26,7 +26,7 @@ export const useCaseDetailsPrefill = (
     const { caseId, userType, userClaims, mainCategory, subCategory } =
       cookieData;
 
-    if (!caseId || userType !== "Legal representative") return;
+    if (!caseId) return;
 
     const userConfigs: any = {
       Worker: {
