@@ -135,6 +135,7 @@ const StepNavigation = <T extends FieldValues>({
         removeCookie("caseId");
         removeCookie("incompleteCaseMessage");
         removeCookie("incompleteCaseNumber");
+        removeCookie("incompleteCase");
 
         toast.success(tManageHearing("cancel_success"));
         navigate("/");

@@ -12,7 +12,6 @@ import { useTranslation } from "react-i18next";
 
 export const usePayloadService = ({
   isDomestic,
- // EstablishmentData,
   userType,
   GetCookieEstablishmentData,
   getNicDetailObject,
@@ -42,21 +41,6 @@ export const usePayloadService = ({
       if (currentStep === 0) {
         switch (currentTab) {
           case 0:
-            //console.log("CASSAEASAS", getCaseId);
-            
-            //console.log("this is  step 0", claimantDetailsPayload(
-            //   buttonName,
-            //   formData,
-            //   userClaims,
-            //   isDomestic,
-            //   getNicDetailObject,
-            //   attorneyData,
-            //   userType,
-            //   getCaseId,
-            //   watch,
-            // ));
-
-            // send data corected by the team
             return claimantDetailsPayload(
               buttonName,
               formData,
@@ -66,22 +50,32 @@ export const usePayloadService = ({
               attorneyData,
               userType,
               getCaseId,
-              watch,
+              language
             );
 
           case 1:
+            // Debug what data we have
+            console.log('Form Data:', formData);
+            console.log('NIC Details from form:', formData?.NICDetails);
+            console.log('NIC Details from function:', getNicDetailObject?.());
+            console.log('Defendant Details:', defendantDetails);
+
+            // Try to get NIC details from all possible sources
+            const nicDetails = formData?.NICDetails || 
+                             getNicDetailObject?.() || 
+                             defendantDetails?.NICDetails || 
+                             formData?.defendantDetails?.NICDetails;
+
+            console.log('Final NIC Details:', nicDetails);
+
             return defendantDetailsPayload(
               buttonName,
               formData,
-              //(EstablishmentData = EstablishmentData?.EstablishmentInfo),
               getCaseId,
-              extractEstablishmentObject,
-              GetCookieEstablishmentData,
-              userType,
-              defendantStatus,
-              defendantDetails,
               userClaims,
+              userType,
               language,
+              nicDetails
             );
           case 2:
             return workDetailsPayload(

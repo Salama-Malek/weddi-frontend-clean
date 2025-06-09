@@ -147,7 +147,7 @@ const OTPFormLayout = ({
   const handleCerifyOtp = () => {
 
     verifyOtp(otp.join(""));
-    console.log("sdfhdsjsf", lastSentOtp);
+    // console.log("sdfhdsjsf", lastSentOtp);
   }
 
 

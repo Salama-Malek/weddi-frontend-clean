@@ -89,9 +89,9 @@ export const useCasesLogic = () => {
     defendantDetails,
   });
 
-  console.log("currentStep", currentStep);
-  console.log("currentTab", currentTab);
-  console.log("tabs", tabs);
+  // console.log("currentStep", currentStep);
+  // console.log("currentTab", currentTab);
+  // console.log("tabs", tabs);
 
   const currentLanguage = i18n.language.toUpperCase();
 
@@ -193,7 +193,7 @@ export const useCasesLogic = () => {
       prevTab = 0;
     }
 
-    console.log("Moving to previous step/tab:", { prevStep, prevTab });
+    // console.log("Moving to previous step/tab:", { prevStep, prevTab });
 
     updateParams(prevStep, prevTab);
     setLocalStep(prevStep);

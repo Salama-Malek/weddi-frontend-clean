@@ -39,10 +39,11 @@ const CaseRecords: React.FC<CaseRecordsProps> = ({ isLegalRep, popupHandler }) =
   const { data, isError, isFetching } = useGetCaseAduitQuery(
     {
       IDNumber: userClaims?.UserID || "",
-      SourceSystem: "E-Services",
-      AcceptedLanguage: isRTL ? "AR" : "EN",
+      // SourceSystem: "E-Services",
+      // AcceptedLanguage: isRTL ? "AR" : "EN",
       PageNumber: 1,
       PageSize: 3,
+      UserType: userType,
     },
     {
       skip: !userType, // Skip if we don't have user type

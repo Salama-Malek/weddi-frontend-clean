@@ -1,6 +1,7 @@
 import { extractValue } from "@/shared/lib/api/utils";
 import { formatDateToYYYYMMDD } from "@/shared/lib/helpers";
 import type { TokenClaims } from "@/features/login/components/AuthProvider";
+import { log } from "console";
 
 export type CaseAttachment = {
   FileType: string;
@@ -11,40 +12,26 @@ export type CaseAttachment = {
 };
 
 export type CasePayload = {
-  [key: string]:
-    | string
-    | number
-    | boolean
-    | string[]
-    | CaseAttachment[]
-    | undefined;
+  [key: string]: string | number | boolean | string[] | CaseAttachment[] | undefined;
 };
 
-// Base payload for all Create/Update calls
 const getBasePayload = (
   userClaims: TokenClaims,
   language: string,
   userType?: string
 ): CasePayload => {
-  const basePayload: CasePayload = {
+  const lowUserType = userType?.toLowerCase();
+  return {
     CreatedBy: userClaims?.UserID,
     SourceSystem: "E-Services",
     Flow_CurrentScreen: "PlaintiffDetails",
     AcceptedLanguage: language,
+    ...(lowUserType === "worker" || lowUserType === "agent"
+      ? { PlaintiffId: userClaims?.UserID }
+      : {})
   };
-
-  // Only add PlaintiffId for Worker and Agent user types
-  const lowUserType = userType?.toLowerCase();
-  if (lowUserType === "worker" || lowUserType === "agent") {
-    basePayload.PlaintiffId = userClaims?.UserID;
-  }
-
-  return basePayload;
 };
 
-/**
- * Build payload for the PlaintiffDetails step, including Agent flow.
- */
 export const claimantDetailsPayload = (
   buttonName: "Next" | "Save",
   formData: any,
@@ -56,504 +43,185 @@ export const claimantDetailsPayload = (
   caseId?: string,
   language: string = "EN"
 ): CasePayload => {
+  const lowUserType = userType?.toLowerCase();
+  const isAgent = formData.claimantStatus === "representative";
+  const isLegalRep = lowUserType === "legal representative";
+
+  if (isLegalRep) {
+    return {
+      ...getBasePayload(userClaims, language, userType),
+      Flow_ButtonName: buttonName,
+      CaseID: caseId,
+      Language: language,
+      RepresentativeType: "Legal representative",
+      PlaintiffType: "",
+      ApplicantType: "",
+      MainGovtDefendant: formData.MainGovtDefendant || "",
+      SubGovtDefendant: formData.SubGovtDefendant || "",
+      MainGovtDefendant_Code: formData.MainGovtDefendant_Code || "",
+      SubGovtDefendant_Code: formData.SubGovtDefendant_Code || "",
+      LegalRepName: formData.LegalRepName || "",
+      LegalRepID: formData.LegalRepID || "",
+      LegalRepMobileNumber: formData.LegalRepMobileNumber || "",
+      LegalRepEmail: formData.LegalRepEmail || ""
+    };
+  }
+
   const payload: CasePayload = {
     ...getBasePayload(userClaims, language, userType),
     Flow_ButtonName: buttonName,
     CaseID: caseId,
+    Language: language,
+    PlaintiffId: isAgent ? formData.workerAgentIdNumber : userClaims?.UserID,
+    PlaintiffType: isAgent ? "Agent" : "Self(Worker)",
+    ApplicantType: isAgent ? "Agent" : "Worker",
+    PlaintiffName: formData.userName,
+    Plaintiff_HijiriDOB: formData.hijriDate,
+    Plaintiff_ApplicantBirthDate: formData.gregorianDate,
+    Plaintiff_PhoneNumber: formData.phoneNumber,
+    Plaintiff_Region: formData.region?.value,
+    Plaintiff_City: formData.city?.value,
+    Plaintiff_Occupation: formData.occupation?.value,
+    Plaintiff_Gender: formData.gender?.value,
+    Plaintiff_Nationality: formData.nationality?.value,
+    Plaintiff_JobLocation: formData.region?.value,
+    IsGNRequired: formData.isPhone || false,
+    CountryCode: formData.phoneCode?.value || "",
+    GlobalPhoneNumber: formData.interPhoneNumber || "",
+    IsGNOtpVerified: formData.isVerified || false,
+    DomesticWorker: formData.isDomestic ? "true" : "false",
+    IDNumber: isAgent ? formData.workerAgentIdNumber : userClaims?.UserID,
   };
-
-  payload.PlaintiffName = nicDetailObj?.PlaintiffName || userClaims?.UserName;
-  payload.PlaintiffHijiriDOB =
-    nicDetailObj?.DateOfBirthHijri || userClaims?.UserDOB || "";
-  payload.Plaintiff_ApplicantBirthDate =
-    nicDetailObj?.DateOfBirthGregorian || formData?.gregorianDate;
-  payload.Plaintiff_PhoneNumber = formData?.phoneNumber || "";
-  payload.Plaintiff_Region =
-    nicDetailObj?.Region_Code || formData?.region?.value;
-  payload.Plaintiff_City = nicDetailObj?.City_Code || formData?.city?.value;
-  payload.JobPracticing =
-    nicDetailObj?.Occupation_Code || formData?.occupation?.value;
-  payload.Gender = nicDetailObj?.Gender_Code || formData?.gender?.value;
-  payload.Worker_Nationality =
-    nicDetailObj?.Nationality_Code || formData?.nationality?.value;
-  payload.Plaintiff_JobLocation =
-    nicDetailObj?.Region_Code || formData?.region?.value;
-  // payload.PlaintiffJobCity = formData?.city?.value; // check again
-  payload.Plaintiff_ClosestLaborOffice = formData?.laborOffice?.value;
-  const applicantType = formData?.applicantType;
-  const isAgent = applicantType === "Agent";
-  payload.ApplicantType = "Worker";
-  payload.PlaintiffType = isAgent ? "Agent" : "Self(Worker)";
 
   if (isAgent) {
-    payload.Agent_AgentID = attorneyData?.agentId || userClaims?.UserID;
-    payload.CertifiedBy =
-      formData?.certifiedAgency === "localAgency"
-        ? "CB1"
-        : formData?.certifiedAgency === "externalAgency"
-        ? "CB2"
-        : "";
-    payload.Agent_Name = attorneyData?.agentName || formData?.agentName;
-    payload.Agent_MandateNumber = formData?.agentMandateNumber;
-    payload.Agent_PhoneNumber = formData?.phoneNumber;
-    payload.Agent_MandateStatus =
-      attorneyData?.mandateStatus || formData?.agentMandateStatus;
-    payload.Agent_MandateSource =
-      attorneyData?.mandateSource || formData?.agentMandateSource;
-    payload.Agent_ResidencyAddress = formData?.agentResidence || "";
-    payload.Agent_CurrentPlaceOfWork = formData?.agentWorkplace || "";
-    payload.Agent_Mobilenumber = formData?.phoneNumber;
+    Object.assign(payload, {
+      CertifiedBy: formData.agentType === "external_agency" ? "CB2" : "CB1",
+      Agent_AgentID: userClaims?.UserID,
+      Agent_MandateNumber: formData.agencyNumber,
+      Agent_Name: formData.agentName,
+      Agent_MandateStatus: formData.agencyStatus,
+      Agent_MandateSource: formData.agencySource,
+      Agent_ResidencyAddress: formData.Agent_ResidencyAddress,
+      Agent_CurrentPlaceOfWork: formData.Agent_CurrentPlaceOfWork,
+      ...(formData.agentType === "external_agency"
+        ? {
+            Agent_PhoneNumber: formData.phoneNumber,
+            Agent_Mobilenumber: formData.phoneNumber,
+          }
+        : {})
+    });
   }
 
-  const lowUserType = userType?.toLocaleLowerCase();
-  const builders: Record<string, () => CasePayload> = {
-    "legal representative": () => ({
-      ...getBasePayload(userClaims, language || "EN", userType),
-      RepresentativeType: "Legal representative",
-      MainGovtDefendant: formData?.MainGovtDefendant,
-      SubGovtDefendant: formData?.SubGovtDefendant,
-      MainGovtDefendant_Code: formData?.MainGovtDefendant_Code,
-      SubGovtDefendant_Code: formData?.SubGovtDefendant_Code,
-      LegalRepName: formData?.LegalRepName || userClaims?.UserName,
-      LegalRepID: formData?.LegalRepID || userClaims?.UserID,
-      LegalRepMobileNumber: formData?.LegalRepMobileNumber || "",
-      LegalRepEmail: formData?.LegalRepEmail || "",
-      Flow_CurrentScreen: "PlaintiffDetails",
-      CaseID: caseId,
-    }),
-    establishment: () => ({
-      ...getBasePayload(userClaims, language || "EN", userType),
-      ApplicantType: "Establishment",
-      PlaintiffType: "",
-      EstId: extractValue(formData?.PlaintiffsEstablishmentID),
-      Plaintiff_CRNumber: extractValue(formData?.PlaintiffsCRNumber),
-      PlaintiffEstFileNumber: extractValue(formData?.PlaintiffsFileNumber),
-      EstablishmentFullName: extractValue(
-        formData?.PlaintiffsEstablishmentName
-      ),
-      Activity: formData?.Activity || "",
-      EstablishmentName: extractValue(formData?.PlaintiffsEstablishmentName),
-      Plaintiff_PhoneNumber:
-        extractValue(formData?.Plaintiff_PhoneNumber) ||
-        extractValue(formData?.phoneNumber),
-      Plaintiff_Region: extractValue(formData?.region?.value),
-      Plaintiff_City: extractValue(formData?.city?.value),
-      EstablishmentType: "Establishment",
-      CaseID: caseId,
-    }),
-  };
-
-  const defaultBuilder = () => {
-    const isAgentApplicant = formData?.claimantStatus === "agent";
-    const payload: CasePayload = {
-      ...getBasePayload(userClaims, language || "EN", userType),
-      Flow_ButtonName: buttonName,
-      CaseID: caseId,
-      PlaintiffType:
-        formData?.applicantType === "Agent" ? "Agent" : "Self(Worker)",
-      PlaintiffName:
-        formData?.userName ||
-        nicDetailObj?.PlaintiffName ||
-        userClaims?.UserName,
-      PlaintiffHijiriDOB:
-        formData?.hijriDate ||
-        nicDetailObj?.DateOfBirthHijri ||
-        userClaims?.UserDOB ||
-        "",
-      Plaintiff_ApplicantBirthDate:
-        nicDetailObj?.DateOfBirthGregorian || formData?.gregorianDate,
-      Plaintiff_PhoneNumber: formData?.phoneNumber?.toString() || "",
-      Plaintiff_Region: nicDetailObj?.Region_Code || formData?.region?.value,
-      Plaintiff_City: nicDetailObj?.City_Code || formData?.city?.value,
-      JobPracticing:
-        nicDetailObj?.Occupation_Code || formData?.occupation?.value,
-      Gender: nicDetailObj?.Gender_Code || formData?.gender?.value,
-      Worker_Nationality:
-        nicDetailObj?.Nationality_Code || formData?.nationality?.value,
-      Plaintiff_JobLocation:
-        nicDetailObj?.Region_Code || formData?.region?.value,
-      Plaintiff_ClosestLaborOffice: formData?.laborOffice?.value,
-      IsGNRequired: formData?.isPhone || false,
-      CountryCode: formData?.phoneCode?.value || "",
-      GlobalPhoneNumber: formData?.interPhoneNumber || "",
-      IsGNOtpVerified: formData?.isVerified || false,
-    };
-
-    if (isAgentApplicant) {
-      Object.assign(payload, {
-        Agent_AgentID: attorneyData?.agentId,
-        CertifiedBy:
-          formData?.agentType === "local_agency"
-            ? "CB1"
-            : formData?.agentType === "external_agency"
-            ? "CB2"
-            : "",
-        Agent_Name: attorneyData?.agentName,
-        Agent_MandateNumber: formData?.agencyNumber,
-        Agent_PhoneNumber: formData?.mobileNumber,
-        Agent_MandateStatus: attorneyData?.mandateStatus,
-        Agent_MandateSource: attorneyData?.mandateSource,
-        Agent_ResidencyAddress: formData?.residenceAddress,
-        Agent_CurrentPlaceOfWork: formData?.currentWorkingPlace,
-        Agent_Mobilenumber: formData?.mobileNumber,
-      });
-    }
-
-    if (formData?.claimantStatus === "principal") {
-      payload.ApplicantType = "Worker";
-      payload.PlaintiffType = "Self(Worker)";
-    }
-
-    if (isDomestic === "Domestic Worker") {
-      payload.DomesticWorker = "true";
-      payload.CaseAttachments = formData?.attachment
-        ? [
-            {
-              FileType: formData?.attachment.fileType,
-              AttachmentRequired: "true",
-              FileName: formData?.attachment.fileName,
-              FileData: formData?.base64,
-              Attachmentdescription: "Unprofessional Letter",
-            },
-          ]
-        : [];
-    } else if (isDomestic !== undefined) {
-      payload.DomesticWorker = "false";
-    }
-
-    return payload;
-  };
-
-  const builder = builders[lowUserType ?? ""] || defaultBuilder;
-  return builder();
+  return payload;
 };
 
 export const defendantDetailsPayload = (
   buttonName: "Next" | "Save",
   formData: any,
-  // EstablishmentData?: any,
-  getCaseId?: any,
-  extractEstablishmentObject?: any,
-  GetCookieEstablishmentData?: any,
-  userType?: any,
-  defendantStatus?: any,
-  defendantDetails?: any,
-  userClaims?: any,
-  language: string = "EN"
+  caseId?: string,
+  userClaims?: TokenClaims,
+  userType?: string,
+  language: string = "EN",
+  nicData?: any
 ): CasePayload => {
-  const lowUserType = userType?.toLocaleLowerCase();
-
-  console.log("this is deff", formData);
-
-  const builders: Record<string, () => CasePayload> = {
-    "legal representative": () => ({
-      ...getBasePayload(userClaims, language, userType),
-      Flow_ButtonName: buttonName,
-      CaseID: getCaseId,
-      Flow_CurrentScreen: "DefendantDetails",
-      DefendantID: extractValue(formData?.DefendantsEstablishmentPrisonerId),
-      Defendant_HijiriDOB: extractValue(
-        formatDateToYYYYMMDD(formData?.def_date_hijri)
-      ),
-      DefendantType: "",
-      DefendantName: extractValue(
-        formData?.DefendantsEstablishmentPrisonerName
-      ),
-      Defendant_PhoneNumber: extractValue(formData?.mobileNumber),
-      Defendant_Region: extractValue(formData?.region?.value),
-      Defendant_City: extractValue(formData?.city?.value),
-      Defendant_MobileNumber: extractValue(formData?.mobileNumber),
-    }),
-    establishment: () => ({
-      ...getBasePayload(userClaims, language, userType),
-      Flow_CurrentScreen: "DefendantDetails",
-      CaseID: getCaseId,
-      DefendantType: "",
-      DefendantID: extractValue(formData?.DefendantsEstablishmentPrisonerId),
-      Defendant_HijiriDOB: extractValue(
-        formatDateToYYYYMMDD(formData?.def_date_hijri)
-      ),
-      DefendantName: extractValue(
-        formData?.DefendantsEstablishmentPrisonerName
-      ),
-      Defendant_PhoneNumber: extractValue(formData?.mobileNumber),
-      Defendant_Region: extractValue(formData?.region?.value),
-      Defendant_City: extractValue(formData?.city?.value),
-      Worker_Nationality: extractValue(formData?.nationality?.value),
-      Gender: extractValue(formData?.gender?.value),
-      JobPracticing: extractValue(formData?.occupation.value),
-      Defendant_MobileNumber: extractValue(formData?.mobileNumber),
-    }),
+  console.log("nic", nicData);
+  console.log("form dataa", formData);
+  const payload: CasePayload = {
+    ...getBasePayload(userClaims!, language, userType),
+    Flow_ButtonName: buttonName,
+    CaseID: caseId,
+    Flow_CurrentScreen: "DefendantDetails",
+    DefendantType: formData?.DefendantType || "",
+    DefendantID: formData?.nationalIdNumber || formData?.DefendantsEstablishmentPrisonerId || "",
+    DefendantName: formData?.DefendantsEstablishmentPrisonerName || formData?.Defendant_Establishment_data?.EstablishmentName || "",
+    Defendant_ApplicantBirthDate: nicData?.DateOfBirthGregorian || formatDateToYYYYMMDD(formData?.def_date_gregorian),
+    Defendant_HijiriDOB: nicData?.DateOfBirthHijri || formatDateToYYYYMMDD(formData?.DefendantHijiriDOB),
+    Defendant_PhoneNumber: formData?.phoneNumber || formData?.mobileNumber,
+    Defendant_MobileNumber: formData?.mobileNumber,
+    Defendant_Region: nicData?.Region_Code || formData?.Defendant_Region_Code || "",
+    Defendant_City: nicData?.City_Code || formData?.Defendant_City_Code || "",
+    Defendant_Occupation: nicData?.Occupation_Code || formData?.occupation?.value || "",
+    Defendant_Gender: nicData?.Gender_Code || formData?.gender?.value || "",
+    Defendant_Nationality: nicData?.Nationality_Code || formData?.nationality?.value || "",
+    Defendant_EmailAddress: formData?.emailAddress || "",
+    Defendant_MainGovtDefend: formData?.main_category_of_the_government_entity?.value,
+    DefendantSubGovtDefend: formData?.subcategory_of_the_government_entity?.value,
+    Defendant_EstablishmentNameDetails: formData?.Defendant_Establishment_data?.EstablishmentName,
+    DefendantEstFileNumber: formData?.Defendant_Establishment_data?.FileNumber,
+    Defendant_CRNumber: formData?.Defendant_Establishment_data?.CRNumber
   };
 
-  const defaultBuilder = () => {
-    const isOthersDefendant = defendantDetails === "Others";
-    if (formData?.defendantStatus === "Government") {
-      return {
-        ...getBasePayload(userClaims, language, userType),
-        Flow_ButtonName: buttonName,
-        CaseID: getCaseId,
-        Flow_CurrentScreen: "DefendantDetails",
-        DefendantType: "Government",
-        Defendant_MainGovtDefend:
-          formData?.main_category_of_the_government_entity?.value,
-        DefendantSubGovtDefend:
-          formData?.subcategory_of_the_government_entity?.value,
-      };
-    }
-
-    if (formData.defendantDetails === "Others") {
-      return {
-        ...getBasePayload(userClaims, language, userType),
-        Flow_ButtonName: buttonName,
-        CaseID: getCaseId,
-        Flow_CurrentScreen: "DefendantDetails",
-        DefendantType: "Establishment",
-        Defendant_EstablishmentNameDetails:
-          formData?.Defendant_Establishment_data_NON_SELECTED
-            ?.EstablishmentName,
-        DefendantEstFileNumber:
-          formData?.Defendant_Establishment_data_NON_SELECTED?.FileNumber,
-        Defendant_CRNumber:
-          formData?.Defendant_Establishment_data_NON_SELECTED?.CRNumber,
-        Defendant_PhoneNumber: formData?.phoneNumber,
-        Defendant_Region: formData?.region?.value,
-        Defendant_City: formData?.city?.value,
-        Defendant_MobileNumber: formData?.phoneNumber,
-      };
-    }
-
-    return {
-      ...getBasePayload(userClaims, language, userType),
-      Flow_ButtonName: buttonName,
-      CaseID: getCaseId,
-      Flow_CurrentScreen: "DefendantDetails",
-      DefendantType: "Establishment",
-      Defendant_EstablishmentNameDetails:
-        formData?.Defendant_Establishment_data?.EstablishmentName ||
-        formData?.Defendant_Establishment_data_NON_SELECTED?.EstablishmentName,
-      DefendantEstFileNumber:
-        formData?.Defendant_Establishment_data?.FileNumber ||
-        formData?.Defendant_Establishment_data_NON_SELECTED?.FileNumber,
-      Defendant_CRNumber:
-        formData?.Defendant_Establishment_data?.CRNumber ||
-        formData?.Defendant_Establishment_data_NON_SELECTED?.CRNumber,
-      Defendant_Region:
-        formData?.Defendant_Establishment_data?.Region_Code || "1",
-      Defendant_City: formData?.Defendant_Establishment_data?.City_Code || "1",
-      Defendant_PhoneNumber: formData?.phoneNumber,
-      Defendant_MobileNumber: formData?.phoneNumber,
-    };
-  };
-
-  const builder = builders[lowUserType ?? ""] || defaultBuilder;
-  return builder();
+  return payload;
 };
+
 
 export const workDetailsPayload = (
   buttonName: "Next" | "Save",
   formData: any,
-  getCaseId?: any,
-  userClaims?: any,
-  language: string = "EN",
-  userType?: string
+  caseId?: string,
+  userClaims?: TokenClaims,
+  userType?: string,
+  language: string = "EN"
 ): CasePayload => {
-  console.log("this is from worker", formData);
-  const lowUserType = userType?.toLocaleLowerCase();
-  const builders: Record<string, () => CasePayload> = {
-    "legal representative": () => ({
-      ...getBasePayload(userClaims, language || "EN", userType),
-      Flow_ButtonName: buttonName,
-      CaseID: getCaseId,
-      Flow_CurrentScreen: "LastJobDetails",
-      Defendant_StillWorking: formData?.isStillEmployed ? "SW1" : "SW2",
-      Defendant_SalaryType: extractValue(formData?.typeOfWage?.value),
-      Defendant_Salary: extractValue(formData?.salary),
-      Defendant_ContractType: extractValue(formData?.contractType?.value),
-      Defendant_ContractNumber: extractValue(formData?.contractNumber),
-      Defendant_ContractStartDate: extractValue(
-        formatDateToYYYYMMDD(formData?.contractDateGregorian)
-      ),
-      Defendant_ContractStartDateHijjari: extractValue(
-        formatDateToYYYYMMDD(formData?.contractDateHijri)
-      ),
-      Defendant_ContractEndDate: extractValue(
-        formatDateToYYYYMMDD(formData?.contractExpiryDateGregorian)
-      ),
-      Defendant_ContractEndDateHijjari: extractValue(
-        formatDateToYYYYMMDD(formData?.contractExpiryDateHijri)
-      ),
-      Defendant_JobLocation: extractValue(formData?.region?.value),
-      DefendantJobCity: extractValue(formData?.city?.value),
-      Defendant_JobStartDate: formatDateToYYYYMMDD(
-        formData?.dateOfFirstWorkingDayGregorian
-      ),
-      Defendant_JobStartDateHijjari: formatDateToYYYYMMDD(
-        formData?.dateofFirstworkingdayHijri
-      ),
-      Defendant_JobEndDate: formatDateToYYYYMMDD(
-        formData?.dateofLastworkingdayGregorian
-      ),
-      Defendant_JobEndDateHijjari: formatDateToYYYYMMDD(
-        formData?.dateoflastworkingdayHijri
-      ),
-      Defendant_ClosestLaborOffice: formData?.laborOffice?.value,
-    }),
-    establishment: () => ({
-      ...getBasePayload(userClaims, language || "EN", userType),
-      DefendantType: "Worker",
-      Flow_ButtonName: buttonName,
-      Flow_CurrentScreen: "LastJobDetails",
-      CaseID: getCaseId,
-      Defendant_SalaryType: extractValue(formData?.typeOfWage?.value),
-      Defendant_Salary: extractValue(formData?.salary),
-      Defendant_ContractType: extractValue(formData?.contractType?.value),
-      Defendant_ContractNumber: extractValue(formData?.contractNumber),
-      Defendant_ContractStartDate: extractValue(
-        formatDateToYYYYMMDD(formData?.contractDateGregorian)
-      ),
-      Defendant_ContractStartDateHijjari: extractValue(
-        formatDateToYYYYMMDD(formData?.contractDateHijri)
-      ),
-      Defendant_ContractEndDate: extractValue(
-        formatDateToYYYYMMDD(formData?.contractExpiryDateGregorian)
-      ),
-      Defendant_ContractEndDateHijjari: extractValue(
-        formatDateToYYYYMMDD(formData?.contractExpiryDateHijri)
-      ),
-      Defendant_JobStartDate: formatDateToYYYYMMDD(
-        formData?.dateOfFirstWorkingDayGregorian
-      ),
-      Defendant_JobStartDateHijjari: formatDateToYYYYMMDD(
-        formData?.dateofFirstworkingdayHijri
-      ),
-      Defendant_JobEndDate: formatDateToYYYYMMDD(
-        formData?.dateofLastworkingdayGregorian
-      ),
-      Defendant_JobEndDateHijjari: formatDateToYYYYMMDD(
-        formData?.dateoflastworkingdayHijri
-      ),
-      Defendant_ClosestLaborOffice: formData?.laborOffice?.value,
-      Defendant_JobLocation: extractValue(formData?.region?.value),
-      DefendantJobCity: extractValue(formData?.city?.value),
-      Defendant_StillWorking: formData?.isStillEmployed ? "SW1" : "SW2",
-    }),
+  const lowUserType = userType?.toLowerCase();
+  const isPlaintiff = lowUserType === "worker" || lowUserType === "agent";
+  const prefix = isPlaintiff ? "Plaintiff" : "Defendant";
+
+  return {
+    ...getBasePayload(userClaims!, language, userType),
+    Flow_ButtonName: buttonName,
+    CaseID: caseId,
+    Flow_CurrentScreen: "LastJobDetails",
+    [`${prefix}_SalaryType`]: extractValue(formData?.typeOfWage?.value),
+    [`${prefix}_Salary`]: extractValue(formData?.salary),
+    [`${prefix}_ContractType`]: extractValue(formData?.contractType?.value),
+    [`${prefix}_ContractNumber`]: extractValue(formData?.contractNumber),
+    [`${prefix}_ContractStartDate`]: formatDateToYYYYMMDD(formData?.contractDateGregorian),
+    [`${prefix}_ContractStartDateHijjari`]: formatDateToYYYYMMDD(formData?.contractDateHijri),
+    [`${prefix}_ContractEndDate`]: formatDateToYYYYMMDD(formData?.contractExpiryDateGregorian),
+    [`${prefix}_ContractEndDateHijjari`]: formatDateToYYYYMMDD(formData?.contractExpiryDateHijri),
+    [`${prefix}_StillWorking`]: formData?.isStillEmployed ? "SW1" : "SW2",
+    [`${prefix}_JobLocation`]: formData?.region?.value,
+    [`${prefix}JobCity`]: formData?.city?.value,
+    [`${prefix}_ClosestLaborOffice`]: formData?.laborOffice?.value,
+    [`${prefix}_JobStartDate`]: formatDateToYYYYMMDD(formData?.dateOfFirstWorkingDayGregorian),
+    [`${prefix}_JobStartDateHijjari`]: formatDateToYYYYMMDD(formData?.dateofFirstworkingdayHijri),
+    [`${prefix}_JobEndDate`]: formatDateToYYYYMMDD(formData?.dateofLastworkingdayGregorian),
+    [`${prefix}_JobEndDateHijjari`]: formatDateToYYYYMMDD(formData?.dateoflastworkingdayHijri),
   };
-
-  const defaultBuilder = () => {
-    if (lowUserType === "establishment") {
-      return {
-        ...getBasePayload(userClaims, language, userType),
-        Flow_ButtonName: buttonName,
-        CaseID: getCaseId,
-        Flow_CurrentScreen: "LastJobDetails",
-        Defendant_SalaryType: extractValue(formData?.typeOfWage?.value),
-        Defendant_Salary: extractValue(formData?.salary),
-        Defendant_ContractType: extractValue(formData?.contractType?.value),
-        Defendant_ContractNumber: extractValue(formData?.contractNumber),
-        Defendant_StillWorking: formData?.isStillEmployed ? "SW1" : "SW2",
-        Defendant_JobLocation: extractValue(formData?.region?.value),
-        DefendantJobCity: extractValue(formData?.city?.value),
-        Defendant_ClosestLaborOffice: formData?.laborOffice?.value,
-        Defendant_ContractStartDate: extractValue(
-          formatDateToYYYYMMDD(formData?.contractDateGregorian)
-        ),
-        Defendant_ContractStartDateHijjari: extractValue(
-          formatDateToYYYYMMDD(formData?.contractDateHijri)
-        ),
-        Defendant_ContractEndDate: extractValue(
-          formatDateToYYYYMMDD(formData?.contractExpiryDateGregorian)
-        ),
-        Defendant_ContractEndDateHijjari: extractValue(
-          formatDateToYYYYMMDD(formData?.contractExpiryDateHijri)
-        ),
-        Defendant_JobStartDate: formatDateToYYYYMMDD(
-          formData?.dateOfFirstWorkingDayGregorian
-        ),
-        Defendant_JobStartDateHijjari: formatDateToYYYYMMDD(
-          formData?.dateofFirstworkingdayHijri
-        ),
-        Defendant_JobEndDate: formatDateToYYYYMMDD(
-          formData?.dateofLastworkingdayGregorian
-        ),
-        Defendant_JobEndDateHijjari: formatDateToYYYYMMDD(
-          formData?.dateoflastworkingdayHijri
-        ),
-      };
-    }
-
-    return {
-      ...getBasePayload(userClaims, language, userType),
-      Flow_ButtonName: buttonName,
-      CaseID: getCaseId,
-      Flow_CurrentScreen: "LastJobDetails",
-      Plaintiff_SalaryType: formData?.typeOfWage?.value,
-      Plaintiff_Salary: formData?.salary,
-      Plaintiff_ContractType: formData?.contractType?.value,
-      Plaintiff_ContractNumber: formData?.contractNumber,
-      Plaintiff_ContractStartDate: formatDateToYYYYMMDD(
-        formData?.contractDateGregorian
-      ),
-      Plaintiff_ContractStartDateHijjari: formatDateToYYYYMMDD(
-        formData?.contractDateHijri
-      ),
-      Plaintiff_ContractEndDate: formatDateToYYYYMMDD(
-        formData?.contractExpiryDateGregorian
-      ),
-      Plaintiff_ContractEndDateHijjari: formatDateToYYYYMMDD(
-        formData?.contractExpiryDateHijri
-      ),
-      Plaintiff_StillWorking: formData?.isStillEmployed ? "SW1" : "SW2",
-      Plaintiff_JobLocation: formData?.region?.value,
-      PlaintiffJobCity: formData?.city?.value,
-      Plaintiff_ClosestLaborOffice: formData?.laborOffice?.value,
-      Plaintiff_JobStartDate: formatDateToYYYYMMDD(
-        formData?.dateOfFirstWorkingDayGregorian
-      ),
-      Plaintiff_JobStartDateHijjari: formatDateToYYYYMMDD(
-        formData?.dateofFirstworkingdayHijri
-      ),
-      Plaintiff_JobEndDate: formatDateToYYYYMMDD(
-        formData?.dateofLastworkingdayGregorian
-      ),
-      Plaintiff_JobEndDateHijjari: formatDateToYYYYMMDD(
-        formData?.dateoflastworkingdayHijri
-      ),
-    };
-  };
-
-  const builder = builders[lowUserType ?? ""] || defaultBuilder;
-  return builder();
 };
 
 export const hearingTopicsPayload = (
   buttonName: "Next" | "Save",
   formData: any,
-  getCaseId?: any,
+  caseId?: string,
   caseTopics?: any,
-  userClaims?: any,
-  language: string = "EN",
-  userType?: string
-): CasePayload => ({
-  ...getBasePayload(userClaims, language, userType),
-  Flow_ButtonName: buttonName,
-  CaseID: getCaseId,
-  Flow_CurrentScreen: "HearingTopics",
-  HearingTopics: caseTopics,
-});
+  userClaims?: TokenClaims,
+  userType?: string,
+  language: string = "EN"
+): CasePayload => {
+  return {
+    ...getBasePayload(userClaims!, language, userType),
+    Flow_ButtonName: buttonName,
+    CaseID: caseId,
+    Flow_CurrentScreen: "HearingTopics",
+    HearingTopics: caseTopics || [],
+  };
+};
 
 export const reviewPayload = (
   buttonName: "Next" | "Save",
   formData: any,
-  getCaseId?: any,
-  userClaims?: any,
-  language: string = "EN",
-  userType?: string
-): CasePayload => ({
-  ...getBasePayload(userClaims, language, userType),
-  Flow_ButtonName: buttonName,
-  CaseID: getCaseId,
-  Flow_CurrentScreen: "Review",
-  ReviewComments:
-    formData?.reviewComments || "All details reviewed and confirmed.",
-});
+  caseId?: string,
+  userClaims?: TokenClaims,
+  userType?: string,
+  language: string = "EN"
+): CasePayload => {
+  return {
+    ...getBasePayload(userClaims!, language, userType),
+    Flow_ButtonName: buttonName,
+    CaseID: caseId,
+    Flow_CurrentScreen: "Review",
+    ReviewComments: formData?.reviewComments || "All details reviewed and confirmed.",
+  };
+};

@@ -201,6 +201,7 @@ export type FormData = {
   nationalIdNumber?: string;
   defendantHijriDOB?: string;
   defendantDetails?: string;
+  defendantGregorianDOB?: string;
   applicant: string;
   isPhone: boolean;
   phoneCode: string;

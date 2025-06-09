@@ -80,7 +80,7 @@ export const useFormLayout = (
           value: "Others",
         })
       );
-      console.log(getEstablismentWorkingData?.EstablishmentData);
+      // console.log(getEstablismentWorkingData?.EstablishmentData);
     } else {
       setValue("defendantDetails", "Others");
     }
@@ -233,7 +233,7 @@ export const useFormLayout = (
       SourceSystem: "E-Services",
       FileNumber: selectedEstFileNumber,
     });
-    console.log("resjdshj", res);
+    // console.log("resjdshj", res);
 
     res && setSelectedDataEstablishment(true);
   };

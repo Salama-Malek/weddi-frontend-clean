@@ -82,7 +82,7 @@ const withStepNavigation = <P extends object>(
       name: "acknowledge",
       defaultValue: false,
     });
-    console.log("Debug ack:", acknowledgeValue, "currentStep:", currentStep);
+    // console.log("Debug ack:", acknowledgeValue, "currentStep:", currentStep);
 
     const [submitFinalReview, { isLoading: isSubmittingFinalReview }] = useSubmitFinalReviewMutation();
 

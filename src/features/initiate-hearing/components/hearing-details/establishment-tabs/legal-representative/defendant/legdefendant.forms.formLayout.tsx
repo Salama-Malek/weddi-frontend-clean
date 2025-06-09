@@ -8,6 +8,7 @@ import { useCookieState } from "@/features/initiate-hearing/hooks/useCookieState
 import { skipToken } from "@reduxjs/toolkit/query";
 import { useGetGenderLookupDataQuery, useGetNationalityLookupDataQuery, useGetNICDetailsQuery, useGetOccupationLookupDataQuery, useGetWorkerCityLookupDataQuery, useGetWorkerRegionLookupDataQuery } from "@/features/initiate-hearing/api/create-case/plaintiffDetailsApis";
 import { useLazyGetCaseDetailsQuery } from "@/features/manage-hearings/api/myCasesApis";
+import { toast } from "react-toastify";
 
 interface EstablishmentDefendantFormLayoutProps {
   setValue?: UseFormSetValue<FormData>;
@@ -37,6 +38,7 @@ export const useLegelDefendantFormLayout = ({
 
   // Add state to track if form has been initialized
   const [isFormInitialized, setIsFormInitialized] = useState(false);
+  const [hasAttemptedFetch, setHasAttemptedFetch] = useState(false);
 
   // Lookups Apis Calls  
   const { data: regionData, isLoading: isRegionLoading } = useGetWorkerRegionLookupDataQuery({
@@ -72,7 +74,7 @@ export const useLegelDefendantFormLayout = ({
   });
 
   // Case Details API call
-  const [triggerCaseDetailsQuery, { data: caseDetailsData }] = useLazyGetCaseDetailsQuery();
+  const [triggerCaseDetailsQuery, { data: caseDetailsData, error: caseDetailsError }] = useLazyGetCaseDetailsQuery();
 
   // NIC Details API call
   const {
@@ -98,7 +100,7 @@ export const useLegelDefendantFormLayout = ({
 
   // Fetch case details if caseId exists - only once when component mounts
   useEffect(() => {
-    if (caseId && userType === "Legal representative" && !isFormInitialized) {
+    if (caseId && userType === "Legal representative" && !isFormInitialized && !hasAttemptedFetch) {
       const userConfigs: any = {
         Worker: {
           UserType: userType,
@@ -123,8 +125,16 @@ export const useLegelDefendantFormLayout = ({
         AcceptedLanguage: userClaims?.AcceptedLanguage?.toUpperCase() || "EN",
         SourceSystem: "E-Services",
       });
+      setHasAttemptedFetch(true);
     }
-  }, [caseId, userType, userClaims, mainCategory, subCategory, triggerCaseDetailsQuery, isFormInitialized]);
+  }, [caseId, userType, userClaims, mainCategory, subCategory, triggerCaseDetailsQuery, isFormInitialized, hasAttemptedFetch]);
+
+  // Show error toast if case details fetch fails
+  useEffect(() => {
+    if (caseDetailsError) {
+      toast.error(t("error_loading_hearing"));
+    }
+  }, [caseDetailsError, t]);
 
   // Set form values from case details if available, otherwise from NIC details
   useEffect(() => {

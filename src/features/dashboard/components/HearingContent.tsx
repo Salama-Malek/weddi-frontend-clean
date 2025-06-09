@@ -67,12 +67,10 @@ const HearingContent = ({
   const [incompleteCaseNumber, setIncompleteCaseNumber] = useState("");
   const [incompleteCaseMessage, setIncompleteCaseMessage] = useState("");
   const [isCheckingIncomplete, setIsCheckingIncomplete] = useState(false);
-  const {
-    isEstablishmentstate,
-    selected:selectedUser
-  } = useUser();
+  const { isEstablishmentstate, selected: selectedUser } = useUser();
   const [isUserClaimsReady, setIsUserClaimsReady] = useState(false);
-
+  const mainCategory = getCookie("mainCategory")?.value;
+  const subCategory = getCookie("subCategory")?.value;
   // Wait for userClaims to be available
   useEffect(() => {
     if (userClaims?.UserID) {
@@ -80,20 +78,25 @@ const HearingContent = ({
     }
   }, [userClaims]);
 
-useEffect(() => {
-  console.log(selectedUser);
-}, [selectedUser]);
-  // Lazy query for incomplete case
-  const [triggerIncompleteCase, { data: incompleteCase }] = useLazyGetIncompleteCaseQuery();
-
   useEffect(() => {
-    if (incompleteCase?.CaseInfo?.length) {
-      const caseInfo = incompleteCase.CaseInfo[0];
-      setIncompleteCaseNumber(caseInfo.CaseNumber);
-      setIncompleteCaseMessage(caseInfo.pyMessage || "");
-      setCookie("caseId", caseInfo.CaseNumber);
-    }
-  }, [incompleteCase, setCookie]);
+    // console.log(selectedUser);
+  }, [selectedUser]);
+  // Lazy query for incomplete case
+  const [triggerIncompleteCase, { data: incompleteCase }] =
+    useLazyGetIncompleteCaseQuery();
+
+ useEffect(() => {
+  if (incompleteCase?.CaseInfo?.length) {
+    const caseInfo = incompleteCase.CaseInfo[0];
+    setIncompleteCaseNumber(caseInfo.CaseNumber);
+    setIncompleteCaseMessage(caseInfo.pyMessage || "");
+
+    // ✅ Save both the case ID and full CaseInfo for future usage
+    setCookie("caseId", caseInfo.CaseNumber);
+    setCookie("incompleteCase", caseInfo); // ← Add this line
+  }
+}, [incompleteCase, setCookie]);
+
 
   const fileData = {
     duties: {
@@ -223,8 +226,8 @@ useEffect(() => {
         "Legal representative": {
           UserType: userType,
           IDNumber: userClaims?.UserID,
-          MainGovernment: govRepDetails?.GOVTID || "",
-          SubGovernment: govRepDetails?.SubGOVTID || "",
+          MainGovernment: mainCategory || "",
+          SubGovernment: subCategory || "",
         },
       };
 
@@ -232,17 +235,23 @@ useEffect(() => {
         ...userConfigs[userType],
         SourceSystem: "E-Services",
         AcceptedLanguage: i18n.language.toUpperCase(),
-      }).then((result: { data?: { CaseInfo?: Array<{ CaseNumber: string; pyMessage?: string }> } }) => {
-        setIsCheckingIncomplete(false);
-        if (result.data?.CaseInfo?.length) {
-          setShowIncompleteModal(true);
-        } else {
-          // Initialize local storage before navigation
-          localStorage.setItem("step", "0");
-          localStorage.setItem("tab", "0");
-          navigate("/initiate-hearing/case-creation", { replace: true });
+      }).then(
+        (result: {
+          data?: {
+            CaseInfo?: Array<{ CaseNumber: string; pyMessage?: string }>;
+          };
+        }) => {
+          setIsCheckingIncomplete(false);
+          if (result.data?.CaseInfo?.length) {
+            setShowIncompleteModal(true);
+          } else {
+            // Initialize local storage before navigation
+            localStorage.setItem("step", "0");
+            localStorage.setItem("tab", "0");
+            navigate("/initiate-hearing/case-creation", { replace: true });
+          }
         }
-      });
+      );
     } else if (isHearingManage === "manage") {
       navigate("/manage-hearings", { replace: true });
     }
@@ -273,16 +282,16 @@ useEffect(() => {
 
         <div style={{ gridArea: "asid" }}>
           <div>
-       <Suspense fallback={<CaseRecordsSkeleton />}>
-         {isEstablishment || selectedUser === "legal_representative" ? (
-           <Statistics />
-         ) : (
-           <CaseRecords
-             isLegalRep={isLegalRep}
-             popupHandler={popupHandler}
-           />
-         )}
-       </Suspense>
+            <Suspense fallback={<CaseRecordsSkeleton />}>
+              {isEstablishment || selectedUser === "legal_representative" ? (
+                <Statistics />
+              ) : (
+                <CaseRecords
+                  isLegalRep={isLegalRep}
+                  popupHandler={popupHandler}
+                />
+              )}
+            </Suspense>
           </div>
         </div>
 

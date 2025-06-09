@@ -123,7 +123,7 @@ const ReviewDetails = ({
   }, []);
 
   const details = caseDetailsData?.CaseDetails || {};
-  console.log("details", details);
+  // console.log("details", details);
 
   const { data: ackData } = useGetAcknowledgementQuery({
     LookupType: "DataElements",

@@ -354,12 +354,50 @@ const ClaimantDetailsContainer: React.FC<
   // --- Save mutation ---
   const [saveClaimantDetails] = useSaveClaimantDetailsMutation();
   const handleSubmitStep = async () => {
+    const formData = watch();
     const payload: any = {
       CreatedBy: userId,
-      UserType: applicantType === "principal" ? "Worker" : "Agent",
-      ApplicantType: applicantType === "principal" ? "Worker" : "Agent",
-      PlaintiffId: applicantType === "principal" ? userId : plaintiffId,
+      SourceSystem: "E-Services",
+      Flow_CurrentScreen: "PlaintiffDetails",
+      AcceptedLanguage: "EN",
+      Flow_ButtonName: "Next",
+      CaseID: getCookie("caseId") || "",
+      UserType: "Worker",
+      ApplicantType: "Worker",
+      PlaintiffId: formData.claimantStatus === "principal" ? userId : formData.workerAgentIdNumber,
+      PlaintiffType: formData.claimantStatus === "principal" ? "Self(Worker)" : "Agent",
+      PlaintiffName: formData.userName,
+      PlaintiffHijiriDOB: formData.hijriDate,
+      Plaintiff_ApplicantBirthDate: formData.gregorianDate,
+      Plaintiff_PhoneNumber: formData.phoneNumber,
+      Plaintiff_Region: formData.region?.value,
+      Plaintiff_City: formData.city?.value,
+      JobPracticing: formData.occupation?.value,
+      Gender: formData.gender?.value,
+      Worker_Nationality: formData.nationality?.value,
+      Plaintiff_JobLocation: formData.region?.value,
+      IsGNRequired: formData.isPhone || false,
+      CountryCode: formData.phoneCode?.value || "",
+      GlobalPhoneNumber: formData.interPhoneNumber || "",
+      IsGNOtpVerified: formData.isVerified || false,
+      DomesticWorker: formData.isDomestic ? "true" : "false",
+      IDNumber: formData.claimantStatus === "principal" ? userId : formData.workerAgentIdNumber,
     };
+
+    // Add agent-specific fields if it's an agent case
+    if (formData.claimantStatus === "representative") {
+      payload.Agent_AgentID = userId;
+      payload.Agent_MandateNumber = formData.agencyNumber;
+      payload.Agent_PhoneNumber = formData.mobileNumber;
+      payload.Agent_Name = formData.agentName;
+      payload.Agent_MandateStatus = formData.agencyStatus;
+      payload.Agent_MandateSource = formData.agencySource;
+      payload.Agent_ResidencyAddress = formData.Agent_ResidencyAddress;
+      payload.Agent_CurrentPlaceOfWork = formData.Agent_CurrentPlaceOfWork;
+      payload.Agent_Mobilenumber = formData.mobileNumber;
+      payload.CertifiedBy = formData.agentType === "local_agency" ? "CB1" : "CB2";
+    }
+
     const isCaseCreated = !!getCookie("caseId");
     await saveClaimantDetails({ data: payload, isCaseCreated });
   };

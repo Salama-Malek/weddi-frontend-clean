@@ -116,18 +116,18 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children, popupHandler, pop
 
   const getNICData = (IDNumber?: string, DateOfBirth?: string) => {
     try {
-      console.log("Getting NIC data for:", IDNumber, DateOfBirth);
-      console.log("Current userClaims:", userClaims);
+      // console.log("Getting NIC data for:", IDNumber, DateOfBirth);
+      // console.log("Current userClaims:", userClaims);
       if (!IDNumber || !DateOfBirth || !userClaims?.UserID) {
         console.error("Missing required NIC data:", { IDNumber, DateOfBirth, userClaims });
         return;
       }
-      console.log("Triggering NIC API call with:", {
-        IDNumber,
-        DateOfBirth,
-        AcceptedLanguage: isRTL ? "AR" : "EN",
-        SourceSystem: "E-Services"
-      });
+      // console.log("Triggering NIC API call with:", {
+      //   IDNumber,
+      //   DateOfBirth,
+      //   AcceptedLanguage: isRTL ? "AR" : "EN",
+      //   SourceSystem: "E-Services"
+      // });
       triggerGetNICDetailsQuery({
         IDNumber: IDNumber,
         DateOfBirth: DateOfBirth,
@@ -141,18 +141,18 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children, popupHandler, pop
 
   const fetchUserType = (claims: TokenClaims) => {
     try {
-      console.log("Fetching user type with claims:", claims);
-      console.log("Current userClaims:", userClaims);
+      // console.log("Fetching user type with claims:", claims);
+      // console.log("Current userClaims:", userClaims);
       if (!claims.UserID || !userClaims?.UserID) {
-        console.error("Missing required user data:", { claims, userClaims });
+        // console.error("Missing required user data:", { claims, userClaims });
         return;
       }
-      console.log("Triggering GetUserType API call with:", {
-        IDNumber: claims.UserID,
-        UserType: claims.UserType,
-        AcceptedLanguage: isRTL ? "AR" : "EN",
-        SourceSystem: "E-Services"
-      });
+      // console.log("Triggering GetUserType API call with:", {
+      //   IDNumber: claims.UserID,
+      //   UserType: claims.UserType,
+      //   AcceptedLanguage: isRTL ? "AR" : "EN",
+      //   SourceSystem: "E-Services"
+      // });
       triggerGetUserType({
         IDNumber: claims.UserID!,
         UserType: claims.UserType!,
@@ -166,10 +166,10 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children, popupHandler, pop
 
   // Track when this provider has mounted
   useEffect(() => {
-    console.log("AuthProvider mounted");
+    // console.log("AuthProvider mounted");
     setIsMounted(true);
     return () => {
-      console.log("AuthProvider unmounted");
+      // console.log("AuthProvider unmounted");
       setIsMounted(false);
     };
   }, []);
@@ -177,27 +177,27 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children, popupHandler, pop
   // MAIN AUTH EFFECT
   useEffect(() => {
     if (!isMounted) {
-      console.log("AuthProvider not yet mounted, skipping auth check");
+      // console.log("AuthProvider not yet mounted, skipping auth check");
       return;
     }
 
     try {
-      console.log("Starting auth check...");
+      // console.log("Starting auth check...");
       const tokenFromURL = searchParams.get("MyClientsToken");
-      console.log("Token from URL:", tokenFromURL);
-      console.log("Current cookies:", {
-        token: getCookie("token"),
-        userClaims: getCookie("userClaims")
-      });
+      // console.log("Token from URL:", tokenFromURL);
+      // console.log("Current cookies:", {
+      //   token: getCookie("token"),
+      //   userClaims: getCookie("userClaims")
+      // });
 
       if (tokenFromURL) {
-        console.log("Token found in URL, decoding...");
+        // console.log("Token found in URL, decoding...");
         setCookie("token", tokenFromURL);
         const decodedToken = decodeToken(tokenFromURL);
-        console.log("Decoded token:", decodedToken);
+        // console.log("Decoded token:", decodedToken);
 
         if (!decodedToken) {
-          console.error("Failed to decode token or token expired");
+          // console.error("Failed to decode token or token expired");
           removeAll();
           window.location.href = `${process.env.VITE_REDIRECT_URL}`;
           return;

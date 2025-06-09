@@ -84,11 +84,16 @@ const CaseRecordsModal = ({
   ];
 
   const handleContinue = () => {
-    //console.log(localSelected);
+    // Clear case ID if it exists when switching roles
+    const existingCaseId = getCookie("caseId");
+    if (existingCaseId) {
+      setCookie("caseId", "");
+    }
+
     setCookie("userType", localSelected);
     setCookie("selectedUserType", localSelected);
 
-// hassan add thsi here (flage to know the selected user type from the login popup)
+    // Set the selected user type
     if (localSelected === "Legal representative") {
       setSelectedUser("legal_representative");
     } else {
@@ -97,19 +102,14 @@ const CaseRecordsModal = ({
 
     // Store the selected type in a separate cookie
     handleCloseModal();
+    
+    // Navigate to home page
+    navigate("/");
+
     // only fire the global popupHandler *after* they chose Legal
     if (localSelected === "Legal representative") {
       popupHandler();
     }
-    // if (localSelected === "legal_representative") {
-    //   navigate(
-    //     `/initiate-hearing/case-creation?userType=legal_representative&step=0&tab=0`
-    //   );
-    // } else {
-    //   navigate(
-    //     `/initiate-hearing/case-creation?userType=leg_rep_worker&step=0&tab=0`
-    //   );
-    // }
   };
 
   const handleSelection = (type: string) => {

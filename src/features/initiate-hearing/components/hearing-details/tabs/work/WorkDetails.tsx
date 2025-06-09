@@ -12,7 +12,7 @@ import {
 } from "@/features/initiate-hearing/api/create-case/plaintiffDetailsApis";
 import { useEffect, useMemo, useState } from "react";
 import { useCookieState } from "@/features/initiate-hearing/hooks/useCookieState";
-import useCaseDetailsPrefill from "@/features/initiate-hearing/hooks/useCaseDetailsPrefill";
+import useCaseDetailsPrefill from "@/features/initiate-hearing/hooks/useCaseDetailsPrefill"; 
 import { useAPIFormsData } from "@/providers/FormContext";
 import { legRepVsWorkerUseFormLayout } from "../../establishment-tabs/legal-representative/work/legworker.forms.formLayout";
 import { useTranslation } from "react-i18next";

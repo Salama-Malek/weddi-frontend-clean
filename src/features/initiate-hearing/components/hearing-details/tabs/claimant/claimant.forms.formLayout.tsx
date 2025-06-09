@@ -135,28 +135,31 @@ export const useFormLayout = ({
   const { t, i18n } = useTranslation("hearingdetails");
   const { t: LegalRep } = useTranslation("legal_rep");
   const [getCookie] = useCookieState();
-  
+
   // Get incomplete case type from cookie
-  const incompleteCaseType = getCookie("incompleteCaseType");
+  const incompleteCaseType = getCookie("incompleteCase");
 
   // Determine enforced claimant status based on incomplete case type
   const enforcedStatus = useMemo(() => {
-    if (incompleteCaseType?.PlaintiffType === "Self(Worker)") return "principal";
+    if (incompleteCaseType?.PlaintiffType === "Self(Worker)")
+      return "principal";
     if (incompleteCaseType?.PlaintiffType === "Agent") return "representative";
     return null;
   }, [incompleteCaseType]);
 
   // Current claimant status from form state with sensible default
-  const claimantStatus = watch("claimantStatus") || enforcedStatus || "principal";
+  const claimantStatus =
+    watch("claimantStatus") || enforcedStatus || "principal";
 
   // Ensure form state matches enforced status or default
   useEffect(() => {
-    if (enforcedStatus && claimantStatus !== enforcedStatus) {
+    if (enforcedStatus) {
       setValue("claimantStatus", enforcedStatus);
-    } else if (!enforcedStatus && !watch("claimantStatus")) {
-      setValue("claimantStatus", "principal");
+    } else {
+      const value = watch("claimantStatus");
+      if (!value) setValue("claimantStatus", "principal");
     }
-  }, [claimantStatus, enforcedStatus, setValue, watch]);
+  }, [enforcedStatus, setValue]);
 
   // Determine if we should show the claimant status selection
   const shouldShowClaimantStatus = !enforcedStatus;
@@ -188,7 +191,8 @@ export const useFormLayout = ({
   const { clearFormData } = useAPIFormsData();
 
   // Use incompleteCaseType directly
-  const showOnlyPrincipal = incompleteCaseType?.PlaintiffType === "Self(Worker)";
+  const showOnlyPrincipal =
+    incompleteCaseType?.PlaintiffType === "Self(Worker)";
   const showOnlyRepresentative = incompleteCaseType?.PlaintiffType === "Agent";
 
   // --- Field watchers for NIC trigger ---
@@ -321,7 +325,10 @@ export const useFormLayout = ({
   }, []);
 
   // 1) compute when we're ready to fire:
-  const shouldFetchNic = claimantStatus === "representative" && workerAgentIdNumber.length === 10 && workerAgentHijriDob.replace(/\//g, '').length === 8;
+  const shouldFetchNic =
+    claimantStatus === "representative" &&
+    workerAgentIdNumber.length === 10 &&
+    workerAgentHijriDob.replace(/\//g, "").length === 8;
 
   console.log("Claimant Status:", claimantStatus);
   console.log("Worker Agent ID Number:", workerAgentIdNumber);
@@ -329,7 +336,10 @@ export const useFormLayout = ({
   console.log("Should Fetch NIC:", shouldFetchNic);
   console.log("Claimant Status Check:", claimantStatus === "representative");
   console.log("ID Number Length Check:", workerAgentIdNumber.length === 10);
-  console.log("Hijri DOB Length Check:", workerAgentHijriDob.replace(/\//g, '').length === 8);
+  console.log(
+    "Hijri DOB Length Check:",
+    workerAgentHijriDob.replace(/\//g, "").length === 8
+  );
 
   useEffect(() => {
     if (!shouldFetchNic) {
@@ -886,7 +896,6 @@ export const useFormLayout = ({
       }
     }, []); // Empty dependency array means this runs once on mount
 
-
     // Set default agent type to "local_agency" when representative is selected
     useEffect(() => {
       if (claimantStatus === "representative") {
@@ -924,8 +933,8 @@ export const useFormLayout = ({
             value: pd?.PlaintiffName || "",
             isLoading: nicAgentLoading,
             ...(!pd?.PlaintiffName && {
-              validation: { required: t("nameValidation") }
-            })
+              validation: { required: t("nameValidation") },
+            }),
           },
 
           // Region field - readonly if from NIC, autocomplete if not
@@ -937,8 +946,8 @@ export const useFormLayout = ({
             options: RegionOptions,
             isLoading: nicAgentLoading,
             ...(!pd?.Region && {
-              validation: { required: t("regionValidation") }
-            })
+              validation: { required: t("regionValidation") },
+            }),
           },
 
           // City field - readonly if from NIC, autocomplete if not
@@ -950,8 +959,8 @@ export const useFormLayout = ({
             options: CityOptions,
             isLoading: nicAgentLoading,
             ...(!pd?.City && {
-              validation: { required: t("cityValidation") }
-            })
+              validation: { required: t("cityValidation") },
+            }),
           },
 
           // Date of Birth (Hijri)
@@ -982,10 +991,10 @@ export const useFormLayout = ({
                 required: t("phoneNumberValidation"),
                 pattern: {
                   value: /^05\d{8}$/,
-                  message: t("phoneValidationMessage")
-                }
-              }
-            })
+                  message: t("phoneValidationMessage"),
+                },
+              },
+            }),
           },
 
           // Occupation field - readonly if from NIC, autocomplete if not
@@ -997,8 +1006,8 @@ export const useFormLayout = ({
             options: OccupationOptions,
             isLoading: nicAgentLoading,
             ...(!pd?.Occupation && {
-              validation: { required: t("occupationValidation") }
-            })
+              validation: { required: t("occupationValidation") },
+            }),
           },
 
           // Gender field - readonly if from NIC, autocomplete if not
@@ -1010,8 +1019,8 @@ export const useFormLayout = ({
             options: GenderOptions,
             isLoading: nicAgentLoading,
             ...(!pd?.Gender && {
-              validation: { required: t("genderValidation") }
-            })
+              validation: { required: t("genderValidation") },
+            }),
           },
 
           // Nationality field - readonly if from NIC, autocomplete if not
@@ -1023,9 +1032,9 @@ export const useFormLayout = ({
             options: NationalityOptions,
             isLoading: nicAgentLoading,
             ...(!pd?.Nationality && {
-              validation: { required: t("nationalityValidation") }
-            })
-          }
+              validation: { required: t("nationalityValidation") },
+            }),
+          },
         ],
       });
     }
@@ -1151,17 +1160,24 @@ export const useFormLayout = ({
             validation: { required: t("residenceAddressValidation") },
           },
 
-          // External-agency only: Occupation dropdown
+          // External-agency only: Mobile number field
           ...(agentType === "external_agency"
             ? [
                 {
-                  type: "autocomplete" as const,
-                  name: "occupation",
-                  label: t("nicDetails.occupation"),
-                  options: OccupationOptions,
-                  value: watch("occupation"),
-                  onChange: (v: string) => setValue("occupation", v),
-                  validation: { required: t("occupationValidation") },
+                  type: "input" as const,
+                  name: "phoneNumber",
+                  label: t("nicDetails.phoneNumber"),
+                  inputType: "text",
+                  placeholder: "05xxxxxxxx",
+                  value: watch("phoneNumber"),
+                  onChange: (v: string) => setValue("phoneNumber", v),
+                  validation: {
+                    required: t("phoneNumberValidation"),
+                    pattern: {
+                      value: /^05\d{8}$/,
+                      message: t("phoneValidationMessage"),
+                    },
+                  },
                 },
               ]
             : []),
