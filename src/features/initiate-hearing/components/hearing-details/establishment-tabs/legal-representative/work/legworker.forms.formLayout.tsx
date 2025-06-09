@@ -1,6 +1,6 @@
 import { UseFormSetValue, UseFormWatch, Control, UseFormTrigger } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import DatePickerField from "@/shared/components/calanders/NewDatePicker";  
+import HijriDateField from "@/shared/components/calanders/NewDatePicker";
 
 import {
   Option,
@@ -191,7 +191,7 @@ export const legRepVsWorkerUseFormLayout = (
           type: "custom",
           name: "contractStartDate",
           component: (
-            <DatePickerField 
+            <HijriDateField
               control={control}
               setValue={setValue}
               hijriFieldName="contractDateHijri"
@@ -207,7 +207,7 @@ export const legRepVsWorkerUseFormLayout = (
           type: "custom",
           name: "contractEndDate",
           component: (
-            <DatePickerField 
+            <HijriDateField
               control={control}
               setValue={setValue}
               hijriFieldName="contractExpiryDateHijri"
@@ -230,7 +230,7 @@ export const legRepVsWorkerUseFormLayout = (
           type: "custom",
           name: "firstWorkingDate",
           component: (
-            <DatePickerField 
+            <HijriDateField
               control={control}
               setValue={setValue}
               hijriFieldName="dateofFirstworkingdayHijri"
@@ -248,7 +248,7 @@ export const legRepVsWorkerUseFormLayout = (
                 type: "custom",
                 name: "lastWorkingDate",
                 component: (
-                  <DatePickerField 
+                  <HijriDateField
                     control={control}
                     setValue={setValue}
                     hijriFieldName="dateoflastworkingdayHijri"

@@ -42,19 +42,6 @@ const MyDropdown: React.FC<MyDropdownProps> = ({
 
   useOutsideClick(dropdownRef, close);
 
-  <MyDropdownContext.Provider value={{ isOpen, toggle }}>
-    <div ref={dropdownRef}>
-      {trigger ? (
-        <div onClick={toggle}>{trigger}</div>
-      ) : (
-        <MyDropdownButton className={className} applyStyle={applyStyle}>
-          {buttonLabel}
-        </MyDropdownButton>
-      )}
-      <MyDropdownItems items={items} />
-    </div>
-  </MyDropdownContext.Provider>;
-
   return (
     <MyDropdownContext.Provider value={{ isOpen, toggle }}>
       <div ref={dropdownRef}>
