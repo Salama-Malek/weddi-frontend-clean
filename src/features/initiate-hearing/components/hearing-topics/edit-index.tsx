@@ -257,6 +257,7 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
   const [delTopic, setDelTopic] = useState<any | null>(null);
 
   const [editTopic, setEditTopic] = useState<any | null>(null);
+  const [editTopicIndex, setEditTopicIndex] = useState<number | null>(null);
   // //console.log("editTopic", editTopic);
   const [showLegalSection, setShowLegalSection] = useState(false);
   const [showTopicData, setShowTopicData] = useState(false);
@@ -285,7 +286,7 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
   }, [caseTopics, pagination.pageIndex, pagination.pageSize]);
 
   // تحديث حالة editTopic عندما يتم تحديد موضوع
-  const handleTopicSelect = (topic: any) => {
+  const handleTopicSelect = (topic: any, index: number) => {
     console.log("topicvvvvvvv", topic);
     const formattedTopic = {
       ...topic,
@@ -330,6 +331,7 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
     };
 
     setEditTopic(formattedTopic);
+    setEditTopicIndex(index);
     reset(formattedTopic);
     toggle();
   };
@@ -397,8 +399,8 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
     () =>
       getHearingTopicsColumns({
         t,
-        onEdit: (topic) => {
-          handleTopicSelect(topic);
+        onEdit: (topic, index) => {
+          handleTopicSelect(topic, index);
         },
         onDel: (topic) => {
           setCaseTopics((prev) => prev.filter((t) => t !== topic));
@@ -425,6 +427,7 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
     setShowLegalSection(false);
     setShowTopicData(false);
     setEditTopic(null);
+    setEditTopicIndex(null);
     close();
   };
 
@@ -524,7 +527,7 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
     // console.log("Topic:", topic);
 
     setCaseTopics((prev) =>
-      prev.map((topic) => (topic === editTopic ? updatedTopic : topic))
+      prev.map((topic, idx) => (idx === editTopicIndex ? updatedTopic : topic))
     );
 
     console.log("finallll", caseTopics);
@@ -535,6 +538,7 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
     setShowLegalSection(false);
     setShowTopicData(false);
     setEditTopic(null);
+    setEditTopicIndex(null);
     close();
   };
 

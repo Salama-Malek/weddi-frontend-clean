@@ -214,6 +214,7 @@ useEffect(() => {
   const [delTopic, setDelTopic] = useState<any | null>(null);
 
   const [editTopic, setEditTopic] = useState<any | null>(null);
+  const [editTopicIndex, setEditTopicIndex] = useState<number | null>(null);
   // //console.log("editTopic", editTopic);
   const [showLegalSection, setShowLegalSection] = useState(false);
   const [showTopicData, setShowTopicData] = useState(false);
@@ -244,8 +245,9 @@ useEffect(() => {
     () =>
       getHearingTopicsColumns({
         t,
-        onEdit: (topic) => {
+        onEdit: (topic, index) => {
           setEditTopic(topic);
+          setEditTopicIndex(index);
           toggle();
         },
         onDel: (topic) => {
@@ -275,6 +277,7 @@ useEffect(() => {
     setShowLegalSection(false);
     setShowTopicData(false);
     setEditTopic(null);
+    setEditTopicIndex(null);
     close();
   }
   };

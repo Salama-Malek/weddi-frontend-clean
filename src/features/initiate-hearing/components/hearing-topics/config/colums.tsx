@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 
 interface HearingTopicsColumnsProps {
   t: (key: string) => string;
-  onEdit: (topic: Topic) => void;
+  onEdit: (topic: Topic, index: number) => void;
   onDel: (topic: Topic) => void;
 }
 
@@ -38,7 +38,7 @@ export const getHearingTopicsColumns = ({
           variant="secondary"
           typeVariant="outline"
           size="xs"
-          onClick={() => onEdit(row.original)}
+          onClick={() => onEdit(row.original, row.index)}
         >
           {t("edit")}
         </Button>
