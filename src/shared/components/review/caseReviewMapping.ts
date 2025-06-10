@@ -45,6 +45,7 @@ export interface FieldDef {
         { key: "PlaintiffId",                     labelKey: "idNumber"               },
         { key: "Plaintiff_Region",                labelKey: "region"                 },
         { key: "Plaintiff_City",                  labelKey: "city"                   },
+        { key: "Plaintiff_HijiriDOB",             labelKey: "hijriDateOfBirth" },
         { key: "PlaintiffHijiriDOB",              labelKey: "hijriDateOfBirth"       },
         { key: "Plaintiff_ApplicantBirthDate",    labelKey: "gregorianDateOfBirth"   },
         { key: "Plaintiff_DOB_Hijri",             labelKey: "hijriDateOfBirth"       },

@@ -1,6 +1,9 @@
 import { extractValue } from "@/shared/lib/api/utils";
 import { formatDateToYYYYMMDD } from "@/shared/lib/helpers";
 import type { TokenClaims } from "@/features/login/components/AuthProvider";
+
+const nicField = (nicData: any, key: string) =>
+  nicData?.[key] ?? nicData?.NICDetails?.[key];
 import { log } from "console";
 
 export type CaseAttachment = {
@@ -134,15 +137,17 @@ export const defendantDetailsPayload = (
     DefendantType: formData?.DefendantType || "",
     DefendantID: formData?.nationalIdNumber || formData?.DefendantsEstablishmentPrisonerId || "",
     DefendantName: formData?.DefendantsEstablishmentPrisonerName || formData?.Defendant_Establishment_data?.EstablishmentName || "",
-    Defendant_ApplicantBirthDate: nicData?.DateOfBirthGregorian || formatDateToYYYYMMDD(formData?.def_date_gregorian),
-    DefendantHijiriDOB: nicData?.DateOfBirthHijri || formatDateToYYYYMMDD(formData?.DefendantHijiriDOB),
+    Defendant_ApplicantBirthDate: nicField(nicData, 'DateOfBirthGregorian') ||
+      formatDateToYYYYMMDD(formData?.def_date_gregorian),
+    Defendant_HijiriDOB: nicField(nicData, 'DateOfBirthHijri') ||
+      formatDateToYYYYMMDD(formData?.DefendantHijiriDOB),
     Defendant_PhoneNumber: formData?.phoneNumber || formData?.mobileNumber,
     Defendant_MobileNumber: formData?.mobileNumber,
-    Defendant_Region: nicData?.Region_Code || formData?.Defendant_Region_Code || "",
-    Defendant_City: nicData?.City_Code || formData?.Defendant_City_Code || "",
-    Defendant_Occupation: nicData?.Occupation_Code || formData?.occupation?.value || "",
-    Defendant_Gender: nicData?.Gender_Code || formData?.gender?.value || "",
-    Defendant_Nationality: nicData?.Nationality_Code || formData?.nationality?.value || "",
+    Defendant_Region: nicField(nicData, 'Region_Code') || formData?.Defendant_Region_Code || "",
+    Defendant_City: nicField(nicData, 'City_Code') || formData?.Defendant_City_Code || "",
+    Defendant_Occupation: nicField(nicData, 'Occupation_Code') || formData?.occupation?.value || "",
+    Defendant_Gender: nicField(nicData, 'Gender_Code') || formData?.gender?.value || "",
+    Defendant_Nationality: nicField(nicData, 'Nationality_Code') || formData?.nationality?.value || "",
     Defendant_EmailAddress: formData?.emailAddress || "",
     Defendant_MainGovtDefend: formData?.main_category_of_the_government_entity?.value,
     DefendantSubGovtDefend: formData?.subcategory_of_the_government_entity?.value,
