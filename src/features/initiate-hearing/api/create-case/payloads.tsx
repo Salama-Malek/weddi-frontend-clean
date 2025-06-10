@@ -79,7 +79,7 @@ export const claimantDetailsPayload = (
     PlaintiffType: isAgent ? "Agent" : "Self(Worker)",
     ApplicantType: isAgent ? "Agent" : "Worker",
     PlaintiffName: formData.userName,
-    Plaintiff_HijiriDOB: formData.hijriDate,
+    PlaintiffHijiriDOB: formData.hijriDate,
     Plaintiff_ApplicantBirthDate: formData.gregorianDate,
     Plaintiff_PhoneNumber: formData.phoneNumber,
     Plaintiff_Region: formData.region?.value,
