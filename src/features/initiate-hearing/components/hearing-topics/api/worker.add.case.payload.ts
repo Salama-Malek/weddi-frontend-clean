@@ -277,8 +277,8 @@ export function getPayloadBySubTopicID(
       case "RR-1"://done
         const RR1Payload = {
           ...basePayload,
-          Amount: topic?.amount,
-          Type: topic?.rewardType,
+          Amount: topic?.Amount,
+          Type: topic?.RewardType,
         };
 
         payload.CaseTopics.push(RR1Payload);

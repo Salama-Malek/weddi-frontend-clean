@@ -2,8 +2,14 @@ import { extractValue } from "@/shared/lib/api/utils";
 import { formatDateToYYYYMMDD } from "@/shared/lib/helpers";
 import type { TokenClaims } from "@/features/login/components/AuthProvider";
 
-const nicField = (nicData: any, key: string) =>
-  nicData?.[key] ?? nicData?.NICDetails?.[key];
+const nicField = (nicData: any, key: string) => {
+  if (!nicData) return undefined;
+  
+  // Handle both direct NIC details and nested NICDetails object
+  const nicDetails = nicData.NICDetails || nicData;
+  return nicDetails[key] ?? nicDetails[`${key}_Code`];
+};
+
 import { log } from "console";
 
 export type CaseAttachment = {
@@ -118,47 +124,81 @@ export const claimantDetailsPayload = (
   return payload;
 };
 
+// Helper function to extract value from form field
+const getFieldValue = (field: any): string => {
+  if (!field) return "";
+  if (typeof field === "string") return field;
+  if (field.value) return field.value;
+  return "";
+};
+
+// Helper function to get code from form field
+const getFieldCode = (field: any): string => {
+  if (!field) return "";
+  if (typeof field === "string") return field;
+  if (field.value) return field.value;
+  return "";
+};
+
 export const defendantDetailsPayload = (
   buttonName: "Next" | "Save",
   formData: any,
+  nicData: any,
   caseId?: string,
-  userClaims?: TokenClaims,
-  userType?: string,
-  language: string = "EN",
-  nicData?: any
+  language: string = "EN"
 ): CasePayload => {
-  console.log("nic", nicData);
-  console.log("form dataa", formData);
-  const payload: CasePayload = {
-    ...getBasePayload(userClaims!, language, userType),
-    Flow_ButtonName: buttonName,
-    CaseID: caseId,
+  console.log("NIC Data in defendantDetailsPayload:", nicData);
+  console.log("Form Data in defendantDetailsPayload:", formData);
+
+  // If defendant is Government
+  if (formData?.defendantStatus === "Government") {
+    return {
+      DefendantType: "Government",
+      IDNumber: formData?.idNumber || "",
+      CaseID: caseId,
+      Language: language,
+      Defendant_MainGovtDefend: formData?.main_category_of_the_government_entity?.value || "",
+      DefendantSubGovtDefend: formData?.subcategory_of_the_government_entity?.value || "",
+      Flow_CurrentScreen: "DefendantDetails",
+      Flow_ButtonName: "Next",
+      SourceSystem: "E-Services",
+      AcceptedLanguage: language
+    };
+  }
+
+  // If defendant is Establishment
+  if (formData?.defendantStatus === "Establishment") {
+    return {
+      DefendantType: "Establishment",
+      IDNumber: formData?.idNumber || "",
+      CaseID: caseId,
+      Defendant_EstablishmentNameDetails: formData?.establishmentName || "",
+      DefendantEstFileNumber: formData?.estFileNumber || "",
+      Language: language,
+      Defendant_CRNumber: formData?.crNumber || "",
+      Defendant_PhoneNumber: formData?.phoneNumber || "",
+      Defendant_Region: formData?.region?.value || "",
+      Defendant_City: formData?.city?.value || "",
+      Defendant_EmailAddress: formData?.emailAddress || "",
+      Defendant_MobileNumber: formData?.mobileNumber || "",
+      Flow_CurrentScreen: "DefendantDetails",
+      Flow_ButtonName: "Next",
+      SourceSystem: "E-Services",
+      AcceptedLanguage: language
+    };
+  }
+
+  // Default case - return empty payload
+  return {
+    DefendantType: "",
+    IDNumber: formData?.idNumber || "",
+    Language: language,
     Flow_CurrentScreen: "DefendantDetails",
-    DefendantType: formData?.DefendantType || "",
-    DefendantID: formData?.nationalIdNumber || formData?.DefendantsEstablishmentPrisonerId || "",
-    DefendantName: formData?.DefendantsEstablishmentPrisonerName || formData?.Defendant_Establishment_data?.EstablishmentName || "",
-    Defendant_ApplicantBirthDate: nicField(nicData, 'DateOfBirthGregorian') ||
-      formatDateToYYYYMMDD(formData?.def_date_gregorian),
-    Defendant_HijiriDOB: nicField(nicData, 'DateOfBirthHijri') ||
-      formatDateToYYYYMMDD(formData?.DefendantHijiriDOB),
-    Defendant_PhoneNumber: formData?.phoneNumber || formData?.mobileNumber,
-    Defendant_MobileNumber: formData?.mobileNumber,
-    Defendant_Region: nicField(nicData, 'Region_Code') || formData?.Defendant_Region_Code || "",
-    Defendant_City: nicField(nicData, 'City_Code') || formData?.Defendant_City_Code || "",
-    Defendant_Occupation: nicField(nicData, 'Occupation_Code') || formData?.occupation?.value || "",
-    Defendant_Gender: nicField(nicData, 'Gender_Code') || formData?.gender?.value || "",
-    Defendant_Nationality: nicField(nicData, 'Nationality_Code') || formData?.nationality?.value || "",
-    Defendant_EmailAddress: formData?.emailAddress || "",
-    Defendant_MainGovtDefend: formData?.main_category_of_the_government_entity?.value,
-    DefendantSubGovtDefend: formData?.subcategory_of_the_government_entity?.value,
-    Defendant_EstablishmentNameDetails: formData?.Defendant_Establishment_data?.EstablishmentName,
-    DefendantEstFileNumber: formData?.Defendant_Establishment_data?.FileNumber,
-    Defendant_CRNumber: formData?.Defendant_Establishment_data?.CRNumber
+    Flow_ButtonName: "Next",
+    SourceSystem: "E-Services",
+    AcceptedLanguage: language
   };
-
-  return payload;
 };
-
 
 export const workDetailsPayload = (
   buttonName: "Next" | "Save",
@@ -168,9 +208,14 @@ export const workDetailsPayload = (
   userType?: string,
   language: string = "EN"
 ): CasePayload => {
+  console.log('workDetailsPayload - userType:', userType);
+  console.log('workDetailsPayload - userType lowercase:', userType?.toLowerCase());
+  
   const lowUserType = userType?.toLowerCase();
-  const isPlaintiff = lowUserType === "worker" || lowUserType === "agent";
-  const prefix = isPlaintiff ? "Plaintiff" : "Defendant";
+  // Use the userType parameter to determine prefix
+  const prefix = (lowUserType === "worker" || lowUserType === "embassy user" || lowUserType === "legal representative") ? "Plaintiff" : "Defendant";
+  
+  console.log('workDetailsPayload - determined prefix:', prefix);
 
   return {
     ...getBasePayload(userClaims!, language, userType),

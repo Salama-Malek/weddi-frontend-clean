@@ -1,6 +1,6 @@
 export enum UserTypesEnum {
     ESTABLISHMENT = "Establishment",
     WORKER = "Worker",
-    EMBASSY = "Embassy",
+    EMBASSY = "Embassy User",
     LEGAL_REPRESENTATIVE = "Legal Representative",
 }

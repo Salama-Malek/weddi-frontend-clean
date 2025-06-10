@@ -159,7 +159,7 @@ export type SectionLayout = {
   isHidden?: boolean;
 };
 
-export type FormData = {
+export interface FormData {
   isDomestic?: string;
   EstablishmentData?: any;
   extractEstablishmentObject?: any;
@@ -228,7 +228,14 @@ export type FormData = {
   dateofFirstworkingdayHijri?: string;
   acknowledge?: boolean;
   dateoflastworkingdayHijri?: string;
-};
+  DefendantsPrisonerName?: string;
+  DefendantsRegion?: string;
+  DefendantsCity?: string;
+  DefendantsOccupation?: string;
+  DefendantsGender?: string;
+  DefendantsNationality?: string;
+  DefendantsPrisonerId?: string;
+}
 
 export interface UseFormLayoutParams {
   t: (key: string) => string;

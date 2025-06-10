@@ -23,13 +23,15 @@ import {
   useGetWorkerRegionLookupDataQuery,
 } from "@/features/initiate-hearing/api/create-case/plaintiffDetailsApis";
 import { skipToken } from "@reduxjs/toolkit/query";
+import { UserTypesEnum } from "@/shared/types/userTypes.enum";
 
 export const useFormLayout = (
   setValue: UseFormSetValue<FormData>,
   watch: UseFormWatch<FormData>,
   EstablishmentData?: any[],
   governmentData?: any,
-  subGovernmentData?: any
+  subGovernmentData?: any,
+  nicData?: any
   // establishmentDetails?: any,
   // isFileNumberCurrect?: any,
   // isSuccess?: boolean,
@@ -45,9 +47,7 @@ export const useFormLayout = (
   //#region hassan
 
   const userClaims: TokenClaims = getCookie("userClaims");
-  const [wrorkedEstablishmetUsers, setWrorkedEstablishmetUsers] = useState<[]>(
-    []
-  );
+  const [wrorkedEstablishmetUsers, setWrorkedEstablishmetUsers] = useState<Array<{ label: string; value: string }>>([]);
   const [
     establishmentDetailsByFileNumber,
     setEstablishmentDetailsByFileNumber,
@@ -56,11 +56,17 @@ export const useFormLayout = (
     useState<boolean>(false);
 
   const { data: getEstablismentWorkingData, isLoading: ExtractEstDataLoading } =
-    useGetExtractedEstablishmentDataQuery({
-      WorkerId: userClaims?.UserID,
-      AcceptedLanguage: i18n.language.toUpperCase(),
-      SourceSystem: "E-Services",
-    });
+    useGetExtractedEstablishmentDataQuery(
+      {
+        WorkerId: userClaims?.UserID,
+        AcceptedLanguage: i18n.language.toUpperCase(),
+        SourceSystem: "E-Services",
+      },
+      {
+        skip: !userClaims?.UserType || 
+              !["Worker", "Embassy"].includes(userClaims.UserType)
+      }
+    );
 
   useEffect(() => {
     if (
@@ -83,6 +89,12 @@ export const useFormLayout = (
       // console.log(getEstablismentWorkingData?.EstablishmentData);
     } else {
       setValue("defendantDetails", "Others");
+      setWrorkedEstablishmetUsers([
+        {
+          label: t("others"),
+          value: "Others",
+        }
+      ]);
     }
   }, [getEstablismentWorkingData]);
 
@@ -355,6 +367,31 @@ export const useFormLayout = (
     );
   }, [subGovernmentData]);
 
+  useEffect(() => {
+    if (nicData?.NICDetails) {
+      // Set values with proper codes
+      setValue("DefendantsPrisonerName", nicData?.NICDetails?.PlaintiffName, {
+        shouldValidate: nicData?.NICDetails?.PlaintiffName,
+      });
+      setValue("DefendantsRegion", nicData?.NICDetails?.Region_Code || nicData?.NICDetails?.Region, {
+        shouldValidate: nicData?.NICDetails?.Region,
+      });
+      setValue("DefendantsCity", nicData?.NICDetails?.City_Code || nicData?.NICDetails?.City, {
+        shouldValidate: nicData?.NICDetails?.City,
+      });
+      setValue("DefendantsOccupation", nicData?.NICDetails?.Occupation_Code || nicData?.NICDetails?.Occupation, {
+        shouldValidate: nicData?.NICDetails?.Occupation,
+      });
+      setValue("DefendantsGender", nicData?.NICDetails?.Gender_Code || nicData?.NICDetails?.Gender, {
+        shouldValidate: nicData?.NICDetails?.Gender,
+      });
+      setValue("DefendantsNationality", nicData?.NICDetails?.Nationality_Code || nicData?.NICDetails?.Nationality, {
+        shouldValidate: nicData?.NICDetails?.Nationality,
+      });
+      setValue("DefendantsPrisonerId", watch("nationalIdNumber"));
+    }
+  }, [nicData, watch]);
+
   return [
     ...(ExtractEstDataLoading
       ? [
@@ -520,5 +557,5 @@ export const useFormLayout = (
           },
         ]
       : []),
-  ].filter(Boolean) as SectionLayout[];
+].filter(Boolean) as SectionLayout[];
 };

@@ -11,6 +11,7 @@ export function getPayloadBySubTopicID(
   try {
     caseTopics.forEach((topic) => {
       const basePayload = {
+        ...topic,
         MainTopicID: topic?.MainTopicID,
         SubTopicID: topic?.SubTopicID,
       };
@@ -23,7 +24,7 @@ export function getPayloadBySubTopicID(
         case "CR-1": //done
           topicPayload = {
             ...basePayload,
-            Amount: topic?.amount ?? "0",
+            Amount: topic?.amount || topic.Amount,
             CompensationReason: topic?.CompensationReason ?? "",
           };
           break;
@@ -31,8 +32,7 @@ export function getPayloadBySubTopicID(
         case "LCUTE-1": //done
           topicPayload = {
             ...basePayload,
-            AmountOfCompensation: topic?.amountOfCompensation ?? "0",
-            ItemsToHandover: topic?.ItemsToHandover ?? [],
+            AmountOfCompensation: topic?.amountOfCompensation || topic?.AmountOfCompensation,
           };
           break;
 
@@ -46,53 +46,46 @@ export function getPayloadBySubTopicID(
         case "DPVR-1": //done
           topicPayload = {
             ...basePayload,
-            SpoilerType: topic?.damagedType ?? "",
-            DamagedValue: topic?.damagedValue ?? "0",
+            SpoilerType: topic?.damagedType || topic?.SpoilerType,
+            DamagedValue: topic?.damagedValue || topic?.DamagedValue,
           };
           break;
 
         case "AWRW-1": //done
           topicPayload = {
             ...basePayload,
-            AllowanceAmount: topic?.AllowanceAmount ?? "0",
-            ResignationDate: topic?.ResignationDate ?? "",
           }
           break;
         
         case "AWRW-2": //done
           topicPayload = {
             ...basePayload,
-            AllowanceAmount: topic?.AllowanceAmount ?? "0",
-            ResignationDate: topic?.ResignationDate ?? "",
           };
           break;
 
         case "RLRAHI-1":
-          topicPayload = {
-            ...basePayload,
-            TypeOfCustody: topic?.typeOfCustody ?? "",
-            SpoilerType: topic?.typeOfRequest?.label ?? "",
-            Date_New: topic?.request_date_hijri ?? "",
-            RequestDate_New: topic?.ReEntryReason ?? "",
-          };
+          if(topic?.typeOfRequest?.value === "RLRAHI2"){
+            topicPayload = {
+              ...basePayload,
+              LoanAmount: topic?.loanAmount || topic?.LoanAmount
+            };
           break;
 
-        case "RLRAHI-2":
-          topicPayload = {
-            ...basePayload,
-            TypeOfCustody: topic?.typeOfCustody ?? "",
-            SpoilerType: topic?.typeOfRequest?.label ?? "",
-            Date_New: topic?.HijriReEntryDate ?? "",
-            RequestDate_New: topic?.ReEntryReason ?? "",
-          };
-          break;
+          } else {
+            topicPayload = {
+              ...basePayload,
+              TypeOfCustody: topic?.typeOfCustody || topic?.TypeOfCustody,
+              Date_New: topic?.request_date_hijri || topic?.Date_New,
+              RequestDate_New: topic?.request_date_gregorian || topic?.RequestDate_New,
+            };
+            break;
+          }
 
         case "RUF-1":
           topicPayload = {
             ...basePayload,
             RefundType: topic?.RefundType ?? "",
-            SpoilerType: topic?.sploilerType ?? "",
-            Amount: topic?.amount ?? "",
+            Amount: topic?.amount || topic?.Amount,
           };
           break;
 
@@ -100,112 +93,113 @@ export function getPayloadBySubTopicID(
         case "CMR-1": //done
           topicPayload = {
             ...basePayload,
-            AmountsPaidFor: topic?.amountsPaidFor.value,
-            AmountRequired: topic?.theAmountRequired,
+            AmountsPaidFor: topic?.amountsPaidFor.value || topic.AmountsPaidFor,
+            AmountRequired: topic?.theAmountRequired || topic?.AmountRequired,
           };
           break;
 
         case "CMR-3": //done
+        console.log(topic);
           topicPayload = {
             ...basePayload,
-            Amount: topic?.compensationAmount ?? "0",
-            pyTempText: topic?.injury_date_hijri ?? "",
-            InjuryDate_New: topic?.injury_date_gregorian ?? "",
-            TypeOfWorkInjury: topic?.injuryType ?? "",
+            Amount: topic?.compensationAmount || topic?.Amount ,
+            pyTempText: topic?.injury_date_hijri || topic?.pyTempText,
+            InjuryDate_New: topic?.injury_date_gregorian || topic?.InjuryDate_New,
+            TypeOfWorkInjury: topic?.injuryType || topic?.TypeOfWorkInjury,
           };
           break;
 
         case "CMR-4": //done
           topicPayload = {
             ...basePayload,
-            Amount: topic?.amount ?? "0",
+            Amount: topic?.amount || topic?.Amount,
           };
           break;
 
         case "CMR-5": //done
           topicPayload = {
             ...basePayload,
-            LeaveType: topic?.kindOfHoliday.value ?? "",
-            TotalAmountRequired: topic?.totalAmount ?? "0",
-            WorkingHoursCount: topic?.workingHours ?? "0",
-            AdditionalDetails: topic.workingHours,
+            LeaveType: topic?.kindOfHoliday?.value || topic?.LeaveType,
+            TotalAmountRequired: topic?.totalAmount || topic?.TotalAmountRequired,
+            WorkingHoursCount: topic?.workingHours || topic?.WorkingHoursCount,
+            AdditionalDetails: topic.workingHours || topic?.AdditionalDetails,
           };
           break;
 
         case "CMR-6": //done
           topicPayload = {
             ...basePayload,
-            pyTempDate: topic?.from_date_hijri ?? "",
-            FromDate_New: topic?.from_date_gregorian ?? "",
-            Date_New: topic?.to_date_hijri ?? "",
-            ToDate_New: topic?.to_date_gregorian ?? "",
-            NewPayAmount: topic?.newPayAmount ?? "0",
-            PayIncreaseType: topic?.payIncreaseType ?? "",
-            WageDifference: topic?.wageDifference ?? "0",
+            pyTempDate: topic?.from_date_hijri || topic?.pyTempDate,
+            FromDate_New: topic?.from_date_gregorian || topic?.FromDate_New,
+            Date_New: topic?.to_date_hijri || topic?.Date_New,
+            ToDate_New: topic?.to_date_gregorian || topic?.ToDate_New,
+            NewPayAmount: topic?.newPayAmount || topic?.NewPayAmount,
+            PayIncreaseType: topic?.payIncreaseType || topic?.PayIncreaseType,
+            WageDifference: topic?.wageDifference || topic?.WageDifference,
           };
           break;
         case "CMR-7": //done
           topicPayload = {
             ...basePayload,
-            pyTempDate: topic?.from_date_hijri ?? "",
-            ToDate_New: topic?.from_date_gregorian ?? "",
-            Date_New: topic?.to_date_hijri ?? "",
-            FromDate_New: topic?.to_date_gregorian ?? "",
-            DurationOfLeaveDue: topic?.durationOfLeaveDue ?? "0",
-            PayDue: topic?.payDue ?? "0",
+            pyTempDate: topic?.from_date_hijri || topic?.pyTempDate,
+            ToDate_New: topic?.from_date_gregorian || topic?.ToDate_New,
+            Date_New: topic?.to_date_hijri || topic?.Date_New,
+            FromDate_New: topic?.to_date_gregorian || topic?.FromDate_New,
+            DurationOfLeaveDue: topic?.durationOfLeaveDue || topic?.DurationOfLeaveDue,
+            PayDue: topic?.payDue || topic?.PayDue,
           };
           break;
 
         case "CMR-8": //done
           topicPayload = {
             ...basePayload,
-            pyTempDate: topic?.from_date_hijri ?? "",
-            ToDate_New: topic?.from_date_gregorian ?? "",
-            Date_New: topic?.to_date_hijri ?? "",
-            FromDate_New: topic?.to_date_gregorian ?? "",
-            WagesAmount: topic?.wagesAmount ?? "0",
+            pyTempDate: topic?.from_date_hijri || topic?.pyTempDate,
+            ToDate_New: topic?.from_date_gregorian || topic?.ToDate_New,
+            Date_New: topic?.to_date_hijri || topic?.Date_New,
+            FromDate_New: topic?.to_date_gregorian || topic?.FromDate_New,
+            WagesAmount: topic?.wagesAmount || topic?.WagesAmount,
           };
           break;
 
         case "EDO-1": //done
           topicPayload = {
             ...basePayload,
-            FromLocation: topic?.fromLocation,
-            ToLocation: topic?.toLocation,
-            Date_New: topic?.managerial_decision_date_hijri,
-            ManDecsDate: topic?.managerial_decision_date_gregorian,
-            ManagerialDecisionNumber: topic?.managerialDecisionNumber,
+            FromLocation: topic?.fromLocation || topic?.FromLocation,
+            ToLocation: topic?.toLocation || topic?.ToLocation,
+            Date_New: topic?.managerial_decision_date_hijri || topic?.Date_New,
+            ManDecsDate: topic?.managerial_decision_date_gregorian || topic?.ManDecsDate,
+            ManagerialDecisionNumber: topic?.managerialDecisionNumber || topic?.ManagerialDecisionNumber,
           };
           break;
 
         case "EDO-2": //done
           topicPayload = {
             ...basePayload,
-            FromJob: topic?.fromJob,
-            ToJob: topic?.toJob,
-            Date_New: topic?.managerial_decision_date_hijri,
-            ManDecsDate: topic?.managerial_decision_date_gregorian,
-            ManagerialDecisionNumber: topic?.managerialDecisionNumber,
+            FromJob: topic?.fromJob || topic?.FromJob,
+            ToJob: topic?.toJob || topic?.ToJob,
+            Date_New: topic?.managerial_decision_date_hijri || topic?.Date_New,
+            ManDecsDate: topic?.managerial_decision_date_gregorian || topic?.ManDecsDate,
+            ManagerialDecisionNumber: topic?.managerialDecisionNumber || topic?.ManagerialDecisionNumber,
           };
           break;
 
         case "EDO-3": //done
           topicPayload = {
             ...basePayload,
-            AmountOfReduction: topic?.amountOfReduction,
-            pyTempDate: topic?.managerial_decision_date_hijri,
-            ManagerialDecisionDate_New: topic?.managerial_decision_date_gregorian,
-            ManagerialDecisionNumber: topic?.managerialDecisionNumber,
+            AmountOfReduction: topic?.amountOfReduction || topic?.AmountOfReduction,
+            pyTempDate: topic?.managerial_decision_date_hijri || topic?.pyTempDate,
+            ManagerialDecisionDate_New: topic?.managerial_decision_date_gregorian || topic?.ManagerialDecisionDate_New,
+            ManagerialDecisionNumber: topic?.managerialDecisionNumber || topic?.ManagerialDecisionNumber,
           };
           break;
 
         case "EDO-4": //done
           topicPayload = {
             ...basePayload,
-            PenalityType: topic?.typesOfPenalties ?? "ddd",
-            Date_New: topic?.managerial_decision_date_hijri,
-            ManDecsDate: topic?.managerial_decision_date_gregorian,
-            ManagerialDecisionNumber: topic?.managerialDecisionNumber,
+            PenalityType: topic?.typesOfPenalties || topic?.PenalityType,
+            Date_New: topic?.managerial_decision_date_hijri || topic?.Date_New,
+            ManDecsDate: topic?.managerial_decision_date_gregorian || topic?.ManDecsDate,
+            ManagerialDecisionNumber: topic?.managerialDecisionNumber || topic?.ManagerialDecisionNumber,
           };
           break;
 
@@ -223,13 +217,13 @@ export function getPayloadBySubTopicID(
             ...(doesBylawsIncludeAddingAccommodations && {
               IsBylawsIncludeAddingAccommodiation: true,
               IsContractIncludeAddingAccommodiation: false,
-              HousingSpecificationsInBylaws: housingSpecificationInByLaws,
+              HousingSpecificationsInBylaws: housingSpecificationInByLaws || topic?.HousingSpecificationsInBylaws,
             }),
             ...(doesContractIncludeAddingAccommodations && {
               IsContractIncludeAddingAccommodiation: true,
               IsBylawsIncludeAddingAccommodiation: false,
-              HousingSpecificationsInContract: housingSpecificationsInContract,
-              HousingSpecifications: actualHousingSpecifications,
+              HousingSpecificationsInContract: housingSpecificationsInContract || topic?.HousingSpecificationsInContract,
+              HousingSpecifications: actualHousingSpecifications || topic?.HousingSpecifications,
             }),
           };
           break;
@@ -238,8 +232,8 @@ export function getPayloadBySubTopicID(
         case "JAR-2": //done
           topicPayload = {
             ...basePayload,
-            CurrentJobTitle: topic?.currentJobTitle,
-            RequiredJobTitle: topic?.requiredJobTitle,
+            CurrentJobTitle: topic?.currentJobTitle || topic?.CurrentJobTitle,
+            RequiredJobTitle: topic?.requiredJobTitle || topic?.RequiredJobTitle,
           };
           break;
 
@@ -247,16 +241,16 @@ export function getPayloadBySubTopicID(
           topicPayload = {
             ...basePayload,
             PromotionMechanism:
-              topic?.doesTheInternalRegulationIncludePromotionMechanism,
-            AdditionalUpgrade: topic?.doesContractIncludeAdditionalUpgrade,
+              topic?.doesTheInternalRegulationIncludePromotionMechanism || topic?.PromotionMechanism,
+            AdditionalUpgrade: topic?.doesContractIncludeAdditionalUpgrade || topic?.AdditionalUpgrade,
           };
           break;
 
         case "JAR-4": //done
           topicPayload = {
             ...basePayload,
-            CurrentPosition: topic?.currentPosition,
-            WantedJob: topic?.theWantedJob,
+            CurrentPosition: topic?.currentPosition || topic?.CurrentPosition,
+            WantedJob: topic?.theWantedJob || topic?.WantedJob,
           };
           break;
 
@@ -264,90 +258,90 @@ export function getPayloadBySubTopicID(
 
           topicPayload = {
             ...basePayload,
-            Amount: topic?.amount,
-            Type: topic?.rewardType,
+            Amount: topic?.Amount || topic?.amount,
+            Type: topic?.RewardType || topic?.Type,
           };
           break;
 
         case "WR-1": //done
           topicPayload = {
             ...basePayload,
-            Amount: topic?.amount,
-            pyTempDate: topic?.from_date_hijri,
-            FromDate_New: topic?.from_date_gregorian,
-            Date_New: topic?.to_date_hijri,
-            ToDate_New: topic?.to_date_gregorian,
-            ForAllowance: topic?.forAllowance?.value,
-            OtherAllowance: topic?.otherAllowance,
+            Amount: topic?.amount || topic?.Amount,
+            pyTempDate: topic?.from_date_hijri || topic?.pyTempDate,
+            FromDate_New: topic?.from_date_gregorian || topic?.FromDate_New,
+            Date_New: topic?.to_date_hijri || topic?.Date_New,
+            ToDate_New: topic?.to_date_gregorian || topic?.ToDate_New,
+            ForAllowance: topic?.forAllowance?.value || topic?.ForAllowance,
+            OtherAllowance: topic?.otherAllowance || topic?.OtherAllowance,
           };
           break;
 
         case "WR-2": //done
           topicPayload = {
             ...basePayload,
-            OverdueWagesAmount: topic?.amount,
-            pyTempDate: topic?.from_date_hijri,
-            FromDate_New: topic?.from_date_gregorian,
-            Date_New: topic?.to_date_hijri,
-            ToDate_New: topic?.to_date_gregorian,
+            OverdueWagesAmount: topic?.amount || topic?.OverdueWagesAmount,
+            pyTempDate: topic?.from_date_hijri || topic?.pyTempDate,
+            FromDate_New: topic?.from_date_gregorian || topic?.FromDate_New,
+            Date_New: topic?.to_date_hijri || topic?.Date_New,
+            ToDate_New: topic?.to_date_gregorian || topic?.ToDate_New,
           };
           break;
 
         case "TTR-1": //done
           topicPayload = {
             ...basePayload,
-            TravelingWay: topic?.travelingWay.value,
+            TravelingWay: topic?.travelingWay.value || topic?.TravelingWay,
           };
           break;
         case "MIR-1": //done
           topicPayload = {
             ...basePayload,
-            RequestType: topic?.typeOfRequest?.value,
-            Reason: topic?.theReason,
-            CurrentInsuranceLevel: topic?.currentInsuranceLevel,
-            RequiredDegreeInsurance: topic?.requiredDegreeOfInsurance,
+            RequestType: topic?.typeOfRequest?.value || topic?.RequestType,
+            Reason: topic?.theReason || topic?.Reason,
+            CurrentInsuranceLevel: topic?.currentInsuranceLevel || topic?.CurrentInsuranceLevel,
+            RequiredDegreeInsurance: topic?.requiredDegreeOfInsurance || topic?.RequiredDegreeInsurance,
           };
           break;
 
         case "LRESR-1"://done
           topicPayload = {
             ...basePayload,
-            Amount: topic?.amount,
+            Amount: topic?.amount || topic?.Amount,
           };
           break;
 
         case "RFR-1": //done
           topicPayload = {
             ...basePayload,
-            Amount: topic?.amount,
-            Consideration: topic?.consideration,
-            Date_New: topic?.date_gregorian,
-            pyTempDate: topic?.date_hijri,
+            Amount: topic?.amount || topic?.Amount,
+            Consideration: topic?.consideration || topic?.Consideration,
+            Date_New: topic?.date_gregorian || topic?.Date_New,
+            pyTempDate: topic?.date_hijri || topic?.pyTempDate,
           };
           break;
 
         case "BPSR-1": //done
           topicPayload = {
             ...basePayload,
-            Amount: topic?.amount,
-            AmountRatio: topic?.amountRatio,
-            pyTempDate: topic?.from_date_hijri,
-            ToDate_New: topic?.to_date_gregorian,
-            Date_New: topic?.to_date_hijri,
-            FromDate_New: topic?.from_date_gregorian,
-            CommissionType: topic?.commissionType?.value,
-            AccordingToAgreement: topic?.accordingToAgreement?.value,
-            OtherCommission: topic?.otherCommission,
+            Amount: topic?.amount || topic?.Amount,
+            AmountRatio: topic?.amountRatio || topic?.AmountRatio,
+            pyTempDate: topic?.from_date_hijri || topic?.pyTempDate,
+            ToDate_New: topic?.to_date_gregorian || topic?.ToDate_New,
+            Date_New: topic?.to_date_hijri || topic?.Date_New,
+            FromDate_New: topic?.from_date_gregorian || topic?.FromDate_New,
+            CommissionType: topic?.commissionType?.value || topic?.CommissionType,
+            AccordingToAgreement: topic?.accordingToAgreement?.value || topic?.AccordingToAgreement,
+            OtherCommission: topic?.otherCommission || topic?.OtherCommission,
           };
           break;
 
         case "BR-1": //done
           topicPayload = {
             ...basePayload,
-            AccordingToAgreement: topic?.accordingToAgreement?.value,
-            Premium: topic?.bonusAmount,
-            pyTempDate: topic?.date_hijri,
-            Date_New: topic?.date_gregorian,
+            AccordingToAgreement: topic?.accordingToAgreement?.value || topic?.AccordingToAgreement,
+            Premium: topic?.bonusAmount || topic?.Premium,
+            pyTempDate: topic?.date_hijri || topic?.pyTempDate,
+            Date_New: topic?.date_gregorian || topic?.Date_New,
           };
           break;
 

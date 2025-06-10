@@ -192,6 +192,7 @@ export const useLegelDefendantFormLayout = ({
       });
       setIsFormInitialized(true);
     } else if (nicData?.NICDetails && !isFormInitialized) {
+      
       // Fall back to NIC details if case details not available
       setValue("DefendantsEstablishmentPrisonerName", nicData?.NICDetails?.PlaintiffName);
       setValue("DefendantsEstablishmentRegion", nicData?.NICDetails?.Region_Code);

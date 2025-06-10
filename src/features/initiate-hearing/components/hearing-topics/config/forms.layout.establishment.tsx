@@ -450,7 +450,7 @@ export const useFormLayout = ({
               type: "custom",
               component: (
                 <div className="p-4 bg-green-50 text-green-700 rounded-md">
-                  {tHearingTopics("no_content_found")}
+                  {tHearingTopics("no_content_found_establishment")}
                 </div>
               ),
             },

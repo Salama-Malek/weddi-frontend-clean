@@ -307,6 +307,231 @@ export const useFormLayout = ({
           }
         : null
     );
+   
+    // Patch other worker topics when editing
+    if (isEditing) {
+      const sub = editTopic?.SubTopicID;
+      console.log("Subbbbbb", sub);
+      if (sub === "CMR-1") {
+        setValue(
+          "amountsPaidFor",
+          editTopic?.amountsPaidFor || editTopic.AmountsPaidFor
+        );
+        setValue(
+          "theAmountRequired",
+          editTopic?.theAmountRequired || editTopic.AmountRequired
+        );
+      }
+      if (sub === "CMR-3") {
+        setValue(
+          "compensationAmount",
+          editTopic?.compensationAmount || editTopic.Amount
+        );
+        setValue(
+          "injury_date_hijri",
+          editTopic?.injury_date_hijri || new Date(editTopic.pyTempText)
+        );
+        setValue(
+          "injuryType",
+          editTopic?.injuryType || editTopic.TypeOfWorkInjury
+        );
+      }
+      if (sub === "CMR-4") {
+        setValue("amount", editTopic?.amount || editTopic.Amount);
+      }
+       if (sub === "CMR-5") {
+      setValue(
+        "kindOfHoliday",
+        editTopic.LeaveType_Code
+          ? { label: editTopic.LeaveType, value: editTopic.LeaveType_Code }
+          : editTopic.kindOfHoliday
+      );
+      setValue("totalAmount", editTopic.TotalAmountRequired);
+      setValue("workingHours", editTopic.WorkingHoursCount);
+      setValue("additionalDetails", editTopic.AdditionalDetails);
+    }
+      if (sub === "CMR-6") {
+        setValue(
+          "from_date_hijri",
+          editTopic?.from_date_hijri || editTopic.pyTempText
+        );
+        setValue(
+          "to_date_hijri",
+          editTopic?.to_date_hijri || editTopic.Date_New
+        );
+        setValue(
+          "from_date_gregorian",
+          editTopic?.from_date_gregorian || editTopic.FromDate_New
+        );
+        setValue(
+          "to_date_gregorian",
+          editTopic?.to_date_gregorian || editTopic.ToDate_New
+        );
+        setValue(
+          "newPayAmount",
+          editTopic?.newPayAmount || editTopic.NewPayAmount
+        );
+        setValue(
+          "payIncreaseType",
+          editTopic?.payIncreaseType || editTopic.PayIncreaseType
+        );
+        setValue(
+          "wageDifference",
+          editTopic?.wageDifference || editTopic.WageDifference
+        );
+      }
+      if (sub === "CMR-7") {
+        setValue(
+          "from_date_hijri",
+          editTopic?.from_date_hijri || editTopic.pyTempText
+        );
+        setValue(
+          "to_date_hijri",
+          editTopic?.to_date_hijri || editTopic.Date_New
+        );
+        setValue(
+          "from_date_gregorian",
+          editTopic?.from_date_gregorian || editTopic.FromDate_New
+        );
+        setValue(
+          "to_date_gregorian",
+          editTopic?.to_date_gregorian || editTopic.ToDate_New
+        );
+        setValue(
+          "durationOfLeaveDue",
+          editTopic?.durationOfLeaveDue || editTopic.DurationOfLeaveDue
+        );
+        setValue("payDue", editTopic?.payDue || editTopic.PayDue);
+      }
+      if (sub === "CMR-8") {
+        setValue(
+          "from_date_hijri",
+          editTopic?.from_date_hijri || editTopic.pyTempText
+        );
+        setValue(
+          "to_date_hijri",
+          editTopic?.to_date_hijri || editTopic.Date_New
+        );
+        setValue(
+          "from_date_gregorian",
+          editTopic?.from_date_gregorian || editTopic.FromDate_New
+        );
+        setValue(
+          "to_date_gregorian",
+          editTopic?.to_date_gregorian || editTopic.ToDate_New
+        );
+        setValue(
+          "wagesAmount",
+          editTopic?.wagesAmount || editTopic.WagesAmount
+        );
+      }
+      if (sub === "WR-1") {
+        setValue("amount", editTopic?.amount || editTopic.Amount);
+        setValue(
+          "from_date_hijri",
+          editTopic?.from_date_hijri || editTopic.pyTempDate
+        );
+        setValue(
+          "from_date_gregorian",
+          editTopic?.from_date_gregorian || editTopic.FromDate_New
+        );
+        setValue(
+          "to_date_hijri",
+          editTopic?.to_date_hijri || editTopic.Date_New
+        );
+        setValue(
+          "to_date_gregorian",
+          editTopic?.to_date_gregorian || editTopic.ToDate_New
+        );
+        setValue(
+          "forAllowance",
+          editTopic?.forAllowance || editTopic.ForAllowance
+        );
+        setValue(
+          "otherAllowance",
+          editTopic?.otherAllowance || editTopic.OtherAllowance
+        );
+      }
+      if (sub === "WR-2") {
+        setValue("amount", editTopic?.amount || editTopic.OverdueWagesAmount);
+        setValue(
+          "from_date_hijri",
+          editTopic?.from_date_hijri || editTopic.pyTempDate
+        );
+        setValue(
+          "from_date_gregorian",
+          editTopic?.from_date_gregorian || editTopic.FromDate_New
+        );
+        setValue(
+          "to_date_hijri",
+          editTopic?.to_date_hijri || editTopic.Date_New
+        );
+        setValue(
+          "to_date_gregorian",
+          editTopic?.to_date_gregorian || editTopic.ToDate_New
+        );
+      }
+      if (sub === "MIR-1") {
+        setValue(
+          "typeOfRequest",
+          editTopic?.typeOfRequest || editTopic.RequestType
+        );
+        setValue("theReason", editTopic?.theReason || editTopic.Reason);
+        setValue(
+          "currentInsuranceLevel",
+          editTopic?.currentInsuranceLevel || editTopic.CurrentInsuranceLevel
+        );
+        setValue(
+          "requiredDegreeOfInsurance",
+          editTopic?.requiredDegreeOfInsurance ||
+            editTopic.RequiredDegreeInsurance
+        );
+      }
+      if (sub === "BPSR-1") {
+        setValue("amount", editTopic?.amount || editTopic.Amount);
+        setValue(
+          "amountRatio",
+          editTopic?.amountRatio || editTopic.AmountRatio
+        );
+        setValue(
+          "from_date_hijri",
+          editTopic?.from_date_hijri || editTopic.pyTempDate
+        );
+        setValue(
+          "to_date_hijri",
+          editTopic?.to_date_hijri || editTopic.Date_New
+        );
+        setValue(
+          "from_date_gregorian",
+          editTopic?.from_date_gregorian || editTopic.FromDate_New
+        );
+        setValue(
+          "commissionType",
+          editTopic?.commissionType || editTopic.CommissionType
+        );
+        setValue(
+          "accordingToAgreement",
+          editTopic?.accordingToAgreement || editTopic.AccordingToAgreement
+        );
+        setValue(
+          "otherCommission",
+          editTopic?.otherCommission || editTopic.OtherCommission
+        );
+      }
+      if (sub === "BR-1") {
+        setValue("bonusAmount", editTopic?.bonusAmount || editTopic.Premium);
+        setValue(
+          "accordingToAgreement",
+          editTopic?.accordingToAgreement || editTopic.AccordingToAgreement
+        );
+      }
+      if (sub === "TTR-1") {
+        setValue(
+          "travelingWay",
+          editTopic?.travelingWay || editTopic.TravelingWay
+        );
+      }
+    }
   }, [editTopic, caseTopics]);
 
   const getFormBySubCategory = (): (FormElement | false)[] => {
@@ -424,10 +649,10 @@ export const useFormLayout = ({
           {
             name: "injuryDate",
             type: "dateOfBirth" as const,
-            hijriLabel: t("injuryDateHijri"),
-            gregorianLabel: t("injuryDateGregorian"),
-            hijriFieldName: "injury_date_hijri",
+            hijriLabel: t("injuryDateGregorian"),
+            gregorianLabel: t("injuryDateHijri"),
             value: isEditing && formatHijriDate(injury_date_hijri),
+            hijriFieldName: "injury_date_hijri",
             gregorianFieldName: "injury_date_gregorian",
           },
           {

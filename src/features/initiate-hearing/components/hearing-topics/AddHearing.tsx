@@ -1,5 +1,5 @@
 import HearingTopicsDetails from ".";
-// import EditHearingTopicsDetails from "./edit-index";
+import EditHearingTopicsDetails from "./edit-index";
 
 const AddHearing = ({ displayFooter }: { displayFooter: boolean }) => {
   return (
@@ -11,7 +11,7 @@ const AddHearing = ({ displayFooter }: { displayFooter: boolean }) => {
       )}
       {!displayFooter && (
         <div>
-          {/* <EditHearingTopicsDetails showFooter={displayFooter} /> */}
+          <EditHearingTopicsDetails showFooter={displayFooter} />
         </div>
       )}
     </>

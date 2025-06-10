@@ -57,25 +57,23 @@ export const usePayloadService = ({
             // Debug what data we have
             console.log('Form Data:', formData);
             console.log('NIC Details from form:', formData?.NICDetails);
-            console.log('NIC Details from function:', getNicDetailObject?.());
+            console.log('NIC Details from object:', getNicDetailObject);
             console.log('Defendant Details:', defendantDetails);
 
-            // Try to get NIC details from all possible sources
+            // Try to get NIC details from all possible sources, with proper fallback
             const nicDetails = formData?.NICDetails || 
-                             getNicDetailObject?.() || 
+                             (getNicDetailObject?.NICDetails || getNicDetailObject) || 
                              defendantDetails?.NICDetails || 
                              formData?.defendantDetails?.NICDetails;
 
             console.log('Final NIC Details:', nicDetails);
 
             return defendantDetailsPayload(
-              buttonName,
+              "Next",
               formData,
+              nicDetails,
               getCaseId,
-              userClaims,
-              userType,
-              language,
-              nicDetails
+              language
             );
           case 2:
             return workDetailsPayload(
@@ -83,8 +81,8 @@ export const usePayloadService = ({
               formData,
               getCaseId,
               userClaims,
-              language,
-              userType
+              userType,
+              language
             );
           default:
             throw new Error("Invalid tab");

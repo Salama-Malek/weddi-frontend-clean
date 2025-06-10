@@ -36,7 +36,6 @@ import { useFormLayout as useFormLayoutWorker } from "./config/forms.layout.work
 import { getPayloadBySubTopicID } from "./api/establishment.add.case.payload";
 import { useGetCaseDetailsQuery, useLazyGetCaseDetailsQuery } from "@/features/manage-hearings/api/myCasesApis";
 import { TokenClaims } from "@/features/login/components/AuthProvider";
-import useCaseDetailsPrefill from "../../hooks/useCaseDetailsPrefill";
 
 const Modal = lazy(() => import("@/shared/components/modal/Modal"));
 const ReusableTable = lazy(() =>
@@ -92,18 +91,12 @@ function HearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
   const { updateParams, currentStep, currentTab } = useNavigationService();
   const [saveHearingTopics, { isLoading: addHearingLoading }] =
     useSaveHearingTopicsMutation();
-    const { i18n } = useTranslation();
-    const currentLanguage = i18n.language.toUpperCase();
-    const userClaims = getCookie("userClaims");
-    const [caseTopics, setCaseTopics] = useState<any[]>([]);
-    const UserClaims: TokenClaims = getCookie("userClaims");
+  const { i18n } = useTranslation();
+  const currentLanguage = i18n.language.toUpperCase();
+  const userClaims = getCookie("userClaims");
+  const [caseTopics, setCaseTopics] = useState<any[]>([]);
+  const UserClaims: TokenClaims = getCookie("userClaims");
   const userType = getCookie("userType");
-
-  // Prefill fields when continuing an incomplete case
-  useCaseDetailsPrefill((field, value) => {
-    setValue(field as any, value);
-    if (field === "CaseTopics") setCaseTopics(value as any[]);
-  });
   const mainCategory2 = getCookie("mainCategory")?.value;
   const subCategory2 = getCookie("subCategory")?.value;
   const userID = getCookie("userClaims").UserID;
@@ -111,50 +104,50 @@ function HearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
 
 
 
-const [triggerCaseDetailsQuery, { data: caseDetailsData }] = useLazyGetCaseDetailsQuery();
+  const [triggerCaseDetailsQuery, { data: caseDetailsData }] = useLazyGetCaseDetailsQuery();
 
-useEffect(() => {
-  if (caseId) {
-    const userConfigs: any = {
-      Worker: {
-        UserType: userType,
-        IDNumber: userID,
-      },
-      Establishment: {
-        UserType: userType,
-        IDNumber: userID,
-        FileNumber: fileNumber,
-      },
-      "Legal representative": {
-        UserType: userType,
-        IDNumber: userID,
-        MainGovernment:mainCategory2 ||  "",
-        SubGovernment: subCategory2 ||  "",
-      },
-    } ;
+  useEffect(() => {
+    if (caseId) {
+      const userConfigs: any = {
+        Worker: {
+          UserType: userType,
+          IDNumber: userID,
+        },
+        Establishment: {
+          UserType: userType,
+          IDNumber: userID,
+          FileNumber: fileNumber,
+        },
+        "Legal representative": {
+          UserType: userType,
+          IDNumber: userID,
+          MainGovernment: mainCategory2 || "",
+          SubGovernment: subCategory2 || "",
+        },
+      };
 
-    triggerCaseDetailsQuery({
-      ...userConfigs[userType],
-      CaseID: caseId,
-      AcceptedLanguage: currentLanguage,
-      SourceSystem: "E-Services",
-    });
-  }
-}, [caseId, userClaims?.UserID, currentLanguage, triggerCaseDetailsQuery]);
+      triggerCaseDetailsQuery({
+        ...userConfigs[userType],
+        CaseID: caseId,
+        AcceptedLanguage: currentLanguage,
+        SourceSystem: "E-Services",
+      });
+    }
+  }, [caseId, userClaims?.UserID, currentLanguage, triggerCaseDetailsQuery]);
 
-useEffect(() => {
-  // console.log("caseDetailsData", caseDetailsData);
-  if (caseDetailsData?.CaseDetails) {
-    setCaseTopics(caseDetailsData.CaseDetails.CaseTopics);
-  }
-}, [caseDetailsData]);
+  useEffect(() => {
+    // console.log("caseDetailsData", caseDetailsData);
+    if (caseDetailsData?.CaseDetails) {
+      setCaseTopics(caseDetailsData.CaseDetails.CaseTopics);
+    }
+  }, [caseDetailsData]);
 
-  
+
   console.log("currentStep", currentStep);
   console.log("currentTab", currentTab);
 
   // Submit handler
-  const onSubmit = (data: TopicFormValues) => {};
+  const onSubmit = (data: TopicFormValues) => { };
 
   const mainCategory = watch("mainCategory") ?? null;
   const subCategory: any = watch("subCategory") ?? null;
@@ -268,15 +261,15 @@ useEffect(() => {
   };
 
   const handleSend = () => {
-   let fillingForm = saveTopic();
-   if(fillingForm){
-    reset();
-    setDate({ hijri: null, gregorian: null, dateObject: null });
-    setShowLegalSection(false);
-    setShowTopicData(false);
-    setEditTopic(null);
-    close();
-  }
+    let fillingForm = saveTopic();
+    if (fillingForm) {
+      reset();
+      setDate({ hijri: null, gregorian: null, dateObject: null });
+      setShowLegalSection(false);
+      setShowTopicData(false);
+      setEditTopic(null);
+      close();
+    }
   };
 
   const handleAddTopic = async () => {
@@ -470,18 +463,18 @@ useEffect(() => {
     }
   }, [currentStep, currentTab, updateParams]);
 
-  const saveTopic = ():number => {
+  const saveTopic = (): number => {
     const newTopic = getValues();
 
     console.log(newTopic);
 
     for (const [key, value] of Object.entries(newTopic)) {
-       if (
-            value === "" &&
-            key !== "housingSpecificationsInContract" &&
-            key !== "actualHousingSpecifications" &&
-            key !== "housingSpecificationInByLaws"
-          ) {
+      if (
+        value === "" &&
+        key !== "housingSpecificationsInContract" &&
+        key !== "actualHousingSpecifications" &&
+        key !== "housingSpecificationInByLaws"
+      ) {
         return 0;
       }
     }
@@ -539,8 +532,9 @@ useEffect(() => {
       Consideration: newTopic.consideration,
       TravelingWay: newTopic.travelingWay,
       PenalityType: newTopic.typesOfPenalties,
+      LoanAmount: newTopic.loanAmount,
     };
-    
+
     setCaseTopics((prev) => [...prev, topicToSave]);
     return 1;
   };
@@ -550,7 +544,7 @@ useEffect(() => {
   const isEditing = Boolean(editTopic);
 
   const formLayout = useMemo(() => {
-    if (userType === "Worker") {
+    if (userType === "Worker" || userType === "Embassy User") {
       return useFormLayoutWorker({
         t: t,
         MainTopicID: mainCategory,
@@ -681,7 +675,7 @@ useEffect(() => {
   return (
     <Suspense fallback={<TableLoader />}>
       <StepNavigation<FormData>
-        onSubmit={handleSubmit(onSubmit)} 
+        onSubmit={handleSubmit(onSubmit)}
         isValid={isValid && caseTopics.length > 0}
         isFirstStep={currentStep === 0 && currentTab === 0}
         isLastStep={currentStep === 3 - 1}
@@ -810,10 +804,10 @@ useEffect(() => {
                       {isEditing
                         ? t("update") || "Update"
                         : isStep3
-                        ? t("send") || "Send"
-                        : isStep2 && acknowledged
-                        ? t("Next") || "Next"
-                        : t("Next") || "Next"}
+                          ? t("send") || "Send"
+                          : isStep2 && acknowledged
+                            ? t("Next") || "Next"
+                            : t("Next") || "Next"}
                     </Button>
                   </div>
                 </FormProvider>

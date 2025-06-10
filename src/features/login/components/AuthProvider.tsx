@@ -338,7 +338,9 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children, popupHandler, pop
         if ("ErrorDetails" in nicData && Array.isArray((nicData as any).ErrorDetails)) {
           handleErrorResponse(nicData);
         } else {
+          // Store NIC details in both cookies for backward compatibility
           setCookie("storeAllNicData", nicData);
+          setCookie("nicDetailObject", nicData);
           setIsNICValidated(true);
         }
       }

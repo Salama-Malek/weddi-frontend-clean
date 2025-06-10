@@ -246,7 +246,7 @@ const HearingDetails = () => {
 
   const handleEditCase = () => {
     setCookie("caseId", caseId);
-    navigate(`/update-case?caseId=${caseId}`);
+    navigate(`/manage-hearings/update-case?caseId=${caseId}`);
     //  setEditMode(true);
     //  toggleAccordion("topics");
   };

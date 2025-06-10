@@ -25,7 +25,7 @@ import { setFormData } from "@/redux/slices/formSlice";
 import StepNavigation from "@/shared/modules/case-creation/components/StepNavigation";
 import { useNavigationService } from "@/shared/hooks/useNavigationService";
 import { steps } from "@/shared/modules/case-creation/components/tabs/tabsConfig";
-import { useUpdateHearingTopicsMutation } from "../../api/create-case/apis";
+import { useSaveHearingTopicsMutation } from "../../api/create-case/apis";
 import { useCookieState } from "../../hooks/useCookieState";
 import { TableSkeletonLoader } from "@/shared/components/loader/SkeletonLoader";
 import { Topic, TopicFormValues } from "./hearing.topics.types";
@@ -34,11 +34,9 @@ import { useAttachments } from "./hooks/useAttachments";
 import { useFormLayout as useFormLayoutEstablishment } from "./config/forms.layout.establishment";
 import { useFormLayout as useFormLayoutWorker } from "./config/forms.layout.worker";
 import { getPayloadBySubTopicID } from "./api/establishment.add.case.payload";
-import {
-  useGetCaseDetailsQuery,
-  useLazyGetCaseDetailsQuery,
-} from "@/features/manage-hearings/api/myCasesApis";
+import { useGetCaseDetailsQuery, useLazyGetCaseDetailsQuery } from "@/features/manage-hearings/api/myCasesApis";
 import { TokenClaims } from "@/features/login/components/AuthProvider";
+import useCaseDetailsPrefill from "../../hooks/useCaseDetailsPrefill";
 
 const Modal = lazy(() => import("@/shared/components/modal/Modal"));
 const ReusableTable = lazy(() =>
@@ -68,7 +66,7 @@ export const useHearingTopics = () => {
   };
 };
 
-function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
+function HearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
   const {
     register,
     handleSubmit,
@@ -87,34 +85,85 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
       submitCount,
     },
   } = useForm<any>();
-  // //console.log("isValid EditHearingTopicsDetails", isValid);
-  const [getCookie, setCookie] = useCookieState({ caseId: "" });
+  // //console.log("isValid HearingTopicsDetails", isValid);
+  const [getCookie] = useCookieState();
   const [caseId] = useState(getCookie("caseId"));
   const [lastSaved, setLastSaved] = useState(false);
-  // const { updateParams, searchParams } = useNavigationService();
   const { updateParams, currentStep, currentTab } = useNavigationService();
-  const [updateHearingTopics, { isLoading: addHearingLoading }] =
-    useUpdateHearingTopicsMutation();
-  const UserClaims: TokenClaims = getCookie("userClaims");
+  const [saveHearingTopics, { isLoading: addHearingLoading }] =
+    useSaveHearingTopicsMutation();
+    const { i18n } = useTranslation();
+    const currentLanguage = i18n.language.toUpperCase();
+    const userClaims = getCookie("userClaims");
+    const [caseTopics, setCaseTopics] = useState<any[]>([]);
+    const UserClaims: TokenClaims = getCookie("userClaims");
   const userType = getCookie("userType");
+
+  // Prefill fields when continuing an incomplete case
+  useCaseDetailsPrefill((field, value) => {
+    setValue(field as any, value);
+    if (field === "CaseTopics") setCaseTopics(value as any[]);
+  });
   const mainCategory2 = getCookie("mainCategory")?.value;
   const subCategory2 = getCookie("subCategory")?.value;
   const userID = getCookie("userClaims").UserID;
   const fileNumber = getCookie("userClaims")?.File_Number;
 
-  const { i18n } = useTranslation();
-  const currentLanguage = i18n.language.toUpperCase();
+
+
+const [triggerCaseDetailsQuery, { data: caseDetailsData }] = useLazyGetCaseDetailsQuery();
+
+useEffect(() => {
+  if (caseId) {
+    const userConfigs: any = {
+      Worker: {
+        UserType: userType,
+        IDNumber: userID,
+      },
+      Establishment: {
+        UserType: userType,
+        IDNumber: userID,
+        FileNumber: fileNumber,
+      },
+      "Legal representative": {
+        UserType: userType,
+        IDNumber: userID,
+        MainGovernment:mainCategory2 ||  "",
+        SubGovernment: subCategory2 ||  "",
+      },
+    } ;
+
+    triggerCaseDetailsQuery({
+      ...userConfigs[userType],
+      CaseID: caseId,
+      AcceptedLanguage: currentLanguage,
+      SourceSystem: "E-Services",
+    });
+  }
+}, [caseId, userClaims?.UserID, currentLanguage, triggerCaseDetailsQuery]);
+
+useEffect(() => {
+  // console.log("caseDetailsData", caseDetailsData);
+  if (caseDetailsData?.CaseDetails) {
+    setCaseTopics(caseDetailsData.CaseDetails.CaseTopics);
+  }
+}, [caseDetailsData]);
+
+  
+  console.log("currentStep", currentStep);
+  console.log("currentTab", currentTab);
 
   // Submit handler
   const onSubmit = (data: TopicFormValues) => {};
 
   const mainCategory = watch("mainCategory") ?? null;
   const subCategory: any = watch("subCategory") ?? null;
+  // console.log("subCategory", subCategory);
+  // console.log("mainCategory", mainCategory);
   // //console.log(subCategory?.value);
   const { t } = useTranslation("hearingtopics");
   const { isOpen, close, toggle } = useToggle();
-  const userClaims = getCookie("userClaims");
-  const [caseTopics, setCaseTopics] = useState<any[]>([]);
+
   // //console.log("caseTopics???????????????????", caseTopics);
 
   //<===================================== APIs =============================================>
@@ -133,7 +182,6 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
   const { data: travelingWayData } = lookup.travelingWayCategory(
     subCategory?.value
   );
-  // //console.log("travelingWayData", travelingWayData);
   const { data: leaveTypeData } = lookup.leaveTypeCategory(subCategory?.value);
   const { data: forAllowanceData } = lookup.forAllowance(subCategory?.value);
   const { data: typeOfRequestLookupData } = lookup.typeOfRequest(
@@ -159,97 +207,6 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
         skip: !subCategory?.value,
       }
     );
-
-  // const {
-  //   data,
-  //   isLoading: isLoadingCaseDetails,
-  //   isError,
-  //   refetch,
-  // } = useGetCaseDetailsQuery(
-  //   {
-  //     ...userConfigs[userType],
-  //     CaseID: caseId ?? "",
-  //     AcceptedLanguage: i18n.language === "ar" ? "AR" : "EN",
-  //     SourceSystem: "E-Services",
-  //   },
-  //   { skip: !caseId }
-  // );
-
-  // useEffect(() => {
-  //   if (caseId) {
-  //     refetch();
-  //   }
-  // }, [caseId, i18n.language, refetch]);
-
-  // useEffect(() => {
-  //   if (data) {
-  //     data?.CaseDetails?.CaseTopics
-  //       ? setCaseTopics(data?.CaseDetails?.CaseTopics)
-  //       : setCaseTopics([]);
-
-  //     // if (data) {
-  //     //   data?.CaseDetails?.CaseTopics
-  //     //     ? setCaseTopics(data?.CaseDetails?.CaseTopics)
-  //     //     : setCaseTopics([]);
-
-  //     //   // Initialize attachments from API response
-  //     //   if (data?.CaseDetails?.OtherAttachments) {
-  //     //     const initialAttachments = data.CaseDetails.OtherAttachments.map(
-  //     //       (attachment: any) => ({
-  //     //         id: attachment.FileKey,
-  //     //         name: attachment.FileName,
-  //     //         type: attachment.FileType,
-  //     //         url: attachment.FileKey, // You might need to construct a proper URL here
-  //     //       })
-  //     //     );
-  //     //     initializeAttachments(initialAttachments);
-  //     //   }
-  //     // }
-  //   }
-  // }, [data]);
-
-  const [triggerCaseDetailsQuery, { data: caseDetailsData }] =
-    useLazyGetCaseDetailsQuery();
-
-  useEffect(() => {
-    if (caseId) {
-      const userConfigs: any = {
-        Worker: {
-          UserType: userType,
-          IDNumber: userID,
-        },
-        Establishment: {
-          UserType: userType,
-          IDNumber: userID,
-          FileNumber: fileNumber,
-        },
-        "Legal representative": {
-          UserType: userType,
-          IDNumber: userID,
-          MainGovernment: mainCategory2 || "",
-          SubGovernment: subCategory2 || "",
-        },
-      };
-
-      triggerCaseDetailsQuery({
-        ...userConfigs[userType],
-        CaseID: caseId,
-        AcceptedLanguage: currentLanguage,
-        SourceSystem: "E-Services",
-      });
-    }
-  }, [caseId, userClaims?.UserID, currentLanguage, triggerCaseDetailsQuery]);
-
-  useEffect(() => {
-    console.log("caseDetailsData", caseDetailsData);
-    if (caseDetailsData?.CaseDetails) {
-      setCaseTopics(caseDetailsData.CaseDetails.CaseTopics);
-    }
-  }, [caseDetailsData]);
-
-  useEffect(() => {
-    console.log("Updated topics:", caseTopics);
-  }, [caseTopics]);
 
   const matchedSubCategory = subTopicsLookupData?.DataElements?.find(
     (item: any) => item.ElementKey === subCategory?.value
@@ -277,134 +234,26 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
   });
 
   // Calculate paginated data
-
   const getPaginatedTopics = useMemo(() => {
     const start = pagination.pageIndex * pagination.pageSize;
     const end = start + pagination.pageSize;
     return caseTopics.slice(start, end);
   }, [caseTopics, pagination.pageIndex, pagination.pageSize]);
 
-  // تحديث حالة editTopic عندما يتم تحديد موضوع
-  const handleTopicSelect = (topic: any) => {
-    console.log("topicvvvvvvv", topic);
-    const formattedTopic = {
-      ...topic,
-      subCategory: {
-        value: topic.subCategory?.value || topic.SubTopicID,
-        label: topic.subCategory?.label || topic.SubTopicName,
-      },
-      mainCategory: {
-        value: topic.mainCategory?.value || topic.MainTopicID,
-        label: topic.mainCategory?.label || topic.MainSectionHeader,
-      },
-      // تنسيق التواريخ
-      date_hijri: topic.date_hijri || topic.Date_New,
-      from_date_hijri: topic.from_date_hijri || topic.FromDateHijri,
-      to_date_hijri: topic.to_date_hijri || topic.ToDateHijri,
-      // تنسيق القيم الرقمية
-      amount: topic.compensationAmount ? topic.compensationAmount : (topic.amount || topic.Amount),
-      wagesAmount: topic.wagesAmount || topic.WagesAmount,
-      bonusAmount: topic.bonusAmount || topic.BonusAmount,
-      payDue: topic.payDue || topic.PayDue,
-      // تنسيق القيم النصية
-      durationOfLeaveDue: topic.durationOfLeaveDue || topic.DurationOfLeaveDue,
-      theReason: topic.theReason || topic.TheReason,
-      currentPosition: topic.currentPosition || topic.CurrentPosition,
-      // تنسيق القيم المنسدلة
-      forAllowance: topic.forAllowance || {
-        value: topic.ForAllowance,
-        label: topic.ForAllowance,
-      },
-      commissionType: topic.commissionType || {
-        value: topic.CommissionType,
-        label: topic.CommissionType,
-      },
-      accordingToAgreement: topic.accordingToAgreement || {
-        value: topic.AccordingToAgreement,
-        label: topic.AccordingToAgreement,
-      },
-      travelingWay: topic.travelingWay || {
-        value: topic.TravelingWay,
-        label: topic.TravelingWay,
-      },
-    };
-
-    setEditTopic(formattedTopic);
-    reset(formattedTopic);
-    toggle();
-  };
-  /**
-  
-    const handleTopicSelect = (topic: any) => {
-    console.log("topicvvvvvvv", topic);
-    const formattedTopic = {
-      ...topic,
-      subCategory: {
-        value: topic.subCategory?.value || topic.SubTopicID,
-        label: topic.subCategory?.label || topic.SubTopicName,
-      },
-      mainCategory: {
-        value: topic.mainCategory?.value || topic.MainTopicID,
-        label: topic.mainCategory?.label || topic.MainSectionHeader,
-      },
-      // تنسيق التواريخ
-      date_hijri: topic.date_hijri || topic.Date_New,
-      from_date_hijri: topic.from_date_hijri || topic.FromDateHijri,
-      to_date_hijri: topic.to_date_hijri || topic.ToDateHijri,
-      // تنسيق القيم الرقمية
-      amount: topic.amount || topic.Amount,
-      wagesAmount: topic.wagesAmount || topic.WagesAmount,
-      bonusAmount: topic.bonusAmount || topic.BonusAmount,
-      payDue: topic.payDue || topic.PayDue,
-      // تنسيق القيم النصية
-      durationOfLeaveDue: topic.durationOfLeaveDue || topic.DurationOfLeaveDue,
-      theReason: topic.theReason || topic.TheReason,
-      currentPosition: topic.currentPosition || topic.CurrentPosition,
-      // تنسيق القيم المنسدلة
-      forAllowance: topic.forAllowance || {
-        value: topic.ForAllowance,
-        label: topic.ForAllowance,
-      },
-      commissionType: topic.commissionType || {
-        value: topic.CommissionType,
-        label: topic.CommissionType,
-      },
-      accordingToAgreement: topic.accordingToAgreement || {
-        value: topic.AccordingToAgreement,
-        label: topic.AccordingToAgreement,
-      },
-      travelingWay: topic.travelingWay || {
-        value: topic.TravelingWay,
-        label: topic.TravelingWay,
-      },
-    };
-
-    // Set edit topic and reset form values
-    setEditTopic(formattedTopic);
-    // Populate the form with the selected topic values
-    reset(formattedTopic);
-    // Ensure legal and data sections are visible when editing
-    setShowLegalSection(true);
-    setShowTopicData(true);
-    toggle();
-  }; 
-
-
-
-  */
-
   const columns: any = useMemo(
     () =>
       getHearingTopicsColumns({
         t,
         onEdit: (topic) => {
-          handleTopicSelect(topic);
+          setEditTopic(topic);
+          toggle();
         },
         onDel: (topic) => {
+          // Remove the topic from caseTopics array
           setCaseTopics((prev) => prev.filter((t) => t !== topic));
         },
       }),
-    [t, toggle, setEditTopic, setCaseTopics]
+    [t, toggle]
   );
 
   const goToLegalStep = () => {
@@ -419,13 +268,15 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
   };
 
   const handleSend = () => {
-    saveTopic();
+   let fillingForm = saveTopic();
+   if(fillingForm){
     reset();
     setDate({ hijri: null, gregorian: null, dateObject: null });
     setShowLegalSection(false);
     setShowTopicData(false);
     setEditTopic(null);
     close();
+  }
   };
 
   const handleAddTopic = async () => {
@@ -443,29 +294,34 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
     setShowTopicData(false);
     setEditTopic(null);
   };
-
   const handleUpdate = () => {
     if (!editTopic) return;
 
     const updatedValues = getValues();
-    console.log("Updated Values:", updatedValues);
+    // //console.log("updated run");
+    // console.log("updatedValues", updatedValues);
 
     const updatedTopic = {
-      ...updatedValues,
-      subCategory: {
-        value: updatedValues.subCategory?.value || editTopic.subCategory?.value,
-        label: updatedValues.subCategory?.label || editTopic.subCategory?.label,
-      },
-      acknowledged: updatedValues.acknowledged || editTopic.acknowledged,
-      mainCategory: updatedValues.mainCategory?.value || editTopic.mainCategory,
-      amount: updatedValues.amount || editTopic.amount,
+      ...editTopic,
+      AcknowledgedTerms: updatedValues.acknowledged,
+      MainCategoryId:
+        updatedValues.mainCategory?.value || editTopic.mainCategory,
+      SubCategoryId: updatedValues.subCategory?.value || editTopic.subCategory,
+      FromLocation: updatedValues.fromPlace || editTopic.fromPlace,
+      ToLocation: updatedValues.toPlace || editTopic.toPlace,
+      Amount: updatedValues.amount || editTopic.amount,
       payDue: updatedValues.payDue || editTopic.payDue,
       durationOfLeaveDue:
         updatedValues.durationOfLeaveDue || editTopic.durationOfLeaveDue,
+
       wagesAmount: updatedValues.wagesAmount || editTopic.wagesAmount,
+
       compensationAmount:
         updatedValues.compensationAmount || editTopic.compensationAmount,
       injuryType: updatedValues.injuryType || editTopic.injuryType,
+
+      typesOfPenalties: updatedValues.typesOfPenalties || editTopic.typesOfPenalties,
+
       bonusAmount: updatedValues.bonusAmount || editTopic.bonusAmount,
       otherCommission:
         updatedValues.otherCommission || editTopic.otherCommission,
@@ -476,19 +332,24 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
         updatedValues.requiredJobTitle || editTopic.requiredJobTitle,
       currentJobTitle:
         updatedValues.currentJobTitle || editTopic.currentJobTitle,
+
       damagedType: updatedValues.damagedType || editTopic.damagedType,
       currentInsuranceLevel:
         updatedValues.currentInsuranceLevel || editTopic.currentInsuranceLevel,
       theReason: updatedValues.theReason || editTopic.theReason,
+
       theWantedJob: updatedValues.theWantedJob || editTopic.theWantedJob,
       currentPosition:
         updatedValues.currentPosition || editTopic.currentPosition,
+
       typeOfRequest:
         updatedValues.typeOfRequest?.value || editTopic?.typeOfRequest?.label,
       kindOfHoliday:
         updatedValues.kindOfHoliday?.value || editTopic?.kindOfHoliday?.label,
+
       commissionType:
         updatedValues.commissionType?.value || editTopic?.commissionType?.label,
+
       accordingToAgreement:
         updatedValues.accordingToAgreement?.value ||
         editTopic?.accordingToAgreement?.label,
@@ -497,8 +358,10 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
       requiredDegreeOfInsurance:
         updatedValues.requiredDegreeOfInsurance ||
         editTopic?.requiredDegreeOfInsurance,
+
       typeOfCustody: updatedValues.typeOfCustody || editTopic?.typeOfCustody,
       amountsPaidFor: updatedValues.amountsPaidFor || editTopic?.amountsPaidFor,
+
       request_date_hijri:
         updatedValues.request_date_hijri || editTopic?.request_date_hijri,
       date_hijri: updatedValues.date_hijri || editTopic?.date_hijri,
@@ -510,24 +373,23 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
       Gender_Code: updatedValues.DefendantsEstablishmentGender,
       Nationality_Code: updatedValues.DefendantsEstablishmentNationality,
       PrisonerId: updatedValues.DefendantsEstablishmentPrisonerId,
+
+      ////////////////////////////////  Worker //////////////////////////////
       from_date_hijri:
         updatedValues.from_date_hijri || editTopic?.from_date_hijri,
       to_date_hijri: updatedValues.to_date_hijri || editTopic?.to_date_hijri,
+
       forAllowance: updatedValues.forAllowance?.value || editTopic.forAllowance,
       rewardType: updatedValues.rewardType || editTopic.rewardType,
       consideration: updatedValues.consideration || editTopic.consideration,
+
       travelingWay: updatedValues.travelingWay?.value || editTopic.travelingWay,
-      AdditionalDetails: updatedValues.additionalDetails || editTopic.AdditionalDetails
     };
 
-    console.log("Updated Topic:", updatedTopic);
-    // console.log("Topic:", topic);
-
+    // Update the caseTopics array
     setCaseTopics((prev) =>
       prev.map((topic) => (topic === editTopic ? updatedTopic : topic))
     );
-
-    console.log("finallll", caseTopics);
 
     // Reset and close
     reset();
@@ -559,13 +421,10 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
   );
 
   const handleSaveApi = async () => {
-    //console.log("dddd");
-
     if (caseTopics.length) {
-      //console.log("dssdadssssssssssss");
       try {
         setLastAction("Save"); // Set action FIRST before API call
-        const response = await updateHearingTopics(
+        const response = await saveHearingTopics(
           getPayloadBySubTopicID(caseTopics, subCategory, "Save", caseId) // Pass explicit action
         ).unwrap();
         setLastSaved(true);
@@ -578,10 +437,11 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
   const handleNext = async () => {
     const latestFormValues = getValues();
     setFormData(latestFormValues);
+    // console.log("caseTopics", caseTopics);
 
     try {
       setLastAction("Next"); // Set action FIRST before API call
-      const response = await updateHearingTopics(
+      const response = await saveHearingTopics(
         getPayloadBySubTopicID(caseTopics, subCategory, "Next", caseId) // Pass explicit action
       ).unwrap();
 
@@ -610,18 +470,18 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
     }
   }, [currentStep, currentTab, updateParams]);
 
-  const saveTopic = (): number => {
+  const saveTopic = ():number => {
     const newTopic = getValues();
 
     console.log(newTopic);
 
     for (const [key, value] of Object.entries(newTopic)) {
-      if (
-        value === "" &&
-        key !== "housingSpecificationsInContract" &&
-        key !== "actualHousingSpecifications" &&
-        key !== "housingSpecificationInByLaws"
-      ) {
+       if (
+            value === "" &&
+            key !== "housingSpecificationsInContract" &&
+            key !== "actualHousingSpecifications" &&
+            key !== "housingSpecificationInByLaws"
+          ) {
         return 0;
       }
     }
@@ -679,9 +539,8 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
       Consideration: newTopic.consideration,
       TravelingWay: newTopic.travelingWay,
       PenalityType: newTopic.typesOfPenalties,
-      LoanAmount: newTopic.loanAmount,
     };
-
+    
     setCaseTopics((prev) => [...prev, topicToSave]);
     return 1;
   };
@@ -691,13 +550,11 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
   const isEditing = Boolean(editTopic);
 
   const formLayout = useMemo(() => {
-    if (userType === "Worker" || userType === "Embassy User") {
+    if (userType === "Worker") {
       return useFormLayoutWorker({
         t: t,
         MainTopicID: mainCategory,
-        SubTopicID: isEditing
-          ? editTopic?.subCategory?.value
-          : subCategory?.value,
+        SubTopicID: isEditing ? editTopic?.subCategory : subCategory,
         FromLocation: fromPlace,
         ToLocation: toPlace,
         AcknowledgementTerms: acknowledged,
@@ -733,9 +590,7 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
       return useFormLayoutEstablishment({
         t: t,
         MainTopicID: mainCategory,
-        SubTopicID: isEditing
-          ? editTopic?.subCategory?.value
-          : subCategory?.value,
+        SubTopicID: isEditing ? editTopic?.subCategory : subCategory,
         FromLocation: fromPlace,
         ToLocation: toPlace,
         AcknowledgementTerms: acknowledged,
@@ -823,20 +678,11 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
     }
   }, [mainCategory, setValue]);
 
-  useEffect(() => {
-    if (editTopic) {
-      setValue("subCategory", {
-        value: editTopic.subCategory?.value,
-        label: editTopic.subCategory?.label,
-      });
-    }
-  }, [editTopic, setValue]);
-
   return (
     <Suspense fallback={<TableLoader />}>
       <StepNavigation<FormData>
-        onSubmit={handleSubmit(onSubmit)} // ✅ both valid/invalid handlers
-        isValid={isValid}
+        onSubmit={handleSubmit(onSubmit)} 
+        isValid={isValid && caseTopics.length > 0}
         isFirstStep={currentStep === 0 && currentTab === 0}
         isLastStep={currentStep === 3 - 1}
         currentStep={currentStep}
@@ -856,8 +702,8 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
           <div>
             {caseTopics.length > 0 ? (
               <>
-                <div className="mx-4">
-                  <p className="text-primary-600 font-semibold text-md leading-6 font-primary mb-7xl">
+                <div className="mx-4 sm:mx-6 md:mx-8">
+                  <p className="text-primary-600 font-semibold text-base sm:text-lg md:text-xl leading-6 font-primary mb-4 sm:mb-6 md:mb-8">
                     {t("lawsuit_topics") || "Lawsuit Topics"}
                   </p>
                   <Button
@@ -868,41 +714,43 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
                       setEditTopic(null);
                       toggle();
                     }}
-                    className="mb-7xl"
+                    className="mb-4 sm:mb-6 md:mb-8"
                   >
                     <Add01Icon size={20} /> {t("add_topic") || "Add Topic"}
                   </Button>
-                  <div className="border-b border-gray-300 mb-7xl" />
+                  <div className="border-b border-gray-300 mb-4 sm:mb-6 md:mb-8" />
                 </div>
                 <Suspense fallback={<TableSkeletonLoader />}>
-                  <ReusableTable
-                    data={getPaginatedTopics}
-                    columns={columns}
-                    page={pagination.pageIndex + 1} // Convert to 1-based index
-                    totalPages={Math.ceil(
-                      caseTopics.length / pagination.pageSize
-                    )}
-                    onPageChange={(newPage) => {
-                      setPagination((prev) => ({
-                        ...prev,
-                        pageIndex: newPage - 1, // Convert back to 0-based index
-                      }));
-                    }}
-                    PaginationComponent={CustomPagination}
-                  />
-                  <AttachmentSection
-                    attachments={attachments}
-                    onAddClick={openAttachmentModal}
-                    onRemove={handleRemoveAttachment}
-                    onView={handleViewAttachment}
-                  />
-
-                  <AttachmentModal
-                    isOpen={showAttachmentModal}
-                    onClose={closeAttachmentModal}
-                    onSave={handleAttachmentSave}
-                  />
+                  <div className="overflow-x-auto">
+                    <ReusableTable
+                      data={getPaginatedTopics}
+                      columns={columns}
+                      page={pagination.pageIndex + 1}
+                      totalPages={Math.ceil(
+                        caseTopics.length / pagination.pageSize
+                      )}
+                      onPageChange={(newPage) => {
+                        setPagination((prev) => ({
+                          ...prev,
+                          pageIndex: newPage - 1,
+                        }));
+                      }}
+                      PaginationComponent={CustomPagination}
+                    />
+                  </div>
                 </Suspense>
+                <AttachmentSection
+                  attachments={attachments}
+                  onAddClick={openAttachmentModal}
+                  onRemove={handleRemoveAttachment}
+                  onView={handleViewAttachment}
+                />
+
+                <AttachmentModal
+                  isOpen={showAttachmentModal}
+                  onClose={closeAttachmentModal}
+                  onSave={handleAttachmentSave}
+                />
               </>
             ) : (
               <Suspense fallback={<TableLoader />}>
@@ -920,6 +768,7 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
                     ? t("edit_topic") || "Edit Topic"
                     : t("add_topic") || "Add Topic"
                 }
+                className="h-[60vh] sm:h-[600px] overflow-y-auto w-full max-w-[800px]"
               >
                 <FormProvider>
                   <Suspense fallback={<TableLoader />}>
@@ -932,13 +781,13 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
                       watch={watch}
                     />
                   </Suspense>
-                  <div className="flex w-full justify-between mt-6xl">
+                  <div className="flex w-full justify-between mt-4 sm:mt-6">
                     <Button
                       variant="secondary"
                       typeVariant="outline"
                       size="sm"
                       onClick={handleCancel}
-                      className="text-sm20 font-medium"
+                      className="text-sm sm:text-base font-medium"
                     >
                       {t("cancel") || "Cancel"}
                     </Button>
@@ -955,7 +804,7 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
                           handleSave();
                         }
                       }}
-                      className="text-sm font-medium"
+                      className="text-sm sm:text-base font-medium"
                       disabled={!isValid}
                     >
                       {isEditing
@@ -978,4 +827,4 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
   );
 }
 
-export default EditHearingTopicsDetails;
+export default HearingTopicsDetails;
