@@ -36,6 +36,7 @@ import { useFormLayout as useFormLayoutWorker } from "./config/forms.layout.work
 import { getPayloadBySubTopicID } from "./api/establishment.add.case.payload";
 import { useGetCaseDetailsQuery, useLazyGetCaseDetailsQuery } from "@/features/manage-hearings/api/myCasesApis";
 import { TokenClaims } from "@/features/login/components/AuthProvider";
+import useCaseDetailsPrefill from "../../hooks/useCaseDetailsPrefill";
 
 const Modal = lazy(() => import("@/shared/components/modal/Modal"));
 const ReusableTable = lazy(() =>
@@ -97,6 +98,12 @@ function HearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
     const [caseTopics, setCaseTopics] = useState<any[]>([]);
     const UserClaims: TokenClaims = getCookie("userClaims");
   const userType = getCookie("userType");
+
+  // Prefill fields when continuing an incomplete case
+  useCaseDetailsPrefill((field, value) => {
+    setValue(field as any, value);
+    if (field === "CaseTopics") setCaseTopics(value as any[]);
+  });
   const mainCategory2 = getCookie("mainCategory")?.value;
   const subCategory2 = getCookie("subCategory")?.value;
   const userID = getCookie("userClaims").UserID;
