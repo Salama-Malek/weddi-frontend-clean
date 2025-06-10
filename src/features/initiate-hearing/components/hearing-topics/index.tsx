@@ -207,6 +207,7 @@ function HearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
   const [delTopic, setDelTopic] = useState<any | null>(null);
 
   const [editTopic, setEditTopic] = useState<any | null>(null);
+  const [editTopicIndex, setEditTopicIndex] = useState<number | null>(null);
   // //console.log("editTopic", editTopic);
   const [showLegalSection, setShowLegalSection] = useState(false);
   const [showTopicData, setShowTopicData] = useState(false);
@@ -237,8 +238,9 @@ function HearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
     () =>
       getHearingTopicsColumns({
         t,
-        onEdit: (topic) => {
+        onEdit: (topic, index) => {
           setEditTopic(topic);
+          setEditTopicIndex(index);
           toggle();
         },
         onDel: (topic) => {
@@ -381,7 +383,7 @@ function HearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
 
     // Update the caseTopics array
     setCaseTopics((prev) =>
-      prev.map((topic) => (topic === editTopic ? updatedTopic : topic))
+      prev.map((topic, idx) => (idx === editTopicIndex ? updatedTopic : topic))
     );
 
     // Reset and close
@@ -390,6 +392,7 @@ function HearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
     setShowLegalSection(false);
     setShowTopicData(false);
     setEditTopic(null);
+    setEditTopicIndex(null);
     close();
   };
 
@@ -398,6 +401,7 @@ function HearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
     setShowLegalSection(false);
     setShowTopicData(false);
     setEditTopic(null);
+    setEditTopicIndex(null);
     close();
   };
 
