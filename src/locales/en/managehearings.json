@@ -30,7 +30,8 @@
     "request_number": "Request Number",
     "case_number": "Case Number",
     "case_status": "Case Status",
-    "legal_representative_name": "Legal Representative’s Name"
+    "legal_representative_name": "Legal Representative’s Name",
+    "code_700": "Code 700"
   },
   "pagination": {
     "prev": "Prev",

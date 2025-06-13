@@ -13,6 +13,7 @@ export interface GetMyCasesRequest {
   SourceSystem?: string;
   FileNumber?: string;
   SearchID: string;
+  Number700?: string;
   MainGovernment?: string;
   SubGovernment?: string;
 }
@@ -42,6 +43,7 @@ export const myCasesApi = api.injectEndpoints({
         MainGovernment,
         SubGovernment,
         SearchID,
+        Number700,
         AcceptedLanguage,
         SourceSystem = "E-Services",
       }) => {
@@ -55,6 +57,10 @@ export const myCasesApi = api.injectEndpoints({
           AcceptedLanguage,
           SourceSystem,
         };
+
+        if (Number700) {
+          params.Number700 = Number700;
+        }
 
         // //console.log("UserType", UserType);
 

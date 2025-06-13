@@ -9,6 +9,7 @@ export type CaseRecord = {
   SessionTime?: string;
   SessionDayDate?: string;
   SettlementID?: string;
+  Number700?: string;
   DownloadPDF?: string;
   ResendAppointment?: string;
   CancelCase?: string;

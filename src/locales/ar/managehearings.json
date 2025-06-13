@@ -31,7 +31,8 @@
     "case_status": "حالة الدعوى",
     "case_number": "رقم الدعوى",
     "session_date": "تاريخ الجلسة",
-    "actions": "الإجراءات"
+    "actions": "الإجراءات",
+    "code_700": "كود 700"
   },
   "pagination": {
     "prev": "السابق",

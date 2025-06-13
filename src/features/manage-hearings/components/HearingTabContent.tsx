@@ -1,4 +1,4 @@
-import React, { lazy, Suspense, useState, useEffect } from "react";
+import React, { lazy, Suspense, useState, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { InputField } from "@/shared/components/form";
 import Button from "@/shared/components/button";
@@ -100,7 +100,28 @@ const HearingTabContent = ({ role, caseType }: HearingTabContentProps) => {
     AcceptedLanguage: i18n.language === "ar" ? "AR" : "EN",
     SourceSystem: "E-Services",
     SearchID: debouncedSearchTerm,
+    Number700: debouncedSearchTerm,
   });
+
+  const filteredData = useMemo(() => {
+    if (!debouncedSearchTerm) return data;
+    const term = debouncedSearchTerm.toLowerCase();
+    return data.filter((item) =>
+      [
+        item.CaseID,
+        item.SettlementID,
+        item.WorkStatus,
+        item.SessionTime,
+        item.SessionDayDate,
+        item.CreateDate,
+        item.CasePlaintiffName,
+        item.CaseDefendantName,
+        item.Number700,
+      ]
+        .filter(Boolean)
+        .some((val) => String(val).toLowerCase().includes(term))
+    );
+  }, [data, debouncedSearchTerm]);
 
   const columns = useMyCasesColumns(data, role);
   const { options: statusOptions } = useStatusWorkLookup();
@@ -174,13 +195,13 @@ const HearingTabContent = ({ role, caseType }: HearingTabContentProps) => {
         <Suspense fallback={<TableLoader />}>
           {isLoading ? (
             <TableLoader />
-          ) : data.length === 0 ? (
+          ) : filteredData.length === 0 ? (
             <div className="text-center text-gray-500 p-6">
               {t("no_results_found") || "No results found for your search."}
             </div>
           ) : (
             <ReusableTable
-              data={data}
+              data={filteredData}
               columns={columns as any}
               page={page}
               totalPages={totalPages}
