@@ -45,12 +45,20 @@ const HelpCenter = ({
   };
 
   useEffect(() => {
-    const savedLanguage = localStorage.getItem("language") || "en";
-    if (savedLanguage !== currentLanguage) {
-      i18n.changeLanguage(savedLanguage);
-      document.documentElement.dir = savedLanguage === "ar" ? "rtl" : "ltr";
-    }
-  }, []);
+    // Initialize selected options with user's language preference
+    const initialOptions = Object.keys(fileData).reduce((acc, category) => {
+      const langs = fileData[category];
+      // Try to use current language, fallback to 'en' if not available
+      const defaultLang = langs[currentLanguage] ? currentLanguage : 'en';
+      acc[category] = {
+        value: defaultLang,
+        label: langs[defaultLang]?.lang || 'English'
+      };
+      return acc;
+    }, {} as { [category: string]: { value: string; label: string } });
+    
+    setSelectedOptions(initialOptions);
+  }, [fileData, currentLanguage]);
 
   return (
     <section className=" py-[16px] p-4xl bg-light-alpha-white flex flex-col shadow-md rounded-md">
@@ -79,8 +87,8 @@ const HelpCenter = ({
             <div className="mt-6 space-y-6">
               {Object.entries(fileData).map(([category, langs]) => {
                 const selected = selectedOptions[category] || {
-                  value: "en", // default fallback
-                  label: langs["en"]?.lang || "English",
+                  value: currentLanguage, // Use current language as default
+                  label: langs[currentLanguage]?.lang || langs["en"]?.lang || "English",
                 };
                 const selectedFile = langs[selected.value];
 
@@ -103,7 +111,7 @@ const HelpCenter = ({
                         </div>
                       </div>
 
-                      <div className="md:w-3/12">
+                      <div className="flex items-center gap-4">
                         <MyDropdown
                           className="!w-auto !h-10 border-0 text-light-alpha-white text-md medium"
                           applyStyle={{
@@ -147,7 +155,6 @@ const HelpCenter = ({
                       </div>
                     </div>
                   </div>
-
                 );
               })}
             </div>

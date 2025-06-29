@@ -10,12 +10,12 @@ export const hearingTopicsApi = api.injectEndpoints({
       }),
     }),
     WorkerAttachmentCategories: builder.query<any, any>({
-      query: ({AcceptedLanguage,SourceSystem}) => ({
+      query: ({ModuleKey,ModuleName,AcceptedLanguage,SourceSystem}) => ({
         url: `/WeddiServices/V1/MainLookUp`,
         params: {
           LookupType: "CaseElements",
-          ModuleKey:"WorkerAttachmentCategories",
-          ModuleName:"WorkerAttachmentCategories",
+          ModuleKey: ModuleKey,
+          ModuleName:ModuleName,
           AcceptedLanguage:AcceptedLanguage,
           SourceSystem:SourceSystem
         }

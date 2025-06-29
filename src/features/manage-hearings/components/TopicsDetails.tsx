@@ -125,7 +125,7 @@ const TopicsDetails: React.FC<TopicsDetailsProps> = ({ hearing }) => {
             className="!max-h-max !m-0"
           >
             <div className="w-full h-[80vh] overflow-auto">
-              {fileName.toLowerCase().endsWith(".pdf") ? (
+              {fileBase64?.pyFileName?.toLowerCase().endsWith(".pdf") ? (
                 <iframe
                   src={`data:application/pdf;base64,${fileBase64.Base64Stream}`}
                   className="w-full h-full border-none"

@@ -14,6 +14,9 @@ interface Props {
 }
 
 const AttachmentSection: React.FC<Props> = ({ attachments, onAddClick, onRemove, onView }) => {
+  
+  console.log("dfshkfhskdhkhksh",attachments);
+  
   const { t } = useTranslation("hearingtopics");
 
   return (
@@ -25,7 +28,12 @@ const AttachmentSection: React.FC<Props> = ({ attachments, onAddClick, onRemove,
       </h2>
 
       <div className="mb-6">
-        <Button variant="primary" size="xs" onClick={onAddClick}>
+        <Button 
+          type="button"
+          variant="primary" 
+          size="xs" 
+          onClick={onAddClick}
+        >
           <Add01Icon size={20} /> {t("add_attachments") || "Add Attachments"}
         </Button>
       </div>
@@ -40,7 +48,7 @@ const AttachmentSection: React.FC<Props> = ({ attachments, onAddClick, onRemove,
             {attachments.map((att, idx) => (
               <Suspense fallback={<TableLoader />} key={`${att.fileName}-${idx}`}>
                 <FileAttachment
-                  fileName={`${att.classification || t("attachment")} - ${att.file?.name || t("unnamed_file")}`}
+                  fileName={`${att.fileName || t("attachment")} - ${att.file?.name || t("unnamed_file")}`}
                   onRemove={() => onRemove(idx)}
                   onView={onView ? () => onView(idx) : undefined}
                 />

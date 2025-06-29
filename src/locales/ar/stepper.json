@@ -21,6 +21,8 @@
   "cancel": "إلغاء",
   "previous": "السابق",
   "save": "حفظ",
+  "save_success": "تم حفظ الدعوى بنجاح",
+  "save_error": "فشل في حفظ الدعوى",
   "submit": "إرسال",
   "next": "التالي",
   "new_text": "جديد",

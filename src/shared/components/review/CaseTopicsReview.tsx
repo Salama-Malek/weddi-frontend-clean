@@ -108,7 +108,7 @@ const CaseTopicsReview: React.FC<CaseTopicsReviewProps> = ({
         ))}
       </Section>
 
-      {previewFile && (
+      {previewFile && fileBase64?.Base64Stream && (
         <Modal
           header={fileName}
           close={() => setPreviewFile(false)}
@@ -121,7 +121,7 @@ const CaseTopicsReview: React.FC<CaseTopicsReviewProps> = ({
             </div>
           ) : (
             <div className="w-full h-[80vh] overflow-auto">
-              {fileName.toLowerCase().endsWith(".pdf") ? (
+              {fileBase64?.pyFileName.toLowerCase().endsWith(".pdf") ? (
                 <iframe
                   src={`data:application/pdf;base64,${fileBase64?.Base64Stream}`}
                   className="w-full h-full border-none"

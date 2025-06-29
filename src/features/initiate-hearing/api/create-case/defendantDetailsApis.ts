@@ -9,13 +9,15 @@ import { api } from "@/config/api";
 export const caseApi = api.injectEndpoints({
   endpoints: (builder) => ({
     GetExtractedEstablishmentData: builder.query<any, any>({
-      query: ({ WorkerId, AcceptedLanguage, SourceSystem ,FileNumber}) => ({
+      query: ({ WorkerId, AcceptedLanguage, SourceSystem, FileNumber, UserType, CaseID }) => ({
         url: `/WeddiServices/V1/ExtractEstabData`,
         params: {
           WorkerID: WorkerId,
           AcceptedLanguage: AcceptedLanguage,
           SourceSystem: SourceSystem,
-          FileNumber: FileNumber
+          FileNumber: FileNumber,
+          UserType: UserType,
+          CaseID: CaseID
         }
       }),
     }),

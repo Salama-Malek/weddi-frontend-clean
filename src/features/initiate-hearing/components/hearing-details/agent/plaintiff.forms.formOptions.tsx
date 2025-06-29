@@ -50,11 +50,11 @@ export const useAgentFormOptions = () => {
     { 
       AcceptedLanguage: lang, 
       SourceSystem: "E-Services", 
-      selectedWorkerRegion: selectedRegion || { value: "" } ,
+      selectedWorkerRegion: (selectedRegion as { value: string } | null)?.value || "",
       ModuleName: userType.toLowerCase().includes("establishment") ? "EstablishmentCity" : "WorkerCity",
 
     },
-    { skip: !selectedRegion }
+    { skip: !(selectedRegion as { value: string } | null)?.value }
   );
   const cityOptions: Option[] =
     cityResponse?.DataElements?.map((item: DataElement) => ({

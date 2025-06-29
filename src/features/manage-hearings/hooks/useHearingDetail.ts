@@ -30,6 +30,10 @@ const useHearingDetail = () => {
       UserType: userType,
       IDNumber: userID,
     },
+    "Embassy User": {
+      UserType: userType,
+      IDNumber: userID,
+    },
     Establishment: {
       UserType: userType,
       IDNumber: userID,

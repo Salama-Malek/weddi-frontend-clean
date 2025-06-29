@@ -74,23 +74,75 @@ const getCurrentDateTime = () => {
   return local.toISOString().slice(0, 16);
 };
 
+
+
+
 const LoginForm: React.FC = () => {
   const [searchParams] = useSearchParams();
   const tokenFromURL = searchParams.get("MyClientsToken");
 
-  useEffect(() => {
-    if (!tokenFromURL) {
-      window.location.href = `${process.env.VITE_REDIRECT_URL}`;
+  // useEffect(() => {
+  //   if (!tokenFromURL) {
+  //     window.location.href = `${process.env.VITE_REDIRECT_URL}`;
+  //   }
+  // }, [tokenFromURL]);
+
+
+  const userLoginlistData = [
+    {
+      lable: "embasy user",
+      data: {
+        File_Number: "",
+        UserDOB: "07/11/1985",
+        UserID: "1022190118",
+        UserName: "Embasy User",
+        AcceptedLanguage: LanguageArray[1].value,
+        UserType: userTypes[1].value,
+      }
+    },
+    {
+      lable: "Legel Rep User",
+      data: {
+        File_Number: "",
+        UserID: "1078229067",
+        UserName: "Worker User",
+        UserDOB: "26/11/1962",
+        AcceptedLanguage: LanguageArray[1].value,
+        UserType: userTypes[1].value,
+      }
+    },
+    {
+      lable: "Worker Agent User",
+      data: {
+        File_Number: "",
+        UserDOB: "13/09/1984",
+        UserID: "1028308656",
+        UserName: "Agent User",
+        AcceptedLanguage: LanguageArray[1].value,
+        UserType: userTypes[1].value,
+      }
+    },
+    {
+      lable: "Esablishment User",
+      data: {
+        File_Number: "1-204757",
+        UserDOB: "07/11/1985",
+        UserID: "1100055753",
+        UserName: "Est User",
+        AcceptedLanguage: LanguageArray[1].value,
+        UserType: userTypes[0].value,
+      }
     }
-  }, [tokenFromURL]);
+  ]
+
 
   const [form, setForm] = useState<FormState>({
     File_Number: "",
-    UserDOB: "26/11/1962 00:00:00",
-    UserID: "1078229067",
-    UserName: "test user",
-    AcceptedLanguage: LanguageArray[0].value,
-    UserType: userTypes[0].value,
+    UserDOB: "07/11/1985",
+    UserID: "1022190118",
+    UserName: "Embasy User",
+    AcceptedLanguage: LanguageArray[1].value,
+    UserType: userTypes[1].value,
   });
 
   const [, , , removeAll] = useCookieState();
@@ -108,7 +160,13 @@ const LoginForm: React.FC = () => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-
+  // Add handler for user selection
+  const handleUserSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const selectedUser = userLoginlistData.find(user => user.lable === e.target.value);
+    if (selectedUser) {
+      setForm(selectedUser.data);
+    }
+  };
 
   const handleSubmit = async (e?: React.BaseSyntheticEvent) => {
     e?.preventDefault();
@@ -132,7 +190,7 @@ const LoginForm: React.FC = () => {
         .sign(secret);
 
       // //console.log("Generated JWT Token:", token);
-      navegator(`?MyClientsToken=${token}`)
+      navegator(`/?MyClientsToken=${token}`)
 
     } catch (error) {
       console.error("Submission failed:", error);
@@ -156,6 +214,27 @@ const LoginForm: React.FC = () => {
           <FormWrapper isValid={!isLoading} onSubmit={handleSubmit}>
             <p className="text-red-500 text-center">The Date Format Should Be  (DD/MM/YYYY)</p>
             <p className="text-red-500 text-center">In Worker User , Delete File Number</p>
+
+            {/* Add the new dropdown for user selection */}
+            <div className="w-full p-2">
+              <label className="block mb-2">
+                Select User
+                <span className="text-red-300">*</span>
+              </label>
+              <select
+                onChange={handleUserSelect}
+                className="input border border-gray-300 rounded-md p-2 w-full"
+                defaultValue=""
+              >
+                <option value="" disabled>Select a user</option>
+                {userLoginlistData.map((user) => (
+                  <option key={user.lable} value={user.lable}>
+                    {user.lable}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             <div className="flex flex-wrap ">
               <InputForm
                 title={"File Number"}
@@ -191,7 +270,7 @@ const LoginForm: React.FC = () => {
                 className="input border border-gray-300 rounded-md p-2 w-full"
               />
               <div className="lg:w-1/2 w-full p-1">
-                <label >
+                <label>
                   User Type
                 </label>
                 <select
@@ -209,7 +288,7 @@ const LoginForm: React.FC = () => {
               </div>
 
               <div className="lg:w-1/2 w-full p-1">
-                <label >
+                <label>
                   Accepted Language
                 </label>
                 <select

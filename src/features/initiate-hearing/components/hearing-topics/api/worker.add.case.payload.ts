@@ -1,4 +1,5 @@
 import { Option } from "@/shared/components/form/form.types";
+import { formatDateToYYYYMMDD } from "@/shared/utils/dateUtils";
 
 export function getPayloadBySubTopicID(
   caseTopics: any[],
@@ -26,10 +27,10 @@ export function getPayloadBySubTopicID(
         const WR1Payload = {
           ...basePayload,
           Amount: topic?.amount,
-          pyTempDate: topic?.from_date_hijri,
-          FromDate_New: topic?.from_date_gregorian,
-          Date_New: topic?.to_date_hijri,
-          ToDate_New: topic?.to_date_gregorian,
+          pyTempDate: formatDateToYYYYMMDD(topic?.from_date_hijri),
+          FromDate_New: formatDateToYYYYMMDD(topic?.from_date_gregorian),
+          Date_New: formatDateToYYYYMMDD(topic?.to_date_hijri),
+          ToDate_New: formatDateToYYYYMMDD(topic?.to_date_gregorian),
           ForAllowance: topic?.forAllowance?.value,
           OtherAllowance: topic?.otherAllowance,
         };
@@ -39,10 +40,10 @@ export function getPayloadBySubTopicID(
         const WR2Payload = {
           ...basePayload,
           OverdueWagesAmount: topic?.overdueWagesAmount,
-          pyTempDate: topic?.from_date_hijri,
-          FromDate_New: topic?.from_date_gregorian,
-          Date_New: topic?.to_date_hijri,
-          ToDate_New: topic?.to_date_gregorian,
+          pyTempDate: formatDateToYYYYMMDD(topic?.from_date_hijri),
+          FromDate_New: formatDateToYYYYMMDD(topic?.from_date_gregorian),
+          Date_New: formatDateToYYYYMMDD(topic?.to_date_hijri),
+          ToDate_New: formatDateToYYYYMMDD(topic?.to_date_gregorian),
         };
         payload.CaseTopics.push(WR2Payload);
         break;
@@ -62,10 +63,10 @@ export function getPayloadBySubTopicID(
           ...basePayload,
           Amount: topic?.amount,
           AmountRatio: topic?.amountRatio,
-          pyTempDate: topic?.from_date_hijri,
-          ToDate_New: topic?.to_date_gregorian,
-          Date_New: topic?.to_date_hijri,
-          FromDate_New: topic?.from_date_gregorian,
+          pyTempDate: formatDateToYYYYMMDD(topic?.from_date_hijri),
+          ToDate_New: formatDateToYYYYMMDD(topic?.to_date_gregorian),
+          Date_New: formatDateToYYYYMMDD(topic?.to_date_hijri),
+          FromDate_New: formatDateToYYYYMMDD(topic?.from_date_gregorian),
           CommissionType: topic?.commissionType?.value,
           AccordingToAgreement: topic?.accordingToAgreement?.value,
           OtherCommission: topic?.otherCommission,
@@ -78,8 +79,8 @@ export function getPayloadBySubTopicID(
           ...basePayload,
           AccordingToAgreement: topic?.accordingToAgreement?.value,
           Premium: topic?.bonusAmount,
-          pyTempDate: topic?.date_hijri,
-          Date_New: topic?.date_gregorian,
+          pyTempDate: formatDateToYYYYMMDD(topic?.date_hijri),
+          Date_New: formatDateToYYYYMMDD(topic?.date_gregorian),
         };
         payload.CaseTopics.push(BR1Payload);
         break;
@@ -95,8 +96,8 @@ export function getPayloadBySubTopicID(
         const CMR3Payload = {
           ...basePayload,
           Amount: topic?.amount,
-          pyTempText: topic?.injury_date_hijri,
-          InjuryDate_New: topic?.injury_date_gregorian,
+          pyTempText: formatDateToYYYYMMDD(topic?.injury_date_hijri),
+          InjuryDate_New: formatDateToYYYYMMDD(topic?.injury_date_gregorian),
           TypeOfWorkInjury: topic?.injuryType,
         };
 
@@ -128,10 +129,10 @@ export function getPayloadBySubTopicID(
         const CMR8Payload = {
           ...basePayload,
           WagesAmount: topic?.newPayAmount,
-          pyTempDate: topic?.from_date_hijri,
-          ToDate_New: topic?.to_date_gregorian,
-          Date_New: topic?.to_date_hijri,
-          FromDate_New: topic?.from_date_gregorian,
+          pyTempDate: formatDateToYYYYMMDD(topic?.from_date_hijri),
+          ToDate_New: formatDateToYYYYMMDD(topic?.to_date_gregorian),
+          Date_New: formatDateToYYYYMMDD(topic?.to_date_hijri),
+          FromDate_New: formatDateToYYYYMMDD(topic?.from_date_gregorian),
         };
 
         payload.CaseTopics.push(CMR8Payload);
@@ -141,10 +142,10 @@ export function getPayloadBySubTopicID(
           ...basePayload,
           NewPayAmount: topic?.wagesAmount,
           PayIncreaseType: topic?.payIncreaseType,
-          pyTempDate: topic?.from_date_hijri,
-          ToDate_New: topic?.to_date_gregorian,
-          Date_New: topic?.to_date_hijri,
-          FromDate_New: topic?.from_date_gregorian,
+          pyTempDate: formatDateToYYYYMMDD(topic?.from_date_hijri),
+          ToDate_New: formatDateToYYYYMMDD(topic?.to_date_gregorian),
+          Date_New: formatDateToYYYYMMDD(topic?.to_date_hijri),
+          FromDate_New: formatDateToYYYYMMDD(topic?.from_date_gregorian),
           WageDifference: topic?.wageDifference,
         };
         payload.CaseTopics.push(CMR6Payload);
@@ -153,10 +154,10 @@ export function getPayloadBySubTopicID(
         const CMR7Payload = {
           ...basePayload,
           PayDue: topic?.payDue,
-          pyTempDate: topic?.from_date_hijri,
-          ToDate_New: topic?.to_date_gregorian,
-          Date_New: topic?.to_date_hijri,
-          FromDate_New: topic?.from_date_gregorian,
+          pyTempDate: formatDateToYYYYMMDD(topic?.from_date_hijri),
+          ToDate_New: formatDateToYYYYMMDD(topic?.to_date_gregorian),
+          Date_New: formatDateToYYYYMMDD(topic?.to_date_hijri),
+          FromDate_New: formatDateToYYYYMMDD(topic?.from_date_gregorian),
           DurationOfLeaveDue: topic?.durationOfLeaveDue,
         };
 
@@ -174,10 +175,10 @@ export function getPayloadBySubTopicID(
       case "EDO-1": //done
         const EDO1Payload = {
           ...basePayload,
-          FromLocation: topic?.fromLocation,
-          ToLocation: topic?.toLocation,
-          Date_New: topic?.managerial_decision_date_hijri,
-          ManDecsDate: topic?.managerial_decision_date_gregorian,
+          FromLocation: topic?.fromLocation?.value,
+          ToLocation: topic?.toLocation?.value,
+          Date_New: formatDateToYYYYMMDD(topic?.managerial_decision_date_hijri),
+          ManDecsDate: formatDateToYYYYMMDD(topic?.managerial_decision_date_gregorian),
           ManagerialDecisionNumber: topic?.managerialDecisionNumber,
         };
 
@@ -188,8 +189,8 @@ export function getPayloadBySubTopicID(
           ...basePayload,
           FromJob: topic?.fromJob,
           ToJob: topic?.toJob,
-          Date_New: topic?.managerial_decision_date_hijri,
-          ManDecsDate: topic?.managerial_decision_date_gregorian,
+          Date_New: formatDateToYYYYMMDD(topic?.managerial_decision_date_hijri),
+          ManDecsDate: formatDateToYYYYMMDD(topic?.managerial_decision_date_gregorian),
           ManagerialDecisionNumber: topic?.managerialDecisionNumber,
         };
 
@@ -198,9 +199,10 @@ export function getPayloadBySubTopicID(
       case "EDO-4"://done
         const EDO4Payload = {
           ...basePayload,
-          PenalityType: topic?.typesOfPenalties,
-          Date_New: topic?.managerial_decision_date_hijri,
-          ManDecsDate: topic?.managerial_decision_date_gregorian,
+          PenalityType: topic?.typesOfPenalties?.value || topic?.TypesOfPenalties || topic?.PenalityType,
+          PenalityTypeLabel: topic?.typesOfPenalties?.label || topic?.TypesOfPenaltiesLabel || topic?.PenalityTypeLabel,
+          Date_New: formatDateToYYYYMMDD(topic?.managerial_decision_date_hijri),
+          ManDecsDate: formatDateToYYYYMMDD(topic?.managerial_decision_date_gregorian),
           ManagerialDecisionNumber: topic?.managerialDecisionNumber,
         };
 
@@ -211,8 +213,8 @@ export function getPayloadBySubTopicID(
         const EDO3Payload = {
           ...basePayload,
           AmountOfReduction: topic?.amountOfReduction,
-          pyTempDate: topic?.managerial_decision_date_hijri,
-          ManagerialDecisionDate_New: topic?.managerial_decision_date_gregorian,
+          pyTempDate: formatDateToYYYYMMDD(topic?.managerial_decision_date_hijri),
+          ManagerialDecisionDate_New: formatDateToYYYYMMDD(topic?.managerial_decision_date_gregorian),
           ManagerialDecisionNumber: topic?.managerialDecisionNumber,
         };
 
@@ -277,8 +279,8 @@ export function getPayloadBySubTopicID(
       case "RR-1"://done
         const RR1Payload = {
           ...basePayload,
-          Amount: topic?.amount,
-          Type: topic?.rewardType,
+          Amount: topic?.Amount,
+          Type: topic?.RewardType,
         };
 
         payload.CaseTopics.push(RR1Payload);
@@ -306,8 +308,8 @@ export function getPayloadBySubTopicID(
           ...basePayload,
           Amount: topic?.amount,
           Consideration: topic?.consideration,
-          pyTempDate: topic?.date_hijri,
-          Date_New: topic?.date_gregorian,
+          pyTempDate: formatDateToYYYYMMDD(topic?.date_hijri),
+          Date_New: formatDateToYYYYMMDD(topic?.date_gregorian),
         };
 
         payload.CaseTopics.push(RFR1Payload);
@@ -315,10 +317,10 @@ export function getPayloadBySubTopicID(
       case "DR-1": //done
         const DR1Payload = {
           ...basePayload,
-          pyTempDate: topic?.from_date_hijri,
-          Date_New: topic?.to_date_hijri,
-          FromDate_New: topic?.from_date_gregorian,
-          ToDate_New: topic?.to_date_gregorian,
+          pyTempDate: formatDateToYYYYMMDD(topic?.from_date_hijri),
+          Date_New: formatDateToYYYYMMDD(topic?.to_date_hijri),
+          FromDate_New: formatDateToYYYYMMDD(topic?.from_date_gregorian),
+          ToDate_New: formatDateToYYYYMMDD(topic?.to_date_gregorian),
         };
 
         payload.CaseTopics.push(DR1Payload);

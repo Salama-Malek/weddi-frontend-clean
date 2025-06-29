@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { useCookieState } from "@/features/initiate-hearing/hooks/useCookieState";
 import { useUserType } from "@/providers/UserTypeContext";
 import { useUser } from "@/shared/context/userTypeContext";
+import { useLazyGetCaseCountQuery, useLazyGetMySchedulesQuery, useLazySaveUINotificationQuery } from "@/features/dashboard/api/api";
 
 const LegalEntitySelection = lazy(
   () => import("@/shared/components/ui/legal-entity-selection")
@@ -37,7 +38,12 @@ const CaseRecordsModal = ({
 }: CaseRecordsModalProps) => {
   const { setUserType } = useUserType();
   const {
-    setSelected: setSelectedUser
+    setSelected: setSelectedUser,
+    selected: selectedUser,
+    setUserType: setUserTypeContext,
+    userType: userTypeContext,
+    setIsMenueCahngeFlag,
+    isMenueCahngeFlag
   } = useUser();
   // //console.log('propSelected', propSelected)
   const navigate = useNavigate();
@@ -46,6 +52,7 @@ const CaseRecordsModal = ({
     mainCategory: null,
     subCategory: null,
   });
+  const hasSeenLegalRepModal = getCookie("hasSeenLegalRepModal");
 
   const [selectedMainCategory, setSelectedMainCategory] = useState<any | null>(
     getCookie("mainCategory")
@@ -54,6 +61,7 @@ const CaseRecordsModal = ({
   const [selectedSubCategory, setSelectedSubCategory] = useState<any | null>(
     getCookie("subCategory")
   );
+
 
   useEffect(() => {
     setCookie("mainCategory", selectedMainCategory);
@@ -83,40 +91,76 @@ const CaseRecordsModal = ({
     },
   ];
 
+
+
+
+
   const handleContinue = () => {
-    //console.log(localSelected);
+
+    // here i want to add flage to detect if the user is cahnging the menue and sub menue
+    // how this condtion work :
+    // if the user from the begining is legal representative and the user type is also legal representative
+    // and open the module and change the mian menu and sub menu and click on continue button
+    // then the condition will be true and the fetchAllRequiredData will be called
+    // يعني بالعربي لو هو فعلا كام ممثل قانوني وفتح الموديول وكان مغير القوائم هيبدا ينادي 
+    // الapis الخاصة بالكتيجور يالمطلوبة 
+    // hasSeenLegalRepModal علشان ما ينهدهاش اول مرة لا اللويجك صح في الاول 
+    if (localSelected === "Legal representative" &&
+      userTypeContext === "Legal representative" &&
+      hasSeenLegalRepModal === "true" &&
+      selectedMainCategory
+      && selectedSubCategory) {
+      console.log("Selected Is Calied Here", {
+        selectedMainCategory,
+        selectedSubCategory,
+        localSelected,
+        selectedUser,
+        userTypeContext
+      });
+      setIsMenueCahngeFlag(!isMenueCahngeFlag);
+    }
+    const existingCaseId = getCookie("caseId");
+    if (existingCaseId) {
+      setCookie("caseId", "");
+    }
+
     setCookie("userType", localSelected);
     setCookie("selectedUserType", localSelected);
 
-// hassan add thsi here (flage to know the selected user type from the login popup)
+    // Set the selected user type
     if (localSelected === "Legal representative") {
       setSelectedUser("legal_representative");
+      setUserTypeContext("Legal representative");
     } else {
       setSelectedUser("leg_rep_worker");
+      setUserTypeContext("Worker");
     }
 
     // Store the selected type in a separate cookie
     handleCloseModal();
+
+    // Navigate to home page
+    navigate("/");
+
     // only fire the global popupHandler *after* they chose Legal
     if (localSelected === "Legal representative") {
       popupHandler();
     }
-    // if (localSelected === "legal_representative") {
-    //   navigate(
-    //     `/initiate-hearing/case-creation?userType=legal_representative&step=0&tab=0`
-    //   );
-    // } else {
-    //   navigate(
-    //     `/initiate-hearing/case-creation?userType=leg_rep_worker&step=0&tab=0`
-    //   );
-    // }
   };
 
   const handleSelection = (type: string) => {
+
     setUserType(type);
+
     setLocalSelected(type);
     propSetSelected(type);
   };
+
+
+
+
+
+
 
   return (
     <div className="w-full space-y-4">
@@ -128,8 +172,8 @@ const CaseRecordsModal = ({
           <div
             key={option.type}
             className={`border rounded-sl px-2 cursor-pointer pb-8 ${localSelected === option.type
-                ? "border-primary-600 bg-primary-50"
-                : "border-gray-400"
+              ? "border-primary-600 bg-primary-50"
+              : "border-gray-400"
               }`}
             onClick={() => handleSelection(option.type)}
           >

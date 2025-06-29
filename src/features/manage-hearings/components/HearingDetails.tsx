@@ -22,6 +22,7 @@ import {
 import { useCookieState } from "@/features/initiate-hearing/hooks/useCookieState";
 import infoIcon from "@/assets/info-alert.svg";
 import { TokenClaims } from "@/features/login/components/AuthProvider";
+import { useApiErrorHandler } from "@/shared/hooks/useApiErrorHandler";
 
 const HearingAccordion = lazy(() => import("../components/HearingAccordion"));
 
@@ -62,8 +63,6 @@ const HearingDetails = () => {
   const canResend = hearing?.ResendAppointment === "true";
   const canCancel = hearing?.CancelCase === "true";
   const canUpdate = hearing?.UpdateCase === "true";
-  // const canUpdate =  true; 
-  //#region Mario will work on this for testing
   const canComplete = hearing?.IncompleteCase === "true";
 
   const [modalType, setModalType] = useState<
@@ -74,6 +73,9 @@ const HearingDetails = () => {
   const lang = i18n.language;
   const SourceSystem = "E-Services";
   const statusCode = hearing?.StatusWork_Code;
+
+  // Use the centralized error handler
+  const { handleResponse, hasErrors } = useApiErrorHandler();
 
   const handleCancelCase = async () => {
     try {
@@ -88,15 +90,14 @@ const HearingDetails = () => {
         SourceSystem,
         ResolveStatus: resolveStatus,
       }).unwrap();
-      if (
-        cancelCaseResponse.ServiceStatus === "Success" &&
-        cancelCaseResponse.ErrorCodeList.length === 0
-      ) {
+      
+      // Use centralized error handling
+      const isSuccessful = handleResponse(cancelCaseResponse);
+      
+      if (isSuccessful) {
         toast.success(t("cancel_success"));
         await refetch();
         setModalType(null);
-      } else {
-        toast.error(t("cancel_error"));
       }
     } catch {
       toast.error(t("cancel_error"));
@@ -114,16 +115,25 @@ const HearingDetails = () => {
         SourceSystem,
         ReopenComments: reason || "",
       }).unwrap();
-      if (
-        reOpenCaseResponse.SuccessCode == "200" &&
-        reOpenCaseResponse.ErrorCodeList.length === 0
-      ) {
+      
+      // Use centralized error handling to check if response is successful
+      const isSuccessful = !hasErrors(reOpenCaseResponse) && (reOpenCaseResponse?.SuccessCode === "200" || reOpenCaseResponse?.ServiceStatus === "Success");
+
+      if (isSuccessful) {
         await refetch();
         toast.success(t("reopen_success"));
         setShowReopenModal(false);
-        navigate("");
-      } else {
-        toast.error(reOpenCaseResponse.ErrorCodeList[0].ErrorDesc);
+        
+        // If the case was rejected, navigate to case creation
+        if (statusCode === "Resolved-Rejected") {
+          setCookie("caseId", caseId);
+          // Reset navigation to the first step and tab
+          localStorage.setItem("step", "0");
+          localStorage.setItem("tab", "0");
+          navigate("/initiate-hearing/case-creation");
+        } else {
+          navigate("");
+        }
       }
     } catch {
       toast.error(t("reopen_error"));
@@ -141,15 +151,14 @@ const HearingDetails = () => {
         SourceSystem,
         CaseTopics: hearing?.CaseTopics || [],
       }).unwrap();
-      if (
-        updateCaseTopicsResponse.ServiceStatus === "Success" &&
-        updateCaseTopicsResponse.ErrorCodeList.length === 0
-      ) {
+      
+      // Use centralized error handling to check if response is successful
+      const isSuccessful = !hasErrors(updateCaseTopicsResponse) && (updateCaseTopicsResponse?.SuccessCode === "200" || updateCaseTopicsResponse?.ServiceStatus === "Success");
+
+      if (isSuccessful) {
         toast.success(t("update_success"));
         await refetch();
         navigate("");
-      } else {
-        toast.error(updateCaseTopicsResponse.ErrorCodeList[0].ErrorDesc);
       }
     } catch {
       toast.error(t("update_error"));
@@ -172,11 +181,9 @@ const HearingDetails = () => {
       }).unwrap();
       if (
         resendAppointmentResponse.ServiceStatus === "Success" &&
-        resendAppointmentResponse.ErrorCodeList.length === 0
+        resendAppointmentResponse.ErrorDetails.length === 0
       ) {
         setShowResendSuccess(true);
-      } else {
-        toast.error(resendAppointmentResponse.ErrorCodeList[0].ErrorDesc);
       }
     } catch {
       toast.error(t("resend_error"));
@@ -185,6 +192,7 @@ const HearingDetails = () => {
     }
   };
   const userClaims: TokenClaims = getCookie("userClaims");
+  const userType = getCookie("userType");
   const handleDownload = async (
     actionType: "GenerateLawSuit" | "Download",
     fileName: string
@@ -197,6 +205,7 @@ const HearingDetails = () => {
         AcceptedLanguage: lang === "ar" ? "AR" : "EN",
         SourceSystem,
         PDFAction: actionType,
+        UserType: userType || "",
         IDNumber: userClaims.UserID || "",
       });
 
@@ -228,25 +237,32 @@ const HearingDetails = () => {
   };
 
   const handleReopenClick = () => {
-    switch (statusCode) {
-      case "Resolved-Save the case":
-      case "Resolved-Applicant didnot attend":
-        setShowReopenModal(true);
-        break;
-      case "Resolved-Waived":
-        handleReopenSubmit("");
-        break;
-      case "Resolved-Rejected":
-        setModalType("confirm-reopen-initiate");
-        break;
-      default:
-        setModalType("confirm-reopen-generic");
+    // For Resolved-Rejected status, show simple confirmation
+    if (statusCode === "Resolved-Rejected") {
+      setModalType("confirm-reopen-generic");
+      return;
+    }
+
+    // Only these specific statuses require acknowledgment
+    const acknowledgmentStatuses = [
+      "Resolved-Applicant didnot attend",
+      "Resolved-Save the case"
+    ];
+    
+    const needsAcknowledgment = acknowledgmentStatuses.includes(statusCode || "");
+    
+    if (needsAcknowledgment) {
+      // For these specific statuses, show the full modal with acknowledgment
+      setShowReopenModal(true);
+    } else {
+      // For all other cases, show simple confirmation popup
+      setModalType("confirm-reopen-generic");
     }
   };
 
   const handleEditCase = () => {
     setCookie("caseId", caseId);
-    navigate(`/update-case?caseId=${caseId}`);
+    navigate(`/manage-hearings/update-case?caseId=${caseId}`);
     //  setEditMode(true);
     //  toggleAccordion("topics");
   };
@@ -334,7 +350,7 @@ const HearingDetails = () => {
       contentClass="p-7xl"
     >
       {/* Header */}
-      <div className="bg-primary-25 p-2 px-4 rounded-md flex items-center gap-4">
+      <div className="bg-primary-25 p-2 px-4 rounded-md flex flex-col lg:flex-row md:flex-row items-center gap-4">
         <h2 className="text-xl font-semibold text-gray-950 flex items-center gap-2">
           {t("hearing_number")}{" "}
           <span className="text-primary-600 text-lg">{caseId}</span>
@@ -349,9 +365,9 @@ const HearingDetails = () => {
       <div className="bg-primary-600 h-[4px] rounded mt-2 mx-4" />
 
       {/* Actions */}
-      <div className="flex justify-between items-center px-4 py-4">
+      <div className="flex flex-wrap justify-between items-center px-4 py-4">
         <Heading>{t("hearing_details")}</Heading>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {canDownloadClaimForm && (
             <Button
               variant="secondary"
@@ -573,7 +589,7 @@ const HearingDetails = () => {
               variant="primary"
               onClick={() => {
                 setModalType(null);
-                setShowReopenModal(true);
+                handleReopenSubmit(""); // Directly call reopen without showing another modal
               }}
             >
               {t("yes")}

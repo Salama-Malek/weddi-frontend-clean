@@ -1,4 +1,5 @@
 import { api } from "@/config/api";
+import { ApiResponse } from "@/shared/modules/case-creation/components/StepNavigation";
 
 interface ExtractAcknowledgment {
   ModuleKey: string;
@@ -11,42 +12,42 @@ interface ExtractAcknowledgment {
 
 export const caseApi = api.injectEndpoints({
   endpoints: (builder) => ({
-    saveClaimantDetails: builder.mutation({
+    saveClaimantDetails: builder.mutation<ApiResponse, any>({
       query: ({ data, isCaseCreated }) => ({
         url: `/WeddiCreateCaseServices/V1/${isCaseCreated ? "Update" : "Create"}`,
         method: "POST",
         body: data,
       }),
     }),
-    saveDefendantDetails: builder.mutation({
+    saveDefendantDetails: builder.mutation<ApiResponse, any>({
       query: (data) => ({
         url: "/WeddiCreateCaseServices/V1/Update",
         method: "POST",
         body: data,
       }),
     }),
-    saveWorkDetails: builder.mutation({
+    saveWorkDetails: builder.mutation<ApiResponse, any>({
       query: (data) => ({
         url: "/WeddiCreateCaseServices/V1/Update",
         method: "POST",
         body: data,
       }),
     }),
-    saveHearingTopics: builder.mutation({
+    saveHearingTopics: builder.mutation<ApiResponse, any>({
       query: (data) => ({
         url: "/WeddiCreateCaseServices/V1/Update",
         method: "POST",
         body: data,
       }),
     }),
-    updateHearingTopics: builder.mutation({
+    updateHearingTopics: builder.mutation<ApiResponse, any>({
       query: (data) => ({
         url: "/WeddiServices/V1/UpdateCaseTopics",
         method: "POST",
         body: data,
       }),
     }),
-    submitReview: builder.mutation({
+    submitReview: builder.mutation<ApiResponse, any>({
       query: (data) => ({
         url: "/WeddiCreateCaseServices/V1/Update",
         method: "POST",
@@ -88,7 +89,7 @@ export const caseApi = api.injectEndpoints({
     //     }
     //   }),
     // }),
-    submitFinalReview: builder.mutation({
+    submitFinalReview: builder.mutation<ApiResponse, any>({
       query: (data) => ({
         url: `/WeddiCreateCaseServices/V1/FinalSubmit`,
         method: "POST",

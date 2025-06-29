@@ -9,10 +9,10 @@ import { useCookieState } from "@/features/initiate-hearing/hooks/useCookieState
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 import Loader from "@/shared/components/loader";
-
 import Modal from "@/shared/components/modal/Modal";
 import Button from "@/shared/components/button";
 import { useNavigate } from "react-router-dom";
+import { useApiErrorHandler } from "@/shared/hooks/useApiErrorHandler";
 
 export interface WithStepNavigationProps {
   register: any;
@@ -48,9 +48,10 @@ const withStepNavigation = <P extends object>(
 
     const [isVerifiedInput, setIsPhoneVerify] = useState<boolean | undefined>();
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [getCookie] = useCookieState();
-    const { i18n } = useTranslation();
+    const [getCookie, setCookie, removeCookie, removeAll] = useCookieState();
+    const { t, i18n } = useTranslation('translation');
     const language = i18n.language === "ar" ? "AR" : "EN";
+    const { hasErrors } = useApiErrorHandler();
 
     const navigate = useNavigate();
 
@@ -82,7 +83,8 @@ const withStepNavigation = <P extends object>(
       name: "acknowledge",
       defaultValue: false,
     });
-    console.log("Debug ack:", acknowledgeValue, "currentStep:", currentStep);
+    console.log("withStepNavigation - formState.isValid:", isValid);
+    // console.log("Debug ack:", acknowledgeValue, "currentStep:", currentStep);
 
     const [submitFinalReview, { isLoading: isSubmittingFinalReview }] = useSubmitFinalReviewMutation();
 
@@ -107,84 +109,52 @@ const withStepNavigation = <P extends object>(
             };
 
             const response = await submitFinalReview(payload).unwrap();
-            if (response?.SuccessCode == "200") {
-              // Log the response for debugging
-              console.log("Final review response:", response);
+            
+            // Use centralized error handling to check if response is successful
+            const isSuccessful = !hasErrors(response) && (response?.SuccessCode === "200" || response?.ServiceStatus === "Success");
 
+            if (isSuccessful) {
               localStorage.removeItem("step");
               localStorage.removeItem("tab");
 
-              toast.success("Submission successful!");
+              toast.success(t("Submission successful!"));
 
               // Handle survey link
               const serviceLink = response?.S2Cservicelink;
               if (serviceLink) {
-                try {
-                  // Navigate to manage-hearings first
-                  navigate("/manage-hearings");
-
-                  // Show persistent toast with survey link
-                  toast.info(
-                    <div>
-                      <p>Please complete the survey:</p>
-                      <a 
-                        href={serviceLink} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="text-blue-600 hover:text-blue-800 underline"
-                      >
-                        {serviceLink}
-                      </a>
-                    </div>,
-                    {
-                      autoClose: false,
-                      closeOnClick: false,
-                      position: "top-center",
-                      onClick: () => window.open(serviceLink, '_blank')
-                    }
-                  );
-
-                  // Also try to open the survey directly
-                  window.open(serviceLink, '_blank');
-                } catch (error) {
-                  console.error("Failed to open survey link:", error);
-                  toast.error(
-                    <div>
-                      <p>Failed to open survey automatically. Please click the link below:</p>
-                      <a 
-                        href={serviceLink} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="text-blue-600 hover:text-blue-800 underline"
-                      >
-                        {serviceLink}
-                      </a>
-                    </div>,
-                    {
-                      autoClose: false,
-                      closeOnClick: false
-                    }
-                  );
-                }
+                // Navigate to manage-hearings first
+                navigate(`/manage-hearings/${response?.CaseNumber}`);
+                // Open survey in new tab
+                window.open(serviceLink, '_blank');
               } else {
                 console.warn("Survey link missing from successful response:", response);
                 // Navigate to manage-hearings even if survey link is missing
-                navigate("/manage-hearings");
+                navigate(`/manage-hearings/${response?.CaseNumber}`);
               }
               
+              // Clear caseId from cookie
+              removeCookie("caseId");
+              
               return;
+            } else {
+              // Handle error cases. ErrorCodeList is handled by the interceptor.
+              if (response?.ErrorDescription) {
+                toast.error(response.ErrorDescription);
+              }
+              throw new Error(response?.ErrorDescription || "Submission failed");
             }
           }
         }
 
         setFormData(data);
+        
+        // Call goToNextStep after successful form submission
+        if (handleNext) {
+          handleNext();
+        }
       } catch (error: any) {
         console.error("❌ Final Submit Failed:", error);
-        const message =
-          error?.data?.message ||
-          error?.message ||
-          "Submission failed! Please try again.";
-        toast.error(message);
+        // The toast is now handled by the central error handler
       } finally {
         setIsSubmitting(false);
       }

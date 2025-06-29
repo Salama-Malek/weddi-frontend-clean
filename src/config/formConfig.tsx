@@ -1,6 +1,13 @@
 import { FormElement } from "@/shared/components/form/form.types";
-import { formatHijriDate } from "@/shared/lib/helpers";
+import { formatHijriDate, formatDateToYYYYMMDD } from "@/shared/lib/helpers";
 import { useTranslation } from "react-i18next";
+import { HijriDatePickerInput } from "@/shared/components/calanders/HijriDatePickerInput";
+import { GregorianDateDisplayInput } from "@/shared/components/calanders/GregorianDateDisplayInput";
+import { DateObject } from "react-multi-date-picker";
+import hijriCalendar from "react-date-object/calendars/arabic";
+import gregorianCalendar from "react-date-object/calendars/gregorian";
+import hijriLocale from "react-date-object/locales/arabic_en";
+import gregorianLocale from "react-date-object/locales/gregorian_en";
 
 type FormConfig = {
   isEditing: boolean;
@@ -48,40 +55,94 @@ export const dateFieldConfigs = (
   t: any,
   isEditing?: any,
   from_date_hijri?: any,
-  to_date_hijri?: any
+  to_date_hijri?: any,
+  setValue?: any,
+  control?: any,
+  handleHijriDateChange?: any
 ) =>
   ({
     fromDate: {
-      name: "fromDate",
-      type: "dateOfBirth" as const,
-      value: isEditing && formatHijriDate(from_date_hijri),
-      hijriLabel: t("fromDateHijri"),
-      gregorianLabel: t("formDateGregorian"),
-      hijriFieldName: "from_date_hijri",
-      gregorianFieldName: "from_date_gregorian",
+      type: "custom" as const,
+      component: (
+        <div className="flex flex-col gap-2">
+          <HijriDatePickerInput
+            control={control}
+            name="from_date_hijri"
+            label={t("fromDateHijri")}
+            rules={{}}
+            onChangeHandler={(date, onChange) =>
+              handleHijriDateChange(
+                date,
+                onChange,
+                "from_date_gregorian"
+              )
+            }
+          />
+          <GregorianDateDisplayInput
+            control={control}
+            name="from_date_gregorian"
+            label={t("fromDateGregorian")}
+          />
+        </div>
+      ),
     },
     toDate: {
-      name: "toDate",
-      type: "dateOfBirth" as const,
-      hijriLabel: t("toDateHijri"),
-      value: isEditing && formatHijriDate(to_date_hijri),
-      gregorianLabel: t("toDateGregorian"),
-      hijriFieldName: "to_date_hijri",
-      gregorianFieldName: "to_date_gregorian",
+      type: "custom" as const,
+      component: (
+        <div className="flex flex-col gap-2">
+          <HijriDatePickerInput
+            control={control}
+            name="to_date_hijri"
+            label={t("toDateHijri")}
+            rules={{}}
+            onChangeHandler={(date, onChange) =>
+              handleHijriDateChange(
+                date,
+                onChange,
+                "to_date_gregorian"
+              )
+            }
+          />
+          <GregorianDateDisplayInput
+            control={control}
+            name="to_date_gregorian"
+            label={t("toDateGregorian")}
+          />
+        </div>
+      ),
     },
   } as const);
 
 export type DateFieldKey = keyof typeof dateFieldConfigs;
 
-export const managerialDateConfigs = (t: any, setValue?: any) =>
-  ({
+export const managerialDateConfigs = (t: any, setValue?: any, watch?: any, control?: any, handleHijriDateChange?: any) => {
+  console.log('managerialDateConfigs called with:', { t, setValue, watch, control, handleHijriDateChange });
+  
+  return ({
     managerialDate: {
-      name: "managerialDecisionDate",
-      type: "dateOfBirth" as const,
-      hijriLabel: t("managerialDecisionDateHijri"),
-      gregorianLabel: t("managerialDecisionDateGregorian"),
-      hijriFieldName: "managerial_decision_date_hijri",
-      gregorianFieldName: "managerial_decision_date_gregorian",
+      type: "custom" as const,
+      component: (
+        <div className="flex flex-col gap-2">
+          <HijriDatePickerInput
+            control={control}
+            name="managerial_decision_date_hijri"
+            label={t("managerialDecisionDateHijri")}
+            rules={{}}
+            onChangeHandler={(date, onChange) =>
+              handleHijriDateChange(
+                date,
+                onChange,
+                "managerial_decision_date_gregorian"
+              )
+            }
+          />
+          <GregorianDateDisplayInput
+            control={control}
+            name="managerial_decision_date_gregorian"
+            label={t("managerialDecisionDateGregorian")}
+          />
+        </div>
+      ),
     },
     managerialNumber: {
       type: "input",
@@ -89,10 +150,11 @@ export const managerialDateConfigs = (t: any, setValue?: any) =>
       label: t("managerialDecisionNumber"),
       inputType: "number",
       notRequired: true,
-      value: "",
+      value: watch ? watch("managerialDecisionNumber") || "" : "",
       onChange: (value: string) => setValue("managerialDecisionNumber", value),
     },
   } as const);
+};
 
 interface InputFieldProps {
   name: string;

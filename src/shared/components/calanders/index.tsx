@@ -22,6 +22,7 @@ export const DateOfBirthField: React.FC<DateOfBirthFieldProps> = ({
   hijriFieldName = "hijriDate",
   gregorianFieldName = "gregorianDate",
   value,
+  control,
 }) => {
   const [dateInfo, setDateInfo] = useState<{
     hijri: string;
@@ -40,6 +41,15 @@ export const DateOfBirthField: React.FC<DateOfBirthFieldProps> = ({
     }
   }, [dateInfo, setValue, hijriFieldName, gregorianFieldName]);
 
+  // Get gregorian value from form if available
+  let gregorianValue = dateInfo.gregorian;
+  if (control && gregorianFieldName) {
+    // Try to get value from form state if possible
+    // @ts-ignore
+    const formValue = control._formValues?.[gregorianFieldName];
+    if (formValue) gregorianValue = formValue;
+  }
+
   return (
     <>
       <DatePickerField
@@ -49,11 +59,18 @@ export const DateOfBirthField: React.FC<DateOfBirthFieldProps> = ({
         value={dateInfo.dateObject}
         onDateChange={(info) => setDateInfo(info)}
       />
-      <ConvertedDateDisplay
-        notRequired={notRequired}
-        gregorianDate={dateInfo.gregorian}
-        label={gregorianLabel}
-      />
+      <div className="mt-2">
+        <label className="text-sm !leading-5 normal block mb-1">
+          {gregorianLabel}
+        </label>
+        <input
+          type="text"
+          value={gregorianValue || ""}
+          readOnly
+          className="w-full p-2 border rounded text-sm bg-gray-50 border-gray-200"
+          placeholder="YYYY/MM/DD"
+        />
+      </div>
     </>
   );
 };

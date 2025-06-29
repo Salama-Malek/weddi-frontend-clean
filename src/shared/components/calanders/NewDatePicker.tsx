@@ -51,15 +51,22 @@ const HijriDateField: React.FC<Props> = ({
     const hijri = date.convert(hijriCalendar, hijriLocale).format("YYYY/MM/DD");
     const gregorian = date.convert(gregorianCalendar, gregorianLocale).format("YYYY/MM/DD");
 
-    console.log("[handleDateChange] hijri:", hijri);
-    console.log("[handleDateChange] gregorian:", gregorian);
+    // Convert to YYYYMMDD format for storage
+    const hijriStorage = hijri.replace(/\//g, '');
+    const gregorianStorage = gregorian.replace(/\//g, '');
 
-    onChange(hijri);
-    setValue(gregorianFieldName, gregorian);
+    console.log("[handleDateChange] hijri:", hijriStorage);
+    console.log("[handleDateChange] gregorian:", gregorianStorage);
+
+    onChange(hijriStorage);
+    setValue(gregorianFieldName, gregorianStorage);
   };
 
 const validateDate = (value: string): true | string => {
-  if (!value || typeof value !== "string") return true;
+  if (!value || typeof value !== "string") {
+    if (notRequired) return true;
+    return t("This field is required");
+  }
 
   const isValidPattern = /^\d{4}\/\d{2}\/\d{2}$/.test(value);
   if (!isValidPattern) return t("dateValidationDesc");
@@ -72,8 +79,10 @@ const validateDate = (value: string): true | string => {
   });
 
   const selected = hijriDate.convert(gregorianCalendar, gregorianLocale).toDate();
+  selected.setHours(0, 0, 0, 0);
 
   const getGregorianFromHijri = (dateStr: string): Date => {
+    if (!dateStr) return new Date(0);
     return new DateObject({
       date: dateStr,
       calendar: hijriCalendar,
@@ -88,30 +97,28 @@ const validateDate = (value: string): true | string => {
   switch (type) {
     case "contract-start":
       if (selected > today) return t("contractDateValidation.startDateFuture");
-      if (relatedEndDate && selected > getGregorianFromHijri(relatedEndDate))
-        return t("contractDateValidation.startAfterEnd");
       break;
 
     case "contract-end":
-      if (relatedStartDate && selected < getGregorianFromHijri(relatedStartDate))
-        return t("contractDateValidation.endBeforeStart");
+      if (relatedStartDate) {
+        const startDate = getGregorianFromHijri(relatedStartDate);
+        startDate.setHours(0, 0, 0, 0);
+        if (selected < startDate) return t("contractDateValidation.endBeforeStart");
+      }
       break;
 
     case "work-start":
       if (selected > today) return t("workDateValidation.startDateFuture");
-      if (relatedEndDate && selected > getGregorianFromHijri(relatedEndDate))
-        return t("workDateValidation.startAfterContract");
       break;
 
     case "work-end":
       if (selected > today) return t("workDateValidation.endDateFuture");
-      if (relatedStartDate && selected < getGregorianFromHijri(relatedStartDate))
-        return t("workDateValidation.endBeforeStart");
-      if (relatedEndDate && selected > getGregorianFromHijri(relatedEndDate))
-        return t("workDateValidation.endAfterContract");
+      if (relatedStartDate) {
+        const startDate = getGregorianFromHijri(relatedStartDate);
+        startDate.setHours(0, 0, 0, 0);
+        if (selected < startDate) return t("workDateValidation.endBeforeStart");
+      }
       break;
-
-    // Optional: you can add a check for 'dob' or 'work-start' here if needed
   }
 
   return true;
@@ -120,7 +127,7 @@ const validateDate = (value: string): true | string => {
 
 
   return (
-    <div className="contents flex-wrap col gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       <FieldWrapper
         notRequired={notRequired}
         invalidFeedback={invalidFeedback}
@@ -164,9 +171,9 @@ const validateDate = (value: string): true | string => {
                   }`}
                   calendarPosition="bottom-right"
                 />
-                {/* <div className="absolute right-2 top-1/2 transform -translate-y-1/2 pointer-events-none">
-                  <Calculator01Icon />
-                </div> */}
+                <div className="absolute right-2 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                  <Calculator01Icon className="text-gray-500" />
+                </div>
                 {(error || invalidFeedback) && (
                   <div className="invalid-feedback text-red-500 mt-2">
                     {error?.message || invalidFeedback}
@@ -184,13 +191,18 @@ const validateDate = (value: string): true | string => {
           name={gregorianFieldName}
           control={control}
           render={({ field: { value } }) => (
-            <input
-              type="text"
-              value={value || ""}
-              readOnly
-              placeholder="YYYY/MM/DD"
-              className="w-full p-2 outline-none bg-gray-100"
-            />
+            <div className="relative">
+              <input
+                type="text"
+                value={value || ""}
+                readOnly
+                placeholder="YYYY/MM/DD"
+                className="w-full p-2 border rounded text-sm bg-gray-50 border-gray-200 pr-8"
+              />
+              <div className="absolute right-2 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                <Calculator01Icon className="text-gray-500" />
+              </div>
+            </div>
           )}
         />
       </FieldWrapper>

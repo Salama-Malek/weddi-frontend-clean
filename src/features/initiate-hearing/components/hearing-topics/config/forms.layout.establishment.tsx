@@ -16,6 +16,15 @@ import { getStep2FormFields } from "./Step2From";
 import { subCategoryValue } from "@/mock/genderData";
 import { DateOfBirthField } from "@/shared/components/calanders";
 import { useTranslation } from "react-i18next";
+import NewDatePicker from "@/shared/components/calanders/NewDatePicker";
+import { HijriDatePickerInput } from "@/shared/components/calanders/HijriDatePickerInput";
+import { GregorianDateDisplayInput } from "@/shared/components/calanders/GregorianDateDisplayInput";
+import { DateObject } from "react-multi-date-picker";
+import hijriCalendar from "react-date-object/calendars/arabic";
+import gregorianCalendar from "react-date-object/calendars/gregorian";
+import hijriLocale from "react-date-object/locales/arabic_en";
+import gregorianLocale from "react-date-object/locales/gregorian_en";
+import { useGetRegionLookupDataQuery } from "@/features/initiate-hearing/api/create-case/workDetailApis";
 
 export const useFormLayout = ({
   t: t,
@@ -43,17 +52,33 @@ export const useFormLayout = ({
   accordingToAgreementLookupData: accordingToAgreementLookupData,
   matchedSubCategory: matchedSubCategory,
   subTopicsLoading: subTopicsLoading,
-  typesOfPenaltiesData: typesOfPenaltiesData,
   amountPaidData: amountPaidData,
   leaveTypeData: leaveTypeData,
   travelingWayData: travelingWayData,
+  editTopic: editTopic,
+  caseTopics: caseTopics,
+  typesOfPenaltiesData: typesOfPenaltiesData,
+  setShowLegalSection: setShowLegalSection,
+  setShowTopicData: setShowTopicData,
   isValid: isValid,
   isMainCategoryLoading: isMainCategoryLoading,
   isSubCategoryLoading: isSubCategoryLoading,
-  editTopic: editTopic,
-  caseTopics: caseTopics,
+  control,
 }: UseFormLayoutParams): SectionLayout[] => {
-  const { t: tHearingTopics } = useTranslation("hearingtopics");
+  const { t: tHearingTopics, i18n } = useTranslation("hearingtopics");
+
+  // Add region lookup hook
+  const { data: regionData, isFetching: isRegionLoading } = useGetRegionLookupDataQuery({
+    AcceptedLanguage: i18n.language.toUpperCase(),
+    context: "default", // This uses RegionName module
+  });
+
+  // Create region options for dropdowns
+  const RegionOptions = React.useMemo(() => {
+    return mapToOptions({
+      data: regionData?.DataElements,
+    });
+  }, [regionData]);
 
   // //console.log('matchedSubCategory', matchedSubCategory)
   const amount = watch("amount");
@@ -61,7 +86,6 @@ export const useFormLayout = ({
   const typeOfCustody = watch("typeOfCustody");
   const damagedValue = watch("damagedValue");
   const damagedType = watch("damagedType");
-  const sploilerType = watch("sploilerType");
   const amountOfCompensation = watch("amountOfCompensation");
   const subCategoryValue = watch("subCategory");
   const request_date_hijri = watch("request_date_hijri");
@@ -138,6 +162,29 @@ export const useFormLayout = ({
     });
   }, [typesOfPenaltiesData]);
 
+  // Date change handler for Hijri dates
+  const handleHijriDateChange = (
+    date: DateObject | DateObject[] | null,
+    setHijriValue: (value: string) => void,
+    gregorianFieldName: string,
+  ) => {
+    if (!date || Array.isArray(date)) {
+      setHijriValue("");
+      setValue(gregorianFieldName, "");
+      return;
+    }
+
+    const hijri = date.convert(hijriCalendar, hijriLocale).format("YYYY/MM/DD");
+    const gregorian = date.convert(gregorianCalendar, gregorianLocale).format("YYYY/MM/DD");
+
+    // Convert to YYYYMMDD format for storage
+    const hijriStorage = hijri.replace(/\//g, '');
+    const gregorianStorage = gregorian.replace(/\//g, '');
+
+    setHijriValue(hijriStorage);
+    setValue(gregorianFieldName, gregorianStorage);
+  };
+
   const step1: SectionLayout = {
     gridCols: 2,
     className: "step1-class", // Add a valid className here
@@ -150,6 +197,21 @@ export const useFormLayout = ({
         SubCategoryOptions,
         subCategory,
         handleAdd,
+        onClearMainCategory: () => {
+          setValue("mainCategory", null);
+          setValue("subCategory", null);
+          setValue("acknowledged", false);
+          setValue("regulatoryText", "");
+          setShowLegalSection(false);
+          setShowTopicData(false);
+        },
+        onClearSubCategory: () => {
+          setValue("subCategory", null);
+          setValue("acknowledged", false);
+          setValue("regulatoryText", "");
+          setShowLegalSection(false);
+          setShowTopicData(false);
+        },
         isMainCategoryLoading,
         isSubCategoryLoading,
       }),
@@ -173,129 +235,57 @@ export const useFormLayout = ({
     ].filter(Boolean) as FormElement[],
   };
 
-  useEffect(() => {
-    if (editTopic) {
-      setValue("amount", editTopic.amount);
-      setValue("amountOfCompensation", editTopic.amountOfCompensation);
-      setValue("damagedType", editTopic.damagedType);
-      setValue("damagedValue", editTopic.damagedValue);
-      setValue("loanAmount", editTopic.loanAmount);
-      setValue("typeOfCustody", editTopic.typeOfCustody);
-      setValue("request_date_hijri", editTopic.request_date_hijri);
-      setValue("request_date_gregorian", editTopic.request_date_gregorian);
-      setValue("date_hijri", editTopic.date_hijri);
-      setValue("manDecsDate", editTopic.manDecsDate);
-      setValue("typeOfRequest", editTopic.typeOfRequest);
-      setValue("fromLocation", editTopic.fromLocation);
-      setValue("toLocation", editTopic.toLocation);
-      setValue("fromJob", editTopic.fromJob);
-      setValue("toJob", editTopic.toJob);
-      setValue("penalityType", editTopic.penalityType);
-      setValue("amountOfReduction", editTopic.amountOfReduction);
-      setValue("date_new", editTopic.date_new);
-      setValue("requestDate", editTopic.requestDate);
-      setValue("requestDateGregorian", editTopic.requestDateGregorian);
-      setValue("wagesAmount", editTopic.wagesAmount);
-      setValue("compensationAmount", editTopic.compensationAmount);
-      setValue("injuryType", editTopic.injuryType);
-      setValue("bonusAmount", editTopic.bonusAmount);
-      setValue("otherCommission", editTopic.otherCommission);
-      setValue("requiredJobTitle", editTopic.requiredJobTitle);
-      setValue("currentJobTitle", editTopic.currentJobTitle);
-      setValue("currentInsuranceLevel", editTopic.currentInsuranceLevel);
-      setValue("theReason", editTopic.theReason);
-      setValue("theWantedJob", editTopic.theWantedJob);
-      setValue("currentPosition", editTopic.currentPosition);
-      setValue("amountRatio", editTopic.amountRatio);
-      setValue(
-        "requiredDegreeOfInsurance",
-        editTopic.requiredDegreeOfInsurance
-      );
-      setValue("amountsPaidFor", editTopic.amountsPaidFor);
-      setValue("decisionNumber", editTopic.decisionNumber);
-      setValue(
-        "DefendantsEstablishmentRegion",
-        editTopic.DefendantsEstablishmentRegion
-      );
-      setValue(
-        "DefendantsEstablishmentCity",
-        editTopic.DefendantsEstablishmentCity
-      );
-      setValue(
-        "DefendantsEstablishOccupation",
-        editTopic.DefendantsEstablishOccupation
-      );
-      setValue(
-        "DefendantsEstablishmentGender",
-        editTopic.DefendantsEstablishmentGender
-      );
-      setValue(
-        "DefendantsEstablishmentNationality",
-        editTopic.DefendantsEstablishmentNationality
-      );
-      setValue(
-        "DefendantsEstablishmentPrisonerId",
-        editTopic.DefendantsEstablishmentPrisonerId
-      );
-      setValue("from_date_hijri", editTopic.from_date_hijri);
-      setValue("to_date_hijri", editTopic.to_date_hijri);
-      setValue("forAllowance", editTopic.forAllowance);
-      setValue("rewardType", editTopic.rewardType);
-      setValue("consideration", editTopic.consideration);
-      setValue("travelingWay", editTopic.travelingWay);
-      setValue("kindOfHoliday", editTopic.kindOfHoliday);
-      setValue("commissionType", editTopic.commissionType);
-      setValue("accordingToAgreement", editTopic.accordingToAgreement);
-      setValue("totalAmount", editTopic.totalAmount);
-      setValue("workingHours", editTopic.workingHours);
-      setValue("additionalDetails", editTopic.additionalDetails);
-      setValue("newPayAmount", editTopic.newPayAmount);
-      setValue("payIncreaseType", editTopic.payIncreaseType);
-      setValue("wageDifference", editTopic.wageDifference);
-      setValue("durationOfLeaveDue", editTopic.durationOfLeaveDue);
-      setValue("typesOfPenalties", editTopic.typesOfPenalties);
-      setValue("payDue", editTopic.payDue);
-      setValue(
-        "doesContractIncludeAddingAccommodations",
-        editTopic.doesBylawsIncludeAddingAccommodations
-      );
-      setValue(
-        "doesContractIncludeAddingAccommodations",
-        editTopic.doesContractIncludeAddingAccommodations
-      );
-      setValue(
-        "housingSpecificationInByLaws",
-        editTopic.housingSpecificationInByLaws
-      );
-      setValue(
-        "housingSpecificationsInContract",
-        editTopic.housingSpecificationsInContract
-      );
-      setValue(
-        "actualHousingSpecifications",
-        editTopic.actualHousingSpecifications
-      );
-      setValue(
-        "doesTheInternalRegulationIncludePromotionMechanism",
-        editTopic.doesTheInternalRegulationIncludePromotionMechanism
-      );
-      setValue(
-        "doesContractIncludeAdditionalUpgrade",
-        editTopic.doesContractIncludeAdditionalUpgrade
-      );
-      setValue(
-        "sploilerType",
-        editTopic.sploilerType
-      );
-      setValue(
-        "RefundType",
-        editTopic.RefundType
-      );
-    }
-  }, [editTopic, setValue]);
-
   const getFormBySubCategory = (): (FormElement | false)[] => {
-    switch (isEditing ? subCategory : subCategoryValue?.value) {
+    // Safety check: if no subCategory is selected, return empty array
+    const currentSubCategory = isEditing ? subCategory?.value : subCategoryValue?.value;
+    if (!currentSubCategory) {
+      return [];
+    }
+
+    // تحويل بيانات lookup إلى خيارات
+    const AmountPaidLookupLookUpOptions =
+      amountPaidData?.DataElements?.map((item: any) => ({
+        value: item.ElementKey,
+        label: item.ElementValue,
+      })) || [];
+
+    const TravelingWayOptions =
+      travelingWayData?.DataElements?.map((item: any) => ({
+        value: item.ElementKey,
+        label: item.ElementValue,
+      })) || [];
+
+    const LeaveTypeLookUpOptions =
+      leaveTypeData?.DataElements?.map((item: any) => ({
+        value: item.ElementKey,
+        label: item.ElementValue,
+      })) || [];
+
+    const ForAllowanceLookUpOptions =
+      forAllowanceData?.DataElements?.map((item: any) => ({
+        value: item.ElementKey,
+        label: item.ElementValue,
+      })) || [];
+
+    const TypeOfRequestLookUpOptions =
+      typeOfRequestLookupData?.DataElements?.map((item: any) => ({
+        value: item.ElementKey,
+        label: item.ElementValue,
+      })) || [];
+
+    const CommissionTypeLookUpOptions =
+      commissionTypeLookupData?.DataElements?.map((item: any) => ({
+        value: item.ElementKey,
+        label: item.ElementValue,
+      })) || [];
+
+    const AccordingToAgreementLookUpOptions =
+      accordingToAgreementLookupData?.DataElements?.map((item: any) => ({
+        value: item.ElementKey,
+        label: item.ElementValue,
+      })) || [];
+
+    switch (currentSubCategory) {
       case "AWRW-1":
         return buildForm([]);
       case "AWRW-2":
@@ -307,9 +297,7 @@ export const useFormLayout = ({
             name: "amountOfCompensation",
             label: tHearingTopics("amountOfCompensation"),
             inputType: "text",
-            value: isEditing
-              ? editTopic?.amountOfCompensation
-              : amountOfCompensation,
+            value: watch("amountOfCompensation") || "",
             onChange: (value) => setValue("amountOfCompensation", value),
             validation: { required: tHearingTopics("amountOfCompensation") },
           },
@@ -321,7 +309,8 @@ export const useFormLayout = ({
             name: "amount",
             label: tHearingTopics("amount"),
             inputType: "number",
-            value: isEditing ? editTopic?.amount : amount,
+            min: 0,
+            value: watch("amount") || "",
             onChange: (value) => setValue("amount", value),
             validation: { required: tHearingTopics("amount") },
           },
@@ -333,7 +322,7 @@ export const useFormLayout = ({
             name: "damagedType",
             label: tHearingTopics("damagedType"),
             inputType: "text",
-            value: isEditing ? editTopic?.damagedType : damagedType,
+            value: watch("damagedType") || "",
             onChange: (value) => setValue("damagedType", value),
             validation: { required: tHearingTopics("damagedType") },
           },
@@ -342,7 +331,8 @@ export const useFormLayout = ({
             name: "damagedValue",
             label: tHearingTopics("damagedValue"),
             inputType: "number",
-            value: isEditing ? editTopic?.damagedValue : damagedValue,
+            min: 0,
+            value: watch("damagedValue") || "",
             onChange: (value) => setValue("damagedValue", value),
             validation: { required: tHearingTopics("damagedValue") },
           },
@@ -354,23 +344,45 @@ export const useFormLayout = ({
             name: "typeOfRequest",
             label: tHearingTopics("typeOfRequest"),
             options: TypeOfRequestLookUpOptions,
-            value: editTopic?.typeOfRequest?.value,
+            value: watch("typeOfRequest")?.value,
             onChange: (option: Option | null) =>
               setValue("typeOfRequest", option),
             validation: { required: tHearingTopics("typeOfRequest") },
           },
         ];
 
-        if (typeOfRequest?.value === "RLRAHI1") {
+        // In edit mode, determine the request type from editTopic if typeOfRequest is not set
+        const effectiveTypeOfRequest = typeOfRequest || (isEditing && editTopic?.RequestType ? {
+          value: editTopic.RequestType,
+          label: editTopic.TypeOfRequest || editTopic.RequestType
+        } : null);
+
+        if (effectiveTypeOfRequest?.value === "RLRAHI1") {
           fields.push(
             {
-              name: "requestDate",
-              type: "dateOfBirth",
-              value: isEditing && formatHijriDate(request_date_hijri),
-              hijriLabel: tHearingTopics("hijriLabel"),
-              gregorianLabel: tHearingTopics("gregorianLabel"),
-              hijriFieldName: "request_date_hijri",
-              gregorianFieldName: "request_date_gregorian",
+              type: "custom",
+              component: (
+                <div className="flex flex-col gap-2">
+                  <HijriDatePickerInput
+                    control={control}
+                    name="request_date_hijri"
+                    label={tHearingTopics("requestDateHijri")}
+                    rules={{}}
+                    onChangeHandler={(date, onChange) =>
+                      handleHijriDateChange(
+                        date,
+                        onChange,
+                        "request_date_gregorian"
+                      )
+                    }
+                  />
+                  <GregorianDateDisplayInput
+                    control={control}
+                    name="request_date_gregorian"
+                    label={tHearingTopics("requestDateGregorian")}
+                  />
+                </div>
+              ),
               showWhen: "RLRAHI1",
             },
             {
@@ -378,43 +390,35 @@ export const useFormLayout = ({
               name: "typeOfCustody",
               label: tHearingTopics("typeOfCustody"),
               inputType: "text",
-              value: isEditing ? editTopic?.typeOfCustody : typeOfCustody,
+              value: isEditing ? editTopic?.TypeOfCustody || editTopic?.typeOfCustody : watch("typeOfCustody") || "",
               onChange: (value: string) => setValue("typeOfCustody", value),
               validation: { required: tHearingTopics("typeOfCustody") },
               showWhen: "RLRAHI1",
             }
           );
-        } else if (typeOfRequest?.value === "RLRAHI2") {
+        } else if (effectiveTypeOfRequest?.value === "RLRAHI2") {
           fields.push({
             type: "input",
             name: "loanAmount",
             label: tHearingTopics("loanAmount"),
             inputType: "number",
-            value: isEditing ? editTopic?.loanAmount : loanAmount,
+            min: 0,
+            value: isEditing ? editTopic?.LoanAmount || editTopic?.loanAmount : watch("loanAmount") || "",
             onChange: (value: string) => setValue("loanAmount", value),
             validation: { required: tHearingTopics("loanAmount") },
           });
         }
 
         return buildForm(fields);
-    
+
       case "RUF-1":
         return buildForm([
-          {
-            type: "input",
-            name: "sploilerType",
-            label: tHearingTopics("sploilerType"),
-            inputType: "text",
-            value: isEditing ? editTopic?.sploilerType : sploilerType,
-            onChange: (value) => setValue("sploilerType", value),
-            validation: { required: tHearingTopics("sploilerType") },
-          },
           {
             type: "input",
             name: "RefundType",
             label: tHearingTopics("RefundType"),
             inputType: "text",
-            value: isEditing ? editTopic?.RefundType : RefundType,
+            value: watch("RefundType") || "",
             onChange: (value) => setValue("RefundType", value),
             validation: { required: tHearingTopics("RefundType") },
           },
@@ -423,13 +427,79 @@ export const useFormLayout = ({
             name: "amount",
             label: tHearingTopics("amount"),
             inputType: "number",
-            value: isEditing ? editTopic?.amount : amount,
+            min: 0,
+            value: watch("amount") || "",
             onChange: (value) => setValue("amount", value),
             validation: { required: tHearingTopics("amount") },
           },
         ]);
 
-        default:
+      case "EDO-1":
+        return buildForm([
+          {
+            type: "autocomplete",
+            name: "fromLocation",
+            label: tHearingTopics("fromLocation"),
+            options: RegionOptions,
+            isLoading: isRegionLoading,
+            value: watch("fromLocation")?.value || editTopic?.fromLocation?.value,
+            onChange: (option: Option | null) => setValue("fromLocation", option),
+          },
+          {
+            type: "autocomplete",
+            name: "toLocation",
+            label: tHearingTopics("toLocation"),
+            options: RegionOptions,
+            isLoading: isRegionLoading,
+            value: watch("toLocation")?.value || editTopic?.toLocation?.value,
+            onChange: (option: Option | null) => setValue("toLocation", option),
+          },
+          {
+            type: "custom",
+            name: "managerial_decision_date_hijri",
+            component: (
+              <HijriDatePickerInput
+                control={control}
+                name="managerial_decision_date_hijri"
+                label={tHearingTopics("managerialDecisionDateHijri")}
+                rules={{
+                  required: false,
+                  pattern: {
+                    value: /^\d{4}\/\d{2}\/\d{2}$/,
+                    message: tHearingTopics("dateValidationDesc"),
+                  },
+                }}
+                onChangeHandler={(date, onChange) =>
+                  handleHijriDateChange(date, onChange, "managerial_decision_date_gregorian")
+                }
+                notRequired={true}
+              />
+            ),
+          },
+          {
+            type: "custom",
+            name: "managerial_decision_date_gregorian",
+            component: (
+              <GregorianDateDisplayInput
+                control={control}
+                name="managerial_decision_date_gregorian"
+                label={tHearingTopics("managerialDecisionDateGregorian")}
+                notRequired={true}
+              />
+            ),
+          },
+          {
+            type: "input",
+            name: "managerialDecisionNumber",
+            label: tHearingTopics("managerialDecisionNumber"),
+            inputType: "number",
+            notRequired: true,
+            value: watch("managerialDecisionNumber") || "",
+            onChange: (value) => setValue("managerialDecisionNumber", value),
+          },
+        ]);
+
+      default:
         return [];
     }
   };
@@ -449,9 +519,10 @@ export const useFormLayout = ({
             {
               type: "custom",
               component: (
-                <div className="p-4 bg-green-50 text-green-700 rounded-md">
-                  {tHearingTopics("no_content_found")}
-                </div>
+                <></>
+                // <div className="p-4 bg-green-50 text-green-700 rounded-md">
+                //   {tHearingTopics("no_content_found")}
+                // </div>
               ),
             },
           ],

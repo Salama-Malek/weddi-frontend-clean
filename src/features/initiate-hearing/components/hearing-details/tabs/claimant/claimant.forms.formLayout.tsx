@@ -39,7 +39,9 @@ import { DateOfBirthField } from "@/shared/components/calanders";
 import { useAPIFormsData } from "@/providers/FormContext";
 import OTPFormLayout from "./OTP.froms.formlayout";
 import { boolean } from "ts-pattern/dist/patterns";
-import { formatDateString } from "@/shared/lib/helpers";
+import { formatDateString, formatDateToYYYYMMDD } from "@/shared/lib/helpers";
+import { toast } from "react-toastify";
+
 interface AgentInfo {
   Agent?: {
     MandateNumber?: string;
@@ -62,8 +64,8 @@ interface FormLayoutProps {
   watch: UseFormWatch<FormData>;
   control: Control<FormData>;
   // lookups
-  regionData: any;
-  cityData: any;
+  plaintiffRegionData: any;
+  plaintiffCityData: any;
   occupationData: any;
   genderData: any;
   nationalityData: any;
@@ -104,14 +106,19 @@ interface FormLayoutProps {
   principalNICResponse?: NICDetailsResponse;
   principalNICRefetch: () => void;
   representativeNICResponse?: NICDetailsResponse;
+  // Add useFormReturn types as props
+  register: any;
+  errors: any;
+  trigger: any;
+  isValid: boolean;
 }
 
 export const useFormLayout = ({
   control,
   setValue,
   watch,
-  regionData,
-  cityData,
+  plaintiffRegionData,
+  plaintiffCityData,
   occupationData,
   genderData,
   nationalityData,
@@ -130,13 +137,52 @@ export const useFormLayout = ({
   principalNICResponse,
   principalNICRefetch,
   representativeNICResponse,
+  // Destructure the new props
+  register, // New prop
+  errors,   // New prop
+  trigger,  // New prop
+  isValid,  // New prop
 }: FormLayoutProps): SectionLayout[] => {
-  const { register } = useForm<FormData>();
+  const { t, i18n } = useTranslation("hearingdetails");
+  const { t: LegalRep } = useTranslation("legal_rep");
+  const [getCookie] = useCookieState();
+
+  // Get incomplete case type from cookie
+  const incompleteCaseType = getCookie("incompleteCase");
+
+  // Determine enforced claimant status based on incomplete case type
+  const enforcedStatus = useMemo(() => {
+    if (incompleteCaseType?.PlaintiffType === "Self(Worker)")
+      return "principal";
+    if (incompleteCaseType?.PlaintiffType === "Agent") return "representative";
+    return null;
+  }, [incompleteCaseType]);
+
+  // Current claimant status from form state with sensible default
+  const claimantStatus =
+    watch("claimantStatus") || enforcedStatus || "principal";
+
+  // Ensure form state matches enforced status or default
+  useEffect(() => {
+    if (enforcedStatus) {
+      setValue("claimantStatus", enforcedStatus);
+    } else {
+      const value = watch("claimantStatus");
+      if (!value) setValue("claimantStatus", "principal");
+    }
+  }, [enforcedStatus, setValue]);
+
+  // Determine if we should show the claimant status selection
+  const shouldShowClaimantStatus = !enforcedStatus;
+
+  // Determine which fields to show based on status
+  const showPrincipalFields = claimantStatus === "principal";
+  const showRepresentativeFields = claimantStatus === "representative";
 
   useEffect(() => {
     register("userName");
-    register("region");
-    register("city");
+    register("plaintiffRegion");
+    register("plaintiffCity");
     register("occupation");
     register("gender");
     register("nationality");
@@ -144,9 +190,25 @@ export const useFormLayout = ({
     register("gregorianDate");
     register("applicant");
     register("workerAgentDateOfBirthHijri");
+    register("phoneNumber");
+    register("region");
+    register("city");
+    register("isDomestic");
+    register("isPhone");
+    register("phoneCode");
+    register("interPhoneNumber");
+    register("isVerified");
+    register("workerAgentIdNumber");
+    register("agencyNumber");
+    register("mobileNumber");
+    register("agentName");
+    register("agencyStatus");
+    register("agencySource");
+    register("Agent_ResidencyAddress");
+    register("Agent_CurrentPlaceOfWork");
+    register("agentType");
   }, [register]);
 
-  const [getCookie] = useCookieState();
   const userClaims = getCookie("userClaims") as TokenClaims;
   const idNumber = userClaims?.UserID || "";
   const dobirth = userClaims?.UserDOB || "";
@@ -156,8 +218,11 @@ export const useFormLayout = ({
   const { plaintiffTypeOptions, AgentTypeOptions } = useLegalRepFormOptions();
   const { clearFormData } = useAPIFormsData();
 
-  const { t } = useTranslation("hearingdetails");
-  const { t: LegalRep } = useTranslation("legal_rep");
+  // Use incompleteCaseType directly
+  const showOnlyPrincipal =
+    incompleteCaseType?.PlaintiffType === "Self(Worker)";
+  const showOnlyRepresentative = incompleteCaseType?.PlaintiffType === "Agent";
+
   // --- Field watchers for NIC trigger ---
   // const workerAgentIdNumber = watch("workerAgentIdNumber") || "";
   // const workerAgentHijriDob = watch("workerAgentDateOfBirthHijri") || "";
@@ -207,8 +272,8 @@ export const useFormLayout = ({
   //     // Auto-populate fields for testing:
   //     const nic = testNicData.NICDetails;
   //     setValue("userName", nic.PlaintiffName || "");
-  //     setValue("region", nic.Region || "");
-  //     setValue("city", nic.City || "");
+  //     setValue("plaintiffRegion", nic.Region || "");
+  //     setValue("plaintiffCity", nic.City || "");
   //     setValue("occupation", nic.Occupation || "");
   //     setValue("gender", nic.Gender || "");
   //     setValue("nationality", nic.Nationality || "");
@@ -227,8 +292,8 @@ export const useFormLayout = ({
   //   workerAgentHijriDob,
   //   (nic) => {
   //     setValue("userName", nic.PlaintiffName || "");
-  //     setValue("region", nic.Region || "");
-  //     setValue("city", nic.City || "");
+  //     setValue("plaintiffRegion", nic.Region || "");
+  //     setValue("plaintiffCity", nic.City || "");
   //     setValue("occupation", nic.Occupation || "");
   //     setValue("gender", nic.Gender || "");
   //     setValue("nationality", nic.Nationality || "");
@@ -267,39 +332,64 @@ export const useFormLayout = ({
   const applicantType = watch("applicant");
   const workerAgentIdNumber = watch("workerAgentIdNumber") || "";
   const workerAgentHijriDob = watch("workerAgentDateOfBirthHijri") || "";
+  const formattedWorkerAgentHijriDob = formatDateToYYYYMMDD(workerAgentHijriDob);
   const claimType = watch("claimantStatus");
   const applicant = watch("applicant");
   // 1): Fetch All Nic Data From The Data
+  // Removed the problematic useEffect that was causing an infinite re-render.
+  // useEffect(() => {
+  //   clearFormData();
+  //   [
+  //     "userName",
+  //     "plaintiffRegion",
+  //     "plaintiffCity",
+  //     "occupation",
+  //     "gender",
+  //     "nationality",
+  //     "hijriDate",
+  //     "gregorianDate",
+  //     "applicant",
+  //     "phoneNumber",
+  //   ].forEach((f) => setValue(f as any, ""));
 
-  useEffect(() => {
-    clearFormData();
-    [
-      "userName",
-      "region",
-      "city",
-      "occupation",
-      "gender",
-      "nationality",
-      "hijriDate",
-      "gregorianDate",
-      "applicant",
-      "phoneNumber",
-    ].forEach((f) => setValue(f as any, ""));
-  }, []);
+  //   // For autocomplete fields that expect Option type, set to null
+  //   setValue("plaintiffRegion", null);
+  //   setValue("plaintiffCity", null);
+  //   setValue("occupation", null);
+  //   setValue("gender", null);
+  //   setValue("nationality", null);
+
+  //   // Also clear errors for these fields explicitly
+  //   clearErrors("plaintiffRegion");
+  //   clearErrors("plaintiffCity");
+  //   clearErrors("occupation");
+  //   clearErrors("gender");
+  //   clearErrors("nationality");
+  // }, [claimType, setValue, clearFormData, clearErrors]);
 
   // 1) compute when we're ready to fire:
-  const claimantStatus = watch("claimantStatus");
-  const shouldFetchNicAgent =
+  const shouldFetchNic =
     claimantStatus === "representative" &&
-    workerAgentIdNumber.length === 10 &&
-    workerAgentHijriDob.length === 8;
+    workerAgentIdNumber?.length === 10 &&
+    formattedWorkerAgentHijriDob?.length === 8;
+
+  console.log("Claimant Status:", claimantStatus);
+  console.log("Worker Agent ID Number:", workerAgentIdNumber);
+  console.log("Worker Agent Hijri DOB:", workerAgentHijriDob);
+  console.log("Should Fetch NIC:", shouldFetchNic);
+  console.log("Claimant Status Check:", claimantStatus === "representative");
+  console.log("ID Number Length Check:", workerAgentIdNumber?.length === 10);
+  console.log(
+    "Hijri DOB Length Check:",
+    formattedWorkerAgentHijriDob?.length === 8
+  );
 
   useEffect(() => {
-    if (!shouldFetchNicAgent) {
+    if (!shouldFetchNic) {
       [
         "userName",
-        "region",
-        "city",
+        "plaintiffRegion",
+        "plaintiffCity",
         "occupation",
         "gender",
         "nationality",
@@ -309,7 +399,7 @@ export const useFormLayout = ({
         "phoneNumber",
       ].forEach((f) => setValue(f as any, ""));
     }
-  }, [shouldFetchNicAgent, setValue]);
+  }, [shouldFetchNic, setValue]);
 
   // 2) one NIC query, only when both inputs are valid:
   const {
@@ -319,47 +409,136 @@ export const useFormLayout = ({
   } = useGetNICDetailsQuery(
     {
       IDNumber: workerAgentIdNumber,
-      DateOfBirth: workerAgentHijriDob,
+      DateOfBirth: formattedWorkerAgentHijriDob || "",
       AcceptedLanguage: "EN",
       SourceSystem: "E-Services",
     },
-    { skip: !shouldFetchNicAgent }
+    { skip: !shouldFetchNic }
   );
 
-  const disableNicFields = !shouldFetchNicAgent || nicAgentLoading;
+  console.log("NIC Agent Data:", nicAgent);
+  console.log("NIC Agent Loading:", nicAgentLoading);
+  console.log("NIC Agent Error:", nicAgentError);
+
+  const disableNicFields = !shouldFetchNic || nicAgentLoading;
 
   // 3) effect to populate or error exactly once per fetch:
   useEffect(() => {
-    if (!shouldFetchNicAgent) return;
+    // Clear error if inputs are incomplete
+    if (!shouldFetchNic) {
+      clearErrors("workerAgentIdNumber");
+      return;
+    }
+
+    // Only proceed after fetch has completed (not loading)
+    if (nicAgentLoading) return;
 
     if (nicAgentError || !nicAgent?.NICDetails) {
+      let errorMessage = t("error.noNicData"); // Default message if ErrorDesc is not found
+      if (nicAgent && nicAgent.ErrorDetails && Array.isArray(nicAgent.ErrorDetails)) {
+        const errorDetail = nicAgent.ErrorDetails.find((detail: any) => detail.ErrorDesc);
+        if (errorDetail && errorDetail.ErrorDesc) {
+          errorMessage = errorDetail.ErrorDesc;
+        }
+      }
+      toast.error(errorMessage);
       if (typeof setError === "function") {
         setError("workerAgentIdNumber", {
           type: "validate",
-          message: t("error.noNicData"),
+          message: errorMessage,
         });
       }
     } else {
+      // Success branch: clear error and populate fields
+      clearErrors("workerAgentIdNumber");
       const d = nicAgent.NICDetails;
-      setValue("userName", d.PlaintiffName || "");
-      setValue("region", { value: d.Region_Code || "", label: d.Region || "" });
-      setValue("city", { value: d.City_Code || "", label: d.City || "" });
-      setValue("occupation", {
-        value: d.Occupation_Code || "",
-        label: d.Occupation || "",
+      setValue("userName", d.PlaintiffName || "", {
+        shouldValidate: d.PlaintiffName !== "",
       });
-      setValue("gender", { value: d.Gender_Code || "", label: d.Gender || "" });
-      setValue("nationality", {
-        value: d.Nationality_Code || "",
-        label: d.Nationality || "",
+
+      // Set region and city with proper code and label
+      if (d.Region_Code) {
+        setValue(
+          "plaintiffRegion",
+          {
+            value: d.Region_Code,
+            label: d.Region || "",
+          },
+          {
+            shouldValidate: d.Region_Code !== "",
+          }
+        );
+      }
+
+      if (d.City_Code) {
+        setValue(
+          "plaintiffCity",
+          {
+            value: d.City_Code,
+            label: d.City || "",
+          },
+          {
+            shouldValidate: d.City_Code !== "",
+          }
+        );
+      }
+
+      if (d.Occupation_Code) {
+        setValue("occupation", {
+          value: d.Occupation_Code,
+          label: d.Occupation || "",
+        }, {
+          shouldValidate: d.Occupation_Code !== "",
+        });
+      }
+
+      if (d.Gender_Code) {
+        setValue("gender", {
+          value: d.Gender_Code,
+          label: d.Gender || "",
+        }, {
+          shouldValidate: d.Gender_Code !== "",
+        });
+      }
+
+      if (d.Nationality_Code) {
+        setValue("nationality", {
+          value: d.Nationality_Code,
+          label: d.Nationality || "",
+        }, {
+          shouldValidate: d.Nationality_Code !== "",
+        });
+      }
+
+      setValue("hijriDate", d.DateOfBirthHijri || "", {
+        shouldValidate: d.DateOfBirthHijri !== "",
       });
-      setValue("hijriDate", d.DateOfBirthHijri || "");
-      setValue("gregorianDate", d.DateOfBirthGregorian || "");
+      setValue("gregorianDate", d.DateOfBirthGregorian || "", {
+        shouldValidate: d.DateOfBirthGregorian !== "",
+      });
+      setValue("applicant", d.Applicant || "", {
+        shouldValidate: d.Applicant !== "",
+      });
+
       if (d.PhoneNumber) {
-        setValue("phoneNumber", d.PhoneNumber.toString());
+        setValue("phoneNumber", d.PhoneNumber.toString(), {
+          shouldValidate: d.PhoneNumber !== "",
+        });
       }
     }
-  }, [shouldFetchNicAgent, nicAgent, nicAgentError, setValue, setError, t]);
+  }, [shouldFetchNic, nicAgent, nicAgentError, setValue, setError, t]);
+
+  // Add validation for city field
+  useEffect(() => {
+    const currentCity = watch("plaintiffCity");
+    if (
+      !currentCity ||
+      (typeof currentCity === "object" && !currentCity.value)
+    ) {
+      setValue("plaintiffCity", { value: "1", label: "RIYADH" }); // Default to Riyadh
+      clearErrors("plaintiffCity");
+    }
+  }, [watch("plaintiffCity"), setValue, clearErrors]);
 
   // –––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
   const plaintiffStatus = watch("plaintiffStatus");
@@ -404,39 +583,101 @@ export const useFormLayout = ({
 
   // Autofill principal-claimant fields when we have that response
   useEffect(() => {
-    console.log("old one");
-
+    console.log("=== PRINCIPAL NIC EFFECT ===");
+    console.log("claimantStatus:", watch("claimantStatus"));
+    console.log("principalNICResponse:", principalNICResponse);
+    console.log("principalNICResponse?.NICDetails:", principalNICResponse?.NICDetails);
+    
     if (
       watch("claimantStatus") === "principal" &&
       principalNICResponse?.NICDetails
     ) {
       const nic = principalNICResponse.NICDetails;
+      console.log("NIC Details:", nic);
 
-      setValue("userName", nic.PlaintiffName || "");
+      if (nic.PlaintiffName) {
+        console.log("Setting userName to:", nic.PlaintiffName);
+        setValue("userName", nic.PlaintiffName || "", {
+          shouldValidate: nic.PlaintiffName !== "",
+        });
+      }
 
-      setValue("region", {
-        value: nic.Region_Code || "",
-        label: nic.Region || "",
-      });
-      setValue("city", { value: nic.City_Code || "", label: nic.City || "" });
-      setValue("occupation", {
-        value: nic.Occupation_Code || "",
-        label: nic.Occupation || "",
-      });
-      setValue("gender", {
-        value: nic.Gender_Code || "",
-        label: nic.Gender || "",
-      });
-      setValue("nationality", {
-        value: nic.Nationality_Code || "",
-        label: nic.Nationality || "",
-      });
+      if (nic.Region_Code) {
+        console.log("Setting plaintiffRegion to:", { value: nic.Region_Code, label: nic.Region });
+        setValue(
+          "plaintiffRegion",
+          {
+            value: nic.Region_Code || "",
+            label: nic.Region || "",
+          },
+          {
+            shouldValidate: nic.Region_Code !== "",
+          }
+        );
+      }
 
-      setValue("hijriDate", nic.DateOfBirthHijri || "");
-      setValue("gregorianDate", nic?.DateOfBirthGregorian || "");
+      if (nic.City_Code) {
+        console.log("Setting plaintiffCity to:", { value: nic.City_Code, label: nic.City });
+        setValue(
+          "plaintiffCity",
+          { value: nic.City_Code || "", label: nic.City || "" },
+          {
+            shouldValidate: nic.City_Code !== "",
+          }
+        );
+      }
+
+      if (nic.Occupation_Code) {
+        console.log("Setting occupation to:", { value: nic.Occupation_Code, label: nic.Occupation });
+        setValue("occupation", {
+          value: nic.Occupation_Code || "",
+          label: nic.Occupation || "",
+        }, {
+          shouldValidate: nic.Occupation_Code !== "",
+        });
+      }
+
+      if (nic.Gender_Code) {
+        console.log("Setting gender to:", { value: nic.Gender_Code, label: nic.Gender });
+        setValue("gender", {
+          value: nic.Gender_Code || "",
+          label: nic.Gender || "",
+        }, {
+          shouldValidate: nic.Gender_Code !== "",
+        });
+      }
+
+      if (nic.Nationality_Code) {
+        console.log("Setting nationality to:", { value: nic.Nationality_Code, label: nic.Nationality });
+        setValue("nationality", {
+          value: nic.Nationality_Code || "",
+          label: nic.Nationality || "",
+        }, {
+          shouldValidate: nic.Nationality_Code !== "",
+        });
+      }
+
+      if (nic.DateOfBirthHijri) {
+        console.log("Setting hijriDate to:", nic.DateOfBirthHijri);
+        setValue("hijriDate", nic.DateOfBirthHijri || "", {
+          shouldValidate: nic.DateOfBirthHijri !== "",
+        });
+      }
+
+      if (nic?.DateOfBirthGregorian) {
+        console.log("Setting gregorianDate to:", nic.DateOfBirthGregorian);
+        setValue("gregorianDate", nic?.DateOfBirthGregorian || "", {
+          shouldValidate: nic?.DateOfBirthGregorian !== "",
+        });
+      }
+
       setValue("applicant", nic.Applicant || "");
+
       if (nic.PhoneNumber) {
-        setValue("phoneNumber", nic.PhoneNumber.toString());
+        console.log("Setting phoneNumber to:", nic.PhoneNumber);
+        setValue("phoneNumber", nic.PhoneNumber.toString(), {
+          shouldValidate: nic.PhoneNumber !== "",
+        });
       }
     }
   }, [principalNICResponse, setValue, watch, claimantStatus]);
@@ -448,72 +689,139 @@ export const useFormLayout = ({
     if (representativeNICResponse?.NICDetails) {
       const nic = representativeNICResponse.NICDetails;
 
-      setValue("userName", nic.PlaintiffName || "");
+      if(nic.PlaintiffName){
+        setValue("userName", nic.PlaintiffName || "", {
+          shouldValidate: nic.PlaintiffName !== "",
+        });
+      }
 
-      // setValue("region", nic.Region || "");
-      // setValue("city", nic.City || "");
-      // setValue("occupation", nic.Occupation || "");
-      // setValue("gender", nic.Gender || "");
-      // setValue("nationality", nic.Nationality || "");
+      if(nic.Region_Code){
+      setValue(
+        "plaintiffRegion",
+        {
+          value: nic.Region_Code || "",
+          label: nic.Region || "",
+        },
+        {
+          shouldValidate: nic.Region_Code !== "",
+        }
+      );
+      }
 
-      setValue("region", {
-        value: nic.Region_Code || "",
-        label: nic.Region || "",
-      });
-      setValue("city", { value: nic.City_Code || "", label: nic.City || "" });
+      if(nic.City_Code){
+      setValue(
+        "plaintiffCity",
+        { value: nic.City_Code || "", label: nic.City || "" },
+        {
+          shouldValidate: nic.City_Code !== "",
+        }
+      );
+      }
+
+      if(nic.Occupation_Code){
       setValue("occupation", {
         value: nic.Occupation_Code || "",
         label: nic.Occupation || "",
+      }, {
+        shouldValidate: nic.Occupation_Code !== "",
       });
+      }
+
+      if(nic.Gender_Code){
       setValue("gender", {
         value: nic.Gender_Code || "",
         label: nic.Gender || "",
+      }, {
+        shouldValidate: nic.Gender_Code !== "",
       });
+      }
+
+      if(nic.Nationality_Code){
       setValue("nationality", {
         value: nic.Nationality_Code || "",
         label: nic.Nationality || "",
+      }, {
+        shouldValidate: nic.Nationality_Code !== "",
       });
+      }
 
-      setValue("hijriDate", nic.DateOfBirthHijri || "");
-      setValue("gregorianDate", nic.DateOfBirthGregorian || "");
-      setValue("applicant", nic.Applicant || "");
+      if(nic.DateOfBirthHijri){
+      setValue("hijriDate", nic.DateOfBirthHijri || "", {
+        shouldValidate: nic.DateOfBirthHijri !== "",
+      });
+      }
+
+      if(nic?.DateOfBirthGregorian){
+        setValue("gregorianDate", nic.DateOfBirthGregorian || "", {
+        shouldValidate: nic.DateOfBirthGregorian !== "",
+      });
+      }
+
+        setValue("applicant", nic.Applicant || "");
+      
 
       if (nic.PhoneNumber) {
-        setValue("phoneNumber", nic.PhoneNumber.toString());
+        setValue("phoneNumber", nic.PhoneNumber.toString(), {
+          shouldValidate: nic.PhoneNumber !== "",
+        });
       }
     } else {
       // cleared or invalid ID => clear all
+      // Set text/date fields to empty string
       [
         "userName",
-        "region",
-        "city",
-        "occupation",
-        "gender",
-        "nationality",
         "hijriDate",
         "gregorianDate",
         "applicant",
         "phoneNumber",
       ].forEach((f) => setValue(f as any, ""));
+
+      // Set autocomplete fields to null
+      setValue("plaintiffRegion", null);
+      setValue("plaintiffCity", null);
+      setValue("occupation", null);
+      setValue("gender", null);
+      setValue("nationality", null);
     }
   }, [representativeNICResponse, setValue, watch]);
 
   const RegionOptions = useMemo(
     () =>
-      regionData?.map((item: DataElement) => ({
+      plaintiffRegionData?.map((item: DataElement) => ({
         value: item.ElementKey,
         label: item.ElementValue,
       })) || [],
-    [regionData]
+    [plaintiffRegionData]
   );
+
+  // Add effect to clear city when region changes
+  useEffect(() => {
+    const currentRegion = watch("plaintiffRegion");
+    if (currentRegion) {
+      setValue("plaintiffCity", null);
+      clearErrors("plaintiffCity");
+    }
+  }, [watch("plaintiffRegion"), setValue, clearErrors]);
+
+  // Add validation for city field
+  useEffect(() => {
+    const currentCity = watch("plaintiffCity");
+    if (
+      !currentCity ||
+      (typeof currentCity === "object" && !currentCity.value)
+    ) {
+      setValue("plaintiffCity", { value: "1", label: "RIYADH" }); // Default to Riyadh
+      clearErrors("plaintiffCity");
+    }
+  }, [watch("plaintiffCity"), setValue, clearErrors]);
 
   const CityOptions = useMemo(
     () =>
-      cityData?.map((item: DataElement) => ({
+      plaintiffCityData?.map((item: DataElement) => ({
         value: item.ElementKey,
         label: item.ElementValue,
       })) || [],
-    [cityData]
+    [plaintiffCityData]
   );
 
   const OccupationOptions = useMemo(
@@ -816,23 +1124,23 @@ export const useFormLayout = ({
   const baseSections =
     userType === "legal_representative"
       ? [
-          {
-            isHidden: true,
-            title: LegalRep("claimantStatus"),
-            isRadio: true,
-            children: [
-              {
-                type: "radio",
-                name: "plaintiffStatus",
-                label: LegalRep("claimantStatus"),
-                options: plaintiffTypeOptions,
-                value: "",
-                onChange: (value: string) => setValue("plaintiffStatus", value),
-                validation: { required: "Region is required" },
-              },
-            ],
-          },
-        ]
+        {
+          isHidden: true,
+          title: LegalRep("claimantStatus"),
+          isRadio: true,
+          children: [
+            {
+              type: "radio",
+              name: "plaintiffStatus",
+              label: LegalRep("claimantStatus"),
+              options: plaintiffTypeOptions,
+              value: "",
+              onChange: (value: string) => setValue("plaintiffStatus", value),
+              validation: { required: "Region is required" },
+            },
+          ],
+        },
+      ]
       : [];
 
   const getWorkerSections = () => {
@@ -840,15 +1148,10 @@ export const useFormLayout = ({
 
     // Set default claimant status to "principal" on mount
     useEffect(() => {
-      setValue("claimantStatus", "principal");
-    }, []); // Empty dependency array means this runs once on mount
-
-    // Set default agent type to "local_agency" when representative is selected
-    useEffect(() => {
-      if (claimantStatus === "representative") {
-        setValue("agentType", "local_agency");
+      if (!incompleteCaseType) {
+        setValue("claimantStatus", "principal");
       }
-    }, [claimantStatus, setValue]);
+    }, []); // Empty dependency array means this runs once on mount
 
     // Set ID number when principal is selected
     useEffect(() => {
@@ -857,11 +1160,42 @@ export const useFormLayout = ({
       }
     }, [claimantStatus, idNumber, setValue]);
 
-    if (claimantStatus === "principal") {
+    // Add validation effect to ensure all required fields are filled
+    useEffect(() => {
+      const requiredFields = [
+        "userName",
+        "plaintiffRegion",
+        "plaintiffCity",
+        "occupation",
+        "gender",
+        "nationality",
+        "phoneNumber"
+      ] as const;
+
+      const validateFields = async () => {
+        for (const field of requiredFields) {
+          await trigger(field);
+        }
+      };
+
+      validateFields();
+    }, []);
+
+    // Add validation tracking for form state changes
+    useEffect(() => {
+      const subscription = watch((value, { name, type }) => {
+        if (name) {
+          trigger(name);
+        }
+      });
+      return () => subscription.unsubscribe();
+    }, [watch, trigger]);
+
+    if (showPrincipalFields) {
       const pd = principalNICResponse?.NICDetails;
       sections.push({
-        title: t("nicDetails.personalInfo"),
-        className: "personal-info-section",
+        title: t("tab1_title"),
+        className: "nic-details-section",
         gridCols: 3,
         children: [
           // ID Number (readonly)
@@ -872,76 +1206,63 @@ export const useFormLayout = ({
             isLoading: nicAgentLoading,
           },
 
-          // Name
-          ...(pd?.PlaintiffName
-            ? [
-                {
-                  type: "readonly" as const,
-                  label: t("nicDetails.name"),
-                  value: pd.PlaintiffName,
-                  isLoading: nicAgentLoading,
-                },
-              ]
-            : [
-                {
-                  type: "input" as const,
-                  name: "userName",
-                  inputType: "text",
-                  label: t("nicDetails.name"),
-                  value: watch("userName"),
-                  onChange: (v: string) => setValue("userName", v),
-                  validation: { required: t("nameValidation") },
-                  isLoading: nicAgentLoading,
-                },
-              ]),
+          // Name field - readonly if from NIC, input if not
+          {
+            type: pd?.PlaintiffName ? "readonly" : "input",
+            name: "userName",
+            label: t("nicDetails.name"),
+            value: pd?.PlaintiffName || "",
+            isLoading: nicAgentLoading,
+            ...(!pd?.PlaintiffName && {
+              validation: {
+                required: true,
+                message: t("nameValidation"),
+                validate: (value: string) => !!value?.trim() || t("nameValidation")
+              },
+            }),
+          },
 
-          // Region
-          ...(pd?.Region
-            ? [
-                {
-                  type: "readonly" as const,
-                  label: t("nicDetails.region"),
-                  value: pd.Region,
-                  isLoading: nicAgentLoading,
+          // Region field - readonly if from NIC, autocomplete if not
+          {
+            type: pd?.Region ? "readonly" : "autocomplete",
+            name: "plaintiffRegion",
+            label: t("nicDetails.region"),
+            value: pd?.Region ? pd.Region : watch("plaintiffRegion"),
+            options: RegionOptions,
+            isLoading: nicAgentLoading,
+            ...(!pd?.Region && {
+              validation: {
+                required: true,
+                validate: (value: any) => {
+                  if (!value || (typeof value === 'object' && !value.value)) {
+                    return t("regionValidation");
+                  }
+                  return true;
                 },
-              ]
-            : [
-                {
-                  type: "autocomplete" as const,
-                  name: "region",
-                  label: t("nicDetails.region"),
-                  options: RegionOptions,
-                  value: watch("region"),
-                  onChange: (v: string) => setValue("region", v),
-                  validation: { required: t("regionValidation") },
-                  isLoading: nicAgentLoading,
-                },
-              ]),
+              },
+            }),
+          },
 
-          // City
-          ...(pd?.City
-            ? [
-                {
-                  type: "readonly" as const,
-                  label: t("nicDetails.city"),
-                  value: pd.City,
-                  onChange: (v: string) => setValue("city", v),
-                  validation: { required: t("cityValidation") },
-                  isLoading: nicAgentLoading,
+          // City field - readonly if from NIC, autocomplete if not
+          {
+            type: pd?.City ? "readonly" : "autocomplete",
+            name: "plaintiffCity",
+            label: t("nicDetails.city"),
+            value: pd?.City ? pd.City : watch("plaintiffCity"),
+            options: CityOptions,
+            isLoading: nicAgentLoading,
+            ...(!pd?.City && {
+              validation: {
+                required: true,
+                validate: (value: any) => {
+                  if (!value || (typeof value === 'object' && !value.value)) {
+                    return t("cityValidation");
+                  }
+                  return true;
                 },
-              ]
-            : [
-                {
-                  type: "autocomplete" as const,
-                  name: "city",
-                  label: t("nicDetails.city"),
-                  options: CityOptions,
-                  value: watch("city"),
-                  onChange: (v: string) => setValue("city", v),
-                  validation: { required: t("cityValidation") },
-                  isLoading: nicAgentLoading,
-                },
-              ]),
+              },
+            }),
+          },
 
           // Date of Birth (Hijri)
           {
@@ -950,133 +1271,107 @@ export const useFormLayout = ({
             value: formatDateString(pd?.DateOfBirthHijri) || "",
             isLoading: nicAgentLoading,
           },
+
           // Date of Birth (Gregorian)
           {
             type: "readonly" as const,
             label: t("nicDetails.dobGrog"),
-            // value: pd?.DateOfBirthGregorian || "",
-
-            value: formatDateString(pd?.DateOfBirthGregorian),
+            value: formatDateString(pd?.DateOfBirthGregorian) || "",
             isLoading: nicAgentLoading,
           },
 
-          // Phone Number
-          ...(pd?.PhoneNumber
-            ? [
-                {
-                  type: "readonly" as const,
-                  label: t("nicDetails.phoneNumber"),
-                  value: pd.PhoneNumber,
-                  isLoading: nicAgentLoading,
+          // Phone Number field - readonly if from NIC, input if not
+          {
+            type: pd?.PhoneNumber ? "readonly" : "input",
+            name: "phoneNumber",
+            label: t("nicDetails.phoneNumber"),
+            value: pd?.PhoneNumber || "",
+            isLoading: nicAgentLoading,
+            ...(!pd?.PhoneNumber && {
+              validation: {
+                required: true,
+                message: t("phoneNumberValidation"),
+                pattern: {
+                  value: /^05\d{8}$/,
+                  message: t("phoneValidationMessage"),
                 },
-              ]
-            : [
-                {
-                  type: "input" as const,
-                  name: "phoneNumber",
-                  inputType: "text",
-                  placeholder: "05xxxxxxxx",
-                  label: t("nicDetails.phoneNumber"),
-                  value: watch("phoneNumber"),
-                  onChange: (v: string) => setValue("phoneNumber", v),
-                  validation: {
-                    required: t("phoneNumberValidation"),
-                    pattern: {
-                      value: /^05\d{8}$/,
-                      message: t("phoneValidationMessage"),
-                    },
-                  },
-                  isLoading: nicAgentLoading,
-                },
-              ]),
+                validate: (value: string) => {
+                  if (!value) return t("phoneNumberValidation");
+                  return /^05\d{8}$/.test(value) || t("phoneValidationMessage");
+                }
+              },
+            }),
+          },
 
-          // Occupation
-          ...(pd?.Occupation
-            ? [
-                {
-                  type: "readonly" as const,
-                  label: t("nicDetails.occupation"),
-                  value: pd.Occupation,
-                  isLoading: nicAgentLoading,
+          // Occupation field - readonly if from NIC, autocomplete if not
+          {
+            type: pd?.Occupation ? "readonly" : "autocomplete",
+            name: "occupation",
+            label: t("nicDetails.occupation"),
+            value: pd?.Occupation ? pd.Occupation : watch("occupation"),
+            options: OccupationOptions,
+            isLoading: nicAgentLoading,
+            ...(!pd?.Occupation && {
+              validation: {
+                required: true,
+                validate: (value: any) => {
+                  if (!value || (typeof value === 'object' && !value.value)) {
+                    return t("occupationValidation");
+                  }
+                  return true;
                 },
-              ]
-            : [
-                {
-                  type: "autocomplete" as const,
-                  name: "occupation",
-                  label: t("nicDetails.occupation"),
-                  options: OccupationOptions,
-                  value: watch("occupation"),
-                  onChange: (v: string) => setValue("occupation", v),
-                  validation: { required: t("occupationValidation") },
-                  isLoading: nicAgentLoading,
-                },
-              ]),
+              },
+            }),
+          },
 
-          // Gender
-          ...(pd?.Gender
-            ? [
-                {
-                  type: "readonly" as const,
-                  label: t("nicDetails.gender"),
-                  value: pd.Gender,
-                  isLoading: nicAgentLoading,
+          // Gender field - readonly if from NIC, autocomplete if not
+          {
+            type: pd?.Gender ? "readonly" : "autocomplete",
+            name: "gender",
+            label: t("nicDetails.gender"),
+            value: pd?.Gender ? pd.Gender : watch("gender"),
+            options: GenderOptions,
+            isLoading: nicAgentLoading,
+            ...(!pd?.Gender && {
+              validation: {
+                required: true,
+                validate: (value: any) => {
+                  if (!value || (typeof value === 'object' && !value.value)) {
+                    return t("genderValidation");
+                  }
+                  return true;
                 },
-              ]
-            : [
-                {
-                  type: "autocomplete" as const,
-                  name: "gender",
-                  label: t("nicDetails.gender"),
-                  options: GenderOptions,
-                  value: watch("gender"),
-                  onChange: (v: string) => setValue("gender", v),
-                  validation: { required: t("genderValidation") },
-                  isLoading: nicAgentLoading,
-                },
-              ]),
+              },
+            }),
+          },
 
-          // Nationality
-          ...(pd?.Nationality
-            ? [
-                {
-                  type: "readonly" as const,
-                  label: t("nicDetails.nationality"),
-                  value: pd.Nationality,
-                  isLoading: nicAgentLoading,
+          // Nationality field - readonly if from NIC, autocomplete if not
+          {
+            type: pd?.Nationality ? "readonly" : "autocomplete",
+            name: "nationality",
+            label: t("nicDetails.nationality"),
+            value: pd?.Nationality ? pd.Nationality : watch("nationality"),
+            options: NationalityOptions,
+            isLoading: nicAgentLoading,
+            ...(!pd?.Nationality && {
+              validation: {
+                required: true,
+                validate: (value: any) => {
+                  if (!value || (typeof value === 'object' && !value.value)) {
+                    return t("nationalityValidation");
+                  }
+                  return true;
                 },
-              ]
-            : [
-                {
-                  type: "autocomplete" as const,
-                  name: "nationality",
-                  label: t("nicDetails.nationality"),
-                  options: NationalityOptions,
-                  value: watch("nationality"),
-                  onChange: (v: string) => setValue("nationality", v),
-                  validation: { required: t("nationalityValidation") },
-                  isLoading: nicAgentLoading,
-                },
-              ]),
-
-          // Applicant (if present)
-          ...(pd?.Applicant
-            ? [
-                {
-                  type: "readonly" as const,
-                  label: t("nicDetails.applicant"),
-                  value: pd.Applicant,
-                  isLoading: nicAgentLoading,
-                },
-              ]
-            : []),
+              },
+            }),
+          },
         ],
       });
     }
-    if (claimantStatus === "representative") {
+    if (showRepresentativeFields) {
       // 1) Agent-Type radio
       sections.push({
-        title: t("nicDetails.agentType"),
+        title: t("AgentType"),
         isRadio: true,
         children: [
           {
@@ -1091,130 +1386,139 @@ export const useFormLayout = ({
         ],
       });
 
-      // 2) Agent Data
-      sections.push({
-        title: t("nicDetails.agentData"),
-        className: "agent-data-section",
-        gridCols: 3,
-        children: [
-          // Agent's own ID (readonly)
-          {
-            type: "readonly" as const,
-            label: t("nicDetails.idNumber"),
-            value: idNumber,
-          },
-
-          // Agent Name: readonly for local_agency, input otherwise
-          {
-            type: agentType === "local_agency" ? "readonly" : "input",
-            name: "agentName",
-            label: t("nicDetails.agentName"),
-            value:
-              agentType === "local_agency"
-                ? agentInfoData.Agent?.AgentName || ""
-                : watch("agentName"),
-            onChange: (v: string) => setValue("agentName", v),
-            validation: { required: t("agentNameValidation") },
-            isLoading: agentType === "local_agency" && apiLoadingStates.agent,
-          },
-
-          {
-            type: "input" as const,
-            name: "agencyNumber",
-            inputType: "text",
-            label: t("nicDetails.agencyNumber"),
-            placeholder: "10xxxxxxxx",
-            value: watch("agencyNumber"),
-            onChange: (v: string) => {
-              // always keep form state up to date
-              setValue("agencyNumber", v);
-              // only fetch when it's exactly 9 digits and a local agency
-              if (agentType === "local_agency" && v.length === 9) {
-                onAgencyNumberChange(v);
-              } else {
-                // clear any previous result if invalid
-                onAgencyNumberChange("");
-              }
+      // 2) Agent Data - only show if agentType is selected
+      if (agentType) {
+        sections.push({
+          title: t("nicDetails.agentData"),
+          className: "agent-data-section",
+          gridCols: 3,
+          children: [
+            // Agent's own ID (readonly)
+            {
+              type: "readonly" as const,
+              label: t("nicDetails.idNumber"),
+              value: idNumber,
             },
-            validation: {
-              required: t("agencyNumberValidation"),
-              maxLength: { value: 9, message: t("max9Validation") },
-              pattern: {
-                value: /^\d{9}$/,
-                message: t("max9ValidationDesc"),
+
+            // Agent Name: readonly for local_agency, input otherwise
+            {
+              type: agentType === "local_agency" ? "readonly" : "input",
+              name: "agentName",
+              label: t("nicDetails.agentName"),
+              value:
+                agentType === "local_agency"
+                  ? agentInfoData.Agent?.AgentName || ""
+                  : watch("agentName"),
+              onChange: (v: string) => setValue("agentName", v),
+              validation: { required: t("agentNameValidation") },
+              isLoading: agentType === "local_agency" && apiLoadingStates.agent,
+            },
+
+            {
+              type: "input" as const,
+              name: "agencyNumber",
+              inputType: "text",
+              label: t("nicDetails.agencyNumber"),
+              placeholder: "10xxxxxxxx",
+              value: watch("agencyNumber"),
+              onChange: (v: string) => {
+                // always keep form state up to date
+                setValue("agencyNumber", v);
+                // only fetch when it's exactly 9 digits and a local agency
+                if (agentType === "local_agency" && v.length === 9) {
+                  onAgencyNumberChange(v);
+                } else {
+                  // clear any previous result if invalid
+                  onAgencyNumberChange("");
+                }
+              },
+              validation: {
+                required: t("agencyNumberValidation"),
+                maxLength: { value: 9, message: t("max9Validation") },
+                pattern: {
+                  value: /^\d{9}$/,
+                  message: t("max9ValidationDesc"),
+                },
               },
             },
-          },
-          // Agency Status
-          {
-            type: agentType === "local_agency" ? "readonly" : "input",
-            name: "agencyStatus",
-            label: t("nicDetails.agencyStatus"),
-            value:
-              agentType === "local_agency"
-                ? agentInfoData.Agent?.MandateStatus || ""
-                : watch("agencyStatus"),
-            onChange: (v: string) => setValue("agencyStatus", v),
-            validation: { required: t("agencyStatusValidation") },
-            isLoading: agentType === "local_agency" && apiLoadingStates.agent,
-          },
+            // Agency Status
+            {
+              type: agentType === "local_agency" ? "readonly" : "input",
+              name: "agencyStatus",
+              label: t("nicDetails.agencyStatus"),
+              value:
+                agentType === "local_agency"
+                  ? agentInfoData.Agent?.MandateStatus || ""
+                  : watch("agencyStatus"),
+              onChange: (v: string) => setValue("agencyStatus", v),
+              validation: { required: t("agencyStatusValidation") },
+              isLoading: agentType === "local_agency" && apiLoadingStates.agent,
+            },
 
-          // Agency Source
-          {
-            type: agentType === "local_agency" ? "readonly" : "input",
-            name: "agencySource",
-            label: t("nicDetails.agencySource"),
-            value:
-              agentType === "local_agency"
-                ? agentInfoData.Agent?.MandateSource || ""
-                : watch("agencySource"),
-            onChange: (v: string) => setValue("agencySource", v),
-            validation: { required: t("agencySourceValidation") },
-            isLoading: agentType === "local_agency" && apiLoadingStates.agent,
-          },
+            // Agency Source
+            {
+              type: agentType === "local_agency" ? "readonly" : "input",
+              name: "agencySource",
+              label: t("nicDetails.agencySource"),
+              value:
+                agentType === "local_agency"
+                  ? agentInfoData.Agent?.MandateSource || ""
+                  : watch("agencySource"),
+              onChange: (v: string) => setValue("agencySource", v),
+              validation: { required: t("agencySourceValidation") },
+              isLoading: agentType === "local_agency" && apiLoadingStates.agent,
+            },
 
-          // Current Place of Work
-          {
-            type: "input" as const,
-            name: "Agent_CurrentPlaceOfWork",
-            inputType: "text",
-            label: t("nicDetails.currentWorkingPlace"),
-            value: watch("Agent_CurrentPlaceOfWork"),
-            onChange: (v: string) => setValue("Agent_CurrentPlaceOfWork", v),
-            validation: { required: t("workplaceValidation") },
-          },
+            // Current Place of Work
+            {
+              type: "input" as const,
+              name: "Agent_CurrentPlaceOfWork",
+              inputType: "text",
+              label: t("nicDetails.currentWorkingPlace"),
+              value: watch("Agent_CurrentPlaceOfWork"),
+              onChange: (v: string) => setValue("Agent_CurrentPlaceOfWork", v),
+              validation: { required: t("workplaceValidation") },
+            },
 
-          // Residency Address
-          {
-            type: "input" as const,
-            name: "Agent_ResidencyAddress",
-            inputType: "text",
-            label: t("nicDetails.residenceAddress"),
-            value: watch("Agent_ResidencyAddress"),
-            onChange: (v: string) => setValue("Agent_ResidencyAddress", v),
-            validation: { required: t("residenceAddressValidation") },
-          },
+            // Residency Address
+            {
+              type: "input" as const,
+              name: "Agent_ResidencyAddress",
+              inputType: "text",
+              label: t("nicDetails.residenceAddress"),
+              value: watch("Agent_ResidencyAddress"),
+              onChange: (v: string) => setValue("Agent_ResidencyAddress", v),
+              validation: { required: t("residenceAddressValidation") },
+            },
 
-          // External-agency only: Occupation dropdown
-          ...(agentType === "external_agency"
-            ? [
+            // External-agency only: Mobile number field
+            ...(agentType === "external_agency"
+              ? [
                 {
-                  type: "autocomplete" as const,
-                  name: "occupation",
-                  label: t("nicDetails.occupation"),
-                  options: OccupationOptions,
-                  value: watch("occupation"),
-                  onChange: (v: string) => setValue("occupation", v),
-                  validation: { required: t("occupationValidation") },
+                  type: "input" as const,
+                  name: "phoneNumber",
+                  label: t("nicDetails.phoneNumber"),
+                  inputType: "text",
+                  placeholder: "05xxxxxxxx",
+                  value: watch("phoneNumber"),
+                  onChange: (v: string) => setValue("phoneNumber", v),
+                  validation: {
+                    required: t("phoneNumberValidation"),
+                    pattern: {
+                      value: /^05\d{8}$/,
+                      message: t("phoneValidationMessage"),
+                    },
+                  },
                 },
               ]
-            : []),
-        ],
-      });
+              : []),
+          ],
+        });
+      }
     }
 
     // — Inside getWorkerSections(), after the agentData section:
-    if (claimantStatus === "representative") {
+    if (claimantStatus === "representative" && agentType) {
       const rd = representativeNICResponse?.NICDetails;
       sections.push({
         title: t("nicDetails.plaintiffData"),
@@ -1257,134 +1561,134 @@ export const useFormLayout = ({
           // 3) Fetched or fallback fields:
           ...(rd
             ? [
-                {
-                  type: "readonly" as const,
-                  label: t("nicDetails.name"),
-                  value: rd.PlaintiffName,
-                  isLoading: nicAgentLoading,
-                },
-                {
-                  type: "readonly" as const,
-                  label: t("nicDetails.region"),
-                  value: rd.Region,
-                  isLoading: nicAgentLoading,
-                },
-                {
-                  type: "readonly" as const,
-                  label: t("nicDetails.city"),
-                  value: rd.City,
-                  isLoading: nicAgentLoading,
-                },
-                {
-                  type: "readonly" as const,
-                  label: t("nicDetails.dobGrog"),
-                  value: rd.DateOfBirthGregorian,
-                  isLoading: nicAgentLoading,
-                },
-                {
-                  type: "readonly" as const,
-                  label: t("nicDetails.phoneNumber"),
-                  value: rd.PhoneNumber,
-                  isLoading: nicAgentLoading,
-                },
-                {
-                  type: "readonly" as const,
-                  label: t("nicDetails.occupation"),
-                  value: rd.Occupation,
-                  isLoading: nicAgentLoading,
-                },
-                {
-                  type: "readonly" as const,
-                  label: t("nicDetails.gender"),
-                  value: rd.Gender,
-                  isLoading: nicAgentLoading,
-                },
-                {
-                  type: "readonly" as const,
-                  label: t("nicDetails.nationality"),
-                  value: rd.Nationality,
-                  isLoading: nicAgentLoading,
-                },
-              ]
+              {
+                type: "readonly" as const,
+                label: t("nicDetails.name"),
+                value: rd.PlaintiffName,
+                isLoading: nicAgentLoading,
+              },
+              {
+                type: "readonly" as const,
+                label: t("nicDetails.region"),
+                value: rd.Region,
+                isLoading: nicAgentLoading,
+              },
+              {
+                type: "readonly" as const,
+                label: t("nicDetails.city"),
+                value: rd.City,
+                isLoading: nicAgentLoading,
+              },
+              {
+                type: "readonly" as const,
+                label: t("nicDetails.dobGrog"),
+                value: rd.DateOfBirthGregorian,
+                isLoading: nicAgentLoading,
+              },
+              {
+                type: "readonly" as const,
+                label: t("nicDetails.phoneNumber"),
+                value: rd.PhoneNumber,
+                isLoading: nicAgentLoading,
+              },
+              {
+                type: "readonly" as const,
+                label: t("nicDetails.occupation"),
+                value: rd.Occupation,
+                isLoading: nicAgentLoading,
+              },
+              {
+                type: "readonly" as const,
+                label: t("nicDetails.gender"),
+                value: rd.Gender,
+                isLoading: nicAgentLoading,
+              },
+              {
+                type: "readonly" as const,
+                label: t("nicDetails.nationality"),
+                value: rd.Nationality,
+                isLoading: nicAgentLoading,
+              },
+            ]
             : [
-                {
-                  type: "input" as const,
-                  name: "userName",
-                  inputType: "text",
-                  label: t("nicDetails.name"),
-                  value: watch("userName"),
-                  onChange: (v: string) => setValue("userName", v),
-                  validation: { required: t("nameValidation") },
-                  disabled: disableNicFields,
-                },
-                {
-                  type: "autocomplete" as const,
-                  name: "region",
-                  label: t("nicDetails.region"),
-                  options: RegionOptions,
-                  value: watch("region"),
-                  onChange: (v: string) => setValue("region", v),
-                  validation: { required: t("regionValidation") },
-                  disabled: disableNicFields,
-                },
-                {
-                  type: "autocomplete" as const,
-                  name: "city",
-                  label: t("nicDetails.city"),
-                  options: CityOptions,
-                  value: watch("city"),
-                  onChange: (v: string) => setValue("city", v),
-                  validation: { required: t("cityValidation") },
-                  disabled: disableNicFields,
-                },
-                {
-                  type: "input" as const,
-                  name: "phoneNumber",
-                  inputType: "text",
-                  placeholder: "05xxxxxxxx",
-                  label: t("nicDetails.phoneNumber"),
-                  value: watch("phoneNumber"),
-                  onChange: (v: string) => setValue("phoneNumber", v),
-                  validation: {
-                    required: t("phoneNumberValidation"),
-                    pattern: {
-                      value: /^05\d{8}$/,
-                      message: t("phoneValidationMessage"),
-                    },
+              {
+                type: "input" as const,
+                name: "userName",
+                inputType: "text",
+                label: t("nicDetails.name"),
+                value: watch("userName"),
+                onChange: (v: string) => setValue("userName", v),
+                validation: { required: t("nameValidation") },
+                disabled: disableNicFields,
+              },
+              {
+                type: "autocomplete" as const,
+                name: "plaintiffRegion",
+                label: t("nicDetails.region"),
+                options: RegionOptions,
+                value: watch("plaintiffRegion"),
+                onChange: (v: string) => setValue("plaintiffRegion", v),
+                validation: { required: t("regionValidation") },
+                disabled: disableNicFields,
+              },
+              {
+                type: "autocomplete" as const,
+                name: "plaintiffCity",
+                label: t("nicDetails.city"),
+                options: CityOptions,
+                value: watch("plaintiffCity"),
+                onChange: (v: string) => setValue("plaintiffCity", v),
+                validation: { required: t("cityValidation") },
+                disabled: disableNicFields,
+              },
+              {
+                type: "input" as const,
+                name: "phoneNumber",
+                inputType: "text",
+                placeholder: "05xxxxxxxx",
+                label: t("nicDetails.phoneNumber"),
+                value: watch("phoneNumber"),
+                onChange: (v: string) => setValue("phoneNumber", v),
+                validation: {
+                  required: t("phoneNumberValidation"),
+                  pattern: {
+                    value: /^05\d{8}$/,
+                    message: t("phoneValidationMessage"),
                   },
-                  disabled: disableNicFields,
                 },
-                {
-                  type: "autocomplete" as const,
-                  name: "occupation",
-                  label: t("nicDetails.occupation"),
-                  options: OccupationOptions,
-                  value: watch("occupation"),
-                  onChange: (v: string) => setValue("occupation", v),
-                  validation: { required: t("occupationValidation") },
-                  disabled: disableNicFields,
-                },
-                {
-                  type: "autocomplete" as const,
-                  name: "gender",
-                  label: t("nicDetails.gender"),
-                  options: GenderOptions,
-                  value: watch("gender"),
-                  onChange: (v: string) => setValue("gender", v),
-                  validation: { required: t("genderValidation") },
-                  disabled: disableNicFields,
-                },
-                {
-                  type: "autocomplete" as const,
-                  name: "nationality",
-                  label: t("nicDetails.nationality"),
-                  options: NationalityOptions,
-                  value: watch("nationality"),
-                  onChange: (v: string) => setValue("nationality", v),
-                  validation: { required: t("nationalityValidation") },
-                  disabled: disableNicFields,
-                },
-              ]),
+                disabled: disableNicFields,
+              },
+              {
+                type: "autocomplete" as const,
+                name: "occupation",
+                label: t("nicDetails.occupation"),
+                options: OccupationOptions,
+                value: watch("occupation") ?? null,
+                onChange: (v: string) => setValue("occupation", v),
+                validation: { required: t("occupationValidation") },
+                disabled: disableNicFields,
+              },
+              {
+                type: "autocomplete" as const,
+                name: "gender",
+                label: t("nicDetails.gender"),
+                options: GenderOptions,
+                value: watch("gender") ?? null,
+                onChange: (v: string) => setValue("gender", v),
+                validation: { required: t("genderValidation") },
+                disabled: disableNicFields,
+              },
+              {
+                type: "autocomplete" as const,
+                name: "nationality",
+                label: t("nicDetails.nationality"),
+                options: NationalityOptions,
+                value: watch("nationality") ?? null,
+                onChange: (v: string) => setValue("nationality", v),
+                validation: { required: t("nationalityValidation") },
+                disabled: disableNicFields,
+              },
+            ]),
         ],
       });
     }
@@ -1394,7 +1698,10 @@ export const useFormLayout = ({
 
   const ClaimantSelectSection = [];
 
-  if (userType === "Worker" || plaintiffStatus === "leg_rep_worker") {
+  if (
+    shouldShowClaimantStatus &&
+    (userType === "Worker" || plaintiffStatus === "leg_rep_worker")
+  ) {
     ClaimantSelectSection.push({
       isRadio: true,
       children: [
@@ -1404,7 +1711,10 @@ export const useFormLayout = ({
           label: t("claimantStatus"),
           options: ClaimantStatusRadioOptions,
           value: claimantStatus,
-          onChange: (value: string) => setValue("claimantStatus", value),
+          onChange: (value: string) => {
+            console.log("Radio button changed to:", value);
+            setValue("claimantStatus", value);
+          },
           validation: { required: "Region is required" },
         },
       ],
@@ -1480,6 +1790,149 @@ export const useFormLayout = ({
     // ...InternationalPhoneNumberSection,
     ...OTPSection,
   ].filter(Boolean) as SectionLayout[];
+
+  // Add this effect after the existing useEffect blocks
+  useEffect(() => {
+    // Function to set form values from data
+    const setFormValuesFromData = (data: any) => {
+      if (!data) return;
+
+      // Set all form values from data
+      if(data?.PlaintiffName){
+        setValue("userName", data?.PlaintiffName || data?.userName || "",{
+          shouldValidate: data?.PlaintiffName !== "",
+        });
+      }
+
+      // Set region with proper code and label
+      if (data?.Region_Code || data?.plaintiffRegion?.value) {
+        setValue(
+          "plaintiffRegion",
+          {
+            value: data?.Region_Code || data?.plaintiffRegion?.value || "",
+            label: data?.Region || data?.plaintiffRegion?.label || ""
+          },{
+            shouldValidate: data?.Region_Code !== "",
+          });
+      }
+
+      // Set city with proper code and label
+      if (data?.City_Code || data?.plaintiffCity?.value) {
+        setValue(
+          "plaintiffCity",
+          {
+            value: data?.City_Code || data?.plaintiffCity?.value || "",
+            label: data?.City || data?.plaintiffCity?.label || ""
+          },{
+            shouldValidate: data?.City_Code !== "",
+          });
+      }
+
+      // Set occupation with proper code and label
+      if (data?.Occupation_Code || data?.occupation?.value) {
+        const occupationValue = {
+          value: data?.Occupation_Code || data?.occupation?.value || "",
+          label: data?.Occupation || data?.occupation?.label || "",
+        };
+        setValue("occupation", occupationValue,{
+          shouldValidate: data?.Occupation_Code !== "",
+        });
+        // Clear any existing errors
+        clearErrors("occupation");  
+      }
+
+      // Set gender with proper code and label
+      if (data?.Gender_Code || data?.gender?.value) {
+        const genderValue = {
+          value: data?.Gender_Code || data?.gender?.value || "",
+          label: data?.Gender || data?.gender?.label || "",
+        };
+        setValue("gender", genderValue,{
+          shouldValidate: data?.Gender_Code !== "",
+        });
+        // Clear any existing errors
+        clearErrors("gender");
+      }
+
+      // Set nationality with proper code and label
+      if (data?.Nationality_Code || data?.nationality?.value) {
+        const nationalityValue = {
+          value: data?.Nationality_Code || data?.nationality?.value || "",
+          label: data?.Nationality || data?.nationality?.label || "",
+        };
+        setValue("nationality", nationalityValue,{
+          shouldValidate: data?.Nationality_Code !== "",
+        });
+        // Clear any existing errors
+        clearErrors("nationality");
+      }
+
+      // Set dates
+      if(data?.DateOfBirthHijri){
+            setValue("hijriDate", data?.DateOfBirthHijri || data?.hijriDate || "",{
+          shouldValidate: data?.DateOfBirthHijri !== "",
+        });
+      }
+
+      if(data?.DateOfBirthGregorian){
+        setValue("gregorianDate", data?.DateOfBirthGregorian || data?.gregorianDate || "",{
+          shouldValidate: data?.DateOfBirthGregorian !== "",
+        });
+      }
+
+      // Set phone number
+      if (data?.PhoneNumber || data?.phoneNumber) {
+        setValue("phoneNumber", (data?.PhoneNumber || data?.phoneNumber).toString(),{
+          shouldValidate:data?.PhoneNumber !== "",
+        });
+      }
+    };
+
+    // Handle NIC data
+    if (principalNICResponse?.NICDetails) {
+      setFormValuesFromData(principalNICResponse.NICDetails);
+    }
+
+    // Handle case details data
+    const caseDetails = getCookie("caseDetails");
+    if (caseDetails) {
+      setFormValuesFromData(caseDetails);
+    }
+
+    // Trigger validation for all fields
+    trigger([
+      "userName",
+      "plaintiffRegion",
+      "plaintiffCity",
+      "occupation",
+      "gender",
+      "nationality",
+      "phoneNumber"
+    ]);
+  }, [principalNICResponse, setValue, trigger, getCookie, clearErrors]);
+
+  useEffect(() => {
+    // Only clear form data if we're switching to representative mode and the NIC data is invalid
+    // Don't clear on every mount or when switching back to principal
+    if (claimantStatus === "representative" && !shouldFetchNic) {
+      // Only clear if we don't have valid NIC data
+      const currentFormData = watch();
+      if (!currentFormData.userName && !currentFormData.plaintiffRegion) {
+        [
+          "userName",
+          "plaintiffRegion",
+          "plaintiffCity",
+          "occupation",
+          "gender",
+          "nationality",
+          "hijriDate",
+          "gregorianDate",
+          "applicant",
+          "phoneNumber",
+        ].forEach((f) => setValue(f as any, ""));
+      }
+    }
+  }, [shouldFetchNic, setValue, claimantStatus, watch]);
 
   return formLayout;
 };

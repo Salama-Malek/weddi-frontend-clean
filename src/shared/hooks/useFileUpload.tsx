@@ -25,7 +25,7 @@ export const useFileUpload = ({ onFileUpload }: UseFileUploadProps) => {
       "image/png": [".png"],
       "image/tiff": [".tif"],
     },
-    multiple: true,
+    multiple: false,
     onDrop,
   });
 

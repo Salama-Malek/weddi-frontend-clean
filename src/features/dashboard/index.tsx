@@ -16,13 +16,16 @@ const Main = () => {
   const {
     isLegalRep,
     isEstablishment,
-    isLegalRepstate,
-    isEstablishmentstate,
-    openModule,
-    setOpenModule,
+    
     setLegelRepState,
-    setEstablishmentState
+    setEstablishmentState,
+    setUserType
   } = useUser();
+
+
+
+
+
   const popupHandler = () => {
     const selectedUserType = getCookie("selectedUserType");
 
@@ -37,9 +40,8 @@ const Main = () => {
     }
   };
 
-  const popuoStablishment = () => {
-    setEstablishmentState(true);
-  };
+
+
 
   const handleCloseInfoBanner = () => {
     setShowInfoBanner(false);
@@ -47,9 +49,9 @@ const Main = () => {
 
   return (
     <AuthProvider
-      popupHandler={popupHandler}
-      popuoStablishment={popuoStablishment}
       setIsLegalRep={setLegelRepState}
+      setIsEstablishment={setEstablishmentState}
+      setUserTypeState={setUserType}
     >
       <main className="!space-y-[16px] bg-gray-100">
         <div className="container">

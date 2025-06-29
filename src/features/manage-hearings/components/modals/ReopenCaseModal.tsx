@@ -25,16 +25,17 @@ const ReopenCaseModal: React.FC<ReopenCaseModalProps> = ({
     }
   });
 
-  const needsBoth = [
-    "Resolved-Save the case",
+  // Only these specific statuses require acknowledgment
+  const acknowledgmentStatuses = [
     "Resolved-Applicant didnot attend",
-  ].includes(statusCode);
-  const needsReasonOnly = statusCode === "Resolved-Waived";
+    "Resolved-Save the case"
+  ];
 
-  const showReason = needsBoth || needsReasonOnly;
+  const showAcknowledgment = acknowledgmentStatuses.includes(statusCode);
+  const showReason = showAcknowledgment;
   const acknowledged = methods.watch("acknowledge");
 
-  const isValid = (!showReason || reason.trim() !== "") && acknowledged;
+  const isValid = (!showReason || reason.trim() !== "") && (!showAcknowledgment || acknowledged);
 
   const handleSubmit = () => {
     if (isValid) {
@@ -60,16 +61,20 @@ const ReopenCaseModal: React.FC<ReopenCaseModalProps> = ({
             </div>
           )}
 
-          <div className="p-4 bg-gray-100 border border-gray-300 rounded text-sm leading-relaxed">
-            {t("reopen_ack_text")}
-          </div>
+          {showAcknowledgment && (
+            <>
+              <div className="p-4 bg-gray-100 border border-gray-300 rounded text-sm leading-relaxed">
+                {t("reopen_ack_text")}
+              </div>
 
-          <CheckboxField
-            name="acknowledge"
-            label={t("reopen_ack_checkbox")}
-            notRequired
-            wrapperClassName="!w-fit"
-          />
+              <CheckboxField
+                name="acknowledge"
+                label={t("reopen_ack_checkbox")}
+                notRequired
+                wrapperClassName="!w-fit"
+              />
+            </>
+          )}
 
           <div className="flex justify-end gap-3 mt-6">
             <Button variant="secondary" onClick={onClose}>

@@ -4,20 +4,17 @@ import { skipToken } from "@reduxjs/toolkit/query";
 import { useTranslation } from "react-i18next";
 import withStepNavigation from "@/shared/HOC/withStepNavigation";
 import { DynamicForm } from "@/shared/components/form/DynamicForm";
+import { FormData } from "@/shared/components/form/form.types";
 import {
   useGetEstablishmentDetailsQuery,
   useGetGovernmentLookupDataQuery,
   useGetSubGovernmentLookupDataQuery,
 } from "@/features/initiate-hearing/api/create-case/defendantDetailsApis";
 import {
-  useGetWorkerRegionLookupDataQuery,
-  useGetWorkerCityLookupDataQuery,
-  useGetOccupationLookupDataQuery,
-  useGetGenderLookupDataQuery,
-  useGetNationalityLookupDataQuery,
   useGetNICDetailsQuery,
 } from "@/features/initiate-hearing/api/create-case/plaintiffDetailsApis";
 import { useCookieState } from "@/features/initiate-hearing/hooks/useCookieState";
+import useCaseDetailsPrefill from "@/features/initiate-hearing/hooks/useCaseDetailsPrefill";
 import { useAPIFormsData } from "@/providers/FormContext";
 import { useFormLayout } from "./defendant.forms.formLayout";
 import { FieldErrors } from "react-hook-form";
@@ -33,57 +30,102 @@ const DefendantDetailsContainer: React.FC = () => {
   const lang = i18n.language.toUpperCase();
 
   // Form context including errors
-  const { register, clearFormData, setValue, watch, control, formState } = useAPIFormsData();
+  const { register, clearFormData, setValue, watch, control, formState, trigger } = useAPIFormsData();
   const errors = formState.errors;
-  // Cleare The Form Data Before The Componet load 
+  
+  // Preserve form data when component remounts
   useEffect(() => {
-    setValue("region", null);
-    setValue("city", null);
-    [
-      "phoneNumber",
-    ].forEach((f) => setValue(f as any, ""));
-  }, [])
+    const savedFormData = localStorage.getItem("defendantFormData");
+    if (savedFormData) {
+      try {
+        const parsedData = JSON.parse(savedFormData);
+        // Only restore if we don't already have form data
+        const currentFormData = watch();
+        if (!currentFormData.defendantRegion && !currentFormData.defendantCity) {
+          console.log("Restoring saved defendant form data:", parsedData);
+          Object.entries(parsedData).forEach(([key, value]) => {
+            if (value !== null && value !== undefined) {
+              setValue(key as any, value, { shouldValidate: false });
+            }
+          });
+        }
+      } catch (error) {
+        console.error("Error restoring form data:", error);
+      }
+    }
+  }, [setValue, watch]);
+  
+  // Save form data when it changes
+  useEffect(() => {
+    const currentFormData = watch();
+    const formDataToSave = {
+      defendantRegion: currentFormData.defendantRegion,
+      defendantCity: currentFormData.defendantCity,
+      phoneNumber: currentFormData.phoneNumber,
+      DefendantFileNumber: currentFormData.DefendantFileNumber,
+      Defendant_Establishment_data_NON_SELECTED: currentFormData.Defendant_Establishment_data_NON_SELECTED,
+      Defendant_Establishment_data: currentFormData.Defendant_Establishment_data,
+    };
+    
+    // Only save if we have meaningful data
+    if (formDataToSave.defendantRegion || formDataToSave.defendantCity || formDataToSave.phoneNumber) {
+      localStorage.setItem("defendantFormData", JSON.stringify(formDataToSave));
+    }
+  }, [watch("defendantRegion"), watch("defendantCity"), watch("phoneNumber"), watch("DefendantFileNumber")]);
+  
+  // Only clear form data when switching between defendant types, not on every mount
+  useEffect(() => {
+    const currentDefendantStatus = watch("defendantStatus");
+    const currentDefendantDetails = watch("defendantDetails");
+    
+    // Only clear if switching from establishment to government or vice versa
+    if (currentDefendantStatus === "Establishment" && currentDefendantDetails === "Others") {
+      // Clear only when switching to "Others" establishment type
+      setValue("defendantRegion", null);
+      setValue("defendantCity", null);
+      setValue("phoneNumber", "");
+      // Clear saved form data
+      localStorage.removeItem("defendantFormData");
+    }
+  }, [watch("defendantStatus"), watch("defendantDetails"), setValue]);
+
+  // Prefill form fields when continuing an incomplete case for Legal representative
+  useCaseDetailsPrefill(setValue as any);
+
+  // Cleanup saved form data when component unmounts or case is completed
+  useEffect(() => {
+    return () => {
+      // Only clear if we're moving to the next step (not just unmounting)
+      const currentStep = parseInt(localStorage.getItem("step") || "0");
+      const currentTab = parseInt(localStorage.getItem("tab") || "0");
+      
+      if (currentStep > 0 || currentTab > 1) {
+        localStorage.removeItem("defendantFormData");
+      }
+    };
+  }, []);
 
   // Watch fields
   const defendantStatus = watch("defendantStatus");
   const defendantDetails = watch("defendantDetails");
-  const fileNumber = "";//| watch("DefendantFileNumber");
-  const region = watch("region");
-  const nationalIdNumber = watch("nationalIdNumber");
-  const defHijriDOB = watch("defendantHijriDOB");
   const mainCategory = watch("main_category_of_the_government_entity");
-  const selectedWorkerRegion2 = watch("region");
-  const [isVa, setIdNumberValid] = useState<boolean>()
 
-  // Lookup establishment details
-  const {
-    data: establishmentDetails,
-    isFetching: isEstablishmentLoading,
-    isSuccess: estabSuccess,
-    isLoading
-  } = useGetEstablishmentDetailsQuery(
-    fileNumber
-      ? {
-        AcceptedLanguage: lang,
-        SourceSystem: "E-Services",
-        FileNumber: fileNumber,
-      }
-      : skipToken
-  );
 
-  // Persist selection in cookies
-  useEffect(() => {
-    if (establishmentDetails) setCookie("defendantDetails", establishmentDetails);
-    if (defendantStatus) setCookie("defendantStatus", defendantStatus);
-  }, [establishmentDetails, defendantStatus, setCookie]);
+
+
+
+ 
 
   // Government lookups
-  const { data: governmentData } = useGetGovernmentLookupDataQuery({
+  const { data: governmentData, isLoading: isGovernmentLoading } = useGetGovernmentLookupDataQuery({
     AcceptedLanguage: lang,
     SourceSystem: "E-Services",
+  }, {
+    // Don't skip the query
+    skip: false
   });
 
-  const { data: subGovernmentData } = useGetSubGovernmentLookupDataQuery(
+  const { data: subGovernmentData, isLoading: isSubGovernmentLoading } = useGetSubGovernmentLookupDataQuery(
     mainCategory
       ? {
         AcceptedLanguage: lang,
@@ -93,153 +135,64 @@ const DefendantDetailsContainer: React.FC = () => {
       : skipToken
   );
 
-  // NIC lookup for establishment or individual defendant
-  const isIndividual = userType.toLowerCase().includes("individual");
-  const { data: nicData, isFetching: nicLoading } = useGetNICDetailsQuery(
-    isIndividual
-      ? {
-        IDNumber: userClaims.UserID,
-        DateOfBirth: userClaims.UserDOB,
-        AcceptedLanguage: lang,
-        SourceSystem: "E-Services",
-      }
-      : nationalIdNumber && defHijriDOB && nationalIdNumber.length === 10
-        ? {
-          IDNumber: nationalIdNumber,
-          DateOfBirth: defHijriDOB,
-          AcceptedLanguage: lang,
-          SourceSystem: "E-Services",
-        }
-        : skipToken
-  );
-
-  // Region/City/Occupation/Nationality lookups
-  const { data: regionData } = useGetWorkerRegionLookupDataQuery({
-    AcceptedLanguage: lang,
-    SourceSystem: "E-Services",
-    ModuleKey: userType.toLowerCase().includes("establishment") ? "WorkerRegion" : "EstablishmentRegion",
-    ModuleName: userType.toLowerCase().includes("establishment") ? "WorkerRegion" : "EstablishmentRegion",
-  });
-  const { data: cityData } = useGetWorkerCityLookupDataQuery(
-    region && typeof region === "object" && "value" in region
-      ? {
-        AcceptedLanguage: lang,
-        SourceSystem: "E-Services",
-        selectedWorkerRegion: { value: (region as { value: string }).value },
-        ModuleName: userType.toLowerCase().includes("establishment") ? "WorkerCity" : "EstablishmentCity",
-      }
-      : skipToken
-  );
-
-  const { data: occupationData } = useGetOccupationLookupDataQuery({
-    AcceptedLanguage: lang,
-    SourceSystem: "E-Services",
-  });
-
-  const { data: genderData } = useGetGenderLookupDataQuery({
-    AcceptedLanguage: lang,
-    SourceSystem: "E-Services",
-  });
-
-  const { data: nationalityData } = useGetNationalityLookupDataQuery({
-    AcceptedLanguage: lang,
-    SourceSystem: "E-Services",
-  });
-
-  // Call useFormLayout hook at the top level directly (not inside useMemo)
-  const formLayout = useFormLayout(
-    setValue,
-    watch,
-    establishmentDetails,
-    governmentData?.DataElements,
-    subGovernmentData?.DataElements,
-    // establishmentDetails?.EstablishmentInfo?.[0],
-    // establishmentDetails?.ErrorDetails,
-    // estabSuccess,
-    // isEstablishmentLoading,
-    // isLoading
-  );
-
-  const establishmentDefendantFormLayout = useEstablishmentDefendantFormLayout({
-    setValue,
-    selectedWorkerRegion2,
-    watch,
-  });
-
-  // hassan add this 
-  const legelDefendantFormLayout = useLegelDefendantFormLayout({
-    setValue,
-    watch,
-  });
-
-  // Memoize form layouts
-  const memoizedIndividualFormLayout = useMemo(() => formLayout, [formLayout]);
-  const memoizedEstablishmentFormLayout = useMemo(
-    () => establishmentDefendantFormLayout,
-    [establishmentDefendantFormLayout]
-  );
-
-  // hassan add this 
-  const memoizedLegleFormLayout = useMemo(
-    () => legelDefendantFormLayout,
-    [legelDefendantFormLayout]
-  );
-
   // Determine which form layout to use based on userType
   const getFormLayout = (getUserType: string) => {
-    // hassan edit this 
     getUserType = getUserType?.toLocaleLowerCase();
-    console.log("defii", getUserType);
-
     switch (getUserType) {
       case "legal representative":
-        return memoizedLegleFormLayout;
-      case "establishment":
-        return memoizedEstablishmentFormLayout;
-      case "establishment":
-        //console.log("hereh2");
+        return useLegelDefendantFormLayout({
+          setValue,
+          watch,
+        });
 
-        return memoizedLegleFormLayout;
+      case "establishment":
+        return useLegelDefendantFormLayout({
+          setValue,
+          watch,
+        })
       case "individual":
       default:
-        //console.log("hereh3");
-
-        return memoizedIndividualFormLayout;
+        return useFormLayout(
+          setValue,
+          watch,
+          trigger,
+          governmentData,
+          subGovernmentData
+        );
     }
   };
   const isNotOthersDefendant = defendantDetails !== "Others";
   const DefendantType = isNotOthersDefendant
     ? "Establishment"
     : defendantStatus;
+
+  console.log("this is new data ",{isNotOthersDefendant, DefendantType});
+
   useEffect(() => {
     setCookie("defendantTypeInfo", DefendantType);
   }, [DefendantType]);
 
+
+
+  // Reset fields when defendantStatus changes
   useEffect(() => {
-    const isValid = nationalIdNumber?.length === 10;
-    if (isValid) {
-      setIdNumberValid(isValid);
-      setCookie("nationalIdNumber", nationalIdNumber);
+    if (defendantStatus === "Establishment") {
+      // Clear government fields
+      setValue("main_category_of_the_government_entity", "", { shouldValidate: false });
+      setValue("subcategory_of_the_government_entity", "", { shouldValidate: false });
+      // Clear establishment data
+      setValue("EstablishmentData", null, { shouldValidate: false });
+    } else if (defendantStatus === "Government") {
+      // Clear establishment data
+      setValue("EstablishmentData", null, { shouldValidate: false });
     }
-
-  }, [nationalIdNumber]);
-
+  }, [defendantStatus, setValue]);
 
 
-  /*
-      establishmentDetails?.EstablishmentInfo || null,
-      governmentData?.DataElements || [],
-      subGovernmentData?.DataElements || [],
-      estabSuccess,
-      estabSuccess,
-      isEstablishmentLoading
-    );
-  */
   return (
     <>
-      {nicLoading && <Loader />}
-      <div className={`relative ${nicLoading ? "pointer-events-none" : ""}`}>
-        <div className={nicLoading ? "blur-sm" : ""}>
+      <div className={`relative`}>
+        <div>
           <DynamicForm
             formLayout={getFormLayout(userType)}
             register={register}
@@ -247,7 +200,6 @@ const DefendantDetailsContainer: React.FC = () => {
             setValue={setValue}
             watch={watch}
             control={control}
-            isLoading={isEstablishmentLoading || nicLoading}
           />
         </div>
       </div>

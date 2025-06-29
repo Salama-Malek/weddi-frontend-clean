@@ -7,42 +7,35 @@ import Heading from "@/shared/components/ui/title-header";
 import TableLoader from "@/shared/components/loader/TableLoader";
 import HearingLayout from "@/shared/layouts/HearingLayout";
 import { BreadcrumbsWrapper } from "@/shared/components/breadcrumbs/BreadcrumbWrapper";
-
+ 
 const Tabs = lazy(() => import("@/shared/components/tabs").then(module => ({ default: module.Tabs })));
 const HearingTabContent = lazy(() => import("./HearingTabContent"));
-
+ 
 export default function ManageHearings() {
   const { caseType = "individual", role = "defendant" } = useParams();
   const navigate = useNavigate();
   const { t } = useTranslation("managehearings");
-
+ 
   // Set default tab based on localStorage or redirect to stored tab
   useEffect(() => {
     const storedCaseRole = localStorage.getItem("caseRoleTab");
-    if (!role && storedCaseRole) {
-      navigate(`/${caseType}/${storedCaseRole}`, { replace: true });
-    } else if (!role) {
-      // If no stored role, default to claimant
+    if(!storedCaseRole){
       localStorage.setItem("caseRoleTab", "claimant");
-      navigate(`/${caseType}/claimant`, { replace: true });
-    } else {
-      // Store the current role
-      localStorage.setItem("caseRoleTab", role);
     }
   }, [role, caseType, navigate]);
-
+ 
   const breadcrumbs = [
     { label: t("breadcrumbs.home"), href: "/" },
     { label: t("breadcrumbs.manage_hearings"), href: "/manage-hearings" },
   ];
-
+ 
   return (
     <HearingLayout
       breadcrumbs={<BreadcrumbsWrapper items={breadcrumbs} />}
       contentClass="pt-7xl pb-7xl px-3xl"
     >
       <Heading className="mb-6">{t("heading")}</Heading>
-      
+     
       <Suspense fallback={<TableLoader />}>
         <Tabs>
           <TabList>
@@ -65,14 +58,14 @@ export default function ManageHearings() {
               {t("tabs.defendant")}
             </Tab>
           </TabList>
-
+ 
           <TabPanels>
             <TabPanel id="claimant">
               <Suspense fallback={<TableLoader />}>
                 <HearingTabContent role="claimant" caseType={caseType} />
               </Suspense>
             </TabPanel>
-
+ 
             <TabPanel id="defendant">
               <Suspense fallback={<TableLoader />}>
                 <HearingTabContent role="defendant" caseType={caseType} />

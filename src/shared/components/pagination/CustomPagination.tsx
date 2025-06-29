@@ -35,6 +35,7 @@ export const CustomPagination: React.FC<IPaginationProps> = ({
       <button
         className={`text-[#161616] disabled:opacity-50`}
         onClick={() => onPageChange(Math.max(page - 1, 1))}
+        type="button"
         disabled={page === 1}
       >
         <img
@@ -67,6 +68,7 @@ export const CustomPagination: React.FC<IPaginationProps> = ({
                 ? "bold after:content-[''] after:absolute after:bottom-[-3px] after:left-0 after:w-full after:h-[3px] after:bg-[#1B8354]"
                 : "hover:text-primary-600"
             }`}
+            type="button"
             onClick={() => onPageChange(pageNum)}
           >
             {pageNum}
@@ -77,6 +79,7 @@ export const CustomPagination: React.FC<IPaginationProps> = ({
       <button
         className="text-[#161616] disabled:opacity-50"
         onClick={() => onPageChange(Math.min(page + 1, totalPages))}
+        type="button"
         disabled={page === totalPages}
       >
         <img

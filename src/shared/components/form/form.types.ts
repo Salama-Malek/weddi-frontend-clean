@@ -87,6 +87,7 @@ export type FormElement =
     isLoading?: boolean;
     disabled?: boolean;
     condition?: boolean;
+    onClear?: () => void;
   }
   | {
     type: "checkbox";
@@ -159,7 +160,7 @@ export type SectionLayout = {
   isHidden?: boolean;
 };
 
-export type FormData = {
+export interface FormData {
   isDomestic?: string;
   EstablishmentData?: any;
   extractEstablishmentObject?: any;
@@ -188,6 +189,10 @@ export type FormData = {
   userName: string;
   region: Option | null;
   city: Option | null;
+  plaintiffRegion?: Option | null;
+  plaintiffCity?: Option | null;
+  defendantRegion?: Option | null;
+  defendantCity?: Option | null;
   occupation: Option | null;
   gender: Option | null;
   hijriDate: string;
@@ -197,10 +202,12 @@ export type FormData = {
   claimantStatus: string;
   defendantStatus?: string;
   main_category_of_the_government_entity?: string;
+  subcategory_of_the_government_entity?: string;
   DefendantFileNumber?: string;
   nationalIdNumber?: string;
   defendantHijriDOB?: string;
   defendantDetails?: string;
+  defendantGregorianDOB?: string;
   applicant: string;
   isPhone: boolean;
   phoneCode: string;
@@ -227,44 +234,87 @@ export type FormData = {
   dateofFirstworkingdayHijri?: string;
   acknowledge?: boolean;
   dateoflastworkingdayHijri?: string;
-};
+  // hassan add this for embacy user
+  Agent_EmbassyName: string,
+  Agent_EmbassyNationality: string,
+  Agent_EmbassyPhone: string,
+  Agent_EmbassyFirstLanguage: string,
+  Agent_EmbassyEmailAddress: string,
+
+
+  DefendantsPrisonerName?: string;
+  DefendantsRegion?: string;
+  DefendantsCity?: string;
+  DefendantsOccupation?: string;
+  DefendantsGender?: string;
+  DefendantsNationality?: string;
+  DefendantsPrisonerId?: string;
+
+  // Work Details Fields
+  salary?: string | number;
+  contractNumber?: string;
+  contractDateGregorian?: string;
+  contractExpiryDateGregorian?: string;
+  isStillEmployed?: boolean;
+  dateOfFirstWorkingDayGregorian?: string;
+  dateOfLastWorkingDayGregorian?: string;
+  dateOfFirstWorkingDayHijri?: string;
+  dateOfLastWorkingDayHijri?: string;
+  managerial_decision_date_hijri?: string;
+  managerial_decision_date_gregorian?: string;
+  managerialDecisionNumber?: string;
+
+  // Case Topics Date Fields
+  from_date_hijri?: string;
+  from_date_gregorian?: string;
+  to_date_hijri?: string;
+  to_date_gregorian?: string;
+  date_hijri?: string;
+  date_gregorian?: string;
+  injury_date_hijri?: string;
+  injury_date_gregorian?: string;
+  request_date_hijri?: string;
+  request_date_gregorian?: string;
+}
 
 export interface UseFormLayoutParams {
   t: (key: string) => string;
-  MainTopicID: Option | null;
+  MainTopicID: any;
   SubTopicID: any;
-  FromLocation: Option | null;
-  ToLocation: Option | null;
+  FromLocation: any;
+  ToLocation: any;
   AcknowledgementTerms: boolean;
   showLegalSection: boolean;
-  typesOfPenaltiesData?: any;
   showTopicData: boolean;
   setValue: (field: string, value: any) => void;
   handleAdd: () => void;
   handleAcknowledgeChange: (val: boolean) => void;
   handleAddTopic: () => void;
-  handleSend?: () => void;
+  handleSend: () => void;
   regulatoryText: string;
   decisionNumber: string;
   isEditing: boolean;
-  mainCategoryData?: any;
-  subCategoryData?: any;
-  watch?: any;
-  forAllowanceData?: any;
-  typeOfRequestLookupData?: any;
-  commissionTypeLookupData?: any;
-  accordingToAgreementLookupData?: any;
-  matchedSubCategory?: any;
-  subTopicsLoading?: boolean;
-  amountPaidData?: any;
-  leaveTypeData?: any;
-  travelingWayData?: any;
-  isValid?: any;
+  mainCategoryData: any;
+  subCategoryData: any;
+  watch: any;
+  forAllowanceData: any;
+  typeOfRequestLookupData: any;
+  commissionTypeLookupData: any;
+  accordingToAgreementLookupData: any;
+  matchedSubCategory: any;
+  subTopicsLoading: boolean;
+  amountPaidData: any;
+  leaveTypeData: any;
+  travelingWayData: any;
+  editTopic: any;
+  caseTopics: any;
+  typesOfPenaltiesData?: any;
+  setShowLegalSection: (value: boolean) => void;
+  setShowTopicData: (value: boolean) => void;
+  isValid?: boolean;
   isMainCategoryLoading?: boolean;
   isSubCategoryLoading?: boolean;
-  editTopic?: any;
-  caseTopics?: any;
-  subCategoryValue?: any;
+  control: any;
 }
 
 interface EstablishmentDetails {

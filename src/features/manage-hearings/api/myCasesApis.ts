@@ -1,8 +1,8 @@
 import { api } from "@/config/api";
 
-export type UserType = "Worker" | "Establishment" | "Legal representative" | "Agent";
+export type UserType = "Worker" | "Establishment" | "Legal representative" | "Agent" | "Embassy User";
 export type TableForType = "Plaintiff" | "Defendant";
-
+ 
 export interface GetMyCasesRequest {
   UserType: UserType;
   IDNumber: string;
@@ -17,7 +17,7 @@ export interface GetMyCasesRequest {
   MainGovernment?: string;
   SubGovernment?: string;
 }
-
+ 
 export interface GetCaseDetailsRequest {
   CaseID: string;
   AcceptedLanguage?: string;
@@ -28,7 +28,7 @@ export interface GetCaseDetailsRequest {
   MainGovernment:string,
   SubGovernment:string,
 }
-
+ 
 export const myCasesApi = api.injectEndpoints({
   overrideExisting: true,  // ⬅️ allow redefinition of endpoints
   endpoints: (builder) => ({
@@ -44,6 +44,7 @@ export const myCasesApi = api.injectEndpoints({
         SubGovernment,
         SearchID,
         Number700,
+        // Number700,
         AcceptedLanguage,
         SourceSystem = "E-Services",
       }) => {
@@ -63,12 +64,12 @@ export const myCasesApi = api.injectEndpoints({
         }
 
         // //console.log("UserType", UserType);
-
-
+ 
+ 
         if (UserType === "Establishment" && FileNumber) {
           params.FileNumber = FileNumber;
         }
-
+ 
         if (
           UserType === "Legal representative" &&
           MainGovernment &&
@@ -77,11 +78,11 @@ export const myCasesApi = api.injectEndpoints({
           params.MainGovernment = MainGovernment;
           params.SubGovernment = SubGovernment;
         }
-
+ 
         return { url: "/WeddiServices/V1/MyCases", params };
       },
     }),
-
+ 
     getCaseDetails: builder.query<any, GetCaseDetailsRequest>({
       query: ({
         CaseID,
@@ -103,14 +104,14 @@ export const myCasesApi = api.injectEndpoints({
           AcceptedLanguage,
           SourceSystem,
         };
-
+ 
         // //console.log("UserType", UserType);
-
-
+ 
+ 
         if (UserType === "Establishment" && FileNumber) {
           params.FileNumber = FileNumber;
         }
-
+ 
         if (
           UserType === "Legal representative" &&
           MainGovernment &&
@@ -119,9 +120,9 @@ export const myCasesApi = api.injectEndpoints({
           params.MainGovernment = MainGovernment;
           params.SubGovernment = SubGovernment;
         }
-        
+       
         params.CaseID = CaseID;
-
+ 
         return { url: "/WeddiServices/V1/GetCaseDetails", params };
         // return {
         //   url: "/WeddiServices/V1/GetCaseDetails",
@@ -132,6 +133,7 @@ export const myCasesApi = api.injectEndpoints({
     }),
   }),
 });
-
+ 
 // Updated Exports
 export const { useGetMyCasesQuery, useGetCaseDetailsQuery, useLazyGetCaseDetailsQuery } = myCasesApi;
+ 

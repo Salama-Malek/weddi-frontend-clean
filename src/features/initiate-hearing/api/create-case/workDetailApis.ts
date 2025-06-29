@@ -39,8 +39,9 @@ export const workDetailApi = api.injectEndpoints({
           LookupType: "DataElements",
           ModuleKey:
             userType === "Legal representative" ||
-            legalRepType === "Legal representative" ||
-            (userType === "Worker" && defendantStatus === "Government")
+              legalRepType === "Legal representative" ||
+              (userType === "Worker" && defendantStatus === "Government") ||
+              (userType === "Embassy User" && defendantStatus === "Government")
               ? "MCOTP2"
               : "MCOTP1",
           ModuleName: "ContractType",
@@ -53,14 +54,16 @@ export const workDetailApi = api.injectEndpoints({
     // 3. Extract Establishment Data
     getExtractEstablishmentData: builder.query<
       any,
-      { AcceptedLanguage: string }
+      { AcceptedLanguage: string, WorkerID: string, FileNumber: string, CaseID?: string }
     >({
-      query: ({ AcceptedLanguage }) => ({
+      query: ({ AcceptedLanguage, WorkerID, FileNumber, CaseID }) => ({
         url: `/WeddiServices/V1/ExtractEstabData`,
         params: {
-          WorkerID: "2445614924",
+          WorkerID: WorkerID,
           AcceptedLanguage,
           SourceSystem: "E-Services",
+          FileNumber: FileNumber,
+          ...(CaseID && { CaseID })
         },
       }),
     }),
@@ -78,8 +81,8 @@ export const workDetailApi = api.injectEndpoints({
           context === "worker"
             ? "WorkerRegion"
             : context === "establishment"
-            ? "EstablishmentRegion"
-            : "RegionName";
+              ? "EstablishmentRegion"
+              : "RegionName";
         return {
           url: `/WeddiServices/V1/MainLookUp`,
           params: {
@@ -117,6 +120,7 @@ export const {
   useGetContractTypeLookupQuery,
   useLazyGetContractTypeLookupQuery,
   useGetExtractEstablishmentDataQuery,
+  useLazyGetExtractEstablishmentDataQuery,
   useGetRegionLookupDataQuery,
   useGetCityLookupDataQuery,
 } = workDetailApi;

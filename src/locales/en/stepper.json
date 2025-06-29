@@ -1,33 +1,35 @@
 {
-  "initiate_a_hearing": "Initiate a hearing",
+  "initiate_a_hearing": "Initiate a case",
   "case_id_label":"Case Number",
   "new": "New",
   "step1": {
     "title": "Case Details",
-    "description": "Basic information and details of the hearing"
+    "description": "Basic information and details of the case"
   },
   "step2": {
-    "title": "Hearing topics",
-    "description": "Add topics related to the hearing"
+    "title": "Case topics",
+    "description": "Add topics related to the case"
   },
   "step3": {
     "title": "Review the request",
     "description": "Review the Case Details and confirm the acknowledgment"
   },
-  "request": "Review the Request and Confirm the Non-Malicious Nature of the Hearing",
+  "request": "Review the Request and Confirm the Non-Malicious Nature of the Case",
   "formWrapper": {
     "description": "To complete the Case Details, please enter the information in all the tabs before proceeding to the next step."
   },
   "cancel": "Cancel",
   "previous": "Previous",
   "save": "Save",
+  "save_success": "Case saved successfully",
+  "save_error": "Failed to save case",
   "submit": "Submit",
   "next": "Next",
   "new_text": "New",
-  "title": "Initiate a Hearing",
+  "title": "Initiate a Case",
   "tabs": {
-    "plaintiffDetails": "1. Plaintiff’s Details",
-    "defendantDetails": "2. Defendant’s Details",
+    "plaintiffDetails": "1. Plaintiff's Details",
+    "defendantDetails": "2. Defendant's Details",
     "workDetails": "3. Work Details"
   },
   "go_to_my_case":"Back to my cases"

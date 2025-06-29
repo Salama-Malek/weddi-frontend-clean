@@ -2,17 +2,15 @@ import { TokenClaims } from "@/features/login/components/AuthProvider";
 import {
   claimantDetailsPayload,
   defendantDetailsPayload,
+  defendantWorkerPayload,
   workDetailsPayload,
   hearingTopicsPayload,
   reviewPayload,
 } from "../api/create-case/payloads";
 import { useCookieState } from "./useCookieState";
-import { useTransition } from "react";
-import { useTranslation } from "react-i18next";
 
 export const usePayloadService = ({
   isDomestic,
- // EstablishmentData,
   userType,
   GetCookieEstablishmentData,
   getNicDetailObject,
@@ -26,37 +24,32 @@ export const usePayloadService = ({
     formData: any,
     userClaims: TokenClaims,
     userType: string,
-    language?: string,
-    getCaseId?: any,
-    getUserClaims?: any,
-    extractEstablishmentObject?: any,
+    language: string = "EN",
+    getCaseId?: string,
+    _unused1?: any,
+    _unused2?: any,
     caseTopics?: any,
     attorneyData?: any,
-    watch?: any
+    _unused3?: any
   ) => {
-    if (!formData) {
-      return null;
-    }
+    if (!formData) return null;
+
+    const lowUserType = userType?.toLowerCase();
+    const isLegalOrEstablishment =
+      lowUserType === "legal representative" || lowUserType === "establishment";
+
+    // Pick best NIC details fallback
+    const nicDetails =
+      formData?.NICDetails ||
+      getNicDetailObject?.NICDetails ||
+      getNicDetailObject ||
+      defendantDetails?.NICDetails ||
+      formData?.defendantDetails?.NICDetails;
 
     try {
       if (currentStep === 0) {
         switch (currentTab) {
           case 0:
-            //console.log("CASSAEASAS", getCaseId);
-            
-            //console.log("this is  step 0", claimantDetailsPayload(
-            //   buttonName,
-            //   formData,
-            //   userClaims,
-            //   isDomestic,
-            //   getNicDetailObject,
-            //   attorneyData,
-            //   userType,
-            //   getCaseId,
-            //   watch,
-            // ));
-
-            // send data corected by the team
             return claimantDetailsPayload(
               buttonName,
               formData,
@@ -66,57 +59,64 @@ export const usePayloadService = ({
               attorneyData,
               userType,
               getCaseId,
-              watch,
+              language
             );
 
           case 1:
+            if (isLegalOrEstablishment) {
+              return defendantWorkerPayload(
+                buttonName,
+                formData,
+                getCaseId,
+                language
+              );
+            }
             return defendantDetailsPayload(
               buttonName,
               formData,
-              //(EstablishmentData = EstablishmentData?.EstablishmentInfo),
+              nicDetails,
               getCaseId,
-              extractEstablishmentObject,
-              GetCookieEstablishmentData,
-              userType,
-              defendantStatus,
-              defendantDetails,
-              userClaims,
-              language,
+              language
             );
+
           case 2:
             return workDetailsPayload(
               buttonName,
               formData,
               getCaseId,
               userClaims,
-              language,
-              userType
+              userType,
+              language
             );
+
           default:
             throw new Error("Invalid tab");
         }
-      } else if (currentStep === 1) {
+      }
+
+      if (currentStep === 1) {
         return hearingTopicsPayload(
           buttonName,
           formData,
           getCaseId,
-          caseTopics
+          caseTopics,
+          userClaims,
+          userType,
+          language
         );
-      } else if (currentStep === 2) {
-        //console.log("tthisish",formData);
-
-        return {
-          CaseID: getCaseId,
-          Flow_CurrentScreen: "FinalReviewScreen",
-          Language: formData.selectedLanguage || "EN",
-          AckAggrements:
-            formData.acknowlodgement?.DataElements?.map((item: any) => ({
-              ElementKey: formData.selectedLanguage || "EN",
-              ElementValue: item.ElementValue,
-              Selected: "true",
-            })) || [],
-        };
       }
+
+      if (currentStep === 2) {
+        return reviewPayload(
+          buttonName,
+          formData,
+          getCaseId,
+          userClaims,
+          userType,
+          language
+        );
+      }
+
       throw new Error("Invalid step");
     } catch (error) {
       console.error("Error generating payload:", error);

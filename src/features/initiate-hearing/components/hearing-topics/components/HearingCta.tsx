@@ -35,6 +35,7 @@ const HearingCta: React.FC<Props> = memo(({ auditIcon, toggle }) => {
         variant="primary"
         size="md"
         onClick={handleClick}
+        type="button"
         className="text-md font-medium leading-[24px]"
       >
         {addTopicText}

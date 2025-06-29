@@ -2,7 +2,7 @@ import { Option } from "@/shared/components/form/form.types";
 import { RadioOption } from "@/shared/components/form/RadioGroup";
 import { useTranslation } from "react-i18next";
 
-export const useFormOptions = ({ EstablishmentData }: any) => {
+export const useFormOptions = ({ EstablishmentData = [] }: any) => {
   const { t } = useTranslation("hearingdetails");
 
   return {
@@ -20,17 +20,17 @@ export const useFormOptions = ({ EstablishmentData }: any) => {
     IsEstablishmentRadioOptions: [
       ...(EstablishmentData && EstablishmentData.length > 0
         ? EstablishmentData.map((establishment: any) => ({
-            label: establishment.EstablishmentName,
-            value: {
-              EstablishmentFileNumber: establishment.EstablishmentFileNumber,
-              ServiceEndDate: establishment.ServiceEndDate,
-              ServiceStartDate: establishment.ServiceStartDate,
-              EstablishmentName: establishment.EstablishmentName,
-              StillWorking: establishment.StillWorking,
-              OtherFlag: "Others",
-            },
-            description: t(" "),
-          }))
+          label: establishment.EstablishmentName,
+          value: {
+            EstablishmentFileNumber: establishment.EstablishmentFileNumber,
+            ServiceEndDate: establishment.ServiceEndDate,
+            ServiceStartDate: establishment.ServiceStartDate,
+            EstablishmentName: establishment.EstablishmentName,
+            StillWorking: establishment.StillWorking,
+            OtherFlag: "Others",
+          },
+          description: t(" "),
+        }))
         : []),
       {
         label: t("others"),
