@@ -3,6 +3,7 @@ import {
   UseFormSetValue,
   UseFormWatch,
   useForm,
+  useWatch,
 } from "react-hook-form";
 import {
   SectionLayout,
@@ -330,8 +331,8 @@ export const useFormLayout = ({
 
   // --- 1) form watches for rep‐only fields ---
   const applicantType = watch("applicant");
-  const workerAgentIdNumber = watch("workerAgentIdNumber") || "";
-  const workerAgentHijriDob = watch("workerAgentDateOfBirthHijri") || "";
+  const workerAgentIdNumber = useWatch({ control, name: "workerAgentIdNumber" }) || "";
+  const workerAgentHijriDob = useWatch({ control, name: "workerAgentDateOfBirthHijri" }) || "";
   const formattedWorkerAgentHijriDob = formatDateToYYYYMMDD(workerAgentHijriDob);
   const claimType = watch("claimantStatus");
   const applicant = watch("applicant");
