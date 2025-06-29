@@ -1181,16 +1181,6 @@ export const useFormLayout = ({
       validateFields();
     }, []);
 
-    // Add validation tracking for form state changes
-    useEffect(() => {
-      const subscription = watch((value, { name, type }) => {
-        if (name) {
-          trigger(name);
-        }
-      });
-      return () => subscription.unsubscribe();
-    }, [watch, trigger]);
-
     if (showPrincipalFields) {
       const pd = principalNICResponse?.NICDetails;
       sections.push({
