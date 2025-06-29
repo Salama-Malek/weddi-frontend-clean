@@ -149,13 +149,13 @@ const ClaimantDetailsContainer: React.FC<
   const representativeDob = formatDateToYYYYMMDD(watch("workerAgentDateOfBirthHijri"));
 
   // Debug NIC query parameters
-  console.log("=== NIC QUERY DEBUG ===");
-  console.log("principalId:", principalId);
-  console.log("principalDob:", principalDob);
-  console.log("userClaims.UserDOB:", userClaims.UserDOB);
-  console.log("claimantStatus:", claimantStatus);
-  console.log("principalId.length:", principalId?.length);
-  console.log("principalDob.length:", principalDob?.length);
+  // console.log("=== NIC QUERY DEBUG ===");
+  // console.log("principalId:", principalId);
+  // console.log("principalDob:", principalDob);
+  // console.log("userClaims.UserDOB:", userClaims.UserDOB);
+  // console.log("claimantStatus:", claimantStatus);
+  // console.log("principalId.length:", principalId?.length);
+  // console.log("principalDob.length:", principalDob?.length);
 
   // --- OTP setup ---
   const [sendOtp] = useSendOtpMutation();
@@ -364,8 +364,10 @@ const ClaimantDetailsContainer: React.FC<
     }
   }, [agentInfo, isAgentFetching, setValue, setError, clearErrors, t]);
 
-  const allowedIds =
-    agentInfo?.Agent?.AgentDetails?.map((d) => d.IdentityNumber) || [];
+  const allowedIds = useMemo(
+    () => agentInfo?.Agent?.AgentDetails?.map((d) => d.IdentityNumber) || [],
+    [agentInfo]
+  );
 
   // --- Validate agent-entered ID ---
   useEffect(() => {
@@ -382,26 +384,26 @@ const ClaimantDetailsContainer: React.FC<
         clearErrors("idNumber");
       }
     }
-  }, [claimantStatus, representativeId, allowedIds, userId, setValue]);
+  }, [claimantStatus, representativeId, allowedIds, userId, setValue, setError, clearErrors, t]);
 
   // --- Save mutation ---
   const [saveClaimantDetails] = useSaveClaimantDetailsMutation();
   const handleSubmitStep = async () => {
     const formData = watch();
-    console.log("=== PAYLOAD DEBUG ===");
-    console.log("claimantStatus:", formData?.claimantStatus);
-    console.log("applicantType:", formData?.applicantType);
-    console.log("agentType:", formData?.agentType);
-    console.log("Full formData:", formData);
-    console.log("userName:", formData?.userName);
-    console.log("plaintiffRegion:", formData?.plaintiffRegion);
-    console.log("plaintiffCity:", formData?.plaintiffCity);
-    console.log("occupation:", formData?.occupation);
-    console.log("gender:", formData?.gender);
-    console.log("nationality:", formData?.nationality);
-    console.log("hijriDate:", formData?.hijriDate);
-    console.log("gregorianDate:", formData?.gregorianDate);
-    console.log("phoneNumber:", formData?.phoneNumber);
+    // console.log("=== PAYLOAD DEBUG ===");
+    // console.log("claimantStatus:", formData?.claimantStatus);
+    // console.log("applicantType:", formData?.applicantType);
+    // console.log("agentType:", formData?.agentType);
+    // console.log("Full formData:", formData);
+    // console.log("userName:", formData?.userName);
+    // console.log("plaintiffRegion:", formData?.plaintiffRegion);
+    // console.log("plaintiffCity:", formData?.plaintiffCity);
+    // console.log("occupation:", formData?.occupation);
+    // console.log("gender:", formData?.gender);
+    // console.log("nationality:", formData?.nationality);
+    // console.log("hijriDate:", formData?.hijriDate);
+    // console.log("gregorianDate:", formData?.gregorianDate);
+    // console.log("phoneNumber:", formData?.phoneNumber);
     
     const payload: any = {
       CreatedBy: userId,
@@ -431,8 +433,8 @@ const ClaimantDetailsContainer: React.FC<
       DomesticWorker: formData?.isDomestic ? "true" : "false",
       IDNumber: formData?.applicantType === "principal" ? userId : formData?.workerAgentIdNumber,
     };
-    console.log("Final PlaintiffType in payload:", payload.PlaintiffType);
-    console.log("Full payload:", payload);
+    // console.log("Final PlaintiffType in payload:", payload.PlaintiffType);
+    // console.log("Full payload:", payload);
     
     if (!payload.Plaintiff_City) {
       payload.Plaintiff_City = "1";

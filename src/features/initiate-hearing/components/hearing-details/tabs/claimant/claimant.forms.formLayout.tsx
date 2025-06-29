@@ -373,16 +373,16 @@ export const useFormLayout = ({
     workerAgentIdNumber?.length === 10 &&
     formattedWorkerAgentHijriDob?.length === 8;
 
-  console.log("Claimant Status:", claimantStatus);
-  console.log("Worker Agent ID Number:", workerAgentIdNumber);
-  console.log("Worker Agent Hijri DOB:", workerAgentHijriDob);
-  console.log("Should Fetch NIC:", shouldFetchNic);
-  console.log("Claimant Status Check:", claimantStatus === "representative");
-  console.log("ID Number Length Check:", workerAgentIdNumber?.length === 10);
-  console.log(
-    "Hijri DOB Length Check:",
-    formattedWorkerAgentHijriDob?.length === 8
-  );
+  // console.log("Claimant Status:", claimantStatus);
+  // console.log("Worker Agent ID Number:", workerAgentIdNumber);
+  // console.log("Worker Agent Hijri DOB:", workerAgentHijriDob);
+  // console.log("Should Fetch NIC:", shouldFetchNic);
+  // console.log("Claimant Status Check:", claimantStatus === "representative");
+  // console.log("ID Number Length Check:", workerAgentIdNumber?.length === 10);
+  // console.log(
+  //   "Hijri DOB Length Check:",
+  //   formattedWorkerAgentHijriDob?.length === 8
+  // );
 
   useEffect(() => {
     if (!shouldFetchNic) {
@@ -416,9 +416,9 @@ export const useFormLayout = ({
     { skip: !shouldFetchNic }
   );
 
-  console.log("NIC Agent Data:", nicAgent);
-  console.log("NIC Agent Loading:", nicAgentLoading);
-  console.log("NIC Agent Error:", nicAgentError);
+  // console.log("NIC Agent Data:", nicAgent);
+  // console.log("NIC Agent Loading:", nicAgentLoading);
+  // console.log("NIC Agent Error:", nicAgentError);
 
   const disableNicFields = !shouldFetchNic || nicAgentLoading;
 
@@ -529,16 +529,16 @@ export const useFormLayout = ({
   }, [shouldFetchNic, nicAgent, nicAgentError, setValue, setError, t]);
 
   // Add validation for city field
+  const watchedCity = watch("plaintiffCity");
   useEffect(() => {
-    const currentCity = watch("plaintiffCity");
     if (
-      !currentCity ||
-      (typeof currentCity === "object" && !currentCity.value)
+      !watchedCity ||
+      (typeof watchedCity === "object" && !watchedCity.value)
     ) {
-      setValue("plaintiffCity", { value: "1", label: "RIYADH" }); // Default to Riyadh
+      setValue("plaintiffCity", { value: "1", label: "RIYADH" });
       clearErrors("plaintiffCity");
     }
-  }, [watch("plaintiffCity"), setValue, clearErrors]);
+  }, [watchedCity, setValue, clearErrors]);
 
   // –––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
   const plaintiffStatus = watch("plaintiffStatus");
@@ -583,27 +583,27 @@ export const useFormLayout = ({
 
   // Autofill principal-claimant fields when we have that response
   useEffect(() => {
-    console.log("=== PRINCIPAL NIC EFFECT ===");
-    console.log("claimantStatus:", watch("claimantStatus"));
-    console.log("principalNICResponse:", principalNICResponse);
-    console.log("principalNICResponse?.NICDetails:", principalNICResponse?.NICDetails);
+    // console.log("=== PRINCIPAL NIC EFFECT ===");
+    // console.log("claimantStatus:", watch("claimantStatus"));
+    // console.log("principalNICResponse:", principalNICResponse);
+    // console.log("principalNICResponse?.NICDetails:", principalNICResponse?.NICDetails);
     
     if (
       watch("claimantStatus") === "principal" &&
       principalNICResponse?.NICDetails
     ) {
       const nic = principalNICResponse.NICDetails;
-      console.log("NIC Details:", nic);
+      // console.log("NIC Details:", nic);
 
       if (nic.PlaintiffName) {
-        console.log("Setting userName to:", nic.PlaintiffName);
+        // console.log("Setting userName to:", nic.PlaintiffName);
         setValue("userName", nic.PlaintiffName || "", {
           shouldValidate: nic.PlaintiffName !== "",
         });
       }
 
       if (nic.Region_Code) {
-        console.log("Setting plaintiffRegion to:", { value: nic.Region_Code, label: nic.Region });
+        // console.log("Setting plaintiffRegion to:", { value: nic.Region_Code, label: nic.Region });
         setValue(
           "plaintiffRegion",
           {
@@ -617,7 +617,7 @@ export const useFormLayout = ({
       }
 
       if (nic.City_Code) {
-        console.log("Setting plaintiffCity to:", { value: nic.City_Code, label: nic.City });
+        // console.log("Setting plaintiffCity to:", { value: nic.City_Code, label: nic.City });
         setValue(
           "plaintiffCity",
           { value: nic.City_Code || "", label: nic.City || "" },
@@ -628,7 +628,7 @@ export const useFormLayout = ({
       }
 
       if (nic.Occupation_Code) {
-        console.log("Setting occupation to:", { value: nic.Occupation_Code, label: nic.Occupation });
+        // console.log("Setting occupation to:", { value: nic.Occupation_Code, label: nic.Occupation });
         setValue("occupation", {
           value: nic.Occupation_Code || "",
           label: nic.Occupation || "",
@@ -638,7 +638,7 @@ export const useFormLayout = ({
       }
 
       if (nic.Gender_Code) {
-        console.log("Setting gender to:", { value: nic.Gender_Code, label: nic.Gender });
+        // console.log("Setting gender to:", { value: nic.Gender_Code, label: nic.Gender });
         setValue("gender", {
           value: nic.Gender_Code || "",
           label: nic.Gender || "",
@@ -648,7 +648,7 @@ export const useFormLayout = ({
       }
 
       if (nic.Nationality_Code) {
-        console.log("Setting nationality to:", { value: nic.Nationality_Code, label: nic.Nationality });
+        // console.log("Setting nationality to:", { value: nic.Nationality_Code, label: nic.Nationality });
         setValue("nationality", {
           value: nic.Nationality_Code || "",
           label: nic.Nationality || "",
@@ -658,14 +658,14 @@ export const useFormLayout = ({
       }
 
       if (nic.DateOfBirthHijri) {
-        console.log("Setting hijriDate to:", nic.DateOfBirthHijri);
+        // console.log("Setting hijriDate to:", nic.DateOfBirthHijri);
         setValue("hijriDate", nic.DateOfBirthHijri || "", {
           shouldValidate: nic.DateOfBirthHijri !== "",
         });
       }
 
       if (nic?.DateOfBirthGregorian) {
-        console.log("Setting gregorianDate to:", nic.DateOfBirthGregorian);
+        // console.log("Setting gregorianDate to:", nic.DateOfBirthGregorian);
         setValue("gregorianDate", nic?.DateOfBirthGregorian || "", {
           shouldValidate: nic?.DateOfBirthGregorian !== "",
         });
@@ -674,7 +674,7 @@ export const useFormLayout = ({
       setValue("applicant", nic.Applicant || "");
 
       if (nic.PhoneNumber) {
-        console.log("Setting phoneNumber to:", nic.PhoneNumber);
+        // console.log("Setting phoneNumber to:", nic.PhoneNumber);
         setValue("phoneNumber", nic.PhoneNumber.toString(), {
           shouldValidate: nic.PhoneNumber !== "",
         });
@@ -795,13 +795,13 @@ export const useFormLayout = ({
   );
 
   // Add effect to clear city when region changes
+  const watchedRegion = watch("plaintiffRegion");
   useEffect(() => {
-    const currentRegion = watch("plaintiffRegion");
-    if (currentRegion) {
+    if (watchedRegion) {
       setValue("plaintiffCity", null);
       clearErrors("plaintiffCity");
     }
-  }, [watch("plaintiffRegion"), setValue, clearErrors]);
+  }, [watchedRegion, setValue, clearErrors]);
 
   // Add validation for city field
   useEffect(() => {
@@ -1712,7 +1712,7 @@ export const useFormLayout = ({
           options: ClaimantStatusRadioOptions,
           value: claimantStatus,
           onChange: (value: string) => {
-            console.log("Radio button changed to:", value);
+            // console.log("Radio button changed to:", value);
             setValue("claimantStatus", value);
           },
           validation: { required: "Region is required" },
