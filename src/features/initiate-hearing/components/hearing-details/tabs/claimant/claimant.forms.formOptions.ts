@@ -3,18 +3,7 @@ import { RadioOption } from "@/shared/components/form/RadioGroup";
 import { useTranslation } from "react-i18next";
 import CountryCodes from "../../../../../../../public/CountryCode.json";
 
-export interface ClaimantFormOptions {
-  ClaimantStatusRadioOptions: RadioOption[];
-  IsDomesticRadioOptions: RadioOption[];
-  OccupationOptions: Option[];
-  GenderOptions: Option[];
-  RegionOptions: Option[];
-  CodeOptions: Option[];
-  NationalityOptions: Option[];
-  CityOptions: Option[];
-}
-
-export const useFormOptions = (): ClaimantFormOptions => {
+export const useFormOptions = () => {
   const { t } = useTranslation("hearingdetails");
 
   // Map CountryCodes JSON to Option[] for dropdown
@@ -39,11 +28,6 @@ export const useFormOptions = (): ClaimantFormOptions => {
     GenderOptions: [
       { value: "M", label: "Male" },
       { value: "F", label: "Female" },
-    ] as Option[],
-
-    RegionOptions: [
-      { value: "riyadh", label: "Riyadh" },
-      { value: "makkah", label: "Makkah" },
     ] as Option[],
 
     CodeOptions,
