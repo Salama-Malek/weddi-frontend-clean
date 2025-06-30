@@ -1,4 +1,5 @@
-import { SectionLayout } from "@/shared/components/form/form.types";
+
+import { SectionLayout, FormData } from "@/shared/components/form/form.types";
 import { UseFormWatch, UseFormSetValue } from "react-hook-form";
 import { TFunction } from "i18next";
 
@@ -16,6 +17,7 @@ export const buildAgentInformationSection = (
   setValue: UseFormSetValue<any>,
   t: TFunction,
   extraChildren: SectionLayout["children"] = []
+
 ): SectionLayout => {
   return {
     title: t("agentInformation"),
