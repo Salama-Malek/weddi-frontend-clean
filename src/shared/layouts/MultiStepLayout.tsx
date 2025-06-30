@@ -1,7 +1,8 @@
 import React, { Suspense, useMemo, useEffect } from "react";
 import TableLoader from "@/shared/components/loader/TableLoader";
 import { useLanguageDirection } from "@/i18n/LanguageDirectionProvider";
-import Tabs from "../modules/case-creation/components/tabs/Tabs";
+// import Tabs from "../modules/case-creation/components/tabs/Tabs";
+import Tabs from "../modules/case-creation/components/tabs/NewTabs";
 import { useTabs } from "../modules/case-creation/components/tabs/tabsConfig";
 
 interface MultiStepLayoutProps {
@@ -20,12 +21,15 @@ const MultiStepLayout: React.FC<MultiStepLayoutProps> = ({
   const { isRTL } = useLanguageDirection();
   const tabs = useTabs();
 
-  const handleTabChange = (tabIndex: number) => {
-    if (tabIndex >= 0 && tabIndex < tabs.length) {
-      localStorage.setItem("tab", tabIndex.toString());
-      updateParams(currentStep, tabIndex);
-    }
-  };
+  const handleTabChange = React.useCallback(
+    (tabIndex: number) => {
+      if (tabIndex >= 0 && tabIndex < tabs.length) {
+        localStorage.setItem("tab", tabIndex.toString());
+        updateParams(currentStep, tabIndex);
+      }
+    },
+    [tabs, currentStep, updateParams]
+  );
 
   const memoizedTabs = useMemo(() => {
     return (
