@@ -34,7 +34,8 @@ import { useSaveClaimantDetailsMutation } from "@/features/initiate-hearing/api/
 import { useAPIFormsData } from "@/providers/FormContext";
 import { useIncompleteCaseHandler } from '@/features/initiate-hearing/hooks/useIncompleteCaseHandler';
 
-import { useFormLayout } from "./claimant.forms.formLayout";
+// import { useFormLayout as useFormLayoutOld } from "./claimant.forms.formLayout";
+import { useFormLayout } from "./claimant.forms.refactored";
 import { useEstablishmentPlaintiffFormLayout } from "../../establishment-tabs/plaintiff/plaintiff.forms.formLayout";
 import { useLegalRepPlaintiffFormLayout } from "../../establishment-tabs/legal-representative/plaintiff.forms.formLayout";
 import { embasyUserFormLayout } from "../../embasy/plaintiff/embasyCalimnt.forms.formLayout";
@@ -515,56 +516,7 @@ const ClaimantDetailsContainer: React.FC<
       });
     }
     // Default return if no specific user type matches
-    return useFormLayout({
-      control,
-      setValue: setValue as any,
-      watch: watch as any,
-      plaintiffRegionData: regionData?.DataElements,
-      plaintiffCityData: cityData?.DataElements,
-      occupationData: occupationData?.DataElements,
-      genderData: genderData?.DataElements,
-      nationalityData: nationalityData?.DataElements,
-      countryData: countryData?.DataElements,
-      sendOtpHandler,
-      lastSentOtp,
-      isVerified,
-      isNotVerified,
-      setIsNotVerified,
-      agentInfoData: (agentInfo ?? {}) as AgentInfo,
-      apiLoadingStates: {
-        agent: isAgencyValidating,
-        nic: claimantStatus === "principal" ? nicLoading : nicLoading,
-        estab: false,
-        incomplete: false,
-      },
-      userTypeLegalRepData: legalRep,
-      onAgencyNumberChange: (value: string) => {
-        if (value.length === 9 && watch("agentType") === "local_agency") {
-          setIsAgencyValidating(true);
-          setError("agencyNumber", {
-            type: "validate",
-            message: t("validatingAgencyNumber"),
-          });
-          refetchAttorneyDetails();
-        } else {
-          setValue("agentName", "");
-          setValue("agencyStatus", "");
-          setValue("agencySource", "");
-          setIsAgencyValidating(false);
-        }
-      },
-      setError,
-      clearErrors,
-      verifyOtp: sendOtpHandler,
-      isVerify: isVerified,
-      principalNICResponse,
-      principalNICRefetch,
-      representativeNICResponse,
-      register,
-      errors,
-      trigger,
-      isValid,
-    });
+    return useFormLayout();
   };
 
   const rightLayout = loadFormLayoutFunction();
