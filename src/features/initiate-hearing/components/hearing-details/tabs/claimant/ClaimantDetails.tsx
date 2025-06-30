@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import { skipToken } from "@reduxjs/toolkit/query";
 import { useTranslation } from "react-i18next";
 import withStepNavigation, {
@@ -10,6 +10,7 @@ import { DynamicForm } from "@/shared/components/form/DynamicForm";
 import { FormData } from "@/shared/components/form/form.types";
 import { toast } from "react-toastify";
 import Loader from "@/shared/components/loader";
+import { formatDateToYYYYMMDD } from "@/shared/lib/helpers";
 
 import {
   useGetNICDetailsQuery,
@@ -28,12 +29,15 @@ import { useGetIncompleteCaseQuery } from "@/features/dashboard/api/api";
 import { useGetUserTypeLegalRepQuery } from "@/features/login/api/loginApis";
 import { useOtpVerification } from "@/features/initiate-hearing/hooks/useOtpVerification";
 import { useCookieState } from "@/features/initiate-hearing/hooks/useCookieState";
+import useCaseDetailsPrefill from "@/features/initiate-hearing/hooks/useCaseDetailsPrefill";
 import { useSaveClaimantDetailsMutation } from "@/features/initiate-hearing/api/create-case/apis";
 import { useAPIFormsData } from "@/providers/FormContext";
+import { useIncompleteCaseHandler } from '@/features/initiate-hearing/hooks/useIncompleteCaseHandler';
 
 import { useFormLayout } from "./claimant.forms.formLayout";
 import { useEstablishmentPlaintiffFormLayout } from "../../establishment-tabs/plaintiff/plaintiff.forms.formLayout";
 import { useLegalRepPlaintiffFormLayout } from "../../establishment-tabs/legal-representative/plaintiff.forms.formLayout";
+import { embasyUserFormLayout } from "../../embasy/plaintiff/embasyCalimnt.forms.formLayout";
 
 interface NICDetailsResponse {
   DataElements: Array<{
@@ -105,8 +109,10 @@ const ClaimantDetailsContainer: React.FC<
   WithStepNavigationProps & {
     setError: (name: string, error: any) => void;
     clearErrors: (name: string) => void;
+    trigger: (name: string) => void;
+    isValid: boolean;
   }
-> = ({ register, errors, setValue, watch, control, setError, clearErrors }) => {
+> = ({ register, errors, setValue, watch, control, setError, clearErrors, trigger, isValid }) => {
   const { t, i18n } = useTranslation("hearingdetails");
   const lang = i18n.language.toUpperCase();
   const [showSelfIdErrorModal, setShowSelfIdErrorModal] = useState(false);
@@ -114,34 +120,42 @@ const ClaimantDetailsContainer: React.FC<
 
   const [getCookie, setCookie] = useCookieState();
   const userClaims = getCookie("userClaims");
-  const userId = userClaims.UserID;
-  const userName = userClaims.FullName;
+  const userId = userClaims?.UserID || '';
+  const userName = userClaims?.FullName || '';
   const userType = getCookie("userType");
 
-  // Clean The Form Data On load The Component
   const { clearFormData } = useAPIFormsData();
   useEffect(() => {
-    setValue("region", { value: "", label: "" });
-    setValue("city", { value: "", label: "" });
-  }, []);
+    // Keep this for initial setup, but individual fields are managed
+    // by useIncompleteCaseHandler and other hooks.
+  }, [clearFormData]);
 
-  // --- Form-state watchers ---
-  const applicantType = watch("applicantType") as
-    | "principal"
-    | "representative";
-  const plaintiffId =
-    applicantType === "representative"
-      ? (watch("idNumber") as string)
-      : undefined;
-  const plaintiffHijriDOB =
-    applicantType === "representative" ? (watch("hijriDate") as string) : "";
+  useIncompleteCaseHandler(setValue, trigger);
+  useCaseDetailsPrefill(setValue, trigger);
 
-  // Set local_agency as default when agent type is selected
+  const claimantStatus = watch("claimantStatus") as "principal" | "representative";
+
   useEffect(() => {
-    if (applicantType === "representative") {
-      setValue("agentType", "local_agency");
+    // Set default claimant status on mount to avoid race conditions
+    if (!watch("claimantStatus")) {
+      setValue("claimantStatus", "principal");
     }
-  }, [applicantType, setValue]);
+  }, [watch, setValue]);
+  
+  const principalId = userId;
+  const principalDob = formatDateToYYYYMMDD(userClaims.UserDOB);
+
+  const representativeId = watch("workerAgentIdNumber") as string;
+  const representativeDob = formatDateToYYYYMMDD(watch("workerAgentDateOfBirthHijri"));
+
+  // Debug NIC query parameters
+  console.log("=== NIC QUERY DEBUG ===");
+  console.log("principalId:", principalId);
+  console.log("principalDob:", principalDob);
+  console.log("userClaims.UserDOB:", userClaims.UserDOB);
+  console.log("claimantStatus:", claimantStatus);
+  console.log("principalId.length:", principalId?.length);
+  console.log("principalDob.length:", principalDob?.length);
 
   // --- OTP setup ---
   const [sendOtp] = useSendOtpMutation();
@@ -154,8 +168,8 @@ const ClaimantDetailsContainer: React.FC<
   } = useOtpVerification({
     phoneCode: { value: (watch("phoneCode") as string) || "" },
     phoneNumber: (watch("phoneNumber") as string) || "",
-    plaintiffId: applicantType === "principal" ? userId : plaintiffId,
-    plaintiffName: applicantType === "principal" ? userName : "",
+    plaintiffId: claimantStatus === "principal" ? userId : representativeId,
+    plaintiffName: claimantStatus === "principal" ? userName : "",
     setValue: setValue as any,
   });
 
@@ -174,12 +188,12 @@ const ClaimantDetailsContainer: React.FC<
     {
       AcceptedLanguage: lang,
       SourceSystem: "E-Services",
-      selectedWorkerRegion: { value: watch("region")?.value || "" },
+      selectedWorkerRegion: typeof watch("plaintiffRegion") === 'object' ? watch("plaintiffRegion")?.value : watch("plaintiffRegion") || "",
       ModuleName: userType.toLowerCase().includes("establishment")
         ? "EstablishmentCity"
         : "WorkerCity",
     },
-    { skip: !watch("region") }
+    { skip: !(typeof watch("plaintiffRegion") === 'object' ? watch("plaintiffRegion")?.value : watch("plaintiffRegion")) }
   );
   const { data: occupationData } = useGetOccupationLookupDataQuery({
     AcceptedLanguage: lang,
@@ -198,32 +212,49 @@ const ClaimantDetailsContainer: React.FC<
     SourceSystem: "E-Services",
   });
 
-  // --- NIC details ---
+  // --- NIC details hooks, one for each case ---
   const {
-    data: nicDetails,
-    isFetching: nicLoading,
-    isSuccess: nicSuccess,
-    refetch: refetchNicDetails,
+    data: principalNICResponse,
+    isFetching: principalNICLoading,
+    refetch: principalNICRefetch,
   } = useGetNICDetailsQuery(
-    applicantType === "principal"
-      ? {
-          IDNumber: userId,
-          DateOfBirth: userClaims.UserDOB,
-          AcceptedLanguage: lang,
-          SourceSystem: "E-Services",
-        }
-      : {
-          IDNumber: plaintiffId || "",
-          DateOfBirth: plaintiffHijriDOB,
-          AcceptedLanguage: lang,
-          SourceSystem: "E-Services",
-        },
+    {
+      IDNumber: principalId,
+      DateOfBirth: principalDob || "",
+      AcceptedLanguage: lang,
+      SourceSystem: "E-Services",
+    },
     {
       skip:
-        (applicantType === "principal" && (!userId || userId.length !== 10 || !userClaims.UserDOB)) ||
-        (applicantType === "representative" && (!plaintiffId || plaintiffId.length !== 10 || !plaintiffHijriDOB))
+        claimantStatus !== "principal" ||
+        !principalId ||
+        principalId.length !== 10 ||
+        !principalDob,
     }
   );
+
+  const {
+    data: representativeNICResponse,
+    isFetching: representativeNICLoading,
+    refetch: representativeNICRefetch,
+  } = useGetNICDetailsQuery(
+    {
+      IDNumber: representativeId,
+      DateOfBirth: representativeDob || "",
+      AcceptedLanguage: lang,
+      SourceSystem: "E-Services",
+    },
+    {
+      skip:
+        claimantStatus !== "representative" ||
+        !representativeId ||
+        representativeId.length !== 10 ||
+        !representativeDob ||
+        representativeDob.length !== 8,
+    }
+  );
+  
+  const nicLoading = principalNICLoading || representativeNICLoading;
 
   // --- Agent info ---
   const {
@@ -248,11 +279,15 @@ const ClaimantDetailsContainer: React.FC<
     }
   );
 
+  // Track if error toast has been shown to prevent duplicates
+  const errorToastShownRef = useRef(false);
+
   useEffect(() => {
     if (!agentInfo && !isAgentFetching) return;
 
     if (isAgentFetching) {
       setIsAgencyValidating(true);
+      errorToastShownRef.current = false; // Reset when starting new fetch
       return;
     }
 
@@ -274,7 +309,12 @@ const ClaimantDetailsContainer: React.FC<
         (d) => d.ErrorDesc !== undefined
       )?.ErrorDesc;
 
-      toast.error(errorDesc || t("error.invalidAgencyNumber"));
+      // Only show toast if not already shown
+      if (!errorToastShownRef.current) {
+        toast.error(errorDesc || t("error.invalidAgencyNumber"));
+        errorToastShownRef.current = true;
+      }
+
       setError("agencyNumber", {
         type: "validate",
         message: errorDesc || t("error.invalidAgencyNumber"),
@@ -320,6 +360,7 @@ const ClaimantDetailsContainer: React.FC<
       setValue("agencySource", agentInfo?.Agent.MandateSource || "");
       toast.success(t("agencyFound"));
       clearErrors("agencyNumber");
+      errorToastShownRef.current = false; // Reset on success
     }
   }, [agentInfo, isAgentFetching, setValue, setError, clearErrors, t]);
 
@@ -328,11 +369,11 @@ const ClaimantDetailsContainer: React.FC<
 
   // --- Validate agent-entered ID ---
   useEffect(() => {
-    if (applicantType === "representative" && plaintiffId) {
-      if (plaintiffId === userId) {
+    if (claimantStatus === "representative" && representativeId) {
+      if (representativeId === userId) {
         setShowSelfIdErrorModal(true);
         setValue("idNumber", "");
-      } else if (!allowedIds.includes(plaintiffId)) {
+      } else if (!allowedIds.includes(representativeId)) {
         setError("idNumber", {
           type: "validate",
           message: t("error.idNotUnderAgency"),
@@ -341,17 +382,75 @@ const ClaimantDetailsContainer: React.FC<
         clearErrors("idNumber");
       }
     }
-  }, [applicantType, plaintiffId, allowedIds, userId, setValue]);
+  }, [claimantStatus, representativeId, allowedIds, userId, setValue]);
 
   // --- Save mutation ---
   const [saveClaimantDetails] = useSaveClaimantDetailsMutation();
   const handleSubmitStep = async () => {
+    const formData = watch();
+    console.log("=== PAYLOAD DEBUG ===");
+    console.log("claimantStatus:", formData?.claimantStatus);
+    console.log("applicantType:", formData?.applicantType);
+    console.log("agentType:", formData?.agentType);
+    console.log("Full formData:", formData);
+    console.log("userName:", formData?.userName);
+    console.log("plaintiffRegion:", formData?.plaintiffRegion);
+    console.log("plaintiffCity:", formData?.plaintiffCity);
+    console.log("occupation:", formData?.occupation);
+    console.log("gender:", formData?.gender);
+    console.log("nationality:", formData?.nationality);
+    console.log("hijriDate:", formData?.hijriDate);
+    console.log("gregorianDate:", formData?.gregorianDate);
+    console.log("phoneNumber:", formData?.phoneNumber);
+    
     const payload: any = {
       CreatedBy: userId,
-      UserType: applicantType === "principal" ? "Worker" : "Agent",
-      ApplicantType: applicantType === "principal" ? "Worker" : "Agent",
-      PlaintiffId: applicantType === "principal" ? userId : plaintiffId,
+      SourceSystem: "E-Services",
+      Flow_CurrentScreen: "PlaintiffDetails",
+      AcceptedLanguage: "EN",
+      Flow_ButtonName: "Next",
+      CaseID: getCookie("caseId") || "",
+      UserType: "Worker",
+      ApplicantType: "Worker",
+      PlaintiffId: formData?.applicantType === "principal" ? userId : formData?.workerAgentIdNumber,
+      PlaintiffType: formData?.applicantType === "principal" ? "Self(Worker)" : "Agent",
+      PlaintiffName: formData?.userName,
+      PlaintiffHijiriDOB: formData?.hijriDate,
+      Plaintiff_ApplicantBirthDate: formData?.gregorianDate,
+      Plaintiff_PhoneNumber: formData?.phoneNumber,
+      Plaintiff_Region: formData?.plaintiffRegion?.value || formData?.region?.value || formData?.plaintiffRegion || formData?.region || "",
+      Plaintiff_City: formData?.plaintiffCity?.value || formData?.city?.value || formData?.plaintiffCity || formData?.city || "",
+      JobPracticing: formData?.occupation?.value || formData?.occupation || "",
+      Gender: formData?.gender?.value || formData?.gender || "",
+      Worker_Nationality: formData?.nationality?.value || formData?.nationality || "",
+      Plaintiff_JobLocation: formData?.plaintiffRegion?.value || formData?.region?.value || formData?.plaintiffRegion || formData?.region || "",
+      IsGNRequired: formData?.isPhone || false,
+      CountryCode: formData?.phoneCode?.value || "",
+      GlobalPhoneNumber: formData?.interPhoneNumber || "",
+      IsGNOtpVerified: formData?.isVerified || false,
+      DomesticWorker: formData?.isDomestic ? "true" : "false",
+      IDNumber: formData?.applicantType === "principal" ? userId : formData?.workerAgentIdNumber,
     };
+    console.log("Final PlaintiffType in payload:", payload.PlaintiffType);
+    console.log("Full payload:", payload);
+    
+    if (!payload.Plaintiff_City) {
+      payload.Plaintiff_City = "1";
+    }
+
+    if (formData?.applicantType === "representative") {
+      payload.Agent_AgentID = userId;
+      payload.Agent_MandateNumber = formData?.agencyNumber;
+      payload.Agent_PhoneNumber = formData?.mobileNumber;
+      payload.Agent_Name = formData?.agentName;
+      payload.Agent_MandateStatus = formData?.agencyStatus;
+      payload.Agent_MandateSource = formData?.agencySource;
+      payload.Agent_ResidencyAddress = formData?.Agent_ResidencyAddress;
+      payload.Agent_CurrentPlaceOfWork = formData?.Agent_CurrentPlaceOfWork;
+      payload.Agent_Mobilenumber = formData?.mobileNumber;
+      payload.CertifiedBy = formData?.agentType === "local_agency" ? "CB1" : "CB2";
+    }
+
     const isCaseCreated = !!getCookie("caseId");
     await saveClaimantDetails({ data: payload, isCaseCreated });
   };
@@ -377,96 +476,98 @@ const ClaimantDetailsContainer: React.FC<
 
   const apiLoadingStates = {
     agent: isAgencyValidating,
-    nic: applicantType === "principal" ? nicLoading : nicLoading,
+    nic: claimantStatus === "principal" ? nicLoading : nicLoading,
     estab: false,
     incomplete: false,
   };
 
-  // --- Build form layouts ---
-  const formLayoutSelf = useFormLayout({
-    control,
-    // react-hook-form API
-    setValue: setValue as any,
-    watch: watch as any,
+  const loadFormLayoutFunction = () => {
+    if (userType?.toLowerCase().includes("establishment")) {
+      return useEstablishmentPlaintiffFormLayout({
+        establishmentDetails: est?.EstablishmentInfo?.[0] || null,
+        apiLoadingStates,
+        regionData: regionData?.DataElements,
+        cityData: cityData?.DataElements,
+        setValue,
+      });
+    }
+    if (userType?.toLowerCase().includes("legal representative")) {
+      return useLegalRepPlaintiffFormLayout(
+        watch as any,
+        legalRep,
+        setValue as any
+      );
+    }
+    if (userType?.toLowerCase().includes("embassy user")) {
+      return embasyUserFormLayout({
+        control,
+        setValue: setValue as any,
+        watch: watch as any,
+        regionData: regionData?.DataElements,
+        cityData: cityData?.DataElements,
+        occupationData: occupationData?.DataElements,
+        genderData: genderData?.DataElements,
+        nationalityData: nationalityData?.DataElements,
+        countryData: countryData?.DataElements,
+        isVerified,
+        setError,
+        clearErrors,
+      });
+    }
+    // Default return if no specific user type matches
+    return useFormLayout({
+      control,
+      setValue: setValue as any,
+      watch: watch as any,
+      plaintiffRegionData: regionData?.DataElements,
+      plaintiffCityData: cityData?.DataElements,
+      occupationData: occupationData?.DataElements,
+      genderData: genderData?.DataElements,
+      nationalityData: nationalityData?.DataElements,
+      countryData: countryData?.DataElements,
+      sendOtpHandler,
+      lastSentOtp,
+      isVerified,
+      isNotVerified,
+      setIsNotVerified,
+      agentInfoData: (agentInfo ?? {}) as AgentInfo,
+      apiLoadingStates: {
+        agent: isAgencyValidating,
+        nic: claimantStatus === "principal" ? nicLoading : nicLoading,
+        estab: false,
+        incomplete: false,
+      },
+      userTypeLegalRepData: legalRep,
+      onAgencyNumberChange: (value: string) => {
+        if (value.length === 9 && watch("agentType") === "local_agency") {
+          setIsAgencyValidating(true);
+          setError("agencyNumber", {
+            type: "validate",
+            message: t("validatingAgencyNumber"),
+          });
+          refetchAttorneyDetails();
+        } else {
+          setValue("agentName", "");
+          setValue("agencyStatus", "");
+          setValue("agencySource", "");
+          setIsAgencyValidating(false);
+        }
+      },
+      setError,
+      clearErrors,
+      verifyOtp: sendOtpHandler,
+      isVerify: isVerified,
+      principalNICResponse,
+      principalNICRefetch,
+      representativeNICResponse,
+      register,
+      errors,
+      trigger,
+      isValid,
+    });
+  };
 
-    // lookup data
-    regionData: regionData?.DataElements,
-    cityData: cityData?.DataElements,
-    occupationData: occupationData?.DataElements,
-    genderData: genderData?.DataElements,
-    nationalityData: nationalityData?.DataElements,
-    countryData: countryData?.DataElements,
-
-    // OTP
-    sendOtpHandler,
-    lastSentOtp,
-    isVerified,
-    isNotVerified,
-    setIsNotVerified,
-
-    // agent info
-    agentInfoData: (agentInfo ?? {}) as AgentInfo,
-    apiLoadingStates: {
-      agent: isAgencyValidating,
-      nic: applicantType === "principal" ? nicLoading : nicLoading,
-      estab: false,
-      incomplete: false,
-    },
-
-    // legal-rep metadata
-    userTypeLegalRepData: legalRep,
-
-    // callbacks
-    onAgencyNumberChange: (value: string) => {
-      if (value.length === 9 && watch("agentType") === "local_agency") {
-        setIsAgencyValidating(true);
-        setError("agencyNumber", {
-          type: "validate",
-          message: t("validatingAgencyNumber"),
-        });
-        refetchAttorneyDetails();
-      } else {
-        setValue("agentName", "");
-        setValue("agencyStatus", "");
-        setValue("agencySource", "");
-        setIsAgencyValidating(false);
-      }
-    },
-
-    // validation
-    setError,
-    clearErrors,
-
-    // OTP verify
-    verifyOtp: sendOtpHandler,
-    isVerify: isVerified,
-
-    // ← NEW NIC data props →
-    principalNICResponse: nicDetails,
-    principalNICRefetch: refetchNicDetails,
-  });
-
-  const formLayoutEst = useEstablishmentPlaintiffFormLayout({
-    establishmentDetails: est?.EstablishmentInfo?.[0] || null,
-    apiLoadingStates,
-    regionData: regionData?.DataElements,
-    cityData: cityData?.DataElements,
-    setValue,
-  });
-
-  const formLayoutLegal = useLegalRepPlaintiffFormLayout(
-    watch as any,
-    legalRep,
-    setValue as any
-  );
-
-  const layout = useMemo(() => {
-    if (userType?.toLowerCase().includes("establishment")) return formLayoutEst;
-    if (userType?.toLowerCase().includes("legal representative"))
-      return formLayoutLegal;
-
-    return formLayoutSelf;
-  }, [userType, formLayoutSelf, formLayoutEst, formLayoutLegal]);
+  const rightLayout = loadFormLayoutFunction();
 
   return (
     <>
@@ -495,9 +596,8 @@ const ClaimantDetailsContainer: React.FC<
       )}
 
       <div
-        className={`relative ${
-          isAgencyValidating || nicLoading ? "pointer-events-none" : ""
-        }`}
+        className={`relative ${isAgencyValidating || nicLoading ? "pointer-events-none" : ""
+          }`}
       >
         <div className={isAgencyValidating || nicLoading ? "blur-sm" : ""}>
           <PureClaimantDetails
@@ -506,7 +606,7 @@ const ClaimantDetailsContainer: React.FC<
             setValue={setValue}
             watch={watch}
             control={control}
-            formLayout={layout}
+            formLayout={rightLayout}
             nicIsLoading={apiLoadingStates.nic}
           />
         </div>

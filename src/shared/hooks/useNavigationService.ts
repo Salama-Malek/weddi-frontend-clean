@@ -24,7 +24,7 @@ export const useNavigationService = () => {
   }, []);
 
   const updateParams = (step: number, tab?: number) => {
-    console.log('Updating navigation params:', { step, tab });
+    // console.log('Updating navigation params:', { step, tab });
 
     // تحديث localStorage أولاً
     localStorage.setItem('step', step.toString());

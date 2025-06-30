@@ -97,6 +97,7 @@ const AddAttachment = ({ onFileSelect }: AddAttachmentProps) => {
         title={t("attach_title")}
       >
         <Button
+          type="button"
           onClick={handleToggle}
           className={`$${uploadedFiles.length > 0 && "!mb-0"} w-44 justify-around`}
           variant={uploadedFiles.length <= 0 ? "primary" : "disabled"}

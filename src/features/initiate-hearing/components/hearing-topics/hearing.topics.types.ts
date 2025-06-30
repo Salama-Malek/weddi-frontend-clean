@@ -18,4 +18,7 @@ export type Topic = {
     hijriDate?: string;
     gregorianDate?: string;
     decisionNumber?: string;
+    managerial_decision_date_hijri?: string;
+    managerial_decision_date_gregorian?: string;
+    managerialDecisionNumber?: string;
   };

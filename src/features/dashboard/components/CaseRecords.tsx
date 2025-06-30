@@ -3,8 +3,8 @@ import { ArrowLeft01Icon, ArrowRight01Icon } from "hugeicons-react";
 import React, { useState, lazy, Suspense, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import TableLoader from "@/shared/components/loader/TableLoader";
-import { useGetCaseAduitQuery } from "../api/api";
-import { ICaseStatusAudit } from "../types/caseRecord.modal";
+import { useGetCaseAuditQuery } from "../api/api";
+import { ICaseStatusAudit } from "../types/caseRecord.model";
 import { useLanguageDirection } from "@/i18n/LanguageDirectionProvider";
 import StepperSkeleton from "@/shared/components/loader/StepperSkeleton";
 import CaseRecordsSkeleton from "@/shared/components/loader/CaseRecordsSkeleton";
@@ -36,13 +36,14 @@ const CaseRecords: React.FC<CaseRecordsProps> = ({ isLegalRep, popupHandler }) =
   const [selected, setSelected] = useState<string | null>(null);
 
   // Only fetch cases if we have user type data
-  const { data, isError, isFetching } = useGetCaseAduitQuery(
+  const { data, isError, isFetching } = useGetCaseAuditQuery(
     {
       IDNumber: userClaims?.UserID || "",
-      SourceSystem: "E-Services",
-      AcceptedLanguage: isRTL ? "AR" : "EN",
+      // SourceSystem: "E-Services",
+      // AcceptedLanguage: isRTL ? "AR" : "EN",
       PageNumber: 1,
       PageSize: 3,
+      UserType: userType,
     },
     {
       skip: !userType, // Skip if we don't have user type
@@ -362,7 +363,7 @@ const CaseRecords: React.FC<CaseRecordsProps> = ({ isLegalRep, popupHandler }) =
           {/* </div> */}
 
           {/* {isModalOpen && ( */}
-          {userType === "Legal representative" && isModalOpen && (
+          {/* {userType === "Legal representative" && isModalOpen && (
             <Suspense fallback={<StepperSkeleton />}>
               <Modal
                 className="!max-h-none !h-auto !overflow-visible"
@@ -383,7 +384,7 @@ const CaseRecords: React.FC<CaseRecordsProps> = ({ isLegalRep, popupHandler }) =
                 </Suspense>
               </Modal>
             </Suspense>
-          )}
+          )} */}
         </aside>
       )}
     </>

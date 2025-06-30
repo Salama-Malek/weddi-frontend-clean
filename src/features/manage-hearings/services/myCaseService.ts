@@ -16,6 +16,7 @@ export const useMyCasesData = ({
   MainGovernment,
   SubGovernment,
   SearchID,
+  Number700,
   AcceptedLanguage,
   SourceSystem,
 }: UseMyCasesDataParams): {
@@ -33,6 +34,7 @@ export const useMyCasesData = ({
     MainGovernment,
     SubGovernment,
     SearchID,
+    Number700,
     AcceptedLanguage,
     SourceSystem,
   });

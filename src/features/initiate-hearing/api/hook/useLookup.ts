@@ -141,6 +141,19 @@ export const useLookup = () => {
       }
     ),
 
+    typesOfPenalties: (subCategoryValue: string | undefined) => useGenericLookupQuery(
+      {
+        LookupType: "DataElements",
+        ModuleKey: "PENT",
+        ModuleName: "PenalityType",
+        SourceSystem: "E-Services",
+        AcceptedLanguage: currentLanguage
+      },
+      {
+        skip: !subCategoryValue || !["EDO-4"].includes(subCategoryValue)
+      }
+    ),
+
     city: () => useGetCityLookupQuery({
       LookupType: "CaseElements",
       ModuleKey: "07",

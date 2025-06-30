@@ -4,6 +4,7 @@ import { useFormContext, Controller } from "react-hook-form";
 import { SectionLayout } from "@/shared/components/form/form.types";
 import { useAgentFormOptions } from "./plaintiff.forms.formOptions";
 import { useGetNICDetailsQuery } from "@/features/initiate-hearing/api/create-case/plaintiffDetailsApis";
+import { formatDateToYYYYMMDD } from "@/shared/utils/dateUtils";
 
 /**
  * Builds dynamic form sections for PlaintiffDetails,
@@ -53,7 +54,7 @@ export const usePlaintiffFormLayout = (): SectionLayout[] => {
   const { data: nicData, isSuccess: isNicSuccess } = useGetNICDetailsQuery(
     {
       IDNumber: plaintiffId,
-      DateOfBirth: plaintiffHijriDOB,
+      DateOfBirth: formatDateToYYYYMMDD(plaintiffHijriDOB) || "",
       AcceptedLanguage: lang,
       SourceSystem: "E-Services",
     },
@@ -175,7 +176,7 @@ export const usePlaintiffFormLayout = (): SectionLayout[] => {
                     name: "plaintiffRegion",
                     label: t("region"),
                     options: RegionOptions,
-                    value: nicData?.NICDetails?.Region || "",
+                    value: nicData?.NICDetails?.Region ? nicData.NICDetails.Region : watch("plaintiffRegion"),
                     onChange: (value: any) => setValue("plaintiffRegion", value)
                   },
                   {
@@ -183,7 +184,7 @@ export const usePlaintiffFormLayout = (): SectionLayout[] => {
                     name: "plaintiffCity",
                     label: t("city"),
                     options: CityOptions,
-                    value: nicData?.NICDetails?.City || "",
+                    value: nicData?.NICDetails?.City ? nicData.NICDetails.City : watch("plaintiffCity"),
                     onChange: (value: any) => setValue("plaintiffCity", value)
                   },
                   {
@@ -191,7 +192,7 @@ export const usePlaintiffFormLayout = (): SectionLayout[] => {
                     name: "plaintiffOccupation",
                     label: t("occupation"),
                     options: OccupationOptions,
-                    value: nicData?.NICDetails?.Occupation || "",
+                    value: nicData?.NICDetails?.Occupation ? nicData.NICDetails.Occupation : watch("plaintiffOccupation"),
                     onChange: (value: any) => setValue("plaintiffOccupation", value)
                   },
                   {
@@ -199,7 +200,7 @@ export const usePlaintiffFormLayout = (): SectionLayout[] => {
                     name: "plaintiffGender",
                     label: t("gender"),
                     options: GenderOptions,
-                    value: nicData?.NICDetails?.Gender || "",
+                    value: nicData?.NICDetails?.Gender ? nicData.NICDetails.Gender : watch("plaintiffGender"),
                     onChange: (value: any) => setValue("plaintiffGender", value)
                   },
                   {
@@ -207,7 +208,7 @@ export const usePlaintiffFormLayout = (): SectionLayout[] => {
                     name: "plaintiffNationality",
                     label: t("nationality"),
                     options: NationalityOptions,
-                    value: nicData?.NICDetails?.Nationality || "",
+                    value: nicData?.NICDetails?.Nationality ? nicData.NICDetails.Nationality : watch("plaintiffNationality"),
                     onChange: (value: any) => setValue("plaintiffNationality", value)
                   }
                 ]
@@ -423,7 +424,7 @@ export const usePlaintiffFormLayout = (): SectionLayout[] => {
                   name: "plaintiffRegion",
                   label: t("region"),
                   options: RegionOptions,
-                  value: nicData?.NICDetails?.Region || "",
+                  value: nicData?.NICDetails?.Region ? nicData.NICDetails.Region : watch("plaintiffRegion"),
                   onChange: (value: any) => setValue("plaintiffRegion", value)
                 },
                 {
@@ -431,7 +432,7 @@ export const usePlaintiffFormLayout = (): SectionLayout[] => {
                   name: "plaintiffCity",
                   label: t("city"),
                   options: CityOptions,
-                  value: nicData?.NICDetails?.City || "",
+                  value: nicData?.NICDetails?.City ? nicData.NICDetails.City : watch("plaintiffCity"),
                   onChange: (value: any) => setValue("plaintiffCity", value)
                 },
                 {
@@ -439,7 +440,7 @@ export const usePlaintiffFormLayout = (): SectionLayout[] => {
                   name: "plaintiffOccupation",
                   label: t("occupation"),
                   options: OccupationOptions,
-                  value: nicData?.NICDetails?.Occupation || "",
+                  value: nicData?.NICDetails?.Occupation ? nicData.NICDetails.Occupation : watch("plaintiffOccupation"),
                   onChange: (value: any) => setValue("plaintiffOccupation", value)
                 },
                 {
@@ -447,7 +448,7 @@ export const usePlaintiffFormLayout = (): SectionLayout[] => {
                   name: "plaintiffGender",
                   label: t("gender"),
                   options: GenderOptions,
-                  value: nicData?.NICDetails?.Gender || "",
+                  value: nicData?.NICDetails?.Gender ? nicData.NICDetails.Gender : watch("plaintiffGender"),
                   onChange: (value: any) => setValue("plaintiffGender", value)
                 },
                 {
@@ -455,7 +456,7 @@ export const usePlaintiffFormLayout = (): SectionLayout[] => {
                   name: "plaintiffNationality",
                   label: t("nationality"),
                   options: NationalityOptions,
-                  value: nicData?.NICDetails?.Nationality || "",
+                  value: nicData?.NICDetails?.Nationality ? nicData.NICDetails.Nationality : watch("plaintiffNationality"),
                   onChange: (value: any) => setValue("plaintiffNationality", value)
                 }
               ]

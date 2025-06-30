@@ -22,29 +22,48 @@
     "agentData": "Agent Data",
     "plaintiffData": "Plaintiff's Data",
     "plaintiffDataRequiredText": "(To proceed, please provide your National ID Number and Date of Birth to retrieve the required information.)",
-    "agentDataRequiredText": "(Please enter the agency number to inquire about its status and source.)"
+    "agentDataRequiredText": "(Please enter the agency number to inquire about its status and source.)",
+    "personalInfo_title": "Personal Information",
+    "personalInfo_name": "Full Name",
+    "personalInfo_idNumber": "ID Number",
+    "personalInfo_dateOfBirth": "Date of Birth",
+    "personalInfo_gender": "Gender",
+    "personalInfo_nationality": "Nationality",
+    "personalInfo_occupation": "Occupation",
+    "personalInfo_region": "Region",
+    "personalInfo_city": "City",
+    "personalInfo_phoneNumber": "Phone Number",
+    "personalInfo_email": "Email Address"
   },
-  "sendOtp":"Send OTP",
-  "verufyOtp":"Please Verify OTP",
+  "embassyUser": {
+    "idNumber": "Embassy ID Number",
+    "name": "Embassy Name",
+    "phoneNumber": "Embassy Phone Number",
+    "nationality": "Embassy Nationality",
+    "firstLanguage": "Embassy First Language",
+    "emailAddress": "Embassy Email Address"
+  },
+  "sendOtp": "Send OTP",
+  "verufyOtp": "Please Verify OTP",
   "max10Validation": "Maximum 10 characters allowed",
   "phoneValidationMessage": "Please enter a valid phone number",
   "max10ValidationDesc": "This field cannot exceed 10 characters",
   "max9Validation": "Maximum 9 characters allowed",
   "max9ValidationDesc": "This field cannot exceed 9 characters",
-  "salaryTypeValidation":"Please select salary type.",
-  "currentSalaryValidation":"Please enter current salary.",
-  "firstWorkingDateValidation":"Please select first working date in Hijri.",
-  "nationalIdValidation":"Please enter national id.",
-  "defendantNameValidation":"Please enter name.",
-  "dateOfBirthValidation":"Please select date of birth Hijri.",
-  "lastWorkingDateValidation":"Please select last working date in Hijri.",
-  "subCategoryGovernValidation":"Please select sub category of the government entity.",
-  "mainCategoryGovernValidation":"Please select main category of the government entity.",
-  "fileNumberValidation":"Please enter file number.",
-  "contractTypeValidation":"Please select contract type.",
-  "contractNumberValidation":"Please enter contract number.",
-  "agencyNumberValidation":"Please enter agency number.",
-  "idNumberValidation":"Please enter id number.",
+  "salaryTypeValidation": "Please select salary type.",
+  "currentSalaryValidation": "Please enter current salary.",
+  "firstWorkingDateValidation": "Please select first working date in Hijri.",
+  "nationalIdValidation": "Please enter national id.",
+  "defendantNameValidation": "Please enter name.",
+  "dateOfBirthValidation": "Please select date of birth Hijri.",
+  "lastWorkingDateValidation": "Please select last working date in Hijri.",
+  "subCategoryGovernValidation": "Please select sub category of the government entity.",
+  "mainCategoryGovernValidation": "Please select main category of the government entity.",
+  "fileNumberValidation": "Please enter file number.",
+  "contractTypeValidation": "Please select contract type.",
+  "contractNumberValidation": "Please enter contract number.",
+  "agencyNumberValidation": "Please enter agency number.",
+  "idNumberValidation": "Please enter id number.",
   "regionValidation": "Please select a valid region.",
   "cityValidation": "Please enter a valid city name.",
   "phoneNumberValidation": "Please enter a valid phone number.",
@@ -56,7 +75,7 @@
   "lastWorkingDayGregorian": "Last Working Day (Gregorian)",
   "firstWorkingDayGregorian": "First Working Day (Gregorian)",
   "plaintiff_type": "Plaintiff's Type",
-  "title": "Hearing Details",
+  "title": "Case Details",
   "tab1_title": "Plaintiff's Details",
   "tab3_title": "Work Details",
   "tab1": "1. Claimant's Details",
@@ -101,6 +120,7 @@
   "file_num": "File Number",
   "non_govern": {
     "commercialRegistrationNumber": "Commercial Registration Number",
+    "number700":"Code 700",
     "city": "City",
     "name": "Name",
     "unifiedNationalNumber": "Unified National Number",
@@ -108,7 +128,6 @@
     "phoneNumber": "Phone Number"
   },
   "tab3_title": "Work Details",
-
   "typeOfWage": "Type of Wage",
   "currentSalary": "Current Salary",
   "contractType": "Contract Type",
@@ -124,7 +143,6 @@
   "stillEmployed": "Still Employed",
   "reason": "The Reason",
   "workLocationDetails": "Work Location Details",
-
   "region": "Region",
   "city": "City",
   "file_name": "Employment Contract.PNG",
@@ -141,6 +159,7 @@
   "governmental_entities": "Governmental Entities",
   "fileNumber": "File Number",
   "commercialRegistrationNumber": "Commercial Registration Number",
+  "number700":"Code 700",
   "unifiedNationalNumber": "Unified National Number",
   "establishment_name": "Establishment Name",
   "al_meezan_consulting": "Al Meezan Consulting",
@@ -153,6 +172,7 @@
     "establishmentName": "Establishment Name",
     "fileNumber": "File Number",
     "commercialRegistrationNumber": "Commercial Registration Number",
+    "number700":"Code 700",
     "region": "Region",
     "city": "City",
     "unifiedNationalNumber": "Unified National Number",
@@ -168,7 +188,6 @@
     "dobGrog": "Date of Birth (Gregorian)",
     "plaintiffCapacity": "Plaintiff's Capacity"
   },
-
   "agent": "Agent",
   "agent_desc": "Representative of the plaintiff",
   "principle_description": "plaintiff",
@@ -180,18 +199,13 @@
   "agentInfo": "Agent's Information",
   "agentStatus": "Agency Status ",
   "sourceofthePowerofAttorney": "Source of the Power of Attorney ",
-
   "emailAddress": " Email Address ",
   "plaintifNativeLanguage": "Plaintiff's Native Language  ",
   "error": {
     "invalidAgencyNumber": "Invalid agency number",
     "agencyNumberNotBelong": "ID number not authorized in agency"
   },
-
   "dateValidationDesc": "Please enter a valid date in YYYYMMDD format",
-
-
-
   "workDateValidation": {
     "endBeforeStart": "Last working date must be after the first working date",
     "startDateFuture": "Work start date cannot be in future",
@@ -205,6 +219,16 @@
     "startAfterEnd": "Start date must be before end date",
     "endBeforeStart": "End date must be after start date",
     "pastEndDateOkIfAfterStart": "End date can be in the past but must be after the contract start date"
-  }
-
+  },
+  "Please enter phone number must start with 05.": "Please enter phone number must start with 05.",
+  "AgentType": "Agent Type",
+  "agencyFound": "Agency found successfully.",
+  "agentTypeValidation": "Please select agent type.",
+  "agentNameValidation": "Please enter agent name.",
+  "agencyStatusValidation": "Please enter agency status.",
+  "agencySourceValidation": "Please enter agency source.",
+  "workplaceValidation": "Please enter current working place.",
+  "residenceAddressValidation": "Please enter residence address.",
+  "nameValidation": "Please enter a valid name.",
+  "dateValidation": "Please enter a valid date."
 }

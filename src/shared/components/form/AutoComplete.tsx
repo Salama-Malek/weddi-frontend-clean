@@ -1,4 +1,4 @@
-import React from "react";
+import React, { memo } from "react";
 import Select, { components } from "react-select";
 import { FieldWrapper } from "./FieldWrapper";
 import { useTranslation } from "react-i18next";
@@ -22,6 +22,7 @@ export type AutoCompleteFieldProps = {
   control?: any;
   isLoading?: boolean;
   disabled?: boolean;
+  onClear?: () => void;
 };
 
 const CustomDropdownIndicator = (props: any) => (
@@ -32,7 +33,7 @@ const CustomDropdownIndicator = (props: any) => (
 
 // Custom Clear Indicator that stops propagation to avoid closing parent modals
 const CustomClearIndicator = (props: any) => {
-  const { innerProps, clearValue } = props;
+  const { innerProps, clearValue, onClear } = props;
   return (
     <div
       {...innerProps}
@@ -40,6 +41,10 @@ const CustomClearIndicator = (props: any) => {
         e.stopPropagation();
         // call default handler
         innerProps.onMouseDown(e);
+        // call custom clear handler if provided
+        if (onClear) {
+          onClear();
+        }
       }}
     >
       {/* You can use the default clear icon */}
@@ -48,7 +53,7 @@ const CustomClearIndicator = (props: any) => {
   );
 };
 
-export const AutoCompleteField: React.FC<AutoCompleteFieldProps> = ({
+export const AutoCompleteField: React.FC<AutoCompleteFieldProps> = memo(({
   options,
   id,
   label,
@@ -63,9 +68,20 @@ export const AutoCompleteField: React.FC<AutoCompleteFieldProps> = ({
   control,
   isLoading,
   disabled,
+  onClear,
 }) => {
   const { t } = useTranslation();
-  const errorMessage = invalidFeedback?.message || invalidFeedback;
+
+  // Debug log for value prop
+  // console.log(`[AutoCompleteField] name: ${name}, value prop:`, value);
+
+  // Ensure errorMessage is always a string
+  const errorMessage = typeof invalidFeedback === 'string'
+    ? invalidFeedback
+    : (invalidFeedback && typeof invalidFeedback === 'object' && invalidFeedback.message)
+      ? invalidFeedback.message
+      : '';
+
   const hasError = !!errorMessage;
 
   const customStyles = {
@@ -155,7 +171,9 @@ export const AutoCompleteField: React.FC<AutoCompleteFieldProps> = ({
     isDisabled: disabled,
     components: {
       DropdownIndicator: CustomDropdownIndicator,
-      ClearIndicator: CustomClearIndicator,
+      ClearIndicator: (props: any) => (
+        <CustomClearIndicator {...props} onClear={onClear} />
+      ),
     },
   };
 
@@ -168,8 +186,15 @@ export const AutoCompleteField: React.FC<AutoCompleteFieldProps> = ({
         <Select
           {...field}
           {...selectProps}
-          onChange={field.onChange}
-          value={field.value}
+          onChange={(selectedOption) => {
+            const newValue = selectedOption;
+            // console.log(`[AutoCompleteField] name: ${name}, onChange value:`, newValue);
+            field.onChange(newValue);
+            if (onChange) {
+              onChange(newValue);
+            }
+          }}
+          value={field.value || value}
         />
       )}
     />
@@ -178,7 +203,10 @@ export const AutoCompleteField: React.FC<AutoCompleteFieldProps> = ({
       {...selectProps}
       id={id}
       value={value}
-      onChange={onChange}
+      onChange={(selectedOption) => {
+        // console.log(`[AutoCompleteField] name: ${name}, onChange value:`, selectedOption);
+        onChange?.(selectedOption);
+      }}
       name={name}
     />
   );
@@ -195,4 +223,4 @@ export const AutoCompleteField: React.FC<AutoCompleteFieldProps> = ({
   ) : (
     selectComponent
   );
-};
+});

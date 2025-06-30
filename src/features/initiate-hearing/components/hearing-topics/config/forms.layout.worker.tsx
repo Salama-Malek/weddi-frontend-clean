@@ -8,15 +8,25 @@ import {
 import {
   buildForm,
   dateFieldConfigs,
+  getCommonElements,
   initFormConfig,
   managerialDateConfigs,
 } from "@/config/formConfig";
-import { formatHijriDate, mapToOptions } from "@/shared/lib/helpers";
+import { formatHijriDate, mapToOptions, toHijri_YYYYMMDD, formatDateString, formatDateToYYYYMMDD } from "@/shared/lib/helpers";
 import { getMIR1FormFields } from "./MIR1Form";
 import { getBPSR1FormFields } from "./BPSR1Form";
 import { getBR1FormFields } from "./BR1Form";
 import { getStep1FormFields } from "./Step1From";
 import { getStep2FormFields } from "./Step2From";
+import { HijriDatePickerInput } from "@/shared/components/calanders/HijriDatePickerInput";
+import { GregorianDateDisplayInput } from "@/shared/components/calanders/GregorianDateDisplayInput";
+import { DateObject } from "react-multi-date-picker";
+import hijriCalendar from "react-date-object/calendars/arabic";
+import gregorianCalendar from "react-date-object/calendars/gregorian";
+import hijriLocale from "react-date-object/locales/arabic_en";
+import gregorianLocale from "react-date-object/locales/gregorian_en";
+import { useGetRegionLookupDataQuery } from "@/features/initiate-hearing/api/create-case/workDetailApis";
+import { useTranslation } from "react-i18next";
 
 export const useFormLayout = ({
   t: t,
@@ -50,8 +60,24 @@ export const useFormLayout = ({
   editTopic: editTopic,
   caseTopics: caseTopics,
   typesOfPenaltiesData: typesOfPenaltiesData,
+  setShowLegalSection: setShowLegalSection,
+  setShowTopicData: setShowTopicData,
+  isValid: isValid,
+  control: control
 }: UseFormLayoutParams): SectionLayout[] => {
-  // //console.log("subCategoryhai", subCategory);
+  const { t: tHearingTopics, i18n } = useTranslation("hearingtopics");
+
+  const { data: regionData, isFetching: isRegionLoading } = useGetRegionLookupDataQuery({
+    AcceptedLanguage: i18n.language.toUpperCase(),
+    context: "default",
+  });
+
+  const RegionOptions = React.useMemo(() => {
+    return mapToOptions({
+      data: regionData?.DataElements,
+    });
+  }, [regionData]);
+
   const from_date_hijri = watch("from_date_hijri");
   const travelingWay = watch("travelingWay");
   const to_date_hijri = watch("to_date_hijri");
@@ -64,7 +90,6 @@ export const useFormLayout = ({
   const rewardType = watch("rewardType");
   const consideration = watch("consideration");
   const forAllowance = watch("forAllowance");
-  // //console.log("forAllowance", forAllowance);
   const typeOfRequest = watch("typeOfRequest");
   const otherAllowance = watch("otherAllowance");
   const commissionType = watch("commissionType");
@@ -81,7 +106,7 @@ export const useFormLayout = ({
   const workingHours = watch("workingHours");
   const additionalDetails = watch("additionalDetails");
   const wagesAmount = watch("wagesAmount");
-  const payIncreaseType = watch("payIncreaseTypeAQ+aq ");
+  const payIncreaseType = watch("payIncreaseType");
   const wageDifference = watch("wageDifference");
   const newPayAmount = watch("newPayAmount");
   const durationOfLeaveDue = watch("durationOfLeaveDue");
@@ -99,6 +124,30 @@ export const useFormLayout = ({
   const doesContractIncludeAdditionalUpgrade = watch(
     "doesContractIncludeAdditionalUpgrade"
   );
+  const managerial_decision_date_hijri = watch("managerial_decision_date_hijri");
+  const managerial_decision_date_gregorian = watch("managerial_decision_date_gregorian");
+
+  const handleHijriDateChange = (
+    date: DateObject | DateObject[] | null,
+    setHijriValue: (value: string) => void,
+    gregorianFieldName: string,
+  ) => {
+    if (!date || Array.isArray(date)) {
+      setHijriValue("");
+      setValue(gregorianFieldName, "");
+      return;
+    }
+
+    const hijri = date.convert(hijriCalendar, hijriLocale).format("YYYY/MM/DD");
+    const gregorian = date.convert(gregorianCalendar, gregorianLocale).format("YYYY/MM/DD");
+
+    const hijriCompact = hijri ? (formatDateToYYYYMMDD(hijri) || "") : "";
+    const gregorianCompact = gregorian ? (formatDateToYYYYMMDD(gregorian) || "") : "";
+
+    setHijriValue(hijriCompact);
+    setValue(gregorianFieldName, gregorianCompact);
+  };
+
   initFormConfig({
     isEditing,
     handleAddTopic,
@@ -175,6 +224,23 @@ export const useFormLayout = ({
       SubCategoryOptions,
       subCategory,
       handleAdd,
+      onClearMainCategory: () => {
+        setValue("mainCategory", null);
+        setValue("subCategory", null);
+        setValue("acknowledged", false);
+        setValue("regulatoryText", "");
+        setValue("subCategoryData", []);
+        setValue("subCategoryOptions", []);
+        setShowLegalSection(false);
+        setShowTopicData(false);
+      },
+      onClearSubCategory: () => {
+        setValue("subCategory", null);
+        setValue("acknowledged", false);
+        setValue("regulatoryText", "");
+        setShowLegalSection(false);
+        setShowTopicData(false);
+      },
     }),
   };
 
@@ -196,121 +262,55 @@ export const useFormLayout = ({
     children: step2Children.filter(Boolean) as FormElement[],
   };
 
-  useEffect(() => {
-    setValue("amount", editTopic?.amount),
-      setValue("rewardType", editTopic?.rewardType),
-      setValue("consideration", editTopic?.consideration),
-      setValue("from_date_hijri", editTopic?.from_date_hijri);
-    setValue("to_date_hijri", editTopic?.to_date_hijri);
-    setValue("date_hijri", editTopic?.date_hijri);
-    setValue("wagesAmount", editTopic?.wagesAmount);
-    setValue("newPayAmount", editTopic?.newPayAmount);
-    setValue("compensationAmount", editTopic?.compensationAmount);
-    setValue("injuryType", editTopic?.injuryType);
-    setValue("additionalDetails", editTopic?.additionalDetails);
-    setValue("wageDifference", editTopic?.wageDifference);
-    setValue("workingHours", editTopic?.workingHours);
-    setValue("to_date_hijri", editTopic?.to_date_hijri);
-    setValue("to_date_gregorian", editTopic?.to_date_gregorian);
-    setValue("date_hijri", editTopic?.date_hijri),
-      setValue("injury_date_hijri", editTopic?.injury_date_hijri),
-      setValue(
-        "forAllowance",
-        editTopic?.forAllowance
-          ? {
-              label: editTopic.forAllowance?.label,
-              value: editTopic.forAllowance?.value,
-            }
-          : editTopic?.forAllowance
-      ),
-      setValue(
-        "commissionType",
-        editTopic?.commissionType
-          ? {
-              label: editTopic.commissionType?.label,
-              value: editTopic.commissionType?.value,
-            }
-          : editTopic?.commissionType
-      ),
-      setValue(
-        "accordingToAgreement",
-        editTopic?.accordingToAgreement
-          ? {
-              label: editTopic.accordingToAgreement?.label,
-              value: editTopic.accordingToAgreement?.value,
-            }
-          : editTopic?.accordingToAgreement
-      ),
-      setValue(
-        "kindOfHoliday",
-        editTopic?.kindOfHoliday
-          ? {
-              label: editTopic.kindOfHoliday?.label,
-              value: editTopic.kindOfHoliday?.value,
-            }
-          : editTopic?.kindOfHoliday
-      ),
-      setValue("amountOfCompensation", editTopic?.amountOfCompensation),
-      setValue("theAmountRequired", editTopic?.theAmountRequired),
-      setValue("totalAmount", editTopic?.totalAmount),
-      setValue("wagesAmount", editTopic?.wagesAmount),
-      setValue("bonusAmount", editTopic?.bonusAmount),
-      setValue("payDue", editTopic?.payDue),
-      setValue("durationOfLeaveDue", editTopic?.durationOfLeaveDue),
-      setValue("amountRatio", editTopic?.amountRatio),
-      setValue("otherCommission", editTopic?.otherCommission),
-      setValue("damagedType", editTopic?.damagedType),
-      setValue("theReason", editTopic?.theReason),
-      setValue("currentInsuranceLevel", editTopic?.currentInsuranceLevel),
-      setValue(
-        "requiredDegreeOfInsurance",
-        editTopic?.requiredDegreeOfInsurance
-      ),
-      setValue("damagedValue", editTopic?.damagedValue),
-      setValue("requiredJobTitle", editTopic?.requiredJobTitle),
-      setValue("currentJobTitle", editTopic?.currentJobTitle),
-      setValue(
-        "typeOfRequest",
-        editTopic?.typeOfRequest
-          ? {
-              label: editTopic.typeOfRequest?.label,
-              value: editTopic.typeOfRequest?.value,
-            }
-          : null
-      ),
-      setValue(
-        "amountsPaidFor",
-        editTopic?.amountsPaidFor
-          ? {
-              label: editTopic.amountsPaidFor?.label,
-              value: editTopic.amountsPaidFor?.value,
-            }
-          : null
-      ),
-      setValue("loanAmount", editTopic?.loanAmount),
-      setValue("typeOfCustody", editTopic?.typeOfCustody),
-      setValue(
-        "travelingWay",
-        editTopic?.travelingWay
-          ? {
-              label: editTopic.travelingWay?.label,
-              value: editTopic.travelingWay?.value,
-            }
-          : editTopic?.travelingWay
-      );
-    setValue(
-      "typesOfPenalties",
-      editTopic?.typesOfPenalties
-        ? {
-            label: editTopic.typesOfPenalties?.label,
-            value: editTopic.typesOfPenalties?.value,
-          }
-        : null
-    );
-  }, [editTopic, caseTopics]);
-
   const getFormBySubCategory = (): (FormElement | false)[] => {
-    switch (isEditing ? subCategory : subCategoryValue?.value) {
+    const currentSubCategory = isEditing ? subCategory?.value : subCategoryValue?.value;
+    if (!currentSubCategory) {
+      return [];
+    }
+
+    const AmountPaidLookupLookUpOptions =
+      amountPaidData?.DataElements?.map((item: any) => ({
+        value: item.ElementKey,
+        label: item.ElementValue,
+      })) || [];
+
+    const TravelingWayOptions =
+      travelingWayData?.DataElements?.map((item: any) => ({
+        value: item.ElementKey,
+        label: item.ElementValue,
+      })) || [];
+
+    const LeaveTypeLookUpOptions =
+      leaveTypeData?.DataElements?.map((item: any) => ({
+        value: item.ElementKey,
+        label: item.ElementValue,
+      })) || [];
+
+    const ForAllowanceLookUpOptions =
+      forAllowanceData?.DataElements?.map((item: any) => ({
+        value: item.ElementKey,
+        label: item.ElementValue,
+      })) || [];
+
+    const TypeOfRequestLookUpOptions =
+      typeOfRequestLookupData?.DataElements?.map((item: any) => ({
+        value: item.ElementKey,
+        label: item.ElementValue,
+      })) || [];
+
+    const CommissionTypeLookUpOptions =
+      commissionTypeLookupData?.DataElements?.map((item: any) => ({
+        value: item.ElementKey,
+        label: item.ElementValue,
+      })) || [];
+
+    const AccordingToAgreementLookUpOptions =
+      accordingToAgreementLookupData?.DataElements?.map((item: any) => ({
+        value: item.ElementKey,
+        label: item.ElementValue,
+      })) || [];
+
+    switch (currentSubCategory) {
       case "WR-2":
       case "WR-1":
         const baseFields = [
@@ -319,44 +319,43 @@ export const useFormLayout = ({
             name: "amount",
             label: t("amount"),
             inputType: "number" as const,
-            value: isEditing ? editTopic?.amount : amount,
+            min: 0,
+            value: watch("amount") || "",
             onChange: (value: string) => setValue("amount", value),
             validation: { required: "Amount is required" },
           },
-          dateFieldConfigs(t, isEditing, from_date_hijri, to_date_hijri)
+          dateFieldConfigs(t, isEditing, from_date_hijri, to_date_hijri, setValue, control, handleHijriDateChange)
             .fromDate,
-          dateFieldConfigs(t, isEditing, to_date_hijri, to_date_hijri).toDate,
+          dateFieldConfigs(t, isEditing, to_date_hijri, to_date_hijri, setValue, control, handleHijriDateChange).toDate,
         ];
         const shouldShowAllowanceFields =
-          editTopic?.subCategory === "WR-1" || subCategory?.value === "WR-1";
+          watch("subCategory")?.value === "WR-1" || subCategory?.value === "WR-1";
 
         const allowanceFields = shouldShowAllowanceFields
           ? [
-              {
-                type: "autocomplete" as const,
-                name: "forAllowance",
-                label: t("forAllowance"),
-                options: ForAllowanceOptions,
-                value: editTopic
-                  ? editTopic?.forAllowance
-                  : forAllowance?.value,
-                onChange: (option: Option | null) =>
-                  setValue("forAllowance", option),
-              },
-              ...(forAllowance?.label === "Other"
-                ? [
-                    {
-                      type: "input" as const,
-                      name: "otherAllowance",
-                      label: t("otherAllowance"),
-                      inputType: "text" as const,
-                      value: otherAllowance,
-                      onChange: (value: string) =>
-                        setValue("otherAllowance", value),
-                    },
-                  ]
-                : []),
-            ]
+            {
+              type: "autocomplete" as const,
+              name: "forAllowance",
+              label: t("forAllowance"),
+              options: ForAllowanceOptions,
+              value: watch("forAllowance")?.value,
+              onChange: (option: Option | null) =>
+                setValue("forAllowance", option),
+            },
+            ...((watch("forAllowance")?.label === "Other" || (isEditing && editTopic?.ForAllowance === "Other"))
+              ? [
+                {
+                  type: "input" as const,
+                  name: "otherAllowance",
+                  label: t("otherAllowance"),
+                  inputType: "text" as const,
+                  value: isEditing ? editTopic?.OtherAllowance || editTopic?.otherAllowance : watch("otherAllowance") || "",
+                  onChange: (value: string) =>
+                    setValue("otherAllowance", value),
+                },
+              ]
+              : []),
+          ]
           : [];
 
         return buildForm([...baseFields, ...allowanceFields]);
@@ -384,6 +383,8 @@ export const useFormLayout = ({
             isEditing,
             watch,
             editTopic,
+            control,
+            handleHijriDateChange,
           })
         );
       case "BR-1":
@@ -405,7 +406,8 @@ export const useFormLayout = ({
             name: "amount",
             label: t("amount"),
             inputType: "number",
-            value: isEditing ? editTopic?.amount : amount,
+            min: 0,
+            value: watch("amount") || "",
             onChange: (value) => setValue("amount", value),
           },
         ]);
@@ -416,26 +418,41 @@ export const useFormLayout = ({
             name: "compensationAmount",
             label: t("compensationAmount"),
             inputType: "number",
-            value: isEditing
-              ? editTopic?.compensationAmount
-              : compensationAmount,
+            min: 0,
+            value: watch("compensationAmount") || "",
             onChange: (value) => setValue("compensationAmount", value),
           },
           {
-            name: "injuryDate",
-            type: "dateOfBirth" as const,
-            hijriLabel: t("injuryDateHijri"),
-            gregorianLabel: t("injuryDateGregorian"),
-            hijriFieldName: "injury_date_hijri",
-            value: isEditing && formatHijriDate(injury_date_hijri),
-            gregorianFieldName: "injury_date_gregorian",
+            type: "custom",
+            component: (
+              <div className="flex flex-col gap-2">
+                <HijriDatePickerInput
+                  control={control}
+                  name="injury_date_hijri"
+                  label={t("injuryDateHijri")}
+                  rules={{}}
+                  onChangeHandler={(date, onChange) =>
+                    handleHijriDateChange(
+                      date,
+                      onChange,
+                      "injury_date_gregorian"
+                    )
+                  }
+                />
+                <GregorianDateDisplayInput
+                  control={control}
+                  name="injury_date_gregorian"
+                  label={t("injuryDateGregorian")}
+                />
+              </div>
+            ),
           },
           {
             type: "input",
             name: "injuryType",
             label: t("injuryType"),
             inputType: "text",
-            value: isEditing ? editTopic?.injuryType : injuryType,
+            value: watch("injuryType") || "",
             onChange: (value) => setValue("injuryType", value),
           },
         ]);
@@ -446,9 +463,7 @@ export const useFormLayout = ({
             name: "amountsPaidFor",
             label: t("amountsPaidFor"),
             options: AmountPaidLookupLookUpOptions,
-            value: editTopic
-              ? editTopic?.amountsPaidFor
-              : amountsPaidFor?.value,
+            value: watch("amountsPaidFor")?.value,
             onChange: (option: Option | null) =>
               setValue("amountsPaidFor", option),
           },
@@ -457,7 +472,8 @@ export const useFormLayout = ({
             name: "theAmountRequired",
             label: t("theAmountRequired"),
             inputType: "number",
-            value: isEditing ? editTopic?.theAmountRequired : theAmountRequired,
+            min: 0,
+            value: watch("theAmountRequired") || "",
             onChange: (value) => setValue("theAmountRequired", value),
           },
         ]);
@@ -468,7 +484,7 @@ export const useFormLayout = ({
             name: "kindOfHoliday",
             label: t("kindOfHoliday"),
             options: LeaveTypeLookUpOptions,
-            value: editTopic ? editTopic?.kindOfHoliday : kindOfHoliday?.value,
+            value: watch("kindOfHoliday")?.value,
             onChange: (option: Option | null) =>
               setValue("kindOfHoliday", option),
           },
@@ -477,7 +493,8 @@ export const useFormLayout = ({
             name: "totalAmount",
             label: t("totalAmount"),
             inputType: "number",
-            value: isEditing ? editTopic?.totalAmount : totalAmount,
+            min: 0,
+            value: watch("totalAmount") || "",
             onChange: (value) => setValue("totalAmount", value),
           },
           {
@@ -485,7 +502,8 @@ export const useFormLayout = ({
             name: "workingHours",
             label: t("workingHours"),
             inputType: "number",
-            value: isEditing ? editTopic?.workingHours : workingHours,
+            min: 0,
+            value: watch("workingHours") || "",
             onChange: (value) => setValue("workingHours", value),
           },
           {
@@ -493,7 +511,7 @@ export const useFormLayout = ({
             name: "additionalDetails",
             label: t("additionalDetails"),
             inputType: "textarea",
-            value: isEditing ? editTopic?.additionalDetails : additionalDetails,
+            value: watch("additionalDetails") || "",
             notRequired: true,
             onChange: (value) => setValue("additionalDetails", value),
           },
@@ -505,12 +523,60 @@ export const useFormLayout = ({
             name: "wagesAmount",
             label: t("wagesAmount"),
             inputType: "number",
-            value: isEditing ? editTopic?.wagesAmount : wagesAmount,
+            min: 0,
+            value: watch("wagesAmount") || "",
             onChange: (value) => setValue("wagesAmount", value),
           },
-          dateFieldConfigs(t, isEditing, from_date_hijri, to_date_hijri)
-            .fromDate,
-          dateFieldConfigs(t, isEditing, from_date_hijri, to_date_hijri).toDate,
+          {
+            type: "custom",
+            component: (
+              <div className="flex flex-col gap-2">
+                <HijriDatePickerInput
+                  control={control}
+                  name="from_date_hijri"
+                  label={t("fromDateHijri")}
+                  rules={{}}
+                  onChangeHandler={(date, onChange) =>
+                    handleHijriDateChange(
+                      date,
+                      onChange,
+                      "from_date_gregorian"
+                    )
+                  }
+                />
+                <GregorianDateDisplayInput
+                  control={control}
+                  name="from_date_gregorian"
+                  label={t("fromDateGregorian")}
+                />
+              </div>
+            ),
+          },
+          {
+            type: "custom",
+            component: (
+              <div className="flex flex-col gap-2">
+                <HijriDatePickerInput
+                  control={control}
+                  name="to_date_hijri"
+                  label={t("toDateHijri")}
+                  rules={{}}
+                  onChangeHandler={(date, onChange) =>
+                    handleHijriDateChange(
+                      date,
+                      onChange,
+                      "to_date_gregorian"
+                    )
+                  }
+                />
+                <GregorianDateDisplayInput
+                  control={control}
+                  name="to_date_gregorian"
+                  label={t("toDateGregorian")}
+                />
+              </div>
+            ),
+          },
         ]);
       case "CMR-6":
         return buildForm([
@@ -519,7 +585,8 @@ export const useFormLayout = ({
             name: "newPayAmount",
             label: t("newPayAmount"),
             inputType: "number",
-            value: isEditing ? editTopic?.newPayAmount : newPayAmount,
+            min: 0,
+            value: watch("newPayAmount") || "",
             onChange: (value) => setValue("newPayAmount", value),
           },
           {
@@ -527,34 +594,126 @@ export const useFormLayout = ({
             name: "payIncreaseType",
             label: t("payIncreaseType"),
             inputType: "text",
-            value: isEditing ? editTopic?.payIncreaseType : payIncreaseType,
+            value: watch("payIncreaseType") || "",
             onChange: (value) => setValue("payIncreaseType", value),
           },
-          dateFieldConfigs(t, isEditing, from_date_hijri, to_date_hijri)
-            .fromDate,
-          dateFieldConfigs(t, isEditing, from_date_hijri, to_date_hijri).toDate,
+          {
+            type: "custom",
+            component: (
+              <div className="flex flex-col gap-2">
+                <HijriDatePickerInput
+                  control={control}
+                  name="from_date_hijri"
+                  label={t("fromDateHijri")}
+                  rules={{}}
+                  onChangeHandler={(date, onChange) =>
+                    handleHijriDateChange(
+                      date,
+                      onChange,
+                      "from_date_gregorian"
+                    )
+                  }
+                />
+                <GregorianDateDisplayInput
+                  control={control}
+                  name="from_date_gregorian"
+                  label={t("fromDateGregorian")}
+                />
+              </div>
+            ),
+          },
+          {
+            type: "custom",
+            component: (
+              <div className="flex flex-col gap-2">
+                <HijriDatePickerInput
+                  control={control}
+                  name="to_date_hijri"
+                  label={t("toDateHijri")}
+                  rules={{}}
+                  onChangeHandler={(date, onChange) =>
+                    handleHijriDateChange(
+                      date,
+                      onChange,
+                      "to_date_gregorian"
+                    )
+                  }
+                />
+                <GregorianDateDisplayInput
+                  control={control}
+                  name="to_date_gregorian"
+                  label={t("toDateGregorian")}
+                />
+              </div>
+            ),
+          },
           {
             type: "input",
             name: "wageDifference",
             label: t("wageDifference"),
             inputType: "text",
-            value: isEditing ? editTopic?.wageDifference : wageDifference,
+            value: watch("wageDifference") || "",
             onChange: (value) => setValue("wageDifference", value),
           },
         ]);
       case "CMR-7":
         return buildForm([
-          dateFieldConfigs(t, isEditing, from_date_hijri, to_date_hijri)
-            .fromDate,
-          dateFieldConfigs(t, isEditing, from_date_hijri, to_date_hijri).toDate,
+          {
+            type: "custom",
+            component: (
+              <div className="flex flex-col gap-2">
+                <HijriDatePickerInput
+                  control={control}
+                  name="from_date_hijri"
+                  label={t("fromDateHijri")}
+                  rules={{}}
+                  onChangeHandler={(date, onChange) =>
+                    handleHijriDateChange(
+                      date,
+                      onChange,
+                      "from_date_gregorian"
+                    )
+                  }
+                />
+                <GregorianDateDisplayInput
+                  control={control}
+                  name="from_date_gregorian"
+                  label={t("fromDateGregorian")}
+                />
+              </div>
+            ),
+          },
+          {
+            type: "custom",
+            component: (
+              <div className="flex flex-col gap-2">
+                <HijriDatePickerInput
+                  control={control}
+                  name="to_date_hijri"
+                  label={t("toDateHijri")}
+                  rules={{}}
+                  onChangeHandler={(date, onChange) =>
+                    handleHijriDateChange(
+                      date,
+                      onChange,
+                      "to_date_gregorian"
+                    )
+                  }
+                />
+                <GregorianDateDisplayInput
+                  control={control}
+                  name="to_date_gregorian"
+                  label={t("toDateGregorian")}
+                />
+              </div>
+            ),
+          },
           {
             type: "input",
             name: "durationOfLeaveDue",
             label: t("durationOfLeaveDue"),
             inputType: "text",
-            value: isEditing
-              ? editTopic?.durationOfLeaveDue
-              : durationOfLeaveDue,
+            value: watch("durationOfLeaveDue") || "",
             onChange: (value) => setValue("durationOfLeaveDue", value),
           },
           {
@@ -562,7 +721,8 @@ export const useFormLayout = ({
             name: "payDue",
             label: t("payDue"),
             inputType: "number",
-            value: isEditing ? editTopic?.payDue : payDue,
+            min: 0,
+            value: watch("payDue") || "",
             onChange: (value) => setValue("payDue", value),
           },
         ]);
@@ -572,33 +732,66 @@ export const useFormLayout = ({
             type: "input",
             name: "amountOfCompensation",
             label: t("amountOfCompensation"),
-            inputType: "text",
-            value: isEditing
-              ? editTopic?.amountOfCompensation
-              : amountOfCompensation,
+            inputType: "number",
+            min: 0,
+            value: watch("amountOfCompensation") || "",
             onChange: (value) => setValue("amountOfCompensation", value),
           },
         ]);
       case "EDO-1":
         return buildForm([
           {
-            type: "input",
+            type: "autocomplete",
             name: "fromLocation",
             label: t("fromLocation"),
-            inputType: "text",
-            value: "",
-            onChange: (value) => setValue("fromLocation", value),
+            options: RegionOptions,
+            isLoading: isRegionLoading,
+            value: watch("fromLocation")?.value || editTopic?.fromLocation?.value,
+            onChange: (option: Option | null) => setValue("fromLocation", option),
+          },
+          {
+            type: "autocomplete",
+            name: "toLocation",
+            label: t("toLocation"),
+            options: RegionOptions,
+            isLoading: isRegionLoading,
+            value: watch("toLocation")?.value || editTopic?.toLocation?.value,
+            onChange: (option: Option | null) => setValue("toLocation", option),
+          },
+          {
+            type: "custom",
+            component: (
+              <div className="flex flex-col gap-2">
+                <HijriDatePickerInput
+                  control={control}
+                  name="managerial_decision_date_hijri"
+                  label={t("managerialDecisionDateHijri")}
+                  rules={{}}
+                  onChangeHandler={(date, onChange) =>
+                    handleHijriDateChange(
+                      date,
+                      onChange,
+                      "managerial_decision_date_gregorian"
+                    )
+                  }
+                />
+                <GregorianDateDisplayInput
+                  control={control}
+                  name="managerial_decision_date_gregorian"
+                  label={t("managerialDecisionDateGregorian")}
+                />
+              </div>
+            ),
           },
           {
             type: "input",
-            name: "toLocation",
-            label: t("toLocation"),
-            inputType: "text",
-            value: "",
-            onChange: (value) => setValue("toLocation", value),
+            name: "managerialDecisionNumber",
+            label: t("managerialDecisionNumber"),
+            inputType: "number",
+            notRequired: true,
+            value: watch("managerialDecisionNumber") || "",
+            onChange: (value: string) => setValue("managerialDecisionNumber", value),
           },
-          managerialDateConfigs(t, setValue).managerialDate,
-          managerialDateConfigs(t, setValue).managerialNumber,
         ]);
       case "EDO-2":
         return buildForm([
@@ -618,8 +811,8 @@ export const useFormLayout = ({
             value: "",
             onChange: (value) => setValue("toJob", value),
           },
-          managerialDateConfigs(t, setValue).managerialDate,
-          managerialDateConfigs(t, setValue).managerialNumber,
+          managerialDateConfigs(t, setValue, watch, control, handleHijriDateChange).managerialDate,
+          managerialDateConfigs(t, setValue, watch, control, handleHijriDateChange).managerialNumber,
         ]);
       case "EDO-4":
         return buildForm([
@@ -627,13 +820,13 @@ export const useFormLayout = ({
             type: "autocomplete",
             name: "typesOfPenalties",
             label: t("typesOfPenalties"),
-            options: AmountPaidLookupLookUpOptions,
-            value: typesOfPenalties,
+            options: TypesOfPenaltiesOptions,
+            value: watch("typesOfPenalties")?.value,
             onChange: (option: Option | null) =>
               setValue("typesOfPenalties", option),
           },
-          managerialDateConfigs(t, setValue).managerialDate,
-          managerialDateConfigs(t, setValue).managerialNumber,
+          managerialDateConfigs(t, setValue, watch, control, handleHijriDateChange).managerialDate,
+          managerialDateConfigs(t, setValue, watch, control, handleHijriDateChange).managerialNumber,
         ]);
       case "EDO-3":
         return buildForm([
@@ -642,11 +835,12 @@ export const useFormLayout = ({
             name: "amountOfReduction",
             label: t("amountOfReduction"),
             inputType: "number",
-            value: "",
+            min: 0,
+            value: watch("amountOfReduction") || "",
             onChange: (value) => setValue("amountOfReduction", value),
           },
-          managerialDateConfigs(t, setValue).managerialDate,
-          managerialDateConfigs(t, setValue).managerialNumber,
+          managerialDateConfigs(t, setValue, watch, control, handleHijriDateChange).managerialDate,
+          managerialDateConfigs(t, setValue, watch, control, handleHijriDateChange).managerialNumber,
         ]);
       case "HIR-1":
         return buildForm([
@@ -654,7 +848,7 @@ export const useFormLayout = ({
             type: "checkbox",
             name: "doesBylawsIncludeAddingAccommodations",
             label: t("doesBylawsIncludeAddingAccommodations"),
-            checked: doesBylawsIncludeAddingAccommodations,
+            checked: watch("doesBylawsIncludeAddingAccommodations") || false,
             onChange: (checked: boolean) => {
               if (checked) {
                 setValue("doesContractIncludeAddingAccommodations", false);
@@ -669,7 +863,7 @@ export const useFormLayout = ({
             type: "checkbox",
             name: "doesContractIncludeAddingAccommodations",
             label: t("doesContractIncludeAddingAccommodations"),
-            checked: doesContractIncludeAddingAccommodations,
+            checked: watch("doesContractIncludeAddingAccommodations") || false,
             onChange: (checked: boolean) => {
               if (checked) {
                 setValue("doesBylawsIncludeAddingAccommodations", false);
@@ -677,35 +871,6 @@ export const useFormLayout = ({
               }
               setValue("doesContractIncludeAddingAccommodations", checked);
             },
-            validation: { required: "Please select at least one option" },
-          },
-          doesBylawsIncludeAddingAccommodations && {
-            type: "input",
-            name: "housingSpecificationInByLaws",
-            label: t("housingSpecificationInByLaws"),
-            inputType: "text",
-            value: "",
-            onChange: (value) =>
-              setValue("housingSpecificationInByLaws", value),
-            validation: { required: "Please select at least one option" },
-          },
-          doesContractIncludeAddingAccommodations && {
-            type: "input",
-            name: "housingSpecificationsInContract",
-            label: t("housingSpecificationsInContract"),
-            inputType: "text",
-            value: "",
-            onChange: (value) =>
-              setValue("housingSpecificationsInContract", value),
-            validation: { required: "Please select at least one option" },
-          },
-          doesContractIncludeAddingAccommodations && {
-            type: "input",
-            name: "actualHousingSpecifications",
-            label: t("actualHousingSpecifications"),
-            inputType: "text",
-            value: "",
-            onChange: (value) => setValue("actualHousingSpecifications", value),
             validation: { required: "Please select at least one option" },
           },
         ]);
@@ -716,7 +881,7 @@ export const useFormLayout = ({
             name: "currentJobTitle",
             label: t("currentJobTitle"),
             inputType: "text",
-            value: isEditing ? editTopic?.currentJobTitle : currentJobTitle,
+            value: watch("currentJobTitle") || "",
             onChange: (value) => setValue("currentJobTitle", value),
             validation: { required: "Please select at least one option" },
           },
@@ -725,7 +890,7 @@ export const useFormLayout = ({
             name: "requiredJobTitle",
             label: t("requiredJobTitle"),
             inputType: "text",
-            value: isEditing ? editTopic?.requiredJobTitle : requiredJobTitle,
+            value: watch("requiredJobTitle") || "",
             onChange: (value) => setValue("requiredJobTitle", value),
             validation: { required: "Please select at least one option" },
           },
@@ -736,7 +901,7 @@ export const useFormLayout = ({
             type: "checkbox",
             name: "doesTheInternalRegulationIncludePromotionMechanism",
             label: t("doesTheInternalRegulationIncludePromotionMechanism"),
-            checked: doesTheInternalRegulationIncludePromotionMechanism,
+            checked: watch("doesTheInternalRegulationIncludePromotionMechanism") || false,
             onChange: (checked: boolean) => {
               if (checked) {
                 setValue("doesContractIncludeAdditionalUpgrade", false);
@@ -751,7 +916,7 @@ export const useFormLayout = ({
             type: "checkbox",
             name: "doesContractIncludeAdditionalUpgrade",
             label: t("doesContractIncludeAdditionalUpgrade"),
-            checked: doesContractIncludeAdditionalUpgrade,
+            checked: watch("doesContractIncludeAdditionalUpgrade") || false,
             onChange: (checked: boolean) => {
               if (checked) {
                 setValue(
@@ -770,7 +935,7 @@ export const useFormLayout = ({
             name: "currentPosition",
             label: t("currentPosition"),
             inputType: "text",
-            value: isEditing ? editTopic?.currentPosition : currentPosition,
+            value: watch("currentPosition") || "",
             onChange: (value) => setValue("currentPosition", value),
             validation: { required: "Please select at least one option" },
           },
@@ -779,7 +944,7 @@ export const useFormLayout = ({
             name: "theWantedJob",
             label: t("theWantedJob"),
             inputType: "text",
-            value: isEditing ? editTopic?.theWantedJob : theWantedJob,
+            value: watch("theWantedJob") || "",
             onChange: (value) => setValue("theWantedJob", value),
             validation: { required: "Please select at least one option" },
           },
@@ -791,9 +956,54 @@ export const useFormLayout = ({
             name: "amount",
             label: t("amount"),
             inputType: "number",
-            value: isEditing ? editTopic?.amount : amount,
+            min: 0,
+            value: watch("amount") || "",
             onChange: (value) => setValue("amount", value),
-            validation: { required: "Please select at least one option" },
+            validation: { required: t("amount") },
+          },
+        ]);
+      case "LRESR-2":
+        return buildForm([
+          {
+            type: "input",
+            name: "amount",
+            label: t("amount"),
+            inputType: "number",
+            min: 0,
+            value: watch("amount") || "",
+            onChange: (value) => setValue("amount", value),
+            validation: { required: t("amount") },
+          },
+          {
+            type: "input",
+            name: "consideration",
+            label: t("consideration"),
+            inputType: "text",
+            value: watch("consideration") || "",
+            onChange: (value) => setValue("consideration", value),
+            validation: { required: t("consideration") },
+          },
+        ]);
+      case "LRESR-3":
+        return buildForm([
+          {
+            type: "input",
+            name: "amount",
+            label: t("amount"),
+            inputType: "number",
+            min: 0,
+            value: watch("amount") || "",
+            onChange: (value) => setValue("amount", value),
+            validation: { required: t("amount") },
+          },
+          {
+            type: "input",
+            name: "rewardType",
+            label: t("rewardType"),
+            inputType: "text",
+            value: watch("rewardType") || "",
+            onChange: (value) => setValue("rewardType", value),
+            validation: { required: t("rewardType") },
           },
         ]);
       case "TTR-1":
@@ -815,7 +1025,8 @@ export const useFormLayout = ({
             name: "amount",
             label: t("amount"),
             inputType: "number",
-            value: isEditing ? editTopic?.amount : amount,
+            min: 0,
+            value: watch("amount") || "",
             onChange: (value) => setValue("amount", value),
             validation: { required: "Please select at least one option" },
           },
@@ -824,18 +1035,38 @@ export const useFormLayout = ({
             name: "consideration",
             label: t("consideration"),
             inputType: "text",
-            value: isEditing ? editTopic?.consideration : consideration,
+            value: watch("consideration") || "",
             onChange: (value) => setValue("consideration", value),
             validation: { required: "Please select at least one option" },
           },
           {
-            name: "date",
-            type: "dateOfBirth",
-            hijriLabel: t("dateHijri"),
-            gregorianLabel: t("gregorianDate"),
-            hijriFieldName: "date_hijri",
-            value: isEditing && formatHijriDate(date_hijri),
-            gregorianFieldName: "date_gregorian",
+            type: "custom",
+            component: (
+              <div className="flex flex-col gap-2">
+                <HijriDatePickerInput
+                  control={control}
+                  name="date_hijri"
+                  label={t("dateHijri")}
+                  rules={{
+                    required: true,
+                  }}
+
+                  onChangeHandler={(date, onChange) =>
+                    handleHijriDateChange(
+                      date,
+                      onChange,
+                      "date_gregorian"
+                    )
+
+                  }
+                />
+                <GregorianDateDisplayInput
+                  control={control}
+                  name="date_gregorian"
+                  label={t("gregorianDate")}
+                />
+              </div>
+            ),
           },
         ]);
       case "RR-1":
@@ -845,7 +1076,8 @@ export const useFormLayout = ({
             name: "amount",
             label: t("amount"),
             inputType: "number",
-            value: isEditing ? editTopic?.amount : amount,
+            min: 0,
+            value: watch("amount") || "",
             onChange: (value) => setValue("amount", value),
             validation: { required: "Please select at least one option" },
           },
@@ -854,7 +1086,7 @@ export const useFormLayout = ({
             name: "rewardType",
             label: t("rewardType"),
             inputType: "text",
-            value: isEditing ? editTopic?.rewardType : rewardType,
+            value: watch("rewardType") || "",
             onChange: (value) => setValue("rewardType", value),
             validation: { required: "Please select at least one option" },
           },
@@ -864,26 +1096,27 @@ export const useFormLayout = ({
     }
   };
 
-  const step3: SectionLayout = {
+  const step3: any = {
     gridCols: 2,
     className: "step3",
     ...(getFormBySubCategory().filter(Boolean).length > 0
       ? {
-          title: t("topics_data"),
-          children: getFormBySubCategory().filter(Boolean) as FormElement[],
-        }
+        title: t("topics_data"),
+        children: [
+          ...(getFormBySubCategory().filter(Boolean) as FormElement[]),
+          ...getCommonElements(isValid),
+        ],
+      }
       : {
-          children: [
-            {
-              type: "custom",
-              component: (
-                <div className="p-4 bg-green-50 text-green-700 rounded-md">
-                  No Content Found!
-                </div>
-              ),
-            },
-          ],
-        }),
+        children: [
+          {
+            type: "custom",
+            component: (
+              <></>
+            ),
+          },
+        ],
+      }),
   };
 
   const layout: SectionLayout[] = [];

@@ -9,12 +9,14 @@ interface BR1FormProps {
   t: (key: string) => string;
   setValue: (field: string, value: unknown) => void;
   MainCategoryOptions: Option[];
-  mainCategory:any;
+  mainCategory: any;
   SubCategoryOptions: Option[];
-  subCategory:any;
+  subCategory: any;
   handleAdd: () => void;
-  isMainCategoryLoading?:boolean
-  isSubCategoryLoading?:boolean;
+  isMainCategoryLoading?: boolean
+  isSubCategoryLoading?: boolean;
+  onClearMainCategory: () => void;
+  onClearSubCategory: () => void;
 }
 
 export const getStep1FormFields = ({
@@ -26,37 +28,51 @@ export const getStep1FormFields = ({
   subCategory,
   handleAdd,
   isMainCategoryLoading,
-  isSubCategoryLoading
+  isSubCategoryLoading,
+  onClearMainCategory,
+  onClearSubCategory
 }: BR1FormProps): FormElement[] => {
   return [
-        {
-          isLoading:isMainCategoryLoading,
-          type: "autocomplete",
-          name: "mainCategory",
-          label: t("main_category"),
-          options: MainCategoryOptions,
-          value: mainCategory,
-          onChange: (option: Option | null) => {
-            setValue("mainCategory", option);
-            setValue("subCategory", null);
-          },
-        },
-        {
-          isLoading:isSubCategoryLoading,
-          type: "autocomplete",
-          name: "subCategory",
-          label: t("sub_category"),
-          options: SubCategoryOptions,
-          value: subCategory,
-          onChange: (option: Option | null) => setValue("subCategory", option),
-        },
-        {
-          disabled: !(mainCategory && subCategory),
-          type: "button",
-          label: t("add"),
-          onClick: handleAdd,
-          size: "sm",
-          colSpan: 2,
-        },
-      ]
+    {
+      isLoading: isMainCategoryLoading,
+      type: "autocomplete",
+      name: "mainCategory",
+      label: t("main_category"),
+      options: MainCategoryOptions,
+      value: mainCategory,
+      onChange: (option: Option | null) => {
+        setValue("mainCategory", option);
+        setValue("subCategory", null);
+        if (option) {
+          onClearSubCategory();
+        }
+      },
+      onClear: onClearMainCategory,
+      validation: { required: "Main category is required" }
+    },
+    {
+      isLoading: isSubCategoryLoading,
+      type: "autocomplete",
+      name: "subCategory",
+      label: t("sub_category"),
+      options: SubCategoryOptions,
+      value: subCategory,
+      onChange: (option: Option | null) => {
+        setValue("subCategory", option);
+        if (option) {
+          handleAdd();
+        }
+      },
+      onClear: onClearSubCategory,
+      validation: { required: "Sub category is required" }
+    },
+    // {
+    //   disabled: !(mainCategory && subCategory),
+    //   type: "button",
+    //   label: t("add"),
+    //   onClick: handleAdd,
+    //   size: "sm",
+    //   colSpan: 2,
+    // },
+  ]
 };

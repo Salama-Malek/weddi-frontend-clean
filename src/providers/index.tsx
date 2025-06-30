@@ -24,6 +24,8 @@ interface MyDropdownProps {
   trigger?: ReactNode;
   isFetching?: boolean;
   languageChange?: () => void
+  customItems?: { label: string; value: string, onClick?: () => void }[]
+  header?: string
 }
 
 const MyDropdown: React.FC<MyDropdownProps> = ({
@@ -35,25 +37,14 @@ const MyDropdown: React.FC<MyDropdownProps> = ({
   onChange,
   trigger,
   isFetching,
-  languageChange
+  languageChange,
+  customItems,
+  header
 }) => {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { isOpen, close, toggle } = useToggle();
 
   useOutsideClick(dropdownRef, close);
-
-  <MyDropdownContext.Provider value={{ isOpen, toggle }}>
-    <div ref={dropdownRef}>
-      {trigger ? (
-        <div onClick={toggle}>{trigger}</div>
-      ) : (
-        <MyDropdownButton className={className} applyStyle={applyStyle}>
-          {buttonLabel}
-        </MyDropdownButton>
-      )}
-      <MyDropdownItems items={items} />
-    </div>
-  </MyDropdownContext.Provider>;
 
   return (
     <MyDropdownContext.Provider value={{ isOpen, toggle }}>
@@ -66,8 +57,10 @@ const MyDropdown: React.FC<MyDropdownProps> = ({
           </MyDropdownButton>
         )}
         <MyDropdownItems
+          header={header}
           items={items}
           selected={selected}
+          customItems={customItems}
           languageChange={languageChange}
           onSelect={(option) => {
             if (option && option.value) {
@@ -88,4 +81,7 @@ export interface MyDropdownItemsProps {
   selected?: { label: string; value?: string };
   onSelect?: (item: { label: string; value: string }) => void;
   languageChange?: () => void
+  customItems?: { label: string; value: string, onClick?: () => void }[]
+  header?: string
 }
+

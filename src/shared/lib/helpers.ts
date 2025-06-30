@@ -124,13 +124,23 @@ export function useLoadingStates<T extends Record<string,boolean>>(states:T):T {
 export function formatHijriDate(compact:string):string {
   if (!compact||compact.length!==8) return compact;
   const y=compact.slice(0,4), m=compact.slice(4,6), d=compact.slice(6);
-  return `${m}/${d}/${y}`;
+  return `${y}/${m}/${d}`;
 }
  
-export function formatDateToYYYYMMDD(dateString:string):string {
-  if (!dateString) return '';
-  try { return new DateObject(dateString).format('YYYYMMDD'); }
-  catch { return dateString; }
+/**
+ * Format a date string to yyyymmdd format by removing any separators
+ */
+export function formatDateToYYYYMMDD(dateString: string | undefined): string | undefined {
+  if (!dateString) return undefined;
+  return dateString.replace(/[\/\-]/g, '');
+}
+ 
+/**
+ * Format a date string from yyyymmdd format to a display format with separators
+ */
+export function formatDateFromYYYYMMDD(dateString: string | undefined, separator: string = '/'): string | undefined {
+  if (!dateString || dateString.length !== 8) return undefined;
+  return `${dateString.slice(0, 4)}${separator}${dateString.slice(4, 6)}${separator}${dateString.slice(6)}`;
 }
  
 export function formatDateGMT(inputDate: string | null | undefined): string {
@@ -140,8 +150,6 @@ export function formatDateGMT(inputDate: string | null | undefined): string {
   const dt=new Date(`${year}-${month}-${day}T${hour}:${minute}:00.000Z`);
   return dt.toLocaleString('en-US',{year:'numeric',month:'long',day:'numeric',hour:'2-digit',minute:'2-digit',timeZone:'GMT',timeZoneName:'short'});
 }
- 
- 
  
 export const formatDateString = (raw: string | undefined | null): string => {
   if (!raw || raw.length !== 8) return "";

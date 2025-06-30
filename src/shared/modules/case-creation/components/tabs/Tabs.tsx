@@ -10,7 +10,7 @@ interface TabsProps {
 const Tabs: React.FC<TabsProps> = ({ currentTab, tabs, onTabChange, isFormValid }) => {
   return (
     <>
-      <div className="flex gap-x-12 mb-6">
+      <div className="flex flex-col gap-x-12 mb-6 md:flex-row lg:flex-row">
         {tabs.map((tab, index) => (
           <div className="flex flex-col items-center" key={index}>
             <button

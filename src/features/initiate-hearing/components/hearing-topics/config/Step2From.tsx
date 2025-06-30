@@ -12,13 +12,14 @@ interface Step2FormProps {
   isEditing: boolean;
   mainCategory: any;
   subCategory: any;
-  subTopicsLoading: boolean|undefined;
+  subTopicsLoading: boolean | undefined;
   matchedSubCategory?: {
     LegalFormal?: string;
+    ElementValue?: string;
   };
   acknowledged: boolean;
   showTopicData: boolean;
-  handleAcknowledgeChange: any
+  handleAcknowledgeChange: any;
 }
 
 export const getStep2FormFields = ({
@@ -31,16 +32,16 @@ export const getStep2FormFields = ({
   acknowledged,
   showTopicData,
   handleAcknowledgeChange,
-}: Step2FormProps): FormElement|any => {
-  // //console.log('matchedSubCategory', matchedSubCategory)
+}: Step2FormProps): FormElement | any => {
+  // console.log('matchedSubCategory', matchedSubCategory)
   // const excludeAcknowledgment = subCategory?.value === "AWRW-1" || subCategory?.value === "AWRW-2";
-  
+
   return [
     !isEditing && {
       type: "custom",
       name: "divider",
       colSpan: 2,
-      component: <hr className="my-4 mb-[-16px]" /> as ReactNode,
+      component: (<hr className="my-4 mb-[-16px]" />) as ReactNode,
     },
     !isEditing && {
       type: "readonly",
@@ -52,7 +53,7 @@ export const getStep2FormFields = ({
       type: "readonly",
       name: "subCategoryDisplay",
       label: t("sub_category"),
-      value: subCategory?.label || "-----",
+      value: matchedSubCategory?.ElementValue || "-----",
     },
     {
       type: "custom",
@@ -73,13 +74,17 @@ export const getStep2FormFields = ({
           isLoading={subTopicsLoading}
           label={t("regulatory_text_label")}
           readOnly
-          value={isEditing ? matchedSubCategory?.LegalFormal : matchedSubCategory?.LegalFormal}
+          value={
+            isEditing
+              ? matchedSubCategory?.LegalFormal
+              : matchedSubCategory?.LegalFormal
+          }
           className="w-full h-32"
           notRequired={true}
         />
       ) as ReactNode,
     },
-    
+
     // !excludeAcknowledgment &&
     {
       type: "checkbox",
@@ -89,7 +94,6 @@ export const getStep2FormFields = ({
       onChange: handleAcknowledgeChange,
       colSpan: 2,
       className: "mb-7",
-      disabled: false,
     },
-  ].filter(Boolean); 
+  ].filter(Boolean);
 };

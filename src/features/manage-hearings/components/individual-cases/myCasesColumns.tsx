@@ -11,7 +11,7 @@ export const useMyCasesColumns = (
   data: CaseRecord[],
   role: "claimant" | "defendant"
 ): ColumnDef<CaseRecord>[] => {
-  const { t } = useTranslation("manageHearing");
+  const { t } = useTranslation("managehearings");
   const isDefendantView = role === "defendant";
 
   return useMemo(() => {
@@ -23,6 +23,10 @@ export const useMyCasesColumns = (
       {
         header: t("table_headers.case_number"),
         accessorKey: "SettlementID",
+      },
+      {
+        header: t("table_headers.code_700"),
+        accessorKey: "Number700",
       },
     ];
 

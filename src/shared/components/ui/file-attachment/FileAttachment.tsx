@@ -61,6 +61,7 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
       </div>
 
       <button
+        type="button"
         onClick={onView}
         className="text-gray-600 hover:text-gray-800"
       >
@@ -91,6 +92,7 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
       </button>
 
       <button
+        type="button"
         onClick={onRemove}
         className="hover:text-gray-600"
       >

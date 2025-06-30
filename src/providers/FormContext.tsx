@@ -16,6 +16,7 @@ import { FormData } from "@/shared/components/form/form.types";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
 import { Topic } from "@/features/initiate-hearing/components/hearing-topics/hearing.topics.types";
+import { FormResetProvider } from "./FormResetProvider";
 
 interface FormContextType extends UseFormReturn<FormData> {
   formState: FormState<FormData>;
@@ -62,6 +63,19 @@ export const FormProvider: React.FC<FormProviderProps> = ({
       dateOfFirstWorkingDayGregorian: "",
       dateoflastworkingdayHijri: "",
       dateofLastworkingdayGregorian: "",
+      // Case topics date fields
+      from_date_hijri: "",
+      from_date_gregorian: "",
+      to_date_hijri: "",
+      to_date_gregorian: "",
+      date_hijri: "",
+      date_gregorian: "",
+      injury_date_hijri: "",
+      injury_date_gregorian: "",
+      managerial_decision_date_hijri: "",
+      managerial_decision_date_gregorian: "",
+      request_date_hijri: "",
+      request_date_gregorian: "",
       ...storeDefaults,
     }),
     [storeDefaults]
@@ -69,6 +83,7 @@ export const FormProvider: React.FC<FormProviderProps> = ({
 
   const formMethods = useForm<FormData>({
     mode: "onChange",
+    shouldUnregister: true,
     defaultValues: mergedDefaults,
     ...formOptions,
   });
@@ -112,7 +127,9 @@ export const FormProvider: React.FC<FormProviderProps> = ({
         handleRemoveValidation,
       }}
     >
-      {children}
+      <FormResetProvider setValue={formMethods.setValue} clearErrors={formMethods.clearErrors}>
+        {children}
+      </FormResetProvider>
     </FormContext.Provider>
   );
 };

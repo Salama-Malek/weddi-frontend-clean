@@ -12,9 +12,11 @@ import {
 } from "@/features/initiate-hearing/api/create-case/plaintiffDetailsApis";
 import { useEffect, useMemo, useState } from "react";
 import { useCookieState } from "@/features/initiate-hearing/hooks/useCookieState";
+// import useCaseDetailsPrefill from "@/features/initiate-hearing/hooks/useCaseDetailsPrefill"; 
 import { useAPIFormsData } from "@/providers/FormContext";
 import { legRepVsWorkerUseFormLayout } from "../../establishment-tabs/legal-representative/work/legworker.forms.formLayout";
 import { useTranslation } from "react-i18next";
+import { FormResetProvider } from '@/providers/FormResetProvider';
 
 export interface WorkDetailsProps {
   register?: any;
@@ -48,13 +50,16 @@ const userType = getCookie("userType") || "";
    const legalRepType = getCookie("legalRepType");
    const defendantStatus = getCookie("defendantStatus") || "";
 
-  const { formData, forceValidateForm, clearFormData } = useAPIFormsData();
+  const { formData, forceValidateForm, handleRemoveValidation } = useAPIFormsData();
   useEffect(() => {
     forceValidateForm();
 
     setValue("region", null);
     setValue("city", null);
   }, []);
+
+  // Prefill fields when continuing an incomplete case for Legal representative
+  // useCaseDetailsPrefill(setValue as any);
 
 
 
@@ -113,26 +118,22 @@ useEffect(() => {
   const { data: cityData, isFetching: isCityLoading } =
     useGetWorkerCityLookupDataQuery(
       {
-
         AcceptedLanguage: currentLanguage, // Pass current language
-
         SourceSystem: "E-Services",
-        selectedWorkerRegion,
+        selectedWorkerRegion: typeof selectedWorkerRegion === 'object' ? selectedWorkerRegion?.value : selectedWorkerRegion || "",
         ModuleName: "JobLocationCity",
       },
-      { skip: !selectedWorkerRegion }
+      { skip: !(typeof selectedWorkerRegion === 'object' ? selectedWorkerRegion?.value : selectedWorkerRegion) }
     );
 
   const { data: laborOfficeData, isFetching: isLaborLoading } =
     useGetLaborOfficeLookupDataQuery(
       {
-
         AcceptedLanguage: currentLanguage, // Pass current language
-
         SourceSystem: "E-Services",
-        selectedWorkerCity,
+        selectedWorkerCity: typeof selectedWorkerCity === 'object' ? selectedWorkerCity?.value : selectedWorkerCity || "",
       },
-      { skip: !selectedWorkerCity }
+      { skip: !(typeof selectedWorkerCity === 'object' ? selectedWorkerCity?.value : selectedWorkerCity) }
     );
 
   useEffect(() => {
@@ -268,14 +269,18 @@ useEffect(() => {
   };
 
   return (
-    <DynamicForm
-      formLayout={getFormLayout(userType)}
-      register={register}
-      errors={errors}
-      setValue={setValue}
-      control={control}
-      watch={watch}
-    />
+    <FormResetProvider setValue={setValue} clearErrors={handleRemoveValidation}>
+      <div className="flex flex-col gap-4">
+        <DynamicForm
+          formLayout={getFormLayout(userType)}
+          register={register}
+          errors={errors}
+          setValue={setValue}
+          control={control}
+          watch={watch}
+        />
+      </div>
+    </FormResetProvider>
   );
 };
 

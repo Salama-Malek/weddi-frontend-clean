@@ -41,6 +41,7 @@ const AttachmentModal: React.FC<AttachmentModalProps> = ({
   onClose,
   onSave
 }) => {
+  const { t } = useTranslation();
   const { i18n } = useTranslation();
   const currentLanguage = i18n.language.toUpperCase();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -53,11 +54,16 @@ const AttachmentModal: React.FC<AttachmentModalProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [getCookie] = useCookieState({ caseId: "" });
   const userClaims: TokenClaims = getCookie("userClaims");
-
+  const userType = getCookie("userType");
 
   // API Queries
   const { data: WorkerAttachmentCategories, isFetching } = useWorkerAttachmentCategoriesQuery(
-    { AcceptedLanguage: "EN", SourceSystem: "E-Services" },
+    {
+      ModuleKey: (userType === "Legal representative" || userType === "Establishment") ? "EstablishmentAttachmentCategories" : "WorkerAttachmentCategories",
+      ModuleName: (userType === "Legal representative" || userType === "Establishment") ? "EstablishmentAttachmentCategories" : "WorkerAttachmentCategories",
+      AcceptedLanguage: "EN",
+      SourceSystem: "E-Services"
+    },
     { skip: !isOpen }
   );
 
@@ -75,7 +81,7 @@ const AttachmentModal: React.FC<AttachmentModalProps> = ({
   const validateFile = (file: File): boolean => {
     // Check file size
     if (file.size > MAX_FILE_SIZE) {
-      setError(`File "${file.name}" exceeds maximum size of 5MB`);
+      setError(t('attachments.errors.file_size', { name: file.name }));
       return false;
     }
 
@@ -84,9 +90,10 @@ const AttachmentModal: React.FC<AttachmentModalProps> = ({
       // Fallback to extension check if MIME type isn't recognized
       const fileExtension = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
       if (!ALLOWED_EXTENSIONS.includes(fileExtension)) {
-        setError(
-          `File "${file.name}" has invalid type. Only ${ALLOWED_EXTENSIONS.join(', ')} files are allowed`
-        );
+        setError(t('attachments.errors.file_type', {
+          name: file.name,
+          types: ALLOWED_EXTENSIONS.join(', ')
+        }));
         return false;
       }
     }
@@ -113,7 +120,7 @@ const AttachmentModal: React.FC<AttachmentModalProps> = ({
     const selectedFiles = Array.from(event.target.files || []);
 
     if (!classification) {
-      setError("Please select a classification first");
+      setError(t('attachments.errors.select_classification'));
       return;
     }
 
@@ -138,7 +145,7 @@ const AttachmentModal: React.FC<AttachmentModalProps> = ({
       setFiles((prev) => [...prev, ...newAttachments]);
       setClassification(null);
     } catch (err) {
-      setError("Failed to process files. Please try again.");
+      setError(t('attachments.errors.process_failed'));
     } finally {
       // Reset input to allow selecting the same file again
       if (event.target) {
@@ -149,7 +156,7 @@ const AttachmentModal: React.FC<AttachmentModalProps> = ({
 
   const handleAddClick = () => {
     if (!classification) {
-      setError("Please select a classification first");
+      setError(t('attachments.errors.select_classification'));
       return;
     }
     fileInputRef.current?.click();
@@ -163,7 +170,7 @@ const AttachmentModal: React.FC<AttachmentModalProps> = ({
 
   const handleSave = async () => {
     if (!files.length) {
-      setError("Please add at least one file");
+      setError(t('attachments.errors.add_file'));
       return;
     }
 
@@ -191,23 +198,23 @@ const AttachmentModal: React.FC<AttachmentModalProps> = ({
       setClassification(null);
       onClose();
     } catch (err) {
-      setError("Failed to upload attachments. Please try again.");
+      setError(t('attachments.errors.upload_failed'));
     }
   };
 
   if (!isOpen) return null;
 
   return (
-    <Modal header="Add Attachments" close={onClose} modalWidth={600}>
+    <Modal header={t('attachments.title')} close={onClose} modalWidth={600}>
       <div className="space-y-6 w-full">
         <div className="text-sm text-gray-500 mb-4">
-          Allowed file types: PDF, JPG, JPEG, TIF, PNG (Max 5MB each)
+          {t('attachments.allowed_files')}
         </div>
 
         <div className="grid grid-cols-3 gap-4 items-end">
           <div className="col-span-2">
             <AutoCompleteField
-              label="File Classification"
+              label={t('attachments.classification')}
               name="fileClassification"
               isLoading={isFetching}
               options={WorkerAttachmentCategoriesOptions}
@@ -222,6 +229,7 @@ const AttachmentModal: React.FC<AttachmentModalProps> = ({
           </div>
           <div>
             <Button
+              type="button"
               variant="primary"
               typeVariant="brand"
               size="sm"
@@ -229,13 +237,13 @@ const AttachmentModal: React.FC<AttachmentModalProps> = ({
               className={!classification ? "opacity-50 cursor-not-allowed" : ""}
               disabled={!classification}
             >
-              Add Files
+              {t('attachments.add_files')}
             </Button>
             <input
               ref={fileInputRef}
               type="file"
               className="hidden"
-              multiple
+              multiple={false}
               accept=".pdf,.jpg,.jpeg,.tif,.png,application/pdf,image/jpeg,image/png,image/tiff"
               onChange={handleFileSelect}
             />
@@ -256,16 +264,20 @@ const AttachmentModal: React.FC<AttachmentModalProps> = ({
           </div>
         )}
 
+        {error && <p className="text-red-500 text-sm">{error}</p>}
+
         <div className="flex justify-between mt-6">
           <Button
+            type="button"
             variant="secondary"
             typeVariant="outline"
             size="sm"
             onClick={onClose}
           >
-            Cancel
+            {t('attachments.cancel')}
           </Button>
           <Button
+            type="button"
             variant="primary"
             typeVariant="brand"
             size="sm"
@@ -274,10 +286,10 @@ const AttachmentModal: React.FC<AttachmentModalProps> = ({
           >
             {isLoading ? (
               <>
-                <span>Uploading</span> <TableLoader />
+                <span>{t('attachments.uploading')}</span> <TableLoader />
               </>
             ) : (
-              "Save"
+              t('attachments.save')
             )}
           </Button>
         </div>

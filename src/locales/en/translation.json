@@ -18,9 +18,9 @@
   "Start_service": "Start service",
   "welcome_text": "Welcome,",
   "log_desc": "Your last login was on January 13, 2025, at 10:45 AM.",
-  "Completed_hearing_text": "Completed hearings",
-  "Pending_hearing_text": "Pending hearings",
-  "All_hearing_text": "All hearings",
+  "Completed_hearing_text": "Completed cases",
+  "Pending_hearing_text": "Pending cases",
+  "All_hearing_text": "All cases",
   "hearing_time": "20 minutes remaining",
   "time_desc": "You have a case ",
   "time_desc_start": "Remaining time until session",
@@ -80,5 +80,45 @@
   "legal_desc": "Continue as a legal representative to manage cases on behalf of others",
   "select_account_type": "Select Account Type",
   "login": "Login",
-  "login_desc": "Please select your account type to continue"
+  "login_desc": "Please select your account type to continue",
+  "nationality_error": "Cannot file the case , The plaintiffs nationality doesn't match the embassy's nationality",
+  "no_notifcations": "No notifications",
+  "show_more_notifications": "Show more notifications",
+  "notifications": "Notifications",
+  "nic_error": {
+    "default_error": "An error occurred while validating your NIC",
+    "unauthorized": "You are not authorized to access this service",
+    "server_error": "Server error occurred while validating your NIC"
+  },
+  "case_creation": {
+    "storage": {
+      "step": "step",
+      "tab": "tab"
+    },
+    "layout": {
+      "title": "Case Creation",
+      "step_title": "Step {{number}}",
+      "step_description": "Step {{number}} Description"
+    }
+  },
+  "Submission successful!": "Submission successful!",
+  "attachments": {
+    "title": "Add Attachments",
+    "allowed_files": "Allowed file types: PDF, JPG, JPEG, TIF, PNG (Max 5MB each)",
+    "classification": "File Classification",
+    "add_files": "Add Files",
+    "uploading": "Uploading",
+    "save": "Save",
+    "cancel": "Cancel",
+    "errors": {
+      "select_classification": "Please select a classification first",
+      "add_file": "Please add at least one file",
+      "file_size": "File \"{{name}}\" exceeds maximum size of 5MB",
+      "file_type": "File \"{{name}}\" has invalid type. Only {{types}} files are allowed",
+      "process_failed": "Failed to process files. Please try again.",
+      "upload_failed": "Failed to upload attachments. Please try again."
+    }
+  },
+  "homePageWarning": "Switch account from home page",
+  "homePageWarningDesc": "You are currently using the legal representative account. To change the account, change the account in the home page"
 }

@@ -38,18 +38,55 @@ const Banner: React.FC<BannerProps> = ({ isEstablishment, isLegalRep }) => {
  
   useEffect(() => {
     let intervalId: NodeJS.Timeout;
- 
+
     const fetchAndCheckData = async () => {
-      const result = await triggerGetMySchedules({
-        AcceptedLanguage: i18n.language.toUpperCase(),
-        SourceSystem: "E-Services",
-        IDNumber: userClaims.UserID,
-        UserType: uerType,
-        FileNumber: userClaims?.File_Number && userClaims?.File_Number
-      });
- 
+      const selectedUserType = getCookie("selectedUserType");
+      const mainCategory = getCookie("mainCategory")?.value;
+      const subCategory = getCookie("subCategory")?.value;
+
+      // For Legal representative users, check if they have made their selections
+      if (uerType === "Legal representative") {
+        // If user hasn't selected their role yet, don't call the API
+        if (!selectedUserType) {
+          return;
+        }
+        
+        // If user selected Legal representative but hasn't selected main/sub categories, don't call the API
+        if (selectedUserType === "Legal representative" && (!mainCategory || !subCategory)) {
+          return;
+        }
+        
+        // If user selected Worker, use Worker configuration
+        if (selectedUserType === "Worker") {
+          const result = await triggerGetMySchedules({
+            AcceptedLanguage: i18n.language.toUpperCase(),
+            SourceSystem: "E-Services",
+            IDNumber: userClaims.UserID,
+            UserType: "Worker",
+          });
+          handleApiResponse(result);
+          return;
+        }
+      }
+
+      try {
+        const result = await triggerGetMySchedules({
+          AcceptedLanguage: i18n.language.toUpperCase(),
+          SourceSystem: "E-Services",
+          IDNumber: userClaims.UserID,
+          UserType: uerType,
+          FileNumber: userClaims?.File_Number && userClaims?.File_Number
+        });
+        handleApiResponse(result);
+      } catch (error) {
+        // Suppress ER3008 and other "no records found" errors
+        console.log("MySchedules API error (suppressed):", error);
+      }
+    };
+
+    const handleApiResponse = (result: any) => {
       const data = result?.data;
- 
+
       if (data?.PlaintiffCases?.length > 0) {
         const upcomingSessions = data.PlaintiffCases
           .map((s: any) => ({
@@ -58,10 +95,10 @@ const Banner: React.FC<BannerProps> = ({ isEstablishment, isLegalRep }) => {
           }))
           .filter((s: any) => s.minutesRemaining >= 0)
           .sort((a: any, b: any) => a.minutesRemaining - b.minutesRemaining);
- 
+
         if (upcomingSessions.length > 0) {
           setNearestSession(upcomingSessions[0]);
- 
+
           if (!intervalId) {
             intervalId = setInterval(fetchAndCheckData, 60000);
           }
@@ -70,11 +107,11 @@ const Banner: React.FC<BannerProps> = ({ isEstablishment, isLegalRep }) => {
         }
       }
     };
- 
+
     if (uerType) {
       fetchAndCheckData();
     }
- 
+
     return () => {
       if (intervalId) clearInterval(intervalId);
     };

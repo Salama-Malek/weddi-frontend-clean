@@ -7,6 +7,7 @@ import { options } from "@/features/initiate-hearing/config/Options";
 import { useCookieState } from "@/features/initiate-hearing/hooks/useCookieState";
 import { useGetGenderLookupDataQuery, useGetNationalityLookupDataQuery, useGetNICDetailsQuery, useGetOccupationLookupDataQuery, useGetWorkerCityLookupDataQuery, useGetWorkerRegionLookupDataQuery } from "@/features/initiate-hearing/api/create-case/plaintiffDetailsApis";
 import { setFormatDate } from "@/utils/formatters";
+import { formatDateToYYYYMMDD } from "@/shared/utils/dateUtils";
 
 interface EstablishmentDefendantFormLayoutProps {
   setValue?: UseFormSetValue<FormData>;
@@ -51,10 +52,10 @@ export const useEstablishmentDefendantFormLayout = ({
     {
       AcceptedLanguage: i18n.language === "ar" ? "AR" : "EN",
       SourceSystem: "E-Services",
-      selectedWorkerRegion: selectedWorkerRegion2,
+      selectedWorkerRegion: typeof selectedWorkerRegion2 === 'object' ? selectedWorkerRegion2?.value : selectedWorkerRegion2 || "",
       ModuleName: "WorkerCity",
     },
-    { skip: !selectedWorkerRegion2 }
+    { skip: !(typeof selectedWorkerRegion2 === 'object' ? selectedWorkerRegion2?.value : selectedWorkerRegion2) }
   );
   const { data: occupationData } = useGetOccupationLookupDataQuery({
     AcceptedLanguage: i18n.language === "ar" ? "AR" : "EN",
@@ -82,7 +83,7 @@ export const useEstablishmentDefendantFormLayout = ({
   } = useGetNICDetailsQuery(
     {
       IDNumber: watchNationalId || "",
-      DateOfBirth: setFormatDate(watchDateOfBirth) || "",
+      DateOfBirth: formatDateToYYYYMMDD(watchDateOfBirth) || "",
       AcceptedLanguage: i18n.language === "ar" ? "AR" : "EN",
       SourceSystem: "E-Services",
     },
@@ -168,28 +169,28 @@ export const useEstablishmentDefendantFormLayout = ({
 
 
   useEffect(() => {
-    //console.log("this is newwww", nicData?.NICDetails);
-
-    setValue("DefendantsEstablishmentPrisonerName", nicData?.NICDetails?.PlaintiffName, {
-      shouldValidate: nicData?.NICDetails?.PlaintiffName,
-    });
-    setValue("DefendantsEstablishmentRegion", nicData?.NICDetails?.Region, {
-      shouldValidate: nicData?.NICDetails?.Region,
-    });
-    setValue("DefendantsEstablishmentCity", nicData?.NICDetails?.City, {
-      shouldValidate: nicData?.NICDetails?.City,
-    });
-    setValue("DefendantsEstablishOccupation", nicData?.NICDetails?.Occupation, {
-      shouldValidate: nicData?.NICDetails?.Occupation,
-    });
-    setValue("DefendantsEstablishmentGender", nicData?.NICDetails?.Gender, {
-      shouldValidate: nicData?.NICDetails?.Gender,
-    });
-    setValue("DefendantsEstablishmentNationality", nicData?.NICDetails?.Nationality, {
-      shouldValidate: nicData?.NICDetails?.Nationality,
-    });
-    setValue("DefendantsEstablishmentPrisonerId", watchNationalId)
-
+    if (nicData?.NICDetails) {
+      // Set values with proper codes
+      setValue("DefendantsEstablishmentPrisonerName", nicData?.NICDetails?.PlaintiffName, {
+        shouldValidate: nicData?.NICDetails?.PlaintiffName,
+      });
+      setValue("DefendantsEstablishmentRegion", nicData?.NICDetails?.Region_Code || nicData?.NICDetails?.Region, {
+        shouldValidate: nicData?.NICDetails?.Region,
+      });
+      setValue("DefendantsEstablishmentCity", nicData?.NICDetails?.City_Code || nicData?.NICDetails?.City, {
+        shouldValidate: nicData?.NICDetails?.City,
+      });
+      setValue("DefendantsEstablishOccupation", nicData?.NICDetails?.Occupation_Code || nicData?.NICDetails?.Occupation, {
+        shouldValidate: nicData?.NICDetails?.Occupation,
+      });
+      setValue("DefendantsEstablishmentGender", nicData?.NICDetails?.Gender_Code || nicData?.NICDetails?.Gender, {
+        shouldValidate: nicData?.NICDetails?.Gender,
+      });
+      setValue("DefendantsEstablishmentNationality", nicData?.NICDetails?.Nationality_Code || nicData?.NICDetails?.Nationality, {
+        shouldValidate: nicData?.NICDetails?.Nationality,
+      });
+      setValue("DefendantsEstablishmentPrisonerId", watchNationalId);
+    }
   }, [nicData]);
 
 
@@ -238,7 +239,7 @@ export const useEstablishmentDefendantFormLayout = ({
           type: "input",
           name: "mobileNumber",
           label: t("establishment_tab2.mobileNumber"),
-          inputType: "number",
+          inputType: "text",
           placeholder: "05xxxxxxxx",
           validation: {
             required: t("phoneNumberValidation"),
@@ -276,9 +277,9 @@ export const useEstablishmentDefendantFormLayout = ({
           type: nicData?.NICDetails?.Occupation ? "readonly" : "autocomplete",
           name: "DefendantsEstablishOccupation",
           label: t("occupation"),
-          value: nicData?.NICDetails?.Occupation || "", // Fallback empty string
+          value: nicData?.NICDetails?.Occupation || "",
           ...(nicData?.NICDetails?.Occupation ? {} : {
-            options: occupationOptions || [], // Fallback empty array
+            options: occupationOptions || [],
             validation: { required: t("occupationValidation") },
           }),
         },
@@ -287,9 +288,9 @@ export const useEstablishmentDefendantFormLayout = ({
           type: nicData?.NICDetails?.Gender ? "readonly" : "autocomplete",
           name: "DefendantsEstablishmentGender",
           label: t("gender"),
-          value: nicData?.NICDetails?.Gender || "", // Fallback empty string
+          value: nicData?.NICDetails?.Gender || "",
           ...(nicData?.NICDetails?.Gender ? {} : {
-            options: genderOptions || [], // Fallback empty array
+            options: genderOptions || [],
             validation: { required: t("genderValidation") },
           }),
 
@@ -299,9 +300,9 @@ export const useEstablishmentDefendantFormLayout = ({
           type: nicData?.NICDetails?.Nationality ? "readonly" : "autocomplete",
           name: "DefendantsEstablishmentNationality",
           label: t("nationality"),
-          value: nicData?.NICDetails?.Nationality || "", // Fallback empty string
+          value: nicData?.NICDetails?.Nationality || "",
           ...(nicData?.NICDetails?.Nationality ? {} : {
-            options: nationalityOptions || [], // Fallback empty array
+            options: nationalityOptions || [],
             validation: { required: t("nationalityValidation") },
           }),
         },

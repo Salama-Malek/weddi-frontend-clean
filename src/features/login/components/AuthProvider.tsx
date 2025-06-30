@@ -1,9 +1,10 @@
-import { ReactNode, Suspense, useEffect, useState } from "react";
+import { ReactNode, Suspense, useEffect, useState, useCallback } from "react";
 import { jwtDecode } from "jwt-decode";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useCookieState } from "@/features/initiate-hearing/hooks/useCookieState";
 import {
   GetUserTypeResponce,
+  useLazyGetUserTokenQuery,
   useLazyGetUserTypeLegalRepQuery,
 } from "../api/loginApis";
 import Loader from "@/shared/components/loader";
@@ -14,7 +15,7 @@ import { useLazyGetNICDetailsQuery } from "@/features/initiate-hearing/api/creat
 import { toHijri_YYYYMMDD } from "@/shared/lib/helpers";
 import NICErrorModal from "@/shared/components/modal/NICErrorModal";
 import { FetchBaseQueryError } from "@reduxjs/toolkit/query";
- 
+
 export interface TokenClaims {
   AcceptedLanguage?: string;
   File_Number?: string;
@@ -27,19 +28,18 @@ export interface TokenClaims {
   iat?: number;
   iss?: string;
 }
- 
+
 interface AuthProviderProps {
   children: ReactNode;
-  popupHandler: () => void;
-  popuoStablishment: () => void;
   setIsLegalRep: (value: boolean) => void;
+  setIsEstablishment: (value: boolean) => void;
+  setUserTypeState: (value: string) => void;
 }
- 
+
 const LazyLoader = ({ children }: { children: ReactNode }) => (
   <Suspense fallback={<Loader />}>{children}</Suspense>
 );
- 
- 
+
 const decodeToken = (token: string): TokenClaims | null => {
   try {
     const decoded: TokenClaims = jwtDecode(token);
@@ -50,49 +50,197 @@ const decodeToken = (token: string): TokenClaims | null => {
     return null;
   }
 };
- 
+
 const shouldUseStoredClaims = (claims: any): boolean => {
   if (!claims || Object.keys(claims).length === 0) return false;
   const now = Math.floor(Date.now() / 1000);
   return claims.exp && claims.exp >= now;
 };
- 
+
 const extractUserType = (res: GetUserTypeResponce): string | undefined =>
   res?.UserTypeList?.[0]?.UserType;
- 
+
 const formatDateOfbarth = (claims: TokenClaims | null): TokenClaims | null => {
- 
- 
   return {
     AcceptedLanguage: claims?.AcceptedLanguage,
     File_Number: claims?.File_Number,
     UserDOB: toHijri_YYYYMMDD(claims?.UserDOB || ""),
     UserID: claims?.UserID,
     UserName: claims?.UserName,
-    UserType: claims?.UserType,
+    UserType: claims?.UserType === "EstablishmentUser" ? "1" : "2",
     aud: claims?.aud,
     exp: claims?.exp,
     iat: claims?.iat,
-    iss: claims?.iss
+    iss: claims?.iss,
   };
-}
- 
-const AuthProvider: React.FC<AuthProviderProps> = ({ children, popupHandler, popuoStablishment, setIsLegalRep }) => {
+};
+
+const AuthProvider: React.FC<AuthProviderProps> = ({
+  children,
+  setIsLegalRep,
+  setIsEstablishment,
+  setUserTypeState,
+}) => {
+  // The Start Point of the App
+
   const [searchParams] = useSearchParams();
   const [userClaims, setUserClaims] = useState<TokenClaims | null>(null);
-  const [getCookie, setCookie, removeCookie, removeAll] = useCookieState({}, { path: "/", maxAge: 86400 });
+  const [getCookie, setCookie, removeCookie, removeAll] = useCookieState(
+    {},
+    { path: "/", maxAge: 86400 }
+  );
   const [showNICError, setShowNICError] = useState(false);
   const [nicErrorMessage, setNicErrorMessage] = useState("");
   const [isNICValidated, setIsNICValidated] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const [isDataLoaded, setIsDataLoaded] = useState(false);
 
   const [triggerGetUserType, { data: userTypeLegalRepData, isFetching }] =
     useLazyGetUserTypeLegalRepQuery();
 
-  const [triggerGetNICDetailsQuery, { data: nicData, isFetching: nicIsLoading, error: nicError }] = useLazyGetNICDetailsQuery();
+  const [
+    triggerGetNICDetailsQuery,
+    { data: nicData, isFetching: nicIsLoading, error: nicError },
+  ] = useLazyGetNICDetailsQuery();
+
+  const [triggerGetToken, { isFetching: isTokenFetching }] = useLazyGetUserTokenQuery();
+  const [isTokenReady, setIsTokenReady] = useState(false);
+
+  const checkAndFetchToken = useCallback(async () => {
+    const tokenExpiresAt = getCookie("oauth_token_expires_at");
+    const parsedExpiresAt = tokenExpiresAt ? parseInt(tokenExpiresAt, 10) : 0;
+    
+    // Dynamic refresh check (5 minutes before expiration)
+    const shouldRefreshToken = !parsedExpiresAt || Date.now() > parsedExpiresAt - 5 * 60 * 1000;
+
+    // Static refresh check for testing: refresh if less than 30 seconds left
+    // const shouldRefreshToken = !parsedExpiresAt || Date.now() > parsedExpiresAt - 30 * 1000;
+
+    if (shouldRefreshToken) {
+      try {
+        const tokenData = await triggerGetToken().unwrap();
+        setCookie("oauth_token", tokenData.access_token);
+        
+        // Override API expiration: Force 50-minute expiration instead of 1 hour
+        const customExpiresIn = 50 * 60; // 50 minutes in seconds
+        const expiresAt = Date.now() + customExpiresIn * 1000;
+        
+        // Original dynamic expiration from API (commented out)
+        // const expiresAt = Date.now() + tokenData.expires_in * 1000;
+        
+        // Static 2-minute expiration for testing
+        // const expiresAt = Date.now() + 2 * 60 * 1000;
+        
+        setCookie("oauth_token_expires_at", expiresAt.toString());
+      } catch (err) {
+        console.error('Token refresh failed.', err);
+        throw err; 
+      }
+    }
+  }, [getCookie, setCookie, triggerGetToken]);
+
+  useEffect(() => {
+    const initialize = async () => {
+      try {
+        await checkAndFetchToken();
+        setIsTokenReady(true);
+      } catch {
+        console.error("Initial token fetch failed. Application cannot proceed.");
+      }
+    };
+    initialize();
+  }, [checkAndFetchToken]);
+
+  useEffect(() => {
+    if (!isTokenReady) return;
+
+    const intervalId = setInterval(checkAndFetchToken, 5 * 60 * 1000); // Check every 5 minutes
+
+    return () => clearInterval(intervalId);
+  }, [isTokenReady, checkAndFetchToken]);
+
+  useEffect(() => {
+    if (!isTokenReady) return;
+
+    const initializeUserSession = async () => {
+      try {
+        const tokenFromURL = searchParams.get("MyClientsToken");
+        if (tokenFromURL) {
+          // removeAll();
+          const decodedToken = decodeToken(tokenFromURL);
+          if (!decodedToken) {
+            // window.location.href = `${process.env.VITE_REDIRECT_URL}`;
+            return;
+          }
+
+          const claims = formatDateOfbarth(decodedToken);
+          if (claims?.AcceptedLanguage) {
+            const language = claims.AcceptedLanguage.toUpperCase();
+            i18n.changeLanguage(language.toLowerCase()).then(() => {
+              localStorage.setItem("language", language.toLowerCase());
+              document.documentElement.dir =
+                language.toLowerCase() === "ar" ? "rtl" : "ltr";
+            });
+          }
+
+          setCookie("userClaims", claims);
+          setCookie("token", tokenFromURL);
+
+          if (claims) {
+            claims.UserType = claims.UserType === "EstablishmentUser" ? "1" : "2";
+            setUserClaims(claims);
+
+            if (!claims.File_Number) {
+              await Promise.all([
+                fetchUserType(claims),
+                getNICData(claims.UserID, claims.UserDOB),
+              ]);
+            } else {
+              setCookie("userType", "Establishment");
+              setIsEstablishment(true);
+            }
+          } else {
+            // window.location.href = `${process.env.VITE_REDIRECT_URL}`;
+          }
+        } else {
+          const storedClaims = getCookie("userClaims");
+          if (shouldUseStoredClaims(storedClaims)) {
+            setUserClaims(storedClaims);
+            if (!storedClaims.File_Number) {
+              setIsEstablishment(false);
+              const selectedUserType = getCookie("selectedUserType");
+              if (selectedUserType) {
+                setCookie("userType", selectedUserType);
+                setIsLegalRep(selectedUserType === "Legal representative");
+              } else {
+                const storedUserType = getCookie("storeAllUserTypeData");
+                if (!storedUserType) {
+                  await Promise.all([
+                    fetchUserType(storedClaims),
+                    getNICData(storedClaims.UserID, storedClaims.UserDOB),
+                  ]);
+                }
+              }
+            } else {
+              setCookie("userType", "Establishment");
+              setIsEstablishment(true);
+            }
+          } else {
+            // window.location.href = `${process.env.VITE_REDIRECT_URL}`;
+          }
+        }
+      } catch (error) {
+        console.error("Error in auth effect:", error);
+        // window.location.href = `${process.env.VITE_REDIRECT_URL}`;
+      } finally {
+        setIsDataLoaded(true);
+      }
+    };
+    initializeUserSession();
+  }, [isTokenReady]);
+
 
   const navigate = useNavigate();
-  const [isEstablishment, setIsIstablishment] = useState<boolean>(false);
   const { isRTL } = useLanguageDirection();
   const { t, i18n } = useTranslation();
 
@@ -114,299 +262,115 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children, popupHandler, pop
     }
   };
 
-  const getNICData = (IDNumber?: string, DateOfBirth?: string) => {
+  const fetchUserType = async (claims: TokenClaims) => {
     try {
-      console.log("Getting NIC data for:", IDNumber, DateOfBirth);
-      console.log("Current userClaims:", userClaims);
-      if (!IDNumber || !DateOfBirth || !userClaims?.UserID) {
-        console.error("Missing required NIC data:", { IDNumber, DateOfBirth, userClaims });
+      if (!claims.UserID || !claims.UserType) {
+        console.error("Missing required user data:", { claims });
         return;
       }
-      console.log("Triggering NIC API call with:", {
-        IDNumber,
-        DateOfBirth,
+      return await triggerGetUserType({
+        IDNumber: claims.UserID!,
+        UserRequestType: claims.UserType!,
         AcceptedLanguage: isRTL ? "AR" : "EN",
-        SourceSystem: "E-Services"
-      });
-      triggerGetNICDetailsQuery({
+        SourceSystem: "E-Services",
+      }).unwrap();
+    } catch (error) {
+      console.error("Error in fetchUserType:", error);
+      throw error;
+    }
+  };
+
+  const getNICData = async (IDNumber?: string, DateOfBirth?: string) => {
+    try {
+      if (!IDNumber || !DateOfBirth) {
+        console.error("Missing required NIC data:", { IDNumber, DateOfBirth });
+        return;
+      }
+      return await triggerGetNICDetailsQuery({
         IDNumber: IDNumber,
         DateOfBirth: DateOfBirth,
         AcceptedLanguage: isRTL ? "AR" : "EN",
         SourceSystem: "E-Services",
-      });
+      }).unwrap();
     } catch (error) {
       console.error("Error in getNICData:", error);
+      throw error;
     }
   };
 
-  const fetchUserType = (claims: TokenClaims) => {
-    try {
-      console.log("Fetching user type with claims:", claims);
-      console.log("Current userClaims:", userClaims);
-      if (!claims.UserID || !userClaims?.UserID) {
-        console.error("Missing required user data:", { claims, userClaims });
-        return;
+  useEffect(() => {
+    if (userTypeLegalRepData) {
+      setCookie("storeAllUserTypeData", userTypeLegalRepData);
+      const selectedUserType = getCookie("selectedUserType");
+      if (!selectedUserType) {
+        const userType = extractUserType(userTypeLegalRepData);
+        if (userType) {
+          setCookie("userType", userType);
+          setIsLegalRep(userType === "Legal representative");
+          setUserTypeState(userType)
+        }
       }
-      console.log("Triggering GetUserType API call with:", {
-        IDNumber: claims.UserID,
-        UserType: claims.UserType,
-        AcceptedLanguage: isRTL ? "AR" : "EN",
-        SourceSystem: "E-Services"
-      });
-      triggerGetUserType({
-        IDNumber: claims.UserID!,
-        UserType: claims.UserType!,
-        AcceptedLanguage: isRTL ? "AR" : "EN",
-        SourceSystem: "E-Services",
-      });
-    } catch (error) {
-      console.error("Error in fetchUserType:", error);
     }
-  };
+  }, [userTypeLegalRepData]);
 
-  // Track when this provider has mounted
   useEffect(() => {
-    console.log("AuthProvider mounted");
-    setIsMounted(true);
-    return () => {
-      console.log("AuthProvider unmounted");
-      setIsMounted(false);
-    };
-  }, []);
-
-  // MAIN AUTH EFFECT
-  useEffect(() => {
-    if (!isMounted) {
-      console.log("AuthProvider not yet mounted, skipping auth check");
-      return;
-    }
-
-    try {
-      console.log("Starting auth check...");
-      const tokenFromURL = searchParams.get("MyClientsToken");
-      console.log("Token from URL:", tokenFromURL);
-      console.log("Current cookies:", {
-        token: getCookie("token"),
-        userClaims: getCookie("userClaims")
-      });
-
-      if (tokenFromURL) {
-        console.log("Token found in URL, decoding...");
-        setCookie("token", tokenFromURL);
-        const decodedToken = decodeToken(tokenFromURL);
-        console.log("Decoded token:", decodedToken);
-
-        if (!decodedToken) {
-          console.error("Failed to decode token or token expired");
-          removeAll();
-          window.location.href = `${process.env.VITE_REDIRECT_URL}`;
-          return;
-        }
-
-        const claims = formatDateOfbarth(decodedToken);
-        console.log("Formatted claims:", claims);
-
-        if (claims?.AcceptedLanguage) {
-          const language = claims.AcceptedLanguage.toUpperCase();
-          i18n.changeLanguage(language.toLowerCase()).then(() => {
-            localStorage.setItem("language", language.toLowerCase());
-            document.documentElement.dir = language.toLowerCase() === "ar" ? "rtl" : "ltr";
-          });
-        }
-
-        if (claims) {
-          // Convert "EstablishmentUser" → "1", else "2"
-          claims.UserType = claims.UserType === "EstablishmentUser" ? "1" : "2";
-
-          // Save claims into state + cookie first
-          console.log("Setting user claims in state & cookie:", claims);
-          setUserClaims(claims);
-          setCookie("userClaims", claims);
-
-          // Call both APIs in parallel
-          if (!claims.File_Number) {
-            console.log("Starting parallel API calls for user type and NIC validation");
-            Promise.all([
-              fetchUserType(claims),
-              getNICData(claims.UserID, claims.UserDOB)
-            ]).catch(error => {
-              console.error("Error in parallel API calls:", error);
-            });
-          } else {
-            // Establishment user flow
-            setIsIstablishment(true);
-            popuoStablishment();
-            setCookie("userType", "Establishment");
-          }
-        } else {
-          console.error("No valid claims found in token");
-          removeAll();
-          window.location.href = `${process.env.VITE_REDIRECT_URL}`;
-        }
+    if (nicData) {
+      if ("ErrorDetails" in nicData && Array.isArray((nicData as any).ErrorDetails)) {
+        handleErrorResponse(nicData);
       } else {
-        console.log("No token in URL, checking stored claims");
-        const storedClaims = getCookie("userClaims");
-        console.log("Stored claims:", storedClaims);
+        setCookie("storeAllNicData", nicData);
+        setCookie("nicDetailObject", nicData);
+        setIsNICValidated(true);
+      }
+    }
+  }, [nicData]);
 
-        if (shouldUseStoredClaims(storedClaims)) {
-          console.log("Using stored claims");
-          setUserClaims(storedClaims);
-          if (!storedClaims.File_Number) {
-            setIsIstablishment(false);
-            // Check if user has already selected a type from the popup
-            const selectedUserType = getCookie("selectedUserType");
-            if (selectedUserType) {
-              // Use the selected type instead of making a new API call
-              setCookie("userType", selectedUserType);
-              setIsLegalRep(selectedUserType === "Legal representative");
-            } else {
-              // Only fetch user type if we don't have it in cookies
-              const storedUserType = getCookie("storeAllUserTypeData");
-              if (!storedUserType) {
-                // Call both APIs in parallel
-                console.log("Starting parallel API calls for stored claims");
-                Promise.all([
-                  fetchUserType(storedClaims),
-                  getNICData(storedClaims.UserID, storedClaims.UserDOB)
-                ]).catch(error => {
-                  console.error("Error in parallel API calls:", error);
-                });
-              } else {
-                console.log("User type already in cookies, skipping API call");
-              }
-            }
-          } else {
-            setCookie("userType", "Establishment");
-            setIsIstablishment(true);
-            popuoStablishment();
+  useEffect(() => {
+    if (nicError) {
+      const error = nicError as FetchBaseQueryError;
+      let errorMessage = t("nic_error.default_error");
+
+      if (error.status === 401) {
+        errorMessage = t("nic_error.unauthorized");
+        removeAll();
+        // window.location.href = `${process.env.VITE_REDIRECT_URL}`;
+      } else if (error.status === 500) {
+        errorMessage = t("nic_error.server_error");
+      } else if (error.data) {
+        const errorData = error.data as any;
+        if (
+          errorData?.ErrorDetails &&
+          Array.isArray(errorData.ErrorDetails)
+        ) {
+          const errorDesc = errorData.ErrorDetails.find(
+            (detail: any) => detail.ErrorDesc
+          )?.ErrorDesc;
+          if (errorDesc) {
+            errorMessage = errorDesc;
           }
-        } else {
-          console.log("No valid stored claims, redirecting to login");
-          removeAll();
-          window.location.href = `${process.env.VITE_REDIRECT_URL}`;
+          setIsDataLoaded(true);
         }
       }
-    } catch (error) {
-      console.error("Error in auth effect:", error);
-      removeAll();
-      window.location.href = `${process.env.VITE_REDIRECT_URL}`;
-    }
-  }, [isMounted, searchParams]);
 
-  // Separate effect to handle API calls when userClaims changes
-  useEffect(() => {
-    if (!userClaims?.UserID) return;
-
-    const storedUserType = getCookie("storeAllUserTypeData");
-    if (!storedUserType && !userClaims.File_Number) {
-      console.log("Making API calls after userClaims update");
-      Promise.all([
-        fetchUserType(userClaims),
-        getNICData(userClaims.UserID, userClaims.UserDOB)
-      ]).catch(error => {
-        console.error("Error in parallel API calls:", error);
-      });
-    }
-  }, [userClaims?.UserID]);
-
-  // USER‐TYPE EFFECT
-  useEffect(() => {
-    try {
-      if (userTypeLegalRepData) {
-        console.log("User type data received:", userTypeLegalRepData);
-        setCookie("storeAllUserTypeData", userTypeLegalRepData);
-        // Only set the user type if it hasn't been selected from the popup
-        const selectedUserType = getCookie("selectedUserType");
-        if (!selectedUserType) {
-          const userType = extractUserType(userTypeLegalRepData);
-          if (userType) {
-            setCookie("userType", userType);
-            setIsLegalRep(userType === "Legal representative");
-          }
-        }
-      }
-    } catch (error) {
-      console.error("Error in user type effect:", error);
-    }
-  }, [userTypeLegalRepData, setCookie, setIsLegalRep]);
-
-  // NIC‐DATA EFFECT
-  useEffect(() => {
-    try {
-      if (nicData) {
-        console.log("NIC data received:", nicData);
-        if ("ErrorDetails" in nicData && Array.isArray((nicData as any).ErrorDetails)) {
-          handleErrorResponse(nicData);
-        } else {
-          setCookie("storeAllNicData", nicData);
-          setIsNICValidated(true);
-        }
-      }
-    } catch (error) {
-      console.error("Error in NIC data effect:", error);
-    }
-  }, [nicData, setCookie]);
-
-  // NIC‐ERROR HANDLING
-  useEffect(() => {
-    try {
-      if (nicError) {
-        const error = nicError as FetchBaseQueryError;
-        let errorMessage = t("nic_error.default_error");
-
-        if (error.status === 401) {
-          errorMessage = t("nic_error.unauthorized");
-          removeAll();
-          window.location.href = `${process.env.VITE_REDIRECT_URL}`;
-        } else if (error.status === 500) {
-          errorMessage = t("nic_error.server_error");
-        } else if (error.data) {
-          const errorData = error.data as any;
-          if (
-            errorData?.ErrorDetails &&
-            Array.isArray(errorData.ErrorDetails)
-          ) {
-            const errorDesc = errorData.ErrorDetails.find(
-              (detail: any) => detail.ErrorDesc
-            )?.ErrorDesc;
-            if (errorDesc) {
-              errorMessage = errorDesc;
-            }
-          }
-        }
-
-        setNicErrorMessage(errorMessage);
-        setShowNICError(true);
-      }
-    } catch (error) {
-      console.error("Error in NIC error effect:", error);
+      setNicErrorMessage(errorMessage);
+      setShowNICError(true);
     }
   }, [nicError, removeAll, t]);
 
-  // Only show loader during initial auth check and API calls
-  const isLoading = !userClaims && (isFetching || nicIsLoading);
-
-  // If we have userClaims, render the app regardless of other states
-  if (userClaims) {
-    return (
-      <>
-        <LazyLoader>{children}</LazyLoader>
-        <NICErrorModal
-          isOpen={showNICError}
-          onClose={() => setShowNICError(false)}
-          errorMessage={nicErrorMessage}
-        />
-      </>
-    );
-  }
-
-  // Show loader only during initial auth
-  if (isLoading) {
+  if (!isTokenReady || isTokenFetching || !isDataLoaded || nicIsLoading) {
     return <Loader />;
   }
 
-  // If we get here, something went wrong with auth
-  return null;
+  return (
+    <>
+      <LazyLoader>{children}</LazyLoader>
+      <NICErrorModal
+        isOpen={showNICError}
+        onClose={() => setShowNICError(false)}
+        errorMessage={nicErrorMessage}
+      />
+    </>
+  );
 };
- 
+
 export default AuthProvider;

@@ -16,7 +16,7 @@ interface DynamicFormProps {
   watch: any;
   errors: FieldErrors;
   setValue?: any;
- control?: Control<any>;
+  control?: Control<any>;
   isLoading?: boolean;
 }
 
@@ -49,7 +49,9 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
               const colSpan = child?.colSpan || 1;
               if (!child) return null;
 
-              const childKey = `${sectionKey}-${"name" in child ? child.name : childIndex}-${child.type}`;
+              const childKey = `${sectionKey}-${
+                "name" in child ? child.name : childIndex
+              }-${child.type}`;
 
               switch (child.type) {
                 case "radio":
@@ -82,7 +84,6 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
                         maxLength={child.maxLength}
                         min={child.min}
                         label={child.label}
-                        value={child.value}
                         control={control}
                         notRequired={child.notRequired}
                         placeholder={child.placeholder}
@@ -100,20 +101,24 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
                         name={child.name}
                         options={child.options}
                         label={child.label}
-                        value={child.value}
-                        onChange={child.onChange}
                         notRequired={child.notRequired}
-                        invalidFeedback={errors[child.name]}
+                        invalidFeedback={errors[child.name]?.message as string}
                         validation={child.validation}
                         control={control}
                         disabled={child.disabled}
+                        onClear={child.onClear}
+                        value={child.value}
+                        onChange={child.onChange}
                       />
                     </div>
                   );
 
                 case "checkbox":
                   return (
-                    <div key={childKey} className={`col-span-${colSpan} flex items-center`}>
+                    <div
+                      key={childKey}
+                      className={`col-span-${colSpan} flex items-center`}
+                    >
                       <CheckboxField
                         name={child.name}
                         rules={child.rules}

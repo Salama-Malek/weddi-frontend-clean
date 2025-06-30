@@ -66,6 +66,11 @@ const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
     };
   }, [file]);
 
+  // useEffect(()=>{
+    // console.log({file,fileName,onClose});
+    
+  // },[])
+
   // If there's an error or nothing to preview, render nothing (or you could show a message)
   if (!file || !objectUrl) {
     if (error) {

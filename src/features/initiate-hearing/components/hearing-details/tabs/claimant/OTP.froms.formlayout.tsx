@@ -38,7 +38,7 @@ const OTPFormLayout = ({
   setValue,
   isVerify = false,
 }: OTPFormLayoutProps): SectionLayout[] => {
-  const isPhone = watch("isPhone");
+  const isPhone = watch("isPhone") || false;
   const phoneCode = watch("phoneCode");
   const phoneNumber = watch("interPhoneNumber");
   const enteredOtp = watch("otp");
@@ -59,6 +59,12 @@ const OTPFormLayout = ({
     AcceptedLanguage: i18n.language.toUpperCase(),
     SourceSystem: "E-Services",
   });
+
+
+
+  // useEffect(()=>{
+  //   console.log("this is phone ",isPhone);
+  // },[isPhone]) 
 
 
   // set the userId Based On The User Selected Type
@@ -147,7 +153,7 @@ const OTPFormLayout = ({
   const handleCerifyOtp = () => {
 
     verifyOtp(otp.join(""));
-    console.log("sdfhdsjsf", lastSentOtp);
+    // console.log("sdfhdsjsf", lastSentOtp);
   }
 
 
@@ -161,7 +167,7 @@ const OTPFormLayout = ({
           type: "checkbox",
           name: "isPhone",
           label: t("addInternationalNumber"),
-          checked: isPhone,
+          checked: isPhone ? isPhone : false,
           onChange: (checked: boolean) => {
             setValue("isPhone", checked);
             if (!checked) {

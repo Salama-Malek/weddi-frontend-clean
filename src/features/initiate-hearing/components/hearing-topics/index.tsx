@@ -5,6 +5,7 @@ import {
   useEffect,
   useMemo,
   useState,
+  useRef,
 } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import Button from "@/shared/components/button";
@@ -20,7 +21,6 @@ import AttachmentModal from "./components/AttachmentModal";
 import FilePreviewModal from "../add-attachments/FilePreviewModal";
 import { useLookup } from "../../api/hook/useLookup";
 import { useSubTopicsSubLookupQuery } from "../../api/create-case/addHearingApis";
-import { FormProvider } from "@/providers/FormContext";
 import { setFormData } from "@/redux/slices/formSlice";
 import StepNavigation from "@/shared/modules/case-creation/components/StepNavigation";
 import { useNavigationService } from "@/shared/hooks/useNavigationService";
@@ -34,8 +34,26 @@ import { useAttachments } from "./hooks/useAttachments";
 import { useFormLayout as useFormLayoutEstablishment } from "./config/forms.layout.establishment";
 import { useFormLayout as useFormLayoutWorker } from "./config/forms.layout.worker";
 import { getPayloadBySubTopicID } from "./api/establishment.add.case.payload";
-import { useGetCaseDetailsQuery, useLazyGetCaseDetailsQuery } from "@/features/manage-hearings/api/myCasesApis";
+import {
+  useGetCaseDetailsQuery,
+  useLazyGetCaseDetailsQuery,
+} from "@/features/manage-hearings/api/myCasesApis";
 import { TokenClaims } from "@/features/login/components/AuthProvider";
+import { toast } from "react-toastify";
+import useCaseTopicsPrefill from "./hooks/useCaseTopicsPrefill";
+import { useGetRegionLookupDataQuery } from "@/features/initiate-hearing/api/create-case/workDetailApis";
+import { Option } from "@/shared/components/form/form.types";
+import { FormProvider as RHFFormProvider } from "react-hook-form";
+import { useApiErrorHandler } from "@/shared/hooks/useApiErrorHandler";
+
+interface ApiResponse {
+  ServiceStatus: string;
+  SuccessCode: string;
+  CaseNumber?: string;
+  S2Cservicelink?: string;
+  ErrorDescription?: string;
+  ErrorCodeList: Array<{ ErrorCode: string; ErrorDesc: string }>;
+}
 
 const Modal = lazy(() => import("@/shared/components/modal/Modal"));
 const ReusableTable = lazy(() =>
@@ -66,6 +84,45 @@ export const useHearingTopics = () => {
 };
 
 function HearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
+  const methods = useForm<any>({
+    defaultValues: {
+      mainCategory: null,
+      subCategory: null,
+      acknowledged: false,
+      regulatoryText: "",
+      managerial_decision_date_hijri: "",
+      managerial_decision_date_gregorian: "",
+      managerialDecisionNumber: "",
+      typesOfPenalties: null,
+      amount: "",
+      payDue: "",
+      durationOfLeaveDue: "",
+      wagesAmount: "",
+      compensationAmount: "",
+      injuryType: "",
+      bonusAmount: "",
+      otherCommission: "",
+      amountOfCompensation: "",
+      damagedValue: "",
+      requiredJobTitle: "",
+      currentJobTitle: "",
+      damagedType: "",
+      currentInsuranceLevel: "",
+      theReason: "",
+      theWantedJob: "",
+      currentPosition: "",
+      loanAmount: "",
+      amountRatio: "",
+      requiredDegreeOfInsurance: "",
+      typeOfCustody: "",
+      amountsPaidFor: "",
+      consideration: "",
+      rewardType: "",
+      fromPlace: "",
+      toPlace: "",
+      additionalDetails: "",
+    }
+  });
   const {
     register,
     handleSubmit,
@@ -74,6 +131,7 @@ function HearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
     reset,
     control,
     getValues,
+    trigger,
     formState,
     formState: {
       errors,
@@ -83,83 +141,198 @@ function HearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
       isSubmitSuccessful,
       submitCount,
     },
-  } = useForm<any>();
-  // //console.log("isValid HearingTopicsDetails", isValid);
+  } = methods;
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Clear timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
   const [getCookie] = useCookieState();
   const [caseId] = useState(getCookie("caseId"));
   const [lastSaved, setLastSaved] = useState(false);
   const { updateParams, currentStep, currentTab } = useNavigationService();
   const [saveHearingTopics, { isLoading: addHearingLoading }] =
     useSaveHearingTopicsMutation();
-    const { i18n } = useTranslation();
-    const currentLanguage = i18n.language.toUpperCase();
-    const userClaims = getCookie("userClaims");
-    const [caseTopics, setCaseTopics] = useState<any[]>([]);
-    const UserClaims: TokenClaims = getCookie("userClaims");
+  const { i18n } = useTranslation();
+  const currentLanguage = i18n.language.toUpperCase();
+  const userClaims = getCookie("userClaims");
+  const [caseTopics, setCaseTopics] = useState<any[]>([]);
+  const UserClaims: TokenClaims = getCookie("userClaims");
   const userType = getCookie("userType");
+  const defendantStatus = getCookie("defendantStatus");
   const mainCategory2 = getCookie("mainCategory")?.value;
   const subCategory2 = getCookie("subCategory")?.value;
   const userID = getCookie("userClaims").UserID;
   const fileNumber = getCookie("userClaims")?.File_Number;
 
+  const [triggerCaseDetailsQuery, { data: caseDetailsData }] =
+    useLazyGetCaseDetailsQuery();
 
+  // Use the centralized error handler
+  const { handleResponse, createError } = useApiErrorHandler();
 
-const [triggerCaseDetailsQuery, { data: caseDetailsData }] = useLazyGetCaseDetailsQuery();
+  useEffect(() => {
+    if (caseId) {
+      const userConfigs: any = {
+        Worker: {
+          UserType: userType,
+          IDNumber: userID,
+        },
+        "Embassy User": {
+          UserType: userType,
+          IDNumber: userID,
+        },
+        Establishment: {
+          UserType: userType,
+          IDNumber: userID,
+          FileNumber: fileNumber,
+        },
+        "Legal representative": {
+          UserType: userType,
+          IDNumber: userID,
+          MainGovernment: mainCategory2 || "",
+          SubGovernment: subCategory2 || "",
+        },
+      };
 
-useEffect(() => {
-  if (caseId) {
-    const userConfigs: any = {
-      Worker: {
-        UserType: userType,
-        IDNumber: userID,
-      },
-      Establishment: {
-        UserType: userType,
-        IDNumber: userID,
-        FileNumber: fileNumber,
-      },
-      "Legal representative": {
-        UserType: userType,
-        IDNumber: userID,
-        MainGovernment:mainCategory2 ||  "",
-        SubGovernment: subCategory2 ||  "",
-      },
-    } ;
+      triggerCaseDetailsQuery({
+        ...userConfigs[userType],
+        CaseID: caseId,
+        AcceptedLanguage: currentLanguage,
+        SourceSystem: "E-Services",
+      });
+    }
+  }, [caseId, userClaims?.UserID, currentLanguage, triggerCaseDetailsQuery]);
 
-    triggerCaseDetailsQuery({
-      ...userConfigs[userType],
-      CaseID: caseId,
-      AcceptedLanguage: currentLanguage,
-      SourceSystem: "E-Services",
-    });
-  }
-}, [caseId, userClaims?.UserID, currentLanguage, triggerCaseDetailsQuery]);
+  useEffect(() => {
+    if (caseDetailsData?.CaseDetails) {
+      if (caseTopics.length === 0) {
+        const formattedTopics = caseDetailsData.CaseDetails.CaseTopics.map(
+          (topic: any) => ({
+            ...topic,
+            subCategory: {
+              value: topic.SubTopicID,
+              label: topic.SubTopicName,
+            },
+            mainCategory: {
+              value: topic.MainTopicID,
+              label: topic.CaseTopicName,
+            },
+            date_hijri: topic.Date_New,
+            from_date_hijri: topic.FromDateHijri,
+            to_date_hijri: topic.ToDateHijri,
+            amount: topic.Amount,
+            wagesAmount: topic.WagesAmount,
+            bonusAmount: topic.BonusAmount,
+            payDue: topic.PayDue,
+            durationOfLeaveDue: topic.DurationOfLeaveDue,
+            theReason: topic.TheReason,
+            currentPosition: topic.CurrentPosition,
+            doesBylawsIncludeAddingAccommodations:
+              topic.IsBylawsIncludeAddingAccommodiation === "Yes",
+            doesContractIncludeAddingAccommodations:
+              topic.IsContractIncludeAddingAccommodiation === "Yes",
+            housingSpecificationInByLaws:
+              topic.HousingSpecificationsInBylaws || "",
+            housingSpecificationsInContract:
+              topic.HousingSpecificationsInContract || "",
+            actualHousingSpecifications: topic.HousingSpecifications || "",
+            forAllowance: topic.ForAllowance
+              ? {
+                  value: topic.ForAllowance,
+                  label: topic.ForAllowance,
+                }
+              : null,
+            commissionType: topic.CommissionType
+              ? {
+                  value: topic.CommissionType,
+                  label: topic.CommissionType,
+                }
+              : null,
+            accordingToAgreement: topic.AccordingToAgreement
+              ? {
+                  value: topic.AccordingToAgreement,
+                  label: topic.AccordingToAgreement,
+                }
+              : null,
+            travelingWay: topic.TravelingWay
+              ? {
+                  value: topic.TravelingWay,
+                  label: topic.TravelingWay,
+                }
+              : null,
+            typeOfRequest: (topic.RequestType || topic.RequestType_Code)
+              ? {
+                  value: topic.RequestType_Code || topic.RequestType,
+                  label: topic.RequestType || topic.RequestType_Code,
+                }
+              : null,
+            kindOfHoliday: topic.KindOfHoliday
+              ? {
+                  value: topic.KindOfHoliday,
+                  label: topic.KindOfHoliday,
+                }
+              : null,
+            fromLocation: (topic.FromLocation || topic.FromLocation_Code)
+              ? {
+                  value: topic.FromLocation_Code || topic.FromLocation,
+                  label: topic.FromLocation || topic.FromLocation_Code,
+                }
+              : null,
+            toLocation: (topic.ToLocation || topic.ToLocation_Code)
+              ? {
+                  value: topic.ToLocation_Code || topic.ToLocation,
+                  label: topic.ToLocation || topic.ToLocation_Code,
+                }
+              : null,
+            typesOfPenalties: (topic.PenalityType || topic.PenalityType_Code || topic.TypesOfPenalties)
+              ? {
+                  value: topic.PenalityType_Code || topic.PenalityType || topic.TypesOfPenalties,
+                  label: topic.PenalityTypeLabel || topic.TypesOfPenaltiesLabel || topic.PenalityType || topic.TypesOfPenalties,
+                }
+              : null,
+          })
+        );
 
-useEffect(() => {
-  // console.log("caseDetailsData", caseDetailsData);
-  if (caseDetailsData?.CaseDetails) {
-    setCaseTopics(caseDetailsData.CaseDetails.CaseTopics);
-  }
-}, [caseDetailsData]);
+        setCaseTopics(formattedTopics);
 
-  
-  console.log("currentStep", currentStep);
-  console.log("currentTab", currentTab);
+        if (caseDetailsData.CaseDetails.OtherAttachments?.length > 0) {
+          const formattedAttachments =
+            caseDetailsData.CaseDetails.OtherAttachments.map(
+              (attachment: any) => ({
+                fileKey: attachment.FileKey,
+                fileType: attachment.FileType,
+                fileName: attachment.FileName,
+              })
+            );
+          setAttachments(formattedAttachments);
+        }
+      }
+    }
+  }, [caseDetailsData, caseTopics.length]);
 
-  // Submit handler
-  const onSubmit = (data: TopicFormValues) => {};
+  const onSubmit = async (data: TopicFormValues) => {
+    console.log("[onSubmit] Form submitted with data:", data);
+    await handleNext();
+  };
 
   const mainCategory = watch("mainCategory") ?? null;
   const subCategory: any = watch("subCategory") ?? null;
-  // console.log("subCategory", subCategory);
-  // console.log("mainCategory", mainCategory);
-  // //console.log(subCategory?.value);
   const { t } = useTranslation("hearingtopics");
   const { isOpen, close, toggle } = useToggle();
 
-  // //console.log("caseTopics???????????????????", caseTopics);
+  useEffect(() => {
+    if (watch("subCategory")?.value && mainCategory?.value) {
+      setShowLegalSection(true);
+      setShowTopicData(false);
+    }
+  }, [watch("subCategory")?.value, mainCategory?.value]);
 
-  //<===================================== APIs =============================================>
   const lookup = useLookup();
   const {
     data: mainCategoryData,
@@ -170,21 +343,26 @@ useEffect(() => {
     lookup.subCategory(mainCategory?.value);
 
   const { data: amountPaidData } = lookup.amountPaidCategory(
-    subCategory?.value
+    watch("subCategory")?.value
   );
+
+  console.log("subCategory?.value", watch("subCategory")?.value);
   const { data: travelingWayData } = lookup.travelingWayCategory(
-    subCategory?.value
+    watch("subCategory")?.value
   );
-  const { data: leaveTypeData } = lookup.leaveTypeCategory(subCategory?.value);
-  const { data: forAllowanceData } = lookup.forAllowance(subCategory?.value);
+  const { data: leaveTypeData } = lookup.leaveTypeCategory(watch("subCategory")?.value);
+  const { data: forAllowanceData } = lookup.forAllowance(watch("subCategory")?.value);
   const { data: typeOfRequestLookupData } = lookup.typeOfRequest(
-    subCategory?.value
+    watch("subCategory")?.value
   );
   const { data: commissionTypeLookupData } = lookup.commissionType(
-    subCategory?.value
+    watch("subCategory")?.value
   );
   const { data: accordingToAgreementLookupData } = lookup.accordingToAgreement(
-    subCategory?.value
+    watch("subCategory")?.value
+  );
+  const { data: typesOfPenaltiesData } = lookup.typesOfPenalties(
+    watch("subCategory")?.value
   );
 
   const { data: subTopicsLookupData, isFetching: subTopicsLoading } =
@@ -197,21 +375,20 @@ useEffect(() => {
         AcceptedLanguage: currentLanguage,
       },
       {
-        skip: !subCategory?.value,
+        skip: !watch("subCategory")?.value,
       }
     );
 
   const matchedSubCategory = subTopicsLookupData?.DataElements?.find(
-    (item: any) => item.ElementKey === subCategory?.value
+    (item: any) => item.ElementKey === watch("subCategory")?.value
   );
   const [delTopic, setDelTopic] = useState<any | null>(null);
 
   const [editTopic, setEditTopic] = useState<any | null>(null);
-  // //console.log("editTopic", editTopic);
+  const [editTopicIndex, setEditTopicIndex] = useState<number | null>(null);
   const [showLegalSection, setShowLegalSection] = useState(false);
   const [showTopicData, setShowTopicData] = useState(false);
   const acknowledged = watch("acknowledged");
-  // //console.log("acknowledged", acknowledged);
   const fromPlace = watch("fromPlace") ?? null;
   const toPlace = watch("toPlace") ?? null;
   const hijriDate = watch("hijriDate");
@@ -222,31 +399,45 @@ useEffect(() => {
   const { setDate } = useDateContext();
 
   const [pagination, setPagination] = useState({
-    pageIndex: 0, // 0-based index
-    pageSize: 5, // items per page
+    pageIndex: 0,
+    pageSize: 5,
   });
 
-  // Calculate paginated data
   const getPaginatedTopics = useMemo(() => {
     const start = pagination.pageIndex * pagination.pageSize;
     const end = start + pagination.pageSize;
     return caseTopics.slice(start, end);
   }, [caseTopics, pagination.pageIndex, pagination.pageSize]);
 
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  const handleTopicSelect = (topic: any, index: number) => {
+    console.log("topicvvvvvvv", topic);
+    
+    reset();
+    
+    setEditTopic(topic);
+    setEditTopicIndex(index);
+
+    setShowLegalSection(true);
+    setShowTopicData(true);
+
+    toggle();
+  };
+
   const columns: any = useMemo(
     () =>
       getHearingTopicsColumns({
         t,
-        onEdit: (topic) => {
-          setEditTopic(topic);
-          toggle();
+        onEdit: (topic, index) => {
+          handleTopicSelect(topic, index);
         },
         onDel: (topic) => {
-          // Remove the topic from caseTopics array
-          setCaseTopics((prev) => prev.filter((t) => t !== topic));
+          setDelTopic(topic);
+          setShowDeleteConfirm(true);
         },
       }),
-    [t, toggle]
+    [t, toggle, setEditTopic, setCaseTopics]
   );
 
   const goToLegalStep = () => {
@@ -261,60 +452,80 @@ useEffect(() => {
   };
 
   const handleSend = () => {
-   let fillingForm = saveTopic();
-   if(fillingForm){
-    reset();
-    setDate({ hijri: null, gregorian: null, dateObject: null });
-    setShowLegalSection(false);
-    setShowTopicData(false);
-    setEditTopic(null);
-    close();
-  }
+    console.log("handleSend called");
+    const result = saveTopic();
+    console.log("saveTopic result:", result);
+    if (result === 1) {
+      console.log("Topic saved successfully, resetting form and closing modal");
+      reset();
+      setDate({ hijri: null, gregorian: null, dateObject: null });
+      setShowLegalSection(false);
+      setShowTopicData(false);
+      setEditTopic(null);
+      setEditTopicIndex(null);
+      close();
+    } else {
+      console.log("Topic save failed, result:", result);
+    }
   };
 
   const handleAddTopic = async () => {
-    saveTopic();
-    // Get all current form values
-    const latestFormValues = getValues();
-
-    // Validate form
-
-    // Proceed with your logic
-    reset();
-    setShowLegalSection(false);
-    setValue("subCategory", null);
-    setValue("mainCategory", null);
-    setShowTopicData(false);
-    setEditTopic(null);
+    console.log("handleAddTopic called");
+    const result = saveTopic();
+    console.log("saveTopic result:", result);
+    if (result === 1) {
+      console.log("Topic added successfully, resetting form to first step");
+      reset();
+      setDate({ hijri: null, gregorian: null, dateObject: null });
+      setShowLegalSection(false);
+      setShowTopicData(false);
+      setEditTopic(null);
+      setEditTopicIndex(null);
+    } else {
+      console.log("Topic add failed, result:", result);
+    }
   };
+
   const handleUpdate = () => {
     if (!editTopic) return;
 
     const updatedValues = getValues();
-    // //console.log("updated run");
-    // console.log("updatedValues", updatedValues);
+    console.log("Updated Values:", updatedValues);
+
+    const mainCategoryValue = updatedValues.mainCategory?.value || editTopic.MainTopicID || editTopic.mainCategory?.value;
+    const mainCategoryLabel = updatedValues.mainCategory?.label || editTopic.CaseTopicName || editTopic.mainCategory?.label;
+    const subCategoryValue = updatedValues.subCategory?.value || editTopic.SubTopicID || editTopic.subCategory?.value;
+    const subCategoryLabel = updatedValues.subCategory?.label || editTopic.SubTopicName || editTopic.subCategory?.label;
+
+    const formatDateForStorage = (date: string) => {
+      if (!date) return '';
+      return date.replace(/\//g, '');
+    };
 
     const updatedTopic = {
-      ...editTopic,
-      AcknowledgedTerms: updatedValues.acknowledged,
-      MainCategoryId:
-        updatedValues.mainCategory?.value || editTopic.mainCategory,
-      SubCategoryId: updatedValues.subCategory?.value || editTopic.subCategory,
-      FromLocation: updatedValues.fromPlace || editTopic.fromPlace,
-      ToLocation: updatedValues.toPlace || editTopic.toPlace,
-      Amount: updatedValues.amount || editTopic.amount,
+      ...updatedValues,
+      MainTopicID: mainCategoryValue,
+      SubTopicID: subCategoryValue,
+      MainSectionHeader: mainCategoryLabel,
+      SubTopicName: subCategoryLabel,
+      CaseTopicName: mainCategoryLabel,
+      subCategory: {
+        value: subCategoryValue,
+        label: subCategoryLabel,
+      },
+      mainCategory: {
+        value: mainCategoryValue,
+        label: mainCategoryLabel,
+      },
+      acknowledged: updatedValues.acknowledged || editTopic.acknowledged,
+      amount: updatedValues.amount || editTopic.amount,
       payDue: updatedValues.payDue || editTopic.payDue,
       durationOfLeaveDue:
         updatedValues.durationOfLeaveDue || editTopic.durationOfLeaveDue,
-
       wagesAmount: updatedValues.wagesAmount || editTopic.wagesAmount,
-
       compensationAmount:
         updatedValues.compensationAmount || editTopic.compensationAmount,
       injuryType: updatedValues.injuryType || editTopic.injuryType,
-
-      typesOfPenalties: updatedValues.typesOfPenalties || editTopic.typesOfPenalties,
-
       bonusAmount: updatedValues.bonusAmount || editTopic.bonusAmount,
       otherCommission:
         updatedValues.otherCommission || editTopic.otherCommission,
@@ -325,36 +536,29 @@ useEffect(() => {
         updatedValues.requiredJobTitle || editTopic.requiredJobTitle,
       currentJobTitle:
         updatedValues.currentJobTitle || editTopic.currentJobTitle,
-
       damagedType: updatedValues.damagedType || editTopic.damagedType,
       currentInsuranceLevel:
         updatedValues.currentInsuranceLevel || editTopic.currentInsuranceLevel,
       theReason: updatedValues.theReason || editTopic.theReason,
-
       theWantedJob: updatedValues.theWantedJob || editTopic.theWantedJob,
       currentPosition:
         updatedValues.currentPosition || editTopic.currentPosition,
-
-      typeOfRequest:
-        updatedValues.typeOfRequest?.value || editTopic?.typeOfRequest?.label,
-      kindOfHoliday:
-        updatedValues.kindOfHoliday?.value || editTopic?.kindOfHoliday?.label,
-
-      commissionType:
-        updatedValues.commissionType?.value || editTopic?.commissionType?.label,
-
-      accordingToAgreement:
-        updatedValues.accordingToAgreement?.value ||
-        editTopic?.accordingToAgreement?.label,
+      typeOfRequest: updatedValues.typeOfRequest || editTopic?.typeOfRequest,
+      kindOfHoliday: updatedValues.kindOfHoliday || editTopic?.kindOfHoliday,
+      commissionType: updatedValues.commissionType || editTopic?.commissionType,
+      accordingToAgreement: updatedValues.accordingToAgreement || editTopic?.accordingToAgreement,
+      forAllowance: updatedValues.forAllowance || editTopic?.forAllowance,
+      travelingWay: updatedValues.travelingWay || editTopic?.travelingWay,
+      typesOfPenalties: updatedValues.typesOfPenalties || editTopic?.typesOfPenalties,
+      fromLocation: updatedValues.fromLocation || editTopic?.fromLocation,
+      toLocation: updatedValues.toLocation || editTopic?.toLocation,
       loanAmount: updatedValues.loanAmount || editTopic?.loanAmount,
       amountRatio: updatedValues.amountRatio || editTopic?.amountRatio,
       requiredDegreeOfInsurance:
         updatedValues.requiredDegreeOfInsurance ||
         editTopic?.requiredDegreeOfInsurance,
-
       typeOfCustody: updatedValues.typeOfCustody || editTopic?.typeOfCustody,
       amountsPaidFor: updatedValues.amountsPaidFor || editTopic?.amountsPaidFor,
-
       request_date_hijri:
         updatedValues.request_date_hijri || editTopic?.request_date_hijri,
       date_hijri: updatedValues.date_hijri || editTopic?.date_hijri,
@@ -366,30 +570,45 @@ useEffect(() => {
       Gender_Code: updatedValues.DefendantsEstablishmentGender,
       Nationality_Code: updatedValues.DefendantsEstablishmentNationality,
       PrisonerId: updatedValues.DefendantsEstablishmentPrisonerId,
-
-      ////////////////////////////////  Worker //////////////////////////////
       from_date_hijri:
         updatedValues.from_date_hijri || editTopic?.from_date_hijri,
-      to_date_hijri: updatedValues.to_date_hijri || editTopic?.to_date_hijri,
-
-      forAllowance: updatedValues.forAllowance?.value || editTopic.forAllowance,
+      to_date_hijri:
+        updatedValues.to_date_hijri || editTopic?.to_date_hijri,
       rewardType: updatedValues.rewardType || editTopic.rewardType,
       consideration: updatedValues.consideration || editTopic.consideration,
-
-      travelingWay: updatedValues.travelingWay?.value || editTopic.travelingWay,
+      AdditionalDetails:
+        updatedValues.additionalDetails || editTopic.AdditionalDetails,
+      ManagerialDecisionDateHijri: formatDateForStorage(updatedValues.managerial_decision_date_hijri),
+      ManagerialDecisionDateGregorian: formatDateForStorage(updatedValues.managerial_decision_date_gregorian),
+      ManagerialDecisionNumber: updatedValues.managerialDecisionNumber || editTopic.ManagerialDecisionNumber || "",
+      InjuryDateHijri: formatDateForStorage(updatedValues.injury_date_hijri),
+      InjuryDateGregorian: formatDateForStorage(updatedValues.injury_date_gregorian),
+      RequestDateHijri: formatDateForStorage(updatedValues.request_date_hijri),
+      RequestDateGregorian: formatDateForStorage(updatedValues.request_date_gregorian),
+      DateHijri: formatDateForStorage(updatedValues.date_hijri),
+      DateGregorian: formatDateForStorage(updatedValues.date_gregorian),
+      FromDateHijri: formatDateForStorage(updatedValues.from_date_hijri),
+      FromDateGregorian: formatDateForStorage(updatedValues.from_date_gregorian),
+      ToDateHijri: formatDateForStorage(updatedValues.to_date_hijri),
+      ToDateGregorian: formatDateForStorage(updatedValues.to_date_gregorian),
     };
 
-    // Update the caseTopics array
+    console.log("Updated Topic:", updatedTopic);
+
     setCaseTopics((prev) =>
-      prev.map((topic) => (topic === editTopic ? updatedTopic : topic))
+      prev.map((topic, idx) => (idx === editTopicIndex ? updatedTopic : topic))
     );
 
-    // Reset and close
+    toast.success(
+      t("topic_updated_successfully") || "Topic updated successfully"
+    );
+
     reset();
     setDate({ hijri: null, gregorian: null, dateObject: null });
     setShowLegalSection(false);
     setShowTopicData(false);
     setEditTopic(null);
+    setEditTopicIndex(null);
     close();
   };
 
@@ -398,11 +617,12 @@ useEffect(() => {
     setShowLegalSection(false);
     setShowTopicData(false);
     setEditTopic(null);
+    setEditTopicIndex(null);
     close();
   };
 
   const handleSave = () => {
-    if (!showLegalSection) {
+    if (!mainCategory || !subCategory) {
       goToLegalStep();
     } else if (!showTopicData) {
       goToTopicDataStep();
@@ -413,30 +633,73 @@ useEffect(() => {
     undefined
   );
 
-  const handleSaveApi = async () => {
+  const handleSaveApi = async (): Promise<ApiResponse> => {
     if (caseTopics.length) {
       try {
-        setLastAction("Save"); // Set action FIRST before API call
+        setLastAction("Save");
         const response = await saveHearingTopics(
-          getPayloadBySubTopicID(caseTopics, subCategory, "Save", caseId) // Pass explicit action
+          getPayloadBySubTopicID(caseTopics, watch("subCategory"), "Save", caseId)
         ).unwrap();
+
         setLastSaved(true);
-      } catch (error) {
-        setLastAction(undefined); // Reset on error
+        
+        // Use centralized error handling
+        const isSuccessful = handleResponse(response);
+        
+        if (isSuccessful) {
+          return response as ApiResponse;
+        } else {
+          // Errors have already been handled by the error handler
+          return {
+            ServiceStatus: "Error",
+            SuccessCode: "500",
+            ErrorCodeList: [{
+              ErrorCode: "API_ERROR",
+              ErrorDesc: t("error_saving_topics") || "Error saving topics"
+            }]
+          };
+        }
+      } catch (error: any) {
+        setLastAction(undefined);
+        const errorMessage = error?.data?.ErrorCodeList?.[0]?.ErrorDesc || error?.message || t("error_saving_topics") || "Error saving topics";
+        toast.error(errorMessage);
+        return {
+          ServiceStatus: "Error",
+          SuccessCode: "500",
+          ErrorCodeList: [{
+            ErrorCode: "API_ERROR",
+            ErrorDesc: errorMessage
+          }]
+        };
       }
+    } else {
+      const noTopicsMessage = t("no_topics_to_save") || "No topics to save.";
+      toast.error(noTopicsMessage);
+      return {
+        ServiceStatus: "Error",
+        SuccessCode: "400",
+        ErrorCodeList: [{
+          ErrorCode: "NO_TOPICS_TO_SAVE",
+          ErrorDesc: noTopicsMessage
+        }]
+      };
     }
   };
 
   const handleNext = async () => {
     const latestFormValues = getValues();
     setFormData(latestFormValues);
-    // console.log("caseTopics", caseTopics);
-
+    console.log("dkasjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjss");
     try {
-      setLastAction("Next"); // Set action FIRST before API call
-      const response = await saveHearingTopics(
-        getPayloadBySubTopicID(caseTopics, subCategory, "Next", caseId) // Pass explicit action
-      ).unwrap();
+      setLastAction("Next");
+      console.log("[handleNext] Triggered. caseTopics:", caseTopics, "subCategory:", watch("subCategory"), "caseId:", caseId);
+
+      const payload = getPayloadBySubTopicID(caseTopics, watch("subCategory"), "Next", caseId);
+      console.log("[handleNext] Payload for saveHearingTopics:", payload);
+
+      const response = await saveHearingTopics(payload).unwrap();
+
+      console.log("[handleNext] API response:", response);
 
       updateParams(
         currentStep === 0 && currentTab < [0, 1, 2].length - 1
@@ -448,7 +711,8 @@ useEffect(() => {
       );
       setLastSaved(false);
     } catch (error) {
-      setLastAction(undefined); // Reset on error
+      setLastAction(undefined);
+      console.error("[handleNext] Error calling saveHearingTopics:", error);
     }
   };
 
@@ -463,29 +727,46 @@ useEffect(() => {
     }
   }, [currentStep, currentTab, updateParams]);
 
-  const saveTopic = ():number => {
+  const saveTopic = (): number => {
     const newTopic = getValues();
 
     console.log(newTopic);
 
-    for (const [key, value] of Object.entries(newTopic)) {
-       if (
-            value === "" &&
-            key !== "housingSpecificationsInContract" &&
-            key !== "actualHousingSpecifications" &&
-            key !== "housingSpecificationInByLaws"
-          ) {
-        return 0;
-      }
+    if (!newTopic.mainCategory?.value || !newTopic.subCategory?.value || !newTopic.acknowledged) {
+      toast.error(
+        t("required_fields_error") ||
+          "Please fill in all required fields (Main Category, Sub Category, and Acknowledgement)."
+      );
+      return 0;
     }
 
-    console.log(newTopic);
+    // const isDuplicate = caseTopics.some(
+    //   (topic) =>
+    //     topic.SubTopicID === newTopic.subCategory.value &&
+    //     topic.MainTopicID === newTopic.mainCategory.value
+    // );
+
+    // if (isDuplicate) {
+    //   toast.error(
+    //     t("duplicate_topic_error") ||
+    //       "This topic is already added. Please choose a different topic."
+    //   );
+    //   return 0;
+    // }
+
+    console.log("Saving new topic:", newTopic);
+
+    const formatDateForStorage = (date: string) => {
+      if (!date) return '';
+      return date.replace(/\//g, '');
+    };
 
     const topicToSave = {
       ...newTopic,
       MainTopicID: newTopic.mainCategory.value,
       SubTopicID: newTopic.subCategory.value,
       MainSectionHeader: newTopic.mainCategory.label,
+      CaseTopicName: newTopic.mainCategory.label,
       SubTopicName: newTopic?.subCategory.label,
       Date_New: newTopic.date_hijri,
       ManDecsDate: newTopic.manDecsDate,
@@ -512,9 +793,6 @@ useEffect(() => {
       CurrentPosition: newTopic.currentPosition,
       TypeOfCustody: newTopic.typeOfCustody,
       AmountsPaidFor: newTopic.amountsPaidFor,
-      RequestDateHijri: newTopic.request_date_hijri,
-      DateHijri: newTopic.date_hijri,
-      GregorianDate: newTopic.gregorianDate,
       DecisionNumber: newTopic.decisionNumber,
       RegionCode: newTopic.DefendantsEstablishmentRegion,
       CityCode: newTopic.DefendantsEstablishmentCity,
@@ -522,19 +800,35 @@ useEffect(() => {
       GenderCode: newTopic.DefendantsEstablishmentGender,
       NationalityCode: newTopic.DefendantsEstablishmentNationality,
       PrisonerId: newTopic.DefendantsEstablishmentPrisonerId,
-      FromDateHijri: newTopic.from_date_hijri,
-      ToDateHijri: newTopic.to_date_hijri,
-      OverdueWagesAmount: newTopic.overdueWagesAmount,
-      ToDateGregorian: newTopic.to_date_gregorian,
-      FromDateGregorian: newTopic.from_date_gregorian,
       ForAllowance: newTopic?.forAllowance?.value,
       RewardType: newTopic.rewardType,
       Consideration: newTopic.consideration,
       TravelingWay: newTopic.travelingWay,
-      PenalityType: newTopic.typesOfPenalties,
+      TypesOfPenalties: newTopic.typesOfPenalties?.value || "",
+      TypesOfPenaltiesLabel: newTopic.typesOfPenalties?.label || "",
+      RequestType: newTopic.typeOfRequest?.value || "",
+      RequestTypeLabel: newTopic.typeOfRequest?.label || "",
+      LoanAmount: newTopic.loanAmount,
+      ManagerialDecisionNumber: newTopic.managerialDecisionNumber,
+      ManagerialDecisionDateHijri: formatDateForStorage(newTopic.managerial_decision_date_hijri),
+      ManagerialDecisionDateGregorian: formatDateForStorage(newTopic.managerial_decision_date_gregorian),
+      kindOfHoliday: newTopic.kindOfHoliday?.value || editTopic?.kindOfHoliday?.label,
+      InjuryDateHijri: formatDateForStorage(newTopic.injury_date_hijri),
+      InjuryDateGregorian: formatDateForStorage(newTopic.injury_date_gregorian),
+      RequestDateHijri: formatDateForStorage(newTopic.request_date_hijri),
+      RequestDateGregorian: formatDateForStorage(newTopic.request_date_gregorian),
+      DateHijri: formatDateForStorage(newTopic.date_hijri),
+      DateGregorian: formatDateForStorage(newTopic.date_gregorian),
+      FromDateHijri: formatDateForStorage(newTopic.from_date_hijri),
+      FromDateGregorian: formatDateForStorage(newTopic.from_date_gregorian),
+      ToDateHijri: formatDateForStorage(newTopic.to_date_hijri),
+      ToDateGregorian: formatDateForStorage(newTopic.to_date_gregorian),
     };
-    
+
     setCaseTopics((prev) => [...prev, topicToSave]);
+    
+    toast.success(t("topic_added_successfully") || "Topic added successfully");
+    
     return 1;
   };
 
@@ -542,116 +836,112 @@ useEffect(() => {
   const isStep2 = showLegalSection;
   const isEditing = Boolean(editTopic);
 
-  const formLayout = useMemo(() => {
-    if (userType === "Worker") {
-      return useFormLayoutWorker({
-        t: t,
+  const handleClearMainCategory = useCallback(() => {
+    setValue("mainCategory", null);
+    setValue("subCategory", null);
+    setValue("acknowledged", false);
+    setShowTopicData(false);
+    setShowLegalSection(false);
+    setValue("regulatoryText", "");
+  }, [setValue, setShowTopicData, setShowLegalSection]);
+
+  const handleClearSubCategory = useCallback(() => {
+    setValue("subCategory", null);
+    setValue("acknowledged", false);
+    setShowTopicData(false);
+    setValue("regulatoryText", "");
+  }, [setValue, setShowTopicData]);
+
+  const formLayout = userType === "Worker" || userType === "Embassy User"
+    ? useFormLayoutWorker({
+        t,
         MainTopicID: mainCategory,
         SubTopicID: isEditing ? editTopic?.subCategory : subCategory,
         FromLocation: fromPlace,
         ToLocation: toPlace,
         AcknowledgementTerms: acknowledged,
-        showLegalSection: showLegalSection,
-        showTopicData: showTopicData,
-        setValue: (field: string, value: any) => setValue(field as any, value),
-        regulatoryText: regulatoryText,
+        showLegalSection,
+        showTopicData,
+        setValue,
+        regulatoryText,
         handleAdd: goToLegalStep,
-        handleAcknowledgeChange: (val: boolean) =>
-          setValue("acknowledged", val),
-        handleAddTopic: handleAddTopic,
+        handleAcknowledgeChange: (val: boolean) => {
+          setValue("acknowledged", val);
+          if (val) {
+            setShowTopicData(true);
+          }
+        },
+        handleAddTopic,
+        handleSend: handleSend,
         decisionNumber: decisionNumber || "",
-        isEditing: isEditing,
-        mainCategoryData: mainCategoryData,
-        subCategoryData: subCategoryData,
-        watch: watch,
-        forAllowanceData: forAllowanceData,
-        typeOfRequestLookupData: typeOfRequestLookupData,
-        commissionTypeLookupData: commissionTypeLookupData,
-        accordingToAgreementLookupData: accordingToAgreementLookupData,
-        matchedSubCategory: matchedSubCategory,
-        subTopicsLoading: subTopicsLoading,
-        amountPaidData: amountPaidData,
-        leaveTypeData: leaveTypeData,
-        travelingWayData: travelingWayData,
-        isValid: isValid,
+        isEditing,
+        mainCategoryData,
+        subCategoryData,
+        watch,
+        forAllowanceData,
+        typeOfRequestLookupData,
+        commissionTypeLookupData,
+        accordingToAgreementLookupData,
+        typesOfPenaltiesData,
+        matchedSubCategory,
+        subTopicsLoading,
+        amountPaidData,
+        leaveTypeData,
+        travelingWayData,
+        editTopic,
+        caseTopics,
+        setShowLegalSection,
+        setShowTopicData,
+        isValid,
         isMainCategoryLoading: isFetching || isLoading,
-        isSubCategoryLoading: isSubCategoryLoading,
-        editTopic: editTopic,
-        caseTopics: caseTopics,
-      });
-    } else {
-      return useFormLayoutEstablishment({
-        t: t,
+        isSubCategoryLoading,
+        control,
+      })
+    : useFormLayoutEstablishment({
+        t,
         MainTopicID: mainCategory,
         SubTopicID: isEditing ? editTopic?.subCategory : subCategory,
         FromLocation: fromPlace,
         ToLocation: toPlace,
         AcknowledgementTerms: acknowledged,
-        showLegalSection: showLegalSection,
-        showTopicData: showTopicData,
-        setValue: (field: string, value: any) => setValue(field as any, value),
-        regulatoryText: regulatoryText,
+        showLegalSection,
+        showTopicData,
+        setValue,
+        regulatoryText,
         handleAdd: goToLegalStep,
-        handleAcknowledgeChange: (val: boolean) =>
-          setValue("acknowledged", val),
-        handleAddTopic: handleAddTopic,
+        handleAcknowledgeChange: (val: boolean) => {
+          setValue("acknowledged", val);
+          if (val) {
+            setShowTopicData(true);
+          }
+        },
+        handleAddTopic,
+        handleSend: handleSend,
         decisionNumber: decisionNumber || "",
-        isEditing: isEditing,
-        mainCategoryData: mainCategoryData,
-        subCategoryData: subCategoryData,
-        watch: watch,
-        forAllowanceData: forAllowanceData,
-        typeOfRequestLookupData: typeOfRequestLookupData,
-        commissionTypeLookupData: commissionTypeLookupData,
-        accordingToAgreementLookupData: accordingToAgreementLookupData,
-        matchedSubCategory: matchedSubCategory,
-        subTopicsLoading: subTopicsLoading,
-        amountPaidData: amountPaidData,
-        leaveTypeData: leaveTypeData,
-        travelingWayData: travelingWayData,
-        isValid: isValid,
+        isEditing,
+        mainCategoryData,
+        subCategoryData,
+        watch,
+        forAllowanceData,
+        typeOfRequestLookupData,
+        commissionTypeLookupData,
+        accordingToAgreementLookupData,
+        typesOfPenaltiesData,
+        matchedSubCategory,
+        subTopicsLoading,
+        amountPaidData,
+        leaveTypeData,
+        travelingWayData,
+        editTopic,
+        caseTopics,
+        setShowLegalSection,
+        setShowTopicData,
+        isValid,
         isMainCategoryLoading: isFetching || isLoading,
-        isSubCategoryLoading: isSubCategoryLoading,
-        editTopic: editTopic,
-        caseTopics: caseTopics,
+        isSubCategoryLoading,
+        control,
       });
-    }
-  }, [
-    userType,
-    t,
-    mainCategory,
-    subCategory,
-    fromPlace,
-    toPlace,
-    acknowledged,
-    showLegalSection,
-    showTopicData,
-    setValue,
-    regulatoryText,
-    goToLegalStep,
-    handleAddTopic,
-    decisionNumber,
-    isEditing,
-    mainCategoryData,
-    subCategoryData,
-    watch,
-    forAllowanceData,
-    typeOfRequestLookupData,
-    commissionTypeLookupData,
-    accordingToAgreementLookupData,
-    matchedSubCategory,
-    subTopicsLoading,
-    amountPaidData,
-    leaveTypeData,
-    travelingWayData,
-    isValid,
-    isFetching,
-    isLoading,
-    isSubCategoryLoading,
-    editTopic,
-    caseTopics,
-  ]);
-  // //console.log("formLayout", formLayout);
+
   const {
     attachments,
     attachmentFiles,
@@ -663,18 +953,339 @@ useEffect(() => {
     openAttachmentModal,
     closeAttachmentModal,
     closePreview,
+    setAttachments,
   } = useAttachments();
+
+useEffect(()=>{
+  console.log("this is from index",{
+    attachments,
+    attachmentFiles,
+    previewFile,
+    showAttachmentModal,
+    handleAttachmentSave,
+    handleRemoveAttachment,
+    handleViewAttachment,
+    openAttachmentModal,
+    closeAttachmentModal,
+    closePreview,
+    setAttachments,
+  });
+  
+},[
+  attachments,
+    attachmentFiles,
+    previewFile,
+    showAttachmentModal,
+    handleAttachmentSave,
+    handleRemoveAttachment,
+    handleViewAttachment,
+    openAttachmentModal,
+    closeAttachmentModal,
+    closePreview,
+    setAttachments,
+])
 
   useEffect(() => {
     if (mainCategory) {
-      setValue("subCategory", null);
+      setValue("acknowledged", false);
+      setShowTopicData(false);
+      setShowLegalSection(false);
+      setValue("regulatoryText", "");
     }
   }, [mainCategory, setValue]);
+
+  useEffect(() => {
+    if (subCategory) {
+      setValue("acknowledged", false);
+      setShowTopicData(false);
+      setValue("regulatoryText", "");
+    }
+  }, [subCategory, setValue]);
+
+  useEffect(() => {
+    if (editTopic && isOpen) {
+      setShowLegalSection(true);
+      setShowTopicData(true);
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    const bylawsValue = watch("doesBylawsIncludeAddingAccommodations");
+    const contractValue = watch("doesContractIncludeAddingAccommodations");
+
+    if (bylawsValue === true) {
+      setValue("doesContractIncludeAddingAccommodations", false);
+      setValue("housingSpecificationsInContract", "");
+    } else if (contractValue === true) {
+      setValue("doesBylawsIncludeAddingAccommodations", false);
+      setValue("housingSpecificationInByLaws", "");
+    }
+  }, [
+    watch("doesBylawsIncludeAddingAccommodations"),
+    watch("doesContractIncludeAddingAccommodations"),
+    setValue,
+  ]);
+
+  const { data: regionData, isFetching: isRegionLoading } = useGetRegionLookupDataQuery({
+    AcceptedLanguage: currentLanguage,
+    context: "default",
+  });
+
+  useEffect(() => {
+    if (editTopic && isOpen && watch("subCategory")?.value) {
+      const setDropdownValues = () => {
+        if (forAllowanceData?.DataElements && editTopic.ForAllowance) {
+          const forAllowanceOption = forAllowanceData.DataElements.find(
+            (item: any) => item.ElementKey === editTopic.ForAllowance
+          );
+          if (forAllowanceOption) {
+            setValue(
+              "forAllowance",
+              {
+                value: forAllowanceOption.ElementKey,
+                label: forAllowanceOption.ElementValue,
+              },
+              { shouldValidate: true }
+            );
+          }
+        }
+        if (
+          commissionTypeLookupData?.DataElements &&
+          editTopic.CommissionType
+        ) {
+          const commissionTypeOption =
+            commissionTypeLookupData.DataElements.find(
+              (item: any) => item.ElementKey === editTopic.CommissionType
+            );
+          if (commissionTypeOption) {
+            setValue(
+              "commissionType",
+              {
+                value: commissionTypeOption.ElementKey,
+                label: commissionTypeOption.ElementValue,
+              },
+              { shouldValidate: true }
+            );
+          }
+        }
+
+        if (
+          accordingToAgreementLookupData?.DataElements &&
+          editTopic.AccordingToAgreement
+        ) {
+          const accordingToAgreementOption =
+            accordingToAgreementLookupData.DataElements.find(
+              (item: any) => item.ElementKey === editTopic.AccordingToAgreement
+            );
+          if (accordingToAgreementOption) {
+            setValue(
+              "accordingToAgreement",
+              {
+                value: accordingToAgreementOption.ElementKey,
+                label: accordingToAgreementOption.ElementValue,
+              },
+              { shouldValidate: true }
+            );
+          }
+        }
+
+        if (travelingWayData?.DataElements && editTopic.TravelingWay) {
+          const travelingWayOption = travelingWayData.DataElements.find(
+            (item: any) => item.ElementKey === editTopic.TravelingWay
+          );
+          if (travelingWayOption) {
+            setValue(
+              "travelingWay",
+              {
+                value: travelingWayOption.ElementKey,
+                label: travelingWayOption.ElementValue,
+              },
+              { shouldValidate: true }
+            );
+          }
+        }
+
+        if (typeOfRequestLookupData?.DataElements && editTopic.TypeOfRequest) {
+          const typeOfRequestOption = typeOfRequestLookupData.DataElements.find(
+            (item: any) => item.ElementKey === editTopic.TypeOfRequest
+          );
+          if (typeOfRequestOption) {
+            setValue(
+              "typeOfRequest",
+              {
+                value: typeOfRequestOption.ElementKey,
+                label: typeOfRequestOption.ElementValue,
+              },
+              { shouldValidate: true }
+            );
+          }
+        }
+
+        if (typesOfPenaltiesData?.DataElements && (editTopic.PenalityType || editTopic.TypesOfPenalties)) {
+          const penaltyTypeValue = editTopic.PenalityType || editTopic.TypesOfPenalties;
+          const penaltyTypeCode = editTopic.PenalityType_Code;
+          
+          let typesOfPenaltiesOption = null;
+          if (penaltyTypeCode) {
+            typesOfPenaltiesOption = typesOfPenaltiesData.DataElements.find(
+              (item: any) => item.ElementKey === penaltyTypeCode
+            );
+          }
+          
+          if (!typesOfPenaltiesOption) {
+            typesOfPenaltiesOption = typesOfPenaltiesData.DataElements.find(
+              (item: any) => item.ElementKey === penaltyTypeValue
+            );
+          }
+          
+          if (typesOfPenaltiesOption) {
+            setValue(
+              "typesOfPenalties",
+              {
+                value: typesOfPenaltiesOption.ElementKey,
+                label: typesOfPenaltiesOption.ElementValue,
+              },
+              { shouldValidate: true }
+            );
+          }
+        }
+
+        if (regionData?.DataElements) {
+          if (editTopic.FromLocation) {
+            const fromLocationOption = regionData.DataElements.find(
+              (item: any) => item.ElementKey === editTopic.FromLocation
+            );
+            if (fromLocationOption) {
+              setValue(
+                "fromLocation",
+                {
+                  value: fromLocationOption.ElementKey,
+                  label: fromLocationOption.ElementValue,
+                },
+                { shouldValidate: true }
+              );
+            }
+          }
+          
+          if (editTopic.ToLocation) {
+            const toLocationOption = regionData.DataElements.find(
+              (item: any) => item.ElementKey === editTopic.ToLocation
+            );
+            if (toLocationOption) {
+              setValue(
+                "toLocation",
+                {
+                  value: toLocationOption.ElementKey,
+                  label: toLocationOption.ElementValue,
+                },
+                { shouldValidate: true }
+              );
+            }
+          }
+        }
+      };
+      setTimeout(setDropdownValues, 200);
+    }
+  }, [
+    editTopic,
+    isOpen,
+    watch("subCategory")?.value,
+    forAllowanceData,
+    commissionTypeLookupData,
+    accordingToAgreementLookupData,
+    travelingWayData,
+    typeOfRequestLookupData,
+    typesOfPenaltiesData,
+    regionData,
+    setValue,
+  ]);
+
+  useCaseTopicsPrefill({
+    setValue,
+    trigger,
+    caseTopics,
+    isEditing,
+    editTopic,
+  });
+
+  useEffect(() => {
+    if (isEditing && editTopic && isOpen) {
+      if (editTopic.date_hijri) {
+        setDate({
+          hijri: editTopic.date_hijri,
+          gregorian: editTopic.gregorianDate,
+          dateObject: null,
+        });
+      }
+      
+      setShowLegalSection(true);
+      setShowTopicData(true);
+    }
+  }, [isEditing, editTopic, isOpen, setDate, setShowLegalSection, setShowTopicData]);
+
+  function findOption(options: Option[], value: string): Option | null {
+    if (!options) return null;
+    return (
+      options.find((opt: Option) =>
+        typeof opt === "object"
+          ? opt.value === value
+          : opt === value
+      ) || null
+    );
+  }
+
+  useEffect(() => {
+    if (isEditing && editTopic && typeOfRequestLookupData?.DataElements) {
+      const code = editTopic.RequestType_Code || editTopic.RequestType || editTopic.TypeOfRequest;
+      const matchedOption = findOption(
+        typeOfRequestLookupData.DataElements.map((item: any) => ({ value: item.ElementKey, label: item.ElementValue })),
+        code
+      );
+      if (matchedOption) setValue("typeOfRequest", matchedOption);
+    }
+  }, [isEditing, editTopic, typeOfRequestLookupData, setValue]);
+
+  // Add new state for error message
+  const [mojContractError, setMojContractError] = useState<string | null>(null);
+
+  // Add effect to handle MOJ contract validation
+  useEffect(() => {
+    if (userType === "Worker" || userType === "Embassy User" && defendantStatus === "Establishment") {
+      if (subCategory?.value && mainCategory?.value === 'WR') {
+        // Check if selected subtopic is WR-1 or WR-2
+        if (subCategory.value === 'WR-1' || subCategory.value === 'WR-2') {
+          // Get the MOJ contract validation from the API response
+          const mojContractExists = subCategoryData?.MOJContractExist === "false"; 
+        const errorMessage = subCategoryData?.MOJContractExistErrorMessage;
+          // const mojContractExists = true; // For local testing. Correct logic is: subCategoryData?.MOJContractExist === "true"
+          // const errorMessage = "This is a test error message for MOJ Contract validation."; // For local testing. Correct logic is: subCategoryData?.MOJContractExistErrorMessage
+
+          if (mojContractExists && errorMessage) {
+            setMojContractError(errorMessage);
+            // Clear the selected subtopic
+            setValue("subCategory", null);
+            setShowLegalSection(false);
+            setShowTopicData(false);
+
+            // Clear previous timeout if it exists
+            if (timeoutRef.current) {
+              clearTimeout(timeoutRef.current);
+            }
+
+            // Set new timeout
+            timeoutRef.current = setTimeout(() => {
+              setMojContractError(null);
+            }, 3000);
+          }
+        }
+      }
+    }
+  }, [userType, defendantStatus, subCategory?.value, mainCategory?.value, subCategoryData, setValue]);
 
   return (
     <Suspense fallback={<TableLoader />}>
       <StepNavigation<FormData>
-        onSubmit={handleSubmit(onSubmit)} 
+        onSubmit={handleSubmit(onSubmit)}
         isValid={isValid && caseTopics.length > 0}
         isFirstStep={currentStep === 0 && currentTab === 0}
         isLastStep={currentStep === 3 - 1}
@@ -683,7 +1294,7 @@ useEffect(() => {
         goToPrevStep={handlePrevious}
         resetSteps={() => updateParams(0, 0)}
         handleSave={handleSaveApi}
-        canProceed={!!caseTopics.length} // true if caseTopic has value
+        canProceed={!!caseTopics.length}
         isButtonDisabled={(direction: "prev" | "next") =>
           direction === "prev" ? currentStep === 0 && currentTab === 0 : false
         }
@@ -702,8 +1313,14 @@ useEffect(() => {
                   <Button
                     variant="primary"
                     size="xs"
+                    type="button"
                     onClick={() => {
                       reset();
+                      setValue("subCategory", null);
+                      setValue("mainCategory", null);
+                      setValue("acknowledged", false);
+                      setShowLegalSection(false);
+                      setShowTopicData(false);
                       setEditTopic(null);
                       toggle();
                     }}
@@ -763,22 +1380,42 @@ useEffect(() => {
                 }
                 className="h-[60vh] sm:h-[600px] overflow-y-auto w-full max-w-[800px]"
               >
-                <FormProvider>
+                {mojContractError && (
+                  <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4 relative">
+                    <span>{mojContractError}</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMojContractError(null);
+                        if (timeoutRef.current) {
+                          clearTimeout(timeoutRef.current);
+                        }
+                      }}
+                      className="absolute top-0 bottom-0 right-0 px-4 py-3"
+                    >
+                      <span className="text-2xl font-bold">&times;</span>
+                    </button>
+                  </div>
+                )}
+                <RHFFormProvider {...methods}>
                   <Suspense fallback={<TableLoader />}>
-                    <DynamicForm
-                      formLayout={formLayout}
-                      register={register}
-                      errors={errors}
-                      setValue={setValue}
-                      control={control}
-                      watch={watch}
-                    />
+                    {formLayout && (
+                      <DynamicForm
+                        formLayout={formLayout}
+                        register={register}
+                        errors={errors}
+                        setValue={setValue}
+                        control={control}
+                        watch={watch}
+                      />
+                    )}
                   </Suspense>
                   <div className="flex w-full justify-between mt-4 sm:mt-6">
                     <Button
                       variant="secondary"
                       typeVariant="outline"
                       size="sm"
+                      type="button"
                       onClick={handleCancel}
                       className="text-sm sm:text-base font-medium"
                     >
@@ -788,6 +1425,7 @@ useEffect(() => {
                       variant={isValid ? "primary" : "disabled"}
                       typeVariant={isValid ? "brand" : "freeze"}
                       size="sm"
+                      type="button"
                       onClick={() => {
                         if (isEditing) {
                           handleUpdate();
@@ -809,11 +1447,43 @@ useEffect(() => {
                         : t("Next") || "Next"}
                     </Button>
                   </div>
-                </FormProvider>
+                </RHFFormProvider>
               </Modal>
             </Suspense>
           )}
           <FilePreviewModal file={previewFile} onClose={closePreview} />
+          {showDeleteConfirm && (
+            <Modal
+              close={() => setShowDeleteConfirm(false)}
+              header={t("delete_topic") || "Delete Topic"}
+              modalWidth={500}
+            >
+              <p className="text-sm text-gray-700">
+                {t("confirm_delete_topic") ||
+                  "Are you sure you want to delete this topic? This action cannot be undone."}
+              </p>
+              <div className="flex justify-end gap-3 mt-6">
+                <Button
+                  variant="secondary"
+                  type="button"
+                  onClick={() => setShowDeleteConfirm(false)}
+                >
+                  {t("no") || "No"}
+                </Button>
+                <Button
+                  variant="primary"
+                  type="button"
+                  onClick={() => {
+                    setCaseTopics((prev) => prev.filter((t) => t !== delTopic));
+                    setShowDeleteConfirm(false);
+                    setDelTopic(null);
+                  }}
+                >
+                  {t("yes") || "Yes"}
+                </Button>
+              </div>
+            </Modal>
+          )}
         </div>
       </StepNavigation>
     </Suspense>

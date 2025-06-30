@@ -6,7 +6,7 @@ export const hearingActionsApi = api.injectEndpoints({
       query: ({ CaseID, AcceptedLanguage, SourceSystem, PartyType }) => ({
         url: `/WeddiServices/V1/SendAppointment`,
         method: "POST",
-        params: {
+        body: {
           AcceptedLanguage,
           SourceSystem,
           CaseID,
@@ -62,16 +62,17 @@ export const hearingActionsApi = api.injectEndpoints({
         SourceSystem: string;
         PDFAction: "GenerateLawSuit" | "Download"
         IDNumber: string;
+        UserType: string;
       }>({
-        query: ({ CaseID, AcceptedLanguage, SourceSystem, PDFAction, IDNumber }) => ({
+        query: ({ CaseID, AcceptedLanguage, SourceSystem, PDFAction, IDNumber, UserType }) => ({
           url: `/WeddiServices/V1/pdfActions`,
           method: "POST",
-          params: {
+          body: {
             AcceptedLanguage,
             SourceSystem,
             CaseID,
             PDFAction,
-            IDNumber
+            IDNumber,
           },
         }),
       }),

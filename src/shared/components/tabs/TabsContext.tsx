@@ -15,12 +15,12 @@ const TabsContext = createContext<TabsContextType | undefined>(undefined);
 
 export const TabsProvider = ({ children }: { children: ReactNode }) => {
   const [activeTab, setActiveTab] = useState(() => {
-    const savedTab = localStorage.getItem("tab");
+    const savedTab = localStorage.getItem("caseRoleTab");
     return savedTab ? savedTab : "claimant";
   });
 
   useEffect(() => {
-    localStorage.setItem("tab", activeTab);
+    localStorage.setItem("caseRoleTab", activeTab);
   }, [activeTab]);
 
   return (

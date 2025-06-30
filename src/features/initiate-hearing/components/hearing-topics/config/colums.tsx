@@ -5,8 +5,8 @@ import { useTranslation } from "react-i18next";
 
 interface HearingTopicsColumnsProps {
   t: (key: string) => string;
-  onEdit: (topic: Topic) => void;
-  onDel: (topic: Topic) => void;
+  onEdit: (topic: Topic, index: number) => void;
+  onDel: (topic: Topic, index: number) => void;
 }
 
 export const getHearingTopicsColumns = ({
@@ -20,9 +20,9 @@ export const getHearingTopicsColumns = ({
     cell: ({ row }) => row.index + 1,
   },
   {
-    id: "MainSectionHeader",
+    id: "CaseTopicName",
     header: t("mainCategory"),
-    accessorKey: "MainSectionHeader",
+    accessorKey: "CaseTopicName",
   },
   {
     id: "SubTopicName",
@@ -38,15 +38,17 @@ export const getHearingTopicsColumns = ({
           variant="secondary"
           typeVariant="outline"
           size="xs"
-          onClick={() => onEdit(row.original)}
+          type="button"
+          onClick={() => onEdit(row.original, row.index)}
         >
           {t("edit")}
         </Button>
         <Button
-          onClick={() => onDel(row.original)}
+          onClick={() => onDel(row.original, row.index)}
           variant="secondary"
           typeVariant="outline"
           size="xs"
+          type="button"
         >
           {t("delete")}
         </Button>

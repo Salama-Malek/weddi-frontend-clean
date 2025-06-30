@@ -19,7 +19,7 @@ export const Tab = ({ id, children }: { id: string; children: ReactNode }) => {
 
   const handleTabClick = () => {
     setActiveTab(id);
-    localStorage.setItem("tab", id);
+    localStorage.setItem("caseRoleTab", id);
   };
 
   return (

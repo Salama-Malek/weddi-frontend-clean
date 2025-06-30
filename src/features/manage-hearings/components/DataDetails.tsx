@@ -71,7 +71,7 @@ const sectionOrder: SectionOrder = {
   },
   location: {
     title: "work_location_details",
-    fields: ["OfficeName", "Defendant_JobLocation", "DefendantJobCity"],
+    fields: ["Defendant_JobLocation", "DefendantJobCity", "OfficeName"],
   },
 };
 // Legel Rep Review As Defendent
@@ -90,15 +90,13 @@ const legelRepSectionOrderAsDef: SectionOrder = {
       "Plaintiff_Occupation",
       "Plaintiff_Gender",
       "Plaintiff_Region",
-      "Plaintiff_City"],
+      "Plaintiff_City",
+    ],
   },
-  
+
   defendant: {
     title: "defendant_details",
-    fields: [
-      "Defendant_MainGovtDefend",
-      "DefendantSubGovtDefend"
-    ],
+    fields: ["Defendant_MainGovtDefend", "DefendantSubGovtDefend"],
   },
   work: {
     title: "work_details",
@@ -116,19 +114,19 @@ const legelRepSectionOrderAsDef: SectionOrder = {
   },
   location: {
     title: "work_location_details",
-    fields: ["OfficeName", "Plaintiff_JobLocation", "PlaintiffJobCity"],
+    fields: ["Plaintiff_JobLocation", "PlaintiffJobCity", "OfficeName"],
   },
 };
+// hassan code 700
 // Establishments Review
 const sectionForEstablishmentOrder: SectionOrder = {
   plaintiff: {
     title: "plaintiff_details",
     fields: [
-      "Plaintiff_CRNumber",
-      "Plaintiff_StatusID",
       "PlaintiffEstFileNumber",
+      "Plaintiff_CRNumber",
+      "Plaintiff_Number700",
       "PlaintiffName",
-      "EstablishmentFullName",
       "Plaintiff_Region",
       "Plaintiff_City",
     ],
@@ -138,16 +136,17 @@ const sectionForEstablishmentOrder: SectionOrder = {
     fields: [
       "DefendantId",
       "DefendantName",
-      "Defendant_ApplicantBirthDate",
-      "DefendantHijiriDOB",
       "Defendant_PhoneNumber",
-      "Defendant_MobileNumber",
-      "Defendant_EmailAddress",
-      "Defendant_Occupation",
+      "DefendantHijiriDOB",
+      "Defendant_ApplicantBirthDate",
+      // "Defendant_MobileNumber",
+      // "Defendant_EmailAddress",
       "Defendant_Region",
       "Defendant_City",
       "Defendant_Gender",
       "Defendant_Nationality",
+      "Defendant_Occupation",
+      "DefendantType",
     ],
   },
   work: {
@@ -157,7 +156,9 @@ const sectionForEstablishmentOrder: SectionOrder = {
       "Defendant_Salary",
       "Defendant_ContractType",
       "Defendant_ContractNumber",
+      "Defendant_ContractStartDateHijri",
       "Defendant_ContractStartDate",
+      "Defendant_ContractEndDateHijri",
       "Defendant_ContractEndDate",
       "Defendant_StillWorking",
       "Defendant_JobStartDate",
@@ -166,15 +167,15 @@ const sectionForEstablishmentOrder: SectionOrder = {
   },
   location: {
     title: "work_location_details",
-    fields: ["OfficeName", "Defendant_JobLocation", "DefendantJobCity"],
+    fields: ["Defendant_JobLocation", "DefendantJobCity", "OfficeName"],
   },
 };
-
+// hassan code 700
 const EstablishmentSectionOrderAsDef: SectionOrder = {
   plaintiff: {
     title: "plaintiff_details",
     fields: [
-     "PlaintiffId",
+      "PlaintiffId",
       "PlaintiffName",
       "Plaintiff_PhoneNumber",
       "Plaintiff_MobileNumber",
@@ -185,16 +186,17 @@ const EstablishmentSectionOrderAsDef: SectionOrder = {
       "Plaintiff_Occupation",
       "Plaintiff_Gender",
       "Plaintiff_Region",
-      "Plaintiff_City"],
+      "Plaintiff_City",
+    ],
   },
-  
+
   defendant: {
     title: "defendant_details",
     fields: [
       "DefendantEstFileNumber",
       "Defendant_CRNumber",
+      "Defendant_Number700",
       "DefendantName",
-      "EstablishmentFullName",
       "Defendant_Region",
       "Defendant_City",
     ],
@@ -215,18 +217,17 @@ const EstablishmentSectionOrderAsDef: SectionOrder = {
   },
   location: {
     title: "work_location_details",
-    fields: ["OfficeName", "Plaintiff_JobLocation", "PlaintiffJobCity"],
+    fields: ["Plaintiff_JobLocation", "PlaintiffJobCity", "OfficeName"],
   },
 };
 
-const workerSectionOrderAgainistGover: SectionOrder={
-   plaintiff: {
+const workerSectionOrderAgainistGover: SectionOrder = {
+  plaintiff: {
     title: "plaintiff_details",
     fields: [
-     "PlaintiffId",
+      "PlaintiffId",
       "PlaintiffName",
       "Plaintiff_PhoneNumber",
-      "Plaintiff_MobileNumber",
       "PlaintiffHijiriDOB",
       "Plaintiff_ApplicantBirthDate",
       "Plaintiff_Nationality",
@@ -234,21 +235,59 @@ const workerSectionOrderAgainistGover: SectionOrder={
       "Plaintiff_Occupation",
       "Plaintiff_Gender",
       "Plaintiff_Region",
-      "Plaintiff_City"],
+      "Plaintiff_City",
+    ],
   },
   defendant: {
     title: "defendant_details",
-     fields: [
-      "DefendantName",
-      "Defendant_ApplicantBirthDate",
-      "DefendantHijiriDOB",
-      "Defendant_PhoneNumber",
-      "Defendant_EmailAddress",
-      "Defendant_Occupation",
+    fields: ["Defendant_MainGovtDefend", "DefendantSubGovtDefend"],
+  },
+  work: {
+    title: "work_details",
+    fields: [
+      "Plaintiff_SalaryType",
+      "Plaintiff_Salary",
+      "Plaintiff_ContractType",
+      "Plaintiff_ContractNumber",
+      "Plaintiff_ContractStartDate",
+      "Plaintiff_ContractEndDate",
+      "Plaintiff_StillWorking",
+      "Plaintiff_JobStartDate",
+      "Plaintiff_JobEndDate",
+    ],
+  },
+  location: {
+    title: "work_location_details",
+    fields: ["Plaintiff_JobLocation", "PlaintiffJobCity", "OfficeName"],
+
+  },
+};
+const workerSectionOrderAgainistEsta: SectionOrder = {
+  plaintiff: {
+    title: "plaintiff_details",
+    fields: [
+      "PlaintiffId",
+      "PlaintiffName",
+      "Plaintiff_PhoneNumber",
+      "PlaintiffHijiriDOB",
+      "Plaintiff_ApplicantBirthDate",
+      "Plaintiff_Nationality",
+      "Plaintiff_FirstLanguage",
+      "Plaintiff_Occupation",
+      "Plaintiff_Gender",
+      "Plaintiff_Region",
+      "Plaintiff_City",
+    ],
+  },
+  defendant: {
+    title: "defendant_details",
+    fields: [
+      "DefendantEstFileNumber",
+      "Defendant_CRNumber",
+      "Defendant_Number700",
+      "EstablishmentFullName",
       "Defendant_Region",
       "Defendant_City",
-      "Defendant_Gender",
-      "Defendant_Nationality",
     ],
   },
   work: {
@@ -267,32 +306,94 @@ const workerSectionOrderAgainistGover: SectionOrder={
   },
   location: {
     title: "work_location_details",
-    fields: ["OfficeName", "Plaintiff_JobLocation", "PlaintiffJobCity"],
+    fields: ["Plaintiff_JobLocation", "PlaintiffJobCity", "OfficeName"],
   },
+};
 
-}
-const workerSectionOrderAgainistEsta: SectionOrder={
-   plaintiff: {
+// Embassy as Agent vs Government
+const embasyAsAgentVsGovSectionOrder: SectionOrder = {
+  agent: {
+    title: "agent_information",
+    fields: [
+      "EmbassyName",
+      "EmbassyEmailAddress",
+      "EmbassyNationality",
+      "EmbassyPhone",
+      "EmbassyFirstLanguage",
+    ],
+  },
+  plaintiff: {
     title: "plaintiff_details",
     fields: [
-     "PlaintiffId",
+      "PlaintiffId",
       "PlaintiffName",
-      "Plaintiff_PhoneNumber",
-      "Plaintiff_MobileNumber",
+      "Plaintiff_Region",
+      "Plaintiff_City",
       "PlaintiffHijiriDOB",
       "Plaintiff_ApplicantBirthDate",
-      "Plaintiff_Nationality",
-      "Plaintiff_FirstLanguage",
+      "Plaintiff_PhoneNumber",
       "Plaintiff_Occupation",
       "Plaintiff_Gender",
-      "Plaintiff_Region",
-      "Plaintiff_City"],
+      "Plaintiff_Nationality",
+    ],
   },
-    defendant: {
+  defendant: {
+    title: "defendant_details",
+    fields: ["Defendant_MainGovtDefend", "DefendantSubGovtDefend"],
+  },
+  work: {
+    title: "work_details",
+    fields: [
+      "Plaintiff_SalaryType",
+      "Plaintiff_Salary",
+      "Plaintiff_ContractType",
+      "Plaintiff_ContractNumber",
+      "Plaintiff_ContractStartDate",
+      "Plaintiff_ContractEndDate",
+      "Plaintiff_StillWorking",
+      "Plaintiff_JobStartDate",
+      "Plaintiff_JobEndDate",
+    ],
+  },
+  location: {
+    title: "work_location_details",
+    fields: ["Plaintiff_JobLocation", "PlaintiffJobCity", "OfficeName"],
+  },
+};
+// hassan code 700
+// Embassy as Agent vs Establishment
+const embasyAsAgentVsEstSectionOrder: SectionOrder = {
+  agent: {
+    title: "agent_information",
+    fields: [
+      "EmbassyName",
+      "EmbassyEmailAddress",
+      "EmbassyNationality",
+      "EmbassyPhone",
+      "EmbassyFirstLanguage",
+    ],
+  },
+  plaintiff: {
+    title: "plaintiff_details",
+    fields: [
+      "PlaintiffId",
+      "PlaintiffName",
+      "Plaintiff_Region",
+      "Plaintiff_City",
+      "PlaintiffHijiriDOB",
+      "Plaintiff_ApplicantBirthDate",
+      "Plaintiff_PhoneNumber",
+      "Plaintiff_Occupation",
+      "Plaintiff_Gender",
+      "Plaintiff_Nationality",
+    ],
+  },
+  defendant: {
     title: "defendant_details",
     fields: [
       "DefendantEstFileNumber",
       "Defendant_CRNumber",
+     "Defendant_Number700",
       "DefendantName",
       "EstablishmentFullName",
       "Defendant_Region",
@@ -315,51 +416,137 @@ const workerSectionOrderAgainistEsta: SectionOrder={
   },
   location: {
     title: "work_location_details",
-    fields: ["OfficeName", "Plaintiff_JobLocation", "PlaintiffJobCity"],
+    fields: ["Plaintiff_JobLocation", "PlaintiffJobCity", "OfficeName"],
   },
+};
+// Embassy as Self vs Government
+const embasyAsSelfVsGovSectionOrder: SectionOrder = {
+  plaintiff: {
+    title: "plaintiff_details",
+    fields: [
+      "PlaintiffId",
+      "PlaintiffName",
+      "Plaintiff_PhoneNumber",
+      "Plaintiff_MobileNumber",
+      "PlaintiffHijiriDOB",
+      "Plaintiff_ApplicantBirthDate",
+      "Plaintiff_Nationality",
+      "Plaintiff_FirstLanguage",
+      "Plaintiff_Occupation",
+      "Plaintiff_Gender",
+      "Plaintiff_Region",
+      "Plaintiff_City",
+    ],
+  },
+  defendant: {
+    title: "defendant_details",
+    fields: ["Defendant_MainGovtDefend", "DefendantSubGovtDefend"],
+  },
+  work: {
+    title: "work_details",
+    fields: [
+      "Plaintiff_SalaryType",
+      "Plaintiff_Salary",
+      "Plaintiff_ContractType",
+      "Plaintiff_ContractNumber",
+      "Plaintiff_ContractStartDate",
+      "Plaintiff_ContractEndDate",
+      "Plaintiff_StillWorking",
+      "Plaintiff_JobStartDate",
+      "Plaintiff_JobEndDate",
+    ],
+  },
+  location: {
+    title: "work_location_details",
+    fields: ["Plaintiff_JobLocation", "PlaintiffJobCity", "OfficeName"],
+  },
+};
+// Embassy as Self vs Establishment
+const embasyAsSelfVsEstSectionOrder: SectionOrder = {
+  plaintiff: {
+    title: "plaintiff_details",
+    fields: [
+      "PlaintiffId",
+      "PlaintiffName",
+      "Plaintiff_PhoneNumber",
+      "Plaintiff_MobileNumber",
+      "PlaintiffHijiriDOB",
+      "Plaintiff_ApplicantBirthDate",
+      "Plaintiff_Nationality",
+      "Plaintiff_FirstLanguage",
+      "Plaintiff_Occupation",
+      "Plaintiff_Gender",
+      "Plaintiff_Region",
+      "Plaintiff_City",
+    ],
+  },
+  defendant: {
+    title: "defendant_details",
+    fields: [
+      "DefendantEstFileNumber",
+      "Defendant_CRNumber",
+     "Defendant_Number700",
+      "DefendantName",
+      "Defendant_Region",
+      "Defendant_City",
+    ],
+  },
+  work: {
+    title: "work_details",
+    fields: [
+      "Plaintiff_SalaryType",
+      "Plaintiff_Salary",
+      "Plaintiff_ContractType",
+      "Plaintiff_ContractNumber",
+      "Plaintiff_ContractStartDate",
+      "Plaintiff_ContractEndDate",
+      "Plaintiff_StillWorking",
+      "Plaintiff_JobStartDate",
+      "Plaintiff_JobEndDate",
+    ],
+  },
+  location: {
+    title: "work_location_details",
+    fields: ["Plaintiff_JobLocation", "PlaintiffJobCity", "OfficeName"],
 
-}
+  },
+};
+
 // Hassan Add This  for legel rep
 const filterAndOrderData = (data: any, userType?: string) => {
-  // console.log("this is case data ",data);
-/*
-hassan is thinking here 
-
-"ApplicantType": "Establishment" . "Worker",
-"PlaintiffType": "Self(Worker)" , "Agent",
-"RepresentativeType": "Legal representative",
-"DefendantType": "Establishment" . "Government"
-
-
-for the legel rep 
-if case as plantif -> "RepresentativeType": "Legal representative",
-if case as defend -> "DefendantType": "Government"
-
-
-*/
-// console.log(data);
-// console.log("typeeeeeeee",userType);
-  
   let selected_Section: SectionOrder = {};
   if (userType?.toLowerCase() === "legal representative") {
-    if(data["DefendantType_Code"]==="Government"){
+    if (data["DefendantType_Code"] === "Government") {
       selected_Section = legelRepSectionOrderAsDef;
-    }else{
+    } else {
       selected_Section = sectionOrder;
     }
   }
   if (userType?.toLowerCase() === "establishment") {
-    if(data["DefendantType_Code"]==="Establishment"){
+    if (data["DefendantType_Code"] === "Establishment") {
       selected_Section = EstablishmentSectionOrderAsDef;
-    }else{
+    } else {
       selected_Section = sectionForEstablishmentOrder;
     }
   }
-  
+  if (userType?.toLowerCase() === "embassy user") {
+    if (data["PlaintiffType_Code"].toLowerCase() === "agent") {
+      if (data["DefendantType_Code"] === "Government") {
+        selected_Section = embasyAsAgentVsGovSectionOrder;
+      } else {
+        selected_Section = embasyAsAgentVsEstSectionOrder;
+      }
+    } else {
+      if (data["DefendantType_Code"] === "Government") {
+        selected_Section = embasyAsSelfVsGovSectionOrder;
+      } else {
+        selected_Section = embasyAsSelfVsEstSectionOrder;
+      }
+    }
+  }
+
   if (userType?.toLowerCase() === "worker") {
-    // console.log(data['DefendantType']);
-    
-    if(data['DefendantType'] === "Government"){
+    if (data["DefendantType_Code"] === "Government") {
       selected_Section = workerSectionOrderAgainistGover;
     } else {
       selected_Section = workerSectionOrderAgainistEsta;
@@ -371,8 +558,14 @@ if case as defend -> "DefendantType": "Government"
       const filteredFields = section?.fields
         .map((fieldName) => {
           let value = data[fieldName];
-          if (fieldName === "Defendant_StillWorking" ||fieldName === "Plaintiff_StillWorking" ) {
-            value = (data[fieldName] ==="Yes" || data[fieldName] ==="SW1" ) ? "Yes" : "No";
+          if (
+            fieldName === "Defendant_StillWorking" ||
+            fieldName === "Plaintiff_StillWorking"
+          ) {
+            value =
+              data[fieldName] === "Yes" || data[fieldName] === "SW1"
+                ? "Yes"
+                : "No";
           }
           // Only include fields that have values
           if (value !== null && value !== undefined && value !== "") {
@@ -392,13 +585,10 @@ if case as defend -> "DefendantType": "Government"
   return orderedSections;
 };
 
-
-
 const DataDetails: React.FC<DataDetailsProps> = ({ hearing }) => {
   const { t } = useTranslation("manageHearingDetails");
   const caseData = hearing || {};
   // console.log(hearing);
-  
 
   // hassan add this
   const [getCookie] = useCookieState();
@@ -457,9 +647,11 @@ const DataDetails: React.FC<DataDetailsProps> = ({ hearing }) => {
   );
   const workLocationFields = entries?.filter(
     ([key]) =>
-      ["job", "region", "city", "office"].some((prefix) =>
-        key.toLowerCase().includes(prefix)
-      ) && !key.toLowerCase().startsWith("defendant")
+      key === "Plaintiff_JobLocation" ||
+      key === "PlaintiffJobCity" ||
+      key === "Defendant_JobLocation" ||
+      key === "DefendantJobCity" ||
+      key === "OfficeName"
   );
   const representativeFields = entries.filter(
     ([key]) =>
@@ -498,7 +690,9 @@ const DataDetails: React.FC<DataDetailsProps> = ({ hearing }) => {
   return (
     <div className="space-y-6">
       {userType?.toLowerCase() === "legal representative" ||
-      userType?.toLowerCase() === "establishment" ? (
+        userType?.toLowerCase() === "establishment" ||
+        userType?.toLowerCase() === "embassy user" ||
+        userType?.toLowerCase() === "worker" ? (
         newCaseDetailsView &&
         newCaseDetailsView?.map((item) =>
           item?.fields

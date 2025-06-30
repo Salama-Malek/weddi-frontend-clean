@@ -33,10 +33,7 @@ export const useEstablishmentPlaintiffFormLayout = ({
     }
     );
 
-  useEffect(() => {
-    console.log("this is est", establishmentDetails2);
 
-  }, [establishmentDetails2])
 
   const RegionOptions = React.useMemo(() => {
     return (
@@ -75,27 +72,23 @@ export const useEstablishmentPlaintiffFormLayout = ({
       setValue("PlaintiffsEstablishmentID", establishmentDetails?.EstablishmentID, {
         shouldValidate: establishmentDetails?.EstablishmentID,
       })
-    setValue("Plaintiff_PhoneNumber", establishmentDetails?.ContactNumber, {
-      shouldValidate: establishmentDetails?.ContactNumber,
-    })
-
-    setValue("claimantStatus", "establishment", {
-      shouldValidate: true,
-    })
+      setValue("Plaintiff_PhoneNumber", establishmentDetails?.ContactNumber, {
+        shouldValidate: establishmentDetails?.ContactNumber,
+      })
+      //hassan code 700
+      setValue("PlaintiffsNumber700", establishmentDetails?.Number700, {
+        shouldValidate: establishmentDetails?.Number700,
+      })
+      //hassan code 700
+      setValue("claimantStatus", "establishment", {
+        shouldValidate: true,
+      })
     setValue("region", { value: establishmentDetails?.Region_Code || "", label: establishmentDetails?.Region || "" });
     setValue("city", { value: establishmentDetails?.City_Code || "", label: establishmentDetails?.City || "" });
 
 
 
 
-  }, [establishmentDetails2])
-  useEffect(() => {
-    if (establishmentDetails2 && establishmentDetails2.
-      ErrorDetails && establishmentDetails2?.
-        ErrorDetails?.[0]) {
-      toast.warning(establishmentDetails2?.
-        ErrorDetails?.[0]?.ErrorDesc)
-    }
   }, [establishmentDetails2])
 
   const { t } = useTranslation("hearingdetails");
@@ -124,6 +117,15 @@ export const useEstablishmentPlaintiffFormLayout = ({
         isLoading: apiLoadingStates?.estab,
         name: "PlaintiffsCRNumber"
       },
+      //hassan code 700
+      {
+        type: "readonly",
+        label: t("establishment_tab1.number700"),
+        value: establishmentDetails?.Number700,
+        isLoading: apiLoadingStates?.estab,
+        name: "PlaintiffsNumber700"
+      },
+      //hassan code 700
       {
         type: !establishmentDetails?.Region ? "autocomplete" : "readonly",
         name: "PlaintiffsRegion",
@@ -162,7 +164,7 @@ export const useEstablishmentPlaintiffFormLayout = ({
         name: "Plaintiff_PhoneNumber",
         label: t("establishment_tab2.mobileNumber"),
         isLoading: apiLoadingStates?.estab,
-        inputType: "number",
+        inputType: "text",
         placeholder: "05xxxxxxxx",
         value: establishmentDetails?.ContactNumber || "",
         validation: {

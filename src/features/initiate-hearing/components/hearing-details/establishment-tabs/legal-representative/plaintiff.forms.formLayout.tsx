@@ -52,46 +52,68 @@ export const useLegalRepPlaintiffFormLayout = (
   useEffect(() => {
     if (userLegData && userLegData.GovRepDetails &&
       userLegData.GovRepDetails.length > 0) {
-      setUserLegDataState(
-        userLegData.GovRepDetails?.find(
-          (item: any) =>
-            item.GOVTID === selectedMainCategory?.value || item.GOVTID
-        ));
-
-        //console.log(userLegData);
-        //console.log(userLegDataState);
+      // Find the matching government entity based on mainCategory and subCategory from cookies
+      const matchingEntity = userLegData.GovRepDetails?.find(
+        (item: any) =>
+          item.GOVTID === selectedMainCategory?.value && 
+          item.SubGOVTID === selectedSubCategory?.value
+      );
+      
+      if (matchingEntity) {
+        setUserLegDataState(matchingEntity);
+        // Update cookies if they don't match the selected entity
+        if (selectedMainCategory?.value !== matchingEntity.GOVTID) {
+          setCookie("mainCategory", {
+            value: matchingEntity.GOVTID,
+            label: matchingEntity.GovernmentName
+          });
+        }
+        if (selectedSubCategory?.value !== matchingEntity.SubGOVTID) {
+          setCookie("subCategory", {
+            value: matchingEntity.SubGOVTID,
+            label: matchingEntity.SubGovernmentName
+          });
+        }
+      } else {
+        // If no match found, use the first entity and update cookies
+        const firstEntity = userLegData.GovRepDetails[0];
+        setUserLegDataState(firstEntity);
+        setCookie("mainCategory", {
+          value: firstEntity.GOVTID,
+          label: firstEntity.GovernmentName
+        });
+        setCookie("subCategory", {
+          value: firstEntity.SubGOVTID,
+          label: firstEntity.SubGovernmentName
+        });
+      }
     }
-
-  }, [userLegData])
+  }, [userLegData, selectedMainCategory, selectedSubCategory, setCookie]);
 
 
 
   useEffect(() => {
-    setValue("LegalRepEmail", userLegDataState?.EmailAddress, {
-      shouldValidate: userLegDataState?.EmailAddress,
-    });
-    setValue("LegalRepMobileNumber", userLegDataState?.RepMobileNumber, {
-      shouldValidate: userLegDataState?.RepMobileNumber,
-    });
-    setValue("LegalRepID", userLegDataState?.RepNationalid, {
-      shouldValidate: userLegDataState?.RepNationalid,
-    });
-    setValue("LegalRepName", userLegDataState?.RepName, {
-      shouldValidate: userLegDataState?.RepName,
-    });
-    setValue("SubGovtDefendant_Code", userLegDataState?.SubGOVTID, {
-      shouldValidate: userLegDataState?.SubGOVTID,
-    });
-    setValue("MainGovtDefendant_Code", userLegDataState?.GOVTID, {
-      shouldValidate: userLegDataState?.GOVTID,
-    });
-    setValue("SubGovtDefendant", userLegDataState?.SubGovernmentName, {
-      shouldValidate: userLegDataState?.SubGovernmentName,
-    });
-    setValue("MainGovtDefendant", userLegDataState?.GovernmentName, {
-      shouldValidate: userLegDataState?.GovernmentName,
-    });
-  }, [userLegDataState])
+    if (userLegDataState) {
+      // Set all form values based on the selected government entity
+      const formUpdates = {
+        LegalRepEmail: userLegDataState?.EmailAddress,
+        LegalRepMobileNumber: userLegDataState?.RepMobileNumber,
+        LegalRepID: userLegDataState?.RepNationalid,
+        LegalRepName: userLegDataState?.RepName,
+        SubGovtDefendant_Code: userLegDataState?.SubGOVTID,
+        MainGovtDefendant_Code: userLegDataState?.GOVTID,
+        SubGovtDefendant: userLegDataState?.SubGovernmentName,
+        MainGovtDefendant: userLegDataState?.GovernmentName
+      };
+
+      // Update all form values at once
+      Object.entries(formUpdates).forEach(([key, value]) => {
+        setValue(key, value, {
+          shouldValidate: !!value
+        });
+      });
+    }
+  }, [userLegDataState, setValue]);
 
   //#endregion Hassan Code Here 
 
@@ -166,13 +188,13 @@ export const useLegalRepPlaintiffFormLayout = (
       {
         type: "readonly",
         label: LegalRep("plaintiffDetails.MainCategoryGovernmentEntity"),
-        value: userLegDataState?.GovernmentName,
+        value: userLegDataState?.GovernmentName || selectedMainCategory?.label,
         isLoading: isLoading
       },
       {
         type: "readonly",
         label: LegalRep("plaintiffDetails.SubcategoryGovernmentEntity"),
-        value: userLegDataState?.SubGovernmentName,
+        value: userLegDataState?.SubGovernmentName || selectedSubCategory?.label,
         isLoading: isLoading
       },
     ]

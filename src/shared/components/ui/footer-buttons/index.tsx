@@ -21,6 +21,7 @@ const FormActionButtons: React.FC<FormActionButtonsProps> = ({
   return (
     <div className={`flex w-full justify-between items-center ${className}`}>
       <Button
+        type="button"
         typeVariant="outline"
         variant="secondary"
         size="xs"
@@ -28,7 +29,13 @@ const FormActionButtons: React.FC<FormActionButtonsProps> = ({
       >
         {cancelText ?? t("cancel")}
       </Button>
-      <Button typeVariant="brand" variant="primary" size="xs" onClick={onSave}>
+      <Button 
+        type="button"
+        typeVariant="brand" 
+        variant="primary" 
+        size="xs" 
+        onClick={onSave}
+      >
         {saveText ?? t("save")}
       </Button>
     </div>

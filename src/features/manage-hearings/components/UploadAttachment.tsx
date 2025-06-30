@@ -36,6 +36,7 @@ const UploadAttachment: React.FC<{ onUploaded: () => void }> = ({
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [getCookie] = useCookieState({ caseId: "" });
+  const { t } = useTranslation();
 
   const userClaims : TokenClaims = getCookie("userClaims");
   const { i18n } = useTranslation();
@@ -55,7 +56,7 @@ const UploadAttachment: React.FC<{ onUploaded: () => void }> = ({
 
   const validateFile = (file: File): boolean => {
     if (file.size > MAX_FILE_SIZE) {
-      setError(`File \"${file.name}\" exceeds maximum size of 5MB`);
+      setError(t('attachments.errors.file_size', { name: file.name }));
       return false;
     }
 
@@ -64,7 +65,10 @@ const UploadAttachment: React.FC<{ onUploaded: () => void }> = ({
       !ALLOWED_FILE_TYPES.includes(file.type) &&
       !ALLOWED_EXTENSIONS.includes(ext)
     ) {
-      setError(`Invalid file type. Allowed: ${ALLOWED_EXTENSIONS.join(", ")}`);
+      setError(t('attachments.errors.file_type', { 
+        name: file.name,
+        types: ALLOWED_EXTENSIONS.join(', ')
+      }));
       return false;
     }
 
@@ -90,7 +94,7 @@ const UploadAttachment: React.FC<{ onUploaded: () => void }> = ({
     const selectedFiles = Array.from(event.target.files || []);
 
     if (!classification) {
-      setError("Please select a classification first");
+      setError(t('attachments.errors.select_classification'));
       return;
     }
 
@@ -112,7 +116,7 @@ const UploadAttachment: React.FC<{ onUploaded: () => void }> = ({
       setFiles((prev) => [...prev, ...newAttachments]);
       setClassification(null);
     } catch {
-      setError("Failed to process files. Please try again.");
+      setError(t('attachments.errors.process_failed'));
     } finally {
       if (event.target) event.target.value = "";
     }
@@ -124,7 +128,7 @@ const UploadAttachment: React.FC<{ onUploaded: () => void }> = ({
 
   const handleUpload = async () => {
     if (!files.length || !caseId) {
-      setError("Please add at least one file");
+      setError(t('attachments.errors.add_file'));
       return;
     }
 
@@ -154,7 +158,7 @@ const UploadAttachment: React.FC<{ onUploaded: () => void }> = ({
       setClassification(null);
       onUploaded();
     } catch {
-      setError("Upload failed. Try again.");
+      setError(t('attachments.errors.upload_failed'));
     } finally {
       setUploading(false);
     }
@@ -162,23 +166,27 @@ const UploadAttachment: React.FC<{ onUploaded: () => void }> = ({
 
   return (
     <>
-      <Button variant="primary" onClick={() => setFiles([])}>
-        Add Attachment
+      <Button 
+        type="button"
+        variant="primary" 
+        onClick={() => setFiles([])}
+      >
+        {t('attachments.title')}
       </Button>
       <Modal
-        header="Upload Attachment"
+        header={t('attachments.title')}
         modalWidth={600}
         close={() => setFiles([])}
       >
         <div className="space-y-6 w-full">
           <div className="text-sm text-gray-500 mb-4">
-            Allowed file types: PDF, JPG, JPEG, TIF, PNG (Max 5MB each)
+            {t('attachments.allowed_files')}
           </div>
 
           <div className="grid grid-cols-3 gap-4 items-end">
             <div className="col-span-2">
               <AutoCompleteField
-                label="Classification"
+                label={t('attachments.classification')}
                 name="classification"
                 options={classificationOptions}
                 value={classification}
@@ -190,19 +198,20 @@ const UploadAttachment: React.FC<{ onUploaded: () => void }> = ({
             </div>
             <div>
               <Button
+                type="button"
                 variant="primary"
                 typeVariant="brand"
                 size="sm"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={!classification}
               >
-                Add Files
+                {t('attachments.add_files')}
               </Button>
               <input
                 ref={fileInputRef}
                 type="file"
                 className="hidden"
-                multiple
+                multiple ={false}
                 accept={ALLOWED_FILE_TYPES.join(",")}
                 onChange={handleFileSelect}
               />
@@ -234,14 +243,16 @@ const UploadAttachment: React.FC<{ onUploaded: () => void }> = ({
 
           <div className="flex justify-between mt-6">
             <Button
+              type="button"
               variant="secondary"
               typeVariant="outline"
               size="sm"
               onClick={() => setFiles([])}
             >
-              Cancel
+              {t('attachments.cancel')}
             </Button>
             <Button
+              type="button"
               variant="primary"
               typeVariant="brand"
               size="sm"
@@ -250,10 +261,10 @@ const UploadAttachment: React.FC<{ onUploaded: () => void }> = ({
             >
               {uploading ? (
                 <>
-                  <span>Uploading</span> <TableLoader />
+                  <span>{t('attachments.uploading')}</span> <TableLoader />
                 </>
               ) : (
-                "Upload"
+                t('attachments.save')
               )}
             </Button>
           </div>
