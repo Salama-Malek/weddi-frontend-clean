@@ -1,4 +1,5 @@
-import { useFormContext } from "react-hook-form";
+// use custom form provider instead of RHF context
+import { useAPIFormsData } from "@/providers/FormContext";
 import { useTranslation } from "react-i18next";
 import { SectionLayout } from "@/shared/components/form/form.types";
 import { useFormOptions } from "./claimant.forms.formOptions";
@@ -10,7 +11,8 @@ import { buildClaimantBasicInfoSection } from "../../shared-layouts/ClaimantSect
  */
 export const useFormLayout = (): SectionLayout[] => {
   const { t } = useTranslation("hearingdetails");
-  const { watch, setValue } = useFormContext();
+  // grab methods from our global form context
+  const { watch, setValue } = useAPIFormsData();
 
   const {
     ClaimantStatusRadioOptions,
