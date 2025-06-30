@@ -30,6 +30,11 @@ export const useFormOptions = () => {
       { value: "F", label: "Female" },
     ] as Option[],
 
+    RegionOptions: [
+      { value: "riyadh", label: "Riyadh" },
+      { value: "makkah", label: "Makkah" },
+    ] as Option[],
+
     CodeOptions,
 
     NationalityOptions: [
