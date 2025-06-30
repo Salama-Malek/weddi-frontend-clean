@@ -1,7 +1,8 @@
 import React, { Suspense, useMemo, useEffect } from "react";
 import TableLoader from "@/shared/components/loader/TableLoader";
 import { useLanguageDirection } from "@/i18n/LanguageDirectionProvider";
-import Tabs from "../modules/case-creation/components/tabs/Tabs";
+// import Tabs from "../modules/case-creation/components/tabs/Tabs";
+import Tabs from "../modules/case-creation/components/tabs/NewTabs";
 import { useTabs } from "../modules/case-creation/components/tabs/tabsConfig";
 
 interface MultiStepLayoutProps {
