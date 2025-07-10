@@ -10,10 +10,10 @@ if (!i18next.isInitialized) {
     .use(
       resourcesToBackend(async (language: string, namespace: string) => {
         try {
-          const module = await import(`../../src/locales/${language}/${namespace}.json`);
-          return module.default;
-        } catch (error) {
-          return {}; 
+          const module = await import(`@/locales/${language}.json`);
+          return module.default[namespace] ?? {};
+        } catch {
+          return {};
         }
       })
     )
