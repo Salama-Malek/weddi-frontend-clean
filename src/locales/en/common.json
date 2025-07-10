@@ -39,5 +39,7 @@
   "bad_request": "Invalid request. Please check your input.",
   "conflict_error": "The request conflicts with the current state of the resource.",
   "too_many_requests": "Too many requests. Please try again later.",
-  "internal_server_error": "Internal server error. Please try again later."
+  "internal_server_error": "Internal server error. Please try again later.",
+  "notification": "Notification",
+  "moj_contract_error_test": "This is a test error message for MOJ Contract validation."
 } 

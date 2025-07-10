@@ -82,7 +82,7 @@ export const InputField = forwardRef<HTMLInputElement | HTMLTextAreaElement, Inp
       setInputValue(e.target.value);
       onChange?.(e);
     };
-    const handleBlur = (e: React. FocusEventHandler<HTMLInputElement | undefined>) => {
+    const handleBlur = (e: React.FocusEventHandler<HTMLInputElement | undefined>) => {
       onBlur?.();
     };
 
@@ -183,3 +183,78 @@ export const InputField = forwardRef<HTMLInputElement | HTMLTextAreaElement, Inp
 );
 
 InputField.displayName = "InputField";
+
+// --- DigitOnlyInput: reusable input for digits only (max 9) ---
+import React from "react";
+
+export const DigitOnlyInput = React.forwardRef<HTMLInputElement, InputFieldProps>(
+  (props, ref) => {
+    const {
+      maxLength = 9,
+      onChange,
+      onKeyDown,
+      onPaste,
+      onBlur,
+      value,
+      ...rest
+    } = props;
+
+    // Handler to allow only digits and max 9 (for input only)
+    const handleChangeUniversal: React.ChangeEventHandler<HTMLInputElement | HTMLTextAreaElement> = (e) => {
+      if (e.target instanceof HTMLInputElement) {
+        const digitsOnly = e.target.value.replace(/\D/g, "").slice(0, maxLength);
+        if (onChange) {
+          const inputEvent: React.ChangeEvent<HTMLInputElement> = e as React.ChangeEvent<HTMLInputElement>;
+          onChange({ ...inputEvent, target: { ...inputEvent.target, value: digitsOnly } });
+        }
+      } else if (onChange) {
+        onChange(e as React.ChangeEvent<HTMLTextAreaElement>);
+      }
+    };
+
+    const handleKeyDownUniversal: React.KeyboardEventHandler<HTMLInputElement | HTMLTextAreaElement> = (e) => {
+      if (e.target instanceof HTMLInputElement) {
+        const allowedKeys = ["Backspace", "Delete", "Tab", "ArrowLeft", "ArrowRight"];
+        if (!/^\d$/.test(e.key) && !allowedKeys.includes(e.key)) {
+          e.preventDefault();
+        }
+        if (onKeyDown) {
+          onKeyDown(e as React.KeyboardEvent<HTMLInputElement>);
+        }
+      } else if (onKeyDown) {
+        onKeyDown(e as React.KeyboardEvent<HTMLTextAreaElement>);
+      }
+    };
+
+    const handlePasteUniversal: React.ClipboardEventHandler<HTMLInputElement | HTMLTextAreaElement> = (e) => {
+      if (e.target instanceof HTMLInputElement) {
+        const pasted = e.clipboardData.getData("text");
+        if (!/^\d+$/.test(pasted)) {
+          e.preventDefault();
+        }
+        if (onPaste) {
+          onPaste(e as React.ClipboardEvent<HTMLInputElement>);
+        }
+      } else if (onPaste) {
+        onPaste(e as React.ClipboardEvent<HTMLTextAreaElement>);
+      }
+    };
+
+    return (
+      <InputField
+        {...rest}
+        ref={ref}
+        type="tel"
+        inputMode="numeric"
+        pattern="[0-9]*"
+        maxLength={maxLength}
+        value={typeof value === "string" ? value.replace(/\D/g, "").slice(0, maxLength) : value}
+        onChange={handleChangeUniversal}
+        onKeyDown={handleKeyDownUniversal}
+        onPaste={handlePasteUniversal}
+        onBlur={onBlur}
+      />
+    );
+  }
+);
+DigitOnlyInput.displayName = "DigitOnlyInput";

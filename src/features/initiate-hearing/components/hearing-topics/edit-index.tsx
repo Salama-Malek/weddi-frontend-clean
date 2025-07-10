@@ -26,7 +26,10 @@ import { setFormData } from "@/redux/slices/formSlice";
 import StepNavigation from "@/shared/modules/case-creation/components/StepNavigation";
 import { useNavigationService } from "@/shared/hooks/useNavigationService";
 import { steps } from "@/shared/modules/case-creation/components/tabs/tabsConfig";
-import { useLazyGetFileDetailsQuery, useUpdateHearingTopicsMutation } from "../../api/create-case/apis";
+import {
+  useLazyGetFileDetailsQuery,
+  useUpdateHearingTopicsMutation,
+} from "../../api/create-case/apis";
 import { useCookieState } from "../../hooks/useCookieState";
 import { TableSkeletonLoader } from "@/shared/components/loader/SkeletonLoader";
 import { TopicFormValues } from "./hearing.topics.types";
@@ -35,9 +38,7 @@ import { useAttachments } from "./hooks/useAttachments";
 import { useFormLayout as useFormLayoutWorker } from "./config/forms.layout.worker";
 import { useFormLayout as useFormLayoutEstablishment } from "./config/forms.layout.establishment";
 import { getPayloadBySubTopicID } from "./api/establishment.add.case.payload";
-import {
-  useLazyGetCaseDetailsQuery,
-} from "@/features/manage-hearings/api/myCasesApis";
+import { useLazyGetCaseDetailsQuery } from "@/features/manage-hearings/api/myCasesApis";
 import { TokenClaims } from "@/features/login/components/AuthProvider";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
@@ -52,6 +53,7 @@ import gregorianLocale from "react-date-object/locales/gregorian_en";
 import arabicCalendar from "react-date-object/calendars/arabic";
 import arabicLocale from "react-date-object/locales/arabic_ar";
 import { useApiErrorHandler } from "@/shared/hooks/useApiErrorHandler";
+import FeaturedIcon from '@/assets/Featured icon.svg';
 
 const Modal = lazy(() => import("@/shared/components/modal/Modal"));
 const ReusableTable = lazy(() =>
@@ -66,13 +68,11 @@ const DynamicForm = lazy(() =>
 );
 const HearingCta = lazy(() => import("./components/HearingCta"));
 
-
 interface AttachmentFile {
   FileType: string;
   FileName: string;
   FileKey: string;
 }
-
 
 export const useHearingTopics = () => {
   const { i18n } = useTranslation();
@@ -144,13 +144,13 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
   const { handleResponse } = useApiErrorHandler();
 
   // Submit handler
-  const onSubmit = (data: TopicFormValues) => { };
+  const onSubmit = (data: TopicFormValues) => {};
 
   const mainCategory = watch("mainCategory") ?? null;
   const subCategory: any = watch("subCategory") ?? null;
   // Debug logs for watched values
-  console.log('[EditHearingTopicsDetails] mainCategory:', mainCategory);
-  console.log('[EditHearingTopicsDetails] subCategory:', subCategory);
+  console.log("[EditHearingTopicsDetails] mainCategory:", mainCategory);
+  console.log("[EditHearingTopicsDetails] subCategory:", subCategory);
   const { t } = useTranslation("hearingtopics");
   const { isOpen, close, toggle } = useToggle();
   const userClaims = getCookie("userClaims");
@@ -174,7 +174,9 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
       goToLegalStep();
     }
   }, [subCategory?.value, mainCategory?.value, isEditing]);
-
+  
+  const [triggerCaseDetailsQuery, { data: caseDetailsData }] =
+    useLazyGetCaseDetailsQuery();
   // Lookups
   const lookup = useLookup();
   const {
@@ -182,9 +184,7 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
     isFetching,
     isLoading,
   } = lookup.mainCategory(isOpen);
-  const { data: subCategoryData, isFetching: isSubCategoryLoading } =
-    lookup.subCategory(mainCategory?.value);
-
+  // Removed duplicate subCategory call - using useSubTopicsSubLookupQuery instead
   const { data: amountPaidData } = lookup.amountPaidCategory(
     subCategory?.value
   );
@@ -206,26 +206,36 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
     subCategory?.value
   );
 
-  const { data: regionData, isFetching: isRegionLoading } = useGetRegionLookupDataQuery({
-    AcceptedLanguage: currentLanguage,
-    context: "default", // This uses RegionName module
-  });
+  const { data: regionData, isFetching: isRegionLoading } =
+    useGetRegionLookupDataQuery({
+      AcceptedLanguage: currentLanguage,
+      context: "default", // This uses RegionName module
+    });
 
-  const { data: subTopicsLookupData, isFetching: subTopicsLoading } =
+  const subTopicsLookupParams = useMemo(() => {
+    const base: any = {
+      LookupType: "CaseElements",
+      ModuleKey: mainCategory?.value,
+      ModuleName: "SubTopics",
+      SourceSystem: "E-Services",
+      AcceptedLanguage: currentLanguage,
+    };
+    if (caseDetailsData?.CaseDetails) {
+      base.PlaintiffID = caseDetailsData.CaseDetails.PlaintiffId;
+      base.Number700 = caseDetailsData.CaseDetails.Defendant_Number700;
+      base.DefendantType = caseDetailsData.CaseDetails.DefendantType;
+    }
+    console.log("subTopicsLookupParams:", base);
+    return base;
+  }, [mainCategory?.value, currentLanguage, caseDetailsData?.CaseDetails]);
+
+  const { data: subCategoryData, isFetching: isSubCategoryLoading } =
     useSubTopicsSubLookupQuery(
+      subTopicsLookupParams,
       {
-        LookupType: "CaseElements",
-        ModuleKey: mainCategory?.value,
-        ModuleName: "SubTopics",
-        SourceSystem: "E-Services",
-        AcceptedLanguage: currentLanguage,
-      },
-      { skip: !subCategory?.value }
+        skip: !mainCategory?.value || !caseDetailsData?.CaseDetails,
+      }
     );
-
-  const [triggerCaseDetailsQuery, { data: caseDetailsData }] =
-    useLazyGetCaseDetailsQuery();
-
 
 
   const {
@@ -246,25 +256,30 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
   const [fileKey, setFileKey] = useState("");
   const [fileName, setFileName] = useState("");
   const [previewFileModule, setPreviewFile] = useState(false);
-  const [attachmentsModule, setAttachmentsModule] = useState<AttachmentFile[]>();
+  const [attachmentsModule, setAttachmentsModule] =
+    useState<AttachmentFile[]>();
   const [triggerFileDetails, { data: fileBase64 }] =
     useLazyGetFileDetailsQuery();
 
   const onClickedView = (index: number) => {
     if (attachmentsModule?.[index]) {
       console.log(attachmentsModule?.[index]);
-      handleView(attachmentsModule?.[index]?.FileKey, attachmentsModule?.[index]?.FileName)
+      handleView(
+        attachmentsModule?.[index]?.FileKey,
+        attachmentsModule?.[index]?.FileName
+      );
     }
-  }
+  };
 
   const handleView = async (key: string, name: string) => {
     setFileKey(key);
     setFileName(name);
     setPreviewFile(true);
-    await triggerFileDetails({ AttachmentKey: key, AcceptedLanguage: i18n.language.toUpperCase() });
+    await triggerFileDetails({
+      AttachmentKey: key,
+      AcceptedLanguage: i18n.language.toUpperCase(),
+    });
   };
-
-
 
   useEffect(() => {
     if (!caseId || caseDetailsData?.CaseDetails) return;
@@ -301,136 +316,180 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
     };
 
     fetchCaseDetails();
-  }, [caseId, currentLanguage, triggerCaseDetailsQuery, userType, fileNumber, mainCategory2, subCategory2, userID, caseDetailsData]);
+  }, [
+    caseId,
+    currentLanguage,
+    triggerCaseDetailsQuery,
+    userType,
+    fileNumber,
+    mainCategory2,
+    subCategory2,
+    userID,
+    caseDetailsData,
+  ]);
+
+  // Add a ref to track if topics have been loaded from caseDetailsData
+  const topicsLoadedRef = useRef(false);
 
   useEffect(() => {
-    if (caseDetailsData?.CaseDetails) {
-      // تحقق مما إذا كانت البيانات موجودة بالفعل
-      if (caseTopics.length === 0) {
-        // Set case topics
-        const formattedTopics = caseDetailsData.CaseDetails.CaseTopics.map(
-          (topic: any) => ({
-            ...topic,
-            subCategory: {
-              value: topic.SubTopicID,
-              label: topic.SubTopicName,
-            },
-            mainCategory: {
-              value: topic.MainTopicID,
-              label: topic.CaseTopicName,
-            },
-            // تنسيق التواريخ
-            date_hijri: topic.Date_New,
-            from_date_hijri: topic.FromDateHijri,
-            to_date_hijri: topic.ToDateHijri,
-            // تنسيق القيم الرقمية
-            amount: topic.Amount,
-            wagesAmount: topic.WagesAmount,
-            bonusAmount: topic.BonusAmount,
-            payDue: topic.PayDue,
-            // تنسيق القيم النصية
-            durationOfLeaveDue: topic.DurationOfLeaveDue,
-            theReason: topic.TheReason,
-            currentPosition: topic.CurrentPosition,
-            // تحويل قيم Yes/No إلى true/false
-            doesBylawsIncludeAddingAccommodations:
-              topic.IsBylawsIncludeAddingAccommodiation === "Yes",
-            doesContractIncludeAddingAccommodations:
-              topic.IsContractIncludeAddingAccommodiation === "Yes",
-            housingSpecificationInByLaws:
-              topic.HousingSpecificationsInBylaws || "",
-            housingSpecificationsInContract:
-              topic.HousingSpecificationsInContract || "",
-            actualHousingSpecifications: topic.HousingSpecifications || "",
-            // تنسيق القيم المنسدلة
-            forAllowance: topic.ForAllowance
-              ? {
-                value: topic.ForAllowance,
-                label: topic.ForAllowance,
-              }
-              : null,
-            commissionType: topic.CommissionType
-              ? {
-                value: topic.CommissionType,
-                label: topic.CommissionType,
-              }
-              : null,
-            accordingToAgreement: topic.AccordingToAgreement
-              ? {
-                value: topic.AccordingToAgreement,
-                label: topic.AccordingToAgreement,
-              }
-              : null,
-            travelingWay: topic.TravelingWay
-              ? {
-                value: topic.TravelingWay,
-                label: topic.TravelingWay,
-              }
-              : null,
-            typeOfRequest: (topic.RequestType || topic.RequestType_Code)
-              ? {
+    if ((caseDetailsData as any)?.CaseDetails && !topicsLoadedRef.current) {
+      const formattedTopics = (caseDetailsData as any).CaseDetails.CaseTopics.map(
+        (topic: any) => ({
+          ...topic,
+          // Main/sub category for form
+          mainCategory: { value: topic.MainTopicID, label: topic.CaseTopicName },
+          subCategory: { value: topic.SubTopicID, label: topic.SubTopicName },
+
+          // Dates
+          date_hijri: topic.Date_New || "",
+          from_date_hijri: topic.FromDateHijri || "",
+          to_date_hijri: topic.ToDateHijri || "",
+          managerial_decision_date_hijri: topic.ManDecsDate || "",
+          // managerialDecisionNumber: topic.ManagerialDecisionNumber || "",
+          date_gregorian: topic.DateGregorian || "",
+          from_date_gregorian: topic.FromDateGregorian || "",
+          to_date_gregorian: topic.ToDateGregorian || "",
+          injury_date_hijri: topic.InjuryDateHijri || "",
+          injury_date_gregorian: topic.InjuryDateGregorian || "",
+          request_date_hijri: topic.RequestDateHijri || "",
+          request_date_gregorian: topic.RequestDateGregorian || "",
+
+          // Job fields
+          fromJob: topic.FromJob || "",
+          toJob: topic.ToJob || "",
+          requiredJobTitle: topic.RequiredJobTitle || "",
+          currentJobTitle: topic.CurrentJobTitle || "",
+          theWantedJob: topic.TheWantedJob || "",
+
+          // Amounts and numbers
+          amount: topic.Amount || "",
+          wagesAmount: topic.WagesAmount || "",
+          bonusAmount: topic.BonusAmount || "",
+          payDue: topic.PayDue || "",
+          durationOfLeaveDue: topic.DurationOfLeaveDue || "",
+          compensationAmount: topic.CompensationAmount || "",
+          injuryType: topic.InjuryType || "",
+          otherCommission: topic.OtherCommission || "",
+          amountOfCompensation: topic.AmountOfCompensation || "",
+          damagedValue: topic.DamagedValue || "",
+          requiredDegreeOfInsurance: topic.RequiredDegreeOfInsurance || "",
+          currentInsuranceLevel: topic.CurrentInsuranceLevel || "",
+          theReason: topic.TheReason || "",
+          currentPosition: topic.CurrentPosition || "",
+          typeOfCustody: topic.TypeOfCustody || "",
+          amountsPaidFor: topic.AmountsPaidFor || "",
+          gregorianDate: topic.GregorianDate || "",
+          decisionNumber: topic.DecisionNumber || "",
+          regionCode: topic.RegionCode || "",
+          cityCode: topic.CityCode || "",
+          occupationCode: topic.OccupationCode || "",
+          genderCode: topic.GenderCode || "",
+          nationalityCode: topic.NationalityCode || "",
+          prisonerId: topic.PrisonerId || "",
+          rewardType: topic.RewardType || "",
+          consideration: topic.Consideration || "",
+          // travelingWay: topic.TravelingWay || "",
+          loanAmount: topic.LoanAmount || "",
+          managerialDecisionNumber: topic.ManagerialDecisionNumber || "",
+
+          // Dropdowns
+          forAllowance: topic.ForAllowance
+            ? { value: topic.ForAllowance, label: topic.ForAllowance }
+            : null,
+          commissionType: topic.CommissionType
+            ? { value: topic.CommissionType, label: topic.CommissionType }
+            : null,
+          accordingToAgreement: topic.AccordingToAgreement
+            ? { value: topic.AccordingToAgreement, label: topic.AccordingToAgreement }
+            : null,
+          travelingWay: topic.TravelingWay
+            ? { value: topic.TravelingWay, label: topic.TravelingWay }
+            : null,
+          typeOfRequest: topic.RequestType || topic.RequestType_Code
+            ? {
                 value: topic.RequestType_Code || topic.RequestType,
                 label: topic.RequestType || topic.RequestType_Code,
               }
-              : null,
-            kindOfHoliday: topic.KindOfHoliday
-              ? {
-                value: topic.KindOfHoliday,
-                label: topic.KindOfHoliday,
-              }
-              : null,
-            fromLocation: (topic.FromLocation || topic.FromLocation_Code)
-              ? {
+            : null,
+          kindOfHoliday: topic.KindOfHoliday
+            ? { value: topic.KindOfHoliday, label: topic.KindOfHoliday }
+            : null,
+          fromLocation: topic.FromLocation || topic.FromLocation_Code
+            ? {
                 value: topic.FromLocation_Code || topic.FromLocation,
                 label: topic.FromLocation || topic.FromLocation_Code,
               }
-              : null,
-            toLocation: (topic.ToLocation || topic.ToLocation_Code)
-              ? {
+            : null,
+          toLocation: topic.ToLocation || topic.ToLocation_Code
+            ? {
                 value: topic.ToLocation_Code || topic.ToLocation,
                 label: topic.ToLocation || topic.ToLocation_Code,
               }
-              : null,
-            typesOfPenalties: (topic.PenalityType || topic.PenalityType_Code || topic.TypesOfPenalties)
-              ? {
+            : null,
+          typesOfPenalties: topic.PenalityType || topic.PenalityType_Code || topic.TypesOfPenalties
+            ? {
                 value: topic.PenalityType_Code || topic.PenalityType || topic.TypesOfPenalties,
                 label: topic.PenalityTypeLabel || topic.TypesOfPenaltiesLabel || topic.PenalityType || topic.TypesOfPenalties,
               }
-              : null,
-          })
-        );
+            : null,
 
-        setCaseTopics(formattedTopics);
+          // Booleans
+          doesBylawsIncludeAddingAccommodations:
+            topic.IsBylawsIncludeAddingAccommodiation === "Yes" ||
+            topic.doesBylawsIncludeAddingAccommodations === true,
+          doesContractIncludeAddingAccommodations:
+            topic.IsContractIncludeAddingAccommodiation === "Yes" ||
+            topic.doesContractIncludeAddingAccommodations === true,
 
-        if (caseDetailsData?.CaseDetails?.OtherAttachments?.length > 0
-          || caseDetailsData?.CaseDetails?.CaseTopicAttachments?.length > 0
-        ) {
-          const formattedAttachments =
-            caseDetailsData.CaseDetails.OtherAttachments.map(
-              (attachment: any) => ({
-                fileKey: attachment.FileKey,
-                fileType: attachment.FileType,
-                fileName: attachment.FileName,
-              })
-            );
+          // Housing
+          housingSpecificationInByLaws:
+            topic.HousingSpecificationsInBylaws ||
+            topic.housingSpecificationInByLaws ||
+            "",
+          housingSpecificationsInContract:
+            topic.HousingSpecificationsInContract ||
+            topic.housingSpecificationsInContract ||
+            "",
+          actualHousingSpecifications:
+            topic.HousingSpecifications ||
+            topic.actualHousingSpecifications ||
+            "",
 
-          setAttachments(formattedAttachments);
-          setAttachmentsModule([
-            ...(caseDetailsData?.CaseDetails?.OtherAttachments || []),
-            ...(caseDetailsData?.CaseDetails?.CaseTopicAttachments || []),
-          ]);
-        }
+          // Any other fields you want to add...
+        })
+      );
+      setCaseTopics(formattedTopics);
+      topicsLoadedRef.current = true;
+
+      if (
+        caseDetailsData?.CaseDetails?.OtherAttachments?.length > 0 ||
+        caseDetailsData?.CaseDetails?.CaseTopicAttachments?.length > 0
+      ) {
+        const formattedAttachments =
+          caseDetailsData.CaseDetails.OtherAttachments.map(
+            (attachment: any) => ({
+              fileKey: attachment.FileKey,
+              fileType: attachment.FileType,
+              fileName: attachment.FileName,
+            })
+          );
+
+        setAttachments(formattedAttachments);
+        setAttachmentsModule([
+          ...(caseDetailsData?.CaseDetails?.OtherAttachments || []),
+          ...(caseDetailsData?.CaseDetails?.CaseTopicAttachments || []),
+        ]);
       }
     }
-  }, [caseDetailsData, caseTopics.length]);
+  }, [caseDetailsData]);
 
-  const matchedSubCategory = subTopicsLookupData?.DataElements?.find(
+  const matchedSubCategory = subCategoryData?.DataElements?.find(
     (item: any) => item.ElementKey === subCategory?.value
   );
 
   const acknowledged = watch("acknowledged");
-  const fromPlace = watch("fromPlace") ?? null;
-  const toPlace = watch("toPlace") ?? null;
+  const fromLocation = watch("fromLocation") ?? null;
+  const toLocation = watch("toLocation") ?? null;
   const hijriDate = watch("hijriDate");
   const gregorianDate = watch("gregorianDate");
   const decisionNumber = watch("decisionNumber");
@@ -449,7 +508,7 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
   }, [caseTopics, pagination.pageIndex, pagination.pageSize]);
 
   const handleTopicSelect = (topic: any, index: number) => {
-    console.log('Selected topic for editing:', topic);
+    console.log("Selected topic for editing:", topic);
 
     // Reset form first to clear any previous data
     reset();
@@ -470,8 +529,8 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
       getHearingTopicsColumns({
         t,
         onEdit: (topic, index) => handleTopicSelect(topic, index),
-        onDel: (topic) => {
-          setDelTopic(topic);
+        onDel: (topic, index) => {
+          setDelTopic({ topic, index });
           setShowDeleteConfirm(true);
         },
       }),
@@ -517,15 +576,27 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
     if (!editTopic) return;
 
     const updatedValues = getValues();
-    const mainCategoryValue = updatedValues.mainCategory?.value || editTopic.MainTopicID || editTopic.mainCategory?.value;
-    const mainCategoryLabel = updatedValues.mainCategory?.label || editTopic.MainSectionHeader || editTopic.mainCategory?.label;
-    const subCategoryValue = updatedValues.subCategory?.value || editTopic.SubTopicID || editTopic.subCategory?.value;
-    const subCategoryLabel = updatedValues.subCategory?.label || editTopic.SubTopicName || editTopic.subCategory?.label;
+    const mainCategoryValue =
+      updatedValues.mainCategory?.value ||
+      editTopic.MainTopicID ||
+      editTopic.mainCategory?.value;
+    const mainCategoryLabel =
+      updatedValues.mainCategory?.label ||
+      editTopic.MainSectionHeader ||
+      editTopic.mainCategory?.label;
+    const subCategoryValue =
+      updatedValues.subCategory?.value ||
+      editTopic.SubTopicID ||
+      editTopic.subCategory?.value;
+    const subCategoryLabel =
+      updatedValues.subCategory?.label ||
+      editTopic.SubTopicName ||
+      editTopic.subCategory?.label;
 
     // Format dates for storage (remove slashes)
     const formatDateForStorage = (date: string) => {
-      if (!date) return '';
-      return date.replace(/\//g, '');
+      if (!date) return "";
+      return date.replace(/\//g, "");
     };
 
     const updatedTopic = {
@@ -572,10 +643,12 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
       typeOfRequest: updatedValues.typeOfRequest || editTopic?.typeOfRequest,
       kindOfHoliday: updatedValues.kindOfHoliday || editTopic?.kindOfHoliday,
       commissionType: updatedValues.commissionType || editTopic?.commissionType,
-      accordingToAgreement: updatedValues.accordingToAgreement || editTopic?.accordingToAgreement,
+      accordingToAgreement:
+        updatedValues.accordingToAgreement || editTopic?.accordingToAgreement,
       forAllowance: updatedValues.forAllowance || editTopic?.forAllowance,
       travelingWay: updatedValues.travelingWay || editTopic?.travelingWay,
-      typesOfPenalties: updatedValues.typesOfPenalties || editTopic?.typesOfPenalties,
+      typesOfPenalties:
+        updatedValues.typesOfPenalties || editTopic?.typesOfPenalties,
       fromLocation: updatedValues.fromLocation || editTopic?.fromLocation,
       toLocation: updatedValues.toLocation || editTopic?.toLocation,
       loanAmount: updatedValues.loanAmount || editTopic?.loanAmount,
@@ -604,18 +677,31 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
       AdditionalDetails:
         updatedValues.additionalDetails || editTopic.AdditionalDetails,
       // Format dates for storage
-      ManagerialDecisionDateHijri: formatDateForStorage(updatedValues.managerial_decision_date_hijri),
-      ManagerialDecisionDateGregorian: formatDateForStorage(updatedValues.managerial_decision_date_gregorian),
-      ManagerialDecisionNumber: updatedValues.managerialDecisionNumber || editTopic.ManagerialDecisionNumber || "",
+      ManagerialDecisionDateHijri: formatDateForStorage(
+        updatedValues.managerial_decision_date_hijri
+      ),
+      ManagerialDecisionDateGregorian: formatDateForStorage(
+        updatedValues.managerial_decision_date_gregorian
+      ),
+      ManagerialDecisionNumber:
+        updatedValues.managerialDecisionNumber ||
+        editTopic.ManagerialDecisionNumber ||
+        "",
       // Additional date fields
       InjuryDateHijri: formatDateForStorage(updatedValues.injury_date_hijri),
-      InjuryDateGregorian: formatDateForStorage(updatedValues.injury_date_gregorian),
+      InjuryDateGregorian: formatDateForStorage(
+        updatedValues.injury_date_gregorian
+      ),
       RequestDateHijri: formatDateForStorage(updatedValues.request_date_hijri),
-      RequestDateGregorian: formatDateForStorage(updatedValues.request_date_gregorian),
+      RequestDateGregorian: formatDateForStorage(
+        updatedValues.request_date_gregorian
+      ),
       DateHijri: formatDateForStorage(updatedValues.date_hijri),
       DateGregorian: formatDateForStorage(updatedValues.date_gregorian),
       FromDateHijri: formatDateForStorage(updatedValues.from_date_hijri),
-      FromDateGregorian: formatDateForStorage(updatedValues.from_date_gregorian),
+      FromDateGregorian: formatDateForStorage(
+        updatedValues.from_date_gregorian
+      ),
       ToDateHijri: formatDateForStorage(updatedValues.to_date_hijri),
       ToDateGregorian: formatDateForStorage(updatedValues.to_date_gregorian),
     };
@@ -641,7 +727,6 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
     close();
   };
 
-
   const handleCancel = () => {
     reset();
     setShowLegalSection(false);
@@ -663,15 +748,25 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
   );
 
   const handleSaveApi = async (): Promise<ApiResponse> => {
-    const payload = getPayloadBySubTopicID(caseTopics, subCategory, "Save", caseId);
     try {
+      setLastAction("Save");
+      const payload = getPayloadBySubTopicID(
+        caseTopics,
+        subCategory,
+        "Save",
+        caseId
+      );
       const response = await updateHearingTopics(payload).unwrap();
-      if (response?.SuccessCode === "200" && (!response?.ErrorCodeList || response?.ErrorCodeList?.length === 0)) {
+      if (
+        response?.SuccessCode === "200" &&
+        (!response?.ErrorCodeList || response?.ErrorCodeList?.length === 0)
+      ) {
         toast.success(t("save_success"));
         setLastSaved(true);
       }
       return response;
     } catch (error: any) {
+      setLastAction(undefined);
       const errorMessage = error?.message || t("save_error");
       toast.error(errorMessage);
       return Promise.reject(error);
@@ -681,25 +776,31 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
   const handleNext = async () => {
     const latestFormValues = getValues();
     setFormData(latestFormValues);
-    const payload = getPayloadBySubTopicID(caseTopics, subCategory, "Next", caseId);
-
     try {
+      setLastAction("Next");
+      const payload = getPayloadBySubTopicID(
+        caseTopics,
+        subCategory,
+        "Next",
+        caseId
+      );
+
       const response = await updateHearingTopics(payload).unwrap();
-      
+
       // Use centralized error handling
       const isSuccessful = handleResponse(response);
-      
+
       if (isSuccessful) {
         // Only navigate if the API call is successful
         updateParams(currentStep + 1, 0);
       }
       // Errors are automatically handled by the centralized error handler
     } catch (error: any) {
+      setLastAction(undefined);
       const errorMessage = error?.message || t("api_error_generic");
       toast.error(errorMessage);
     }
   };
-
 
   const handlePrevious = useCallback(() => {
     if (currentStep === 1) {
@@ -751,8 +852,8 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
 
     // Format dates for storage (remove slashes)
     const formatDateForStorage = (date: string) => {
-      if (!date) return '';
-      return date.replace(/\//g, '');
+      if (!date) return "";
+      return date.replace(/\//g, "");
     };
 
     const topicToSave = {
@@ -764,9 +865,14 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
       CaseTopicName: newTopic?.mainCategory.label,
       Date_New: newTopic.date_hijri,
       ManDecsDate: newTopic.manDecsDate,
-      FromLocation: newTopic?.fromPlace,
-      ToLocation: newTopic?.toPlace,
-      AcknowledgedTerms: newTopic.acknowledged,
+      // Only send string codes for FromLocation and ToLocation
+      FromLocation: newTopic?.fromLocation?.value || "",
+      ToLocation: newTopic?.toLocation?.value || "",
+      // Save From Job and To Job fields
+      fromJob: newTopic.fromJob || "",
+      toJob: newTopic.toJob || "",
+      // Remove fromLocation/toLocation object fields from payload
+      // AcknowledgedTerms: newTopic.acknowledged,
       Amount: newTopic.amount,
       PayDue: newTopic.payDue,
       DurationOfLeaveDue: newTopic.durationOfLeaveDue,
@@ -803,8 +909,12 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
       LoanAmount: newTopic.loanAmount,
       ManagerialDecisionNumber: newTopic.managerialDecisionNumber,
       // Format dates for storage
-      ManagerialDecisionDateHijri: formatDateForStorage(newTopic.managerial_decision_date_hijri),
-      ManagerialDecisionDateGregorian: formatDateForStorage(newTopic.managerial_decision_date_gregorian),
+      ManagerialDecisionDateHijri: formatDateForStorage(
+        newTopic.managerial_decision_date_hijri
+      ),
+      ManagerialDecisionDateGregorian: formatDateForStorage(
+        newTopic.managerial_decision_date_gregorian
+      ),
       TypesOfPenalties: newTopic.typesOfPenalties?.value || "",
       TypesOfPenaltiesLabel: newTopic.typesOfPenalties?.label || "",
       kindOfHoliday:
@@ -813,7 +923,9 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
       InjuryDateHijri: formatDateForStorage(newTopic.injury_date_hijri),
       InjuryDateGregorian: formatDateForStorage(newTopic.injury_date_gregorian),
       RequestDateHijri: formatDateForStorage(newTopic.request_date_hijri),
-      RequestDateGregorian: formatDateForStorage(newTopic.request_date_gregorian),
+      RequestDateGregorian: formatDateForStorage(
+        newTopic.request_date_gregorian
+      ),
       DateHijri: formatDateForStorage(newTopic.date_hijri),
       DateGregorian: formatDateForStorage(newTopic.date_gregorian),
       FromDateHijri: formatDateForStorage(newTopic.from_date_hijri),
@@ -837,7 +949,6 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
     return 1;
   };
 
-
   const isStep3 = showTopicData;
   const isStep2 = showLegalSection;
 
@@ -859,13 +970,15 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
       locale: arabicLocale,
       format: "YYYYMMDD",
     });
-    return dateObj.convert(gregorianCalendar, gregorianLocale).format("YYYYMMDD");
+    return dateObj
+      .convert(gregorianCalendar, gregorianLocale)
+      .format("YYYYMMDD");
   }
 
   // Handle date context and section visibility when editing
   useEffect(() => {
     if (isEditing && editTopic && isOpen) {
-      // Set date context if available
+      // Set date context if available - only if it's different from current
       if (editTopic.date_hijri) {
         setDate({
           hijri: editTopic.date_hijri,
@@ -873,22 +986,53 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
           dateObject: null,
         });
       }
+      
       // Always set both Hijri and Gregorian fields for from/to dates
       setValue("from_date_hijri", editTopic.from_date_hijri);
       setValue(
         "from_date_gregorian",
-        editTopic.from_date_gregorian || hijriToGregorian(editTopic.from_date_hijri)
+        editTopic.from_date_gregorian ||
+          hijriToGregorian(editTopic.from_date_hijri)
       );
       setValue("to_date_hijri", editTopic.to_date_hijri);
       setValue(
         "to_date_gregorian",
         editTopic.to_date_gregorian || hijriToGregorian(editTopic.to_date_hijri)
       );
+      
+      // Set From Location and To Location fields (always use code for lookup)
+      const fromLocationCode = editTopic.fromLocation?.value || editTopic.FromLocation_Code || editTopic.fromLocation;
+      if (fromLocationCode && regionData?.DataElements) {
+        const fromLocationOption = regionData.DataElements.find(
+          (item: any) => String(item.ElementKey) === String(fromLocationCode)
+        );
+        setValue("fromLocation", {
+          value: String(fromLocationCode),
+          label: fromLocationOption ? fromLocationOption.ElementValue : String(fromLocationCode),
+        });
+      }
+      const toLocationCode = editTopic.toLocation?.value || editTopic.ToLocation_Code || editTopic.toLocation;
+      if (toLocationCode && regionData?.DataElements) {
+        const toLocationOption = regionData.DataElements.find(
+          (item: any) => String(item.ElementKey) === String(toLocationCode)
+        );
+        setValue("toLocation", {
+          value: String(toLocationCode),
+          label: toLocationOption ? toLocationOption.ElementValue : String(toLocationCode),
+        });
+      }
+
       // Show appropriate sections
       setShowLegalSection(true);
       setShowTopicData(true);
     }
-  }, [isEditing, editTopic, isOpen, setDate, setShowLegalSection, setShowTopicData, setValue]);
+  }, [
+    isEditing,
+    editTopic,
+    isOpen,
+    setShowLegalSection,
+    setShowTopicData,
+  ]);
 
   const handleClearMainCategory = useCallback(() => {
     setValue("mainCategory", null);
@@ -897,17 +1041,23 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
     setShowTopicData(false);
     setShowLegalSection(false);
     setValue("regulatoryText", "");
-  }, [setValue, setShowTopicData, setShowLegalSection]);
+  }, [setShowTopicData, setShowLegalSection]);
 
   const handleClearSubCategory = useCallback(() => {
     setValue("subCategory", null);
     setValue("acknowledged", false);
     setShowTopicData(false);
     setValue("regulatoryText", "");
-  }, [setValue, setShowTopicData]);
+  }, [setShowTopicData]);
 
-  const bylawsValue = useWatch({ control, name: "doesBylawsIncludeAddingAccommodations" });
-  const contractValue = useWatch({ control, name: "doesContractIncludeAddingAccommodations" });
+  const bylawsValue = useWatch({
+    control,
+    name: "doesBylawsIncludeAddingAccommodations",
+  });
+  const contractValue = useWatch({
+    control,
+    name: "doesContractIncludeAddingAccommodations",
+  });
 
   useEffect(() => {
     if (bylawsValue && contractValue) {
@@ -917,133 +1067,187 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
       setValue("doesBylawsIncludeAddingAccommodations", false);
       setValue("housingSpecificationInByLaws", "");
     }
-  }, [bylawsValue, contractValue, setValue]);
+  }, [bylawsValue, contractValue]);
 
-  // Add new state for error message
-  const [mojContractError, setMojContractError] = useState<string | null>(null);
-
-  // Add effect to handle MOJ contract validation
+  // --- MOJ Contract Error UI and Handlers Disabled ---
+  // To re-enable, uncomment the mojContractError state, UI, and handler code blocks as needed.
+  // All references to mojContractError and setMojContractError are now commented out for linter compliance.
+  /*
   useEffect(() => {
-    if (userType === "Worker" || userType === "Embassy User" && defendantStatus === "Establishment") {
-      if (subCategory?.value && mainCategory?.value === 'WR') {
-        // Check if selected subtopic is WR-1 or WR-2
-        if (subCategory.value === 'WR-1' || subCategory.value === 'WR-2') {
-          // Get the MOJ contract validation from the API response
-          const mojContractExists = subCategoryData?.MOJContractExist === "false"; 
-        const errorMessage = subCategoryData?.MOJContractExistErrorMessage;
-          // const mojContractExists = true; // For local testing. Correct logic is: subCategoryData?.MOJContractExist === "true"
-          // const errorMessage = "This is a test error message for MOJ Contract validation."; // For local testing. Correct logic is: subCategoryData?.MOJContractExistErrorMessage
+    // Only run validation for Worker or Embassy User with Establishment defendant
+    if (
+      (userType === "Worker" ||
+        (userType === "Embassy User" && defendantStatus === "Establishment")) &&
+      subCategory?.value &&
+      mainCategory?.value === "WR"
+    ) {
+      // Guard: don't clear or set errors until lookup is ready
+      if (!matchedSubCategory) return;
 
-          if (mojContractExists && errorMessage) {
-            setMojContractError(errorMessage);
-            // Clear the selected subtopic
-            setValue("subCategory", null);
-            setShowLegalSection(false);
-            setShowTopicData(false);
+      const mojContractExists = matchedSubCategory?.MojContractExist === "true";
+      const errorMessage = matchedSubCategory?.MojContractExistError;
 
-            // Clear previous timeout if it exists
-            if (timeoutRef.current) {
-              clearTimeout(timeoutRef.current);
-            }
-
-            // Set new timeout
-            timeoutRef.current = setTimeout(() => {
-              setMojContractError(null);
-            }, 3000);
-          }
+      if (mojContractExists && errorMessage) {
+        // Clear any existing timeout
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
         }
+
+        // Set error and remember which subcategory caused it
+        setMojContractError(errorMessage);
+        setLastErrorSubCategory(subCategory.value);
+        // Reset form state
+        setValue("subCategory", null);
+        setValue("acknowledged", false);
+        setShowLegalSection(false);
+        setShowTopicData(false);
+
+        // Set timeout to clear error after 10 seconds
+        timeoutRef.current = setTimeout(() => {
+          setMojContractError(null);
+          setLastErrorSubCategory(null);
+        }, 10000);
+      } else if (
+        lastErrorSubCategory === subCategory.value &&
+        (mojContractExists === false || !errorMessage)
+      ) {
+        // Only clear if the error was for this subcategory
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
+        }
+        setMojContractError(null);
+        setLastErrorSubCategory(null);
       }
     }
-  }, [userType, defendantStatus, subCategory?.value, mainCategory?.value, subCategoryData, setValue]);
+  }, [
+    userType,
+    defendantStatus,
+    subCategory?.value,
+    mainCategory?.value,
+    matchedSubCategory,
+    lastErrorSubCategory,
+  ]);
+  */
+  // --- END MOJ Contract Error UI and Handlers Disabled ---
+
+  // Clear error when main category changes away from WR
+  // useEffect(() => {
+  //   if (mainCategory?.value !== "WR" && lastErrorSubCategory) {
+  //     if (timeoutRef.current) {
+  //       clearTimeout(timeoutRef.current);
+  //     }
+  //     setLastErrorSubCategory(null);
+  //   }
+  // }, [mainCategory?.value, lastErrorSubCategory]);
+
+  // // Clear error when user selects a different subcategory and allow new validation
+  // useEffect(() => {
+  //   if (
+  //     lastErrorSubCategory &&
+  //     subCategory?.value &&
+  //     subCategory.value !== lastErrorSubCategory &&
+  //     mainCategory?.value === "WR"
+  //   ) {
+  //     // Clear the previous error
+  //     if (timeoutRef.current) {
+  //       clearTimeout(timeoutRef.current);
+  //     }
+  //     setLastErrorSubCategory(null);
+      
+  //     // The validation effect will run again for the new subcategory
+  //     // because we cleared the error and the subcategory changed
+  //   }
+  // }, [subCategory?.value, lastErrorSubCategory, mainCategory?.value]);
 
   // ────────────────────────────────────────────────────────────────────────────────
   // Move both layout hooks to the top level, then pick between them:
-  const formLayout = userType === "Worker" || userType === "Embassy User"
-    ? useFormLayoutWorker({
-      t,
-      MainTopicID: mainCategory,
-      SubTopicID: subCategory,
-      FromLocation: fromPlace,
-      ToLocation: toPlace,
-      AcknowledgementTerms: acknowledged,
-      showLegalSection,
-      showTopicData,
-      setValue,
-      regulatoryText,
-      handleAdd: goToLegalStep,
-      handleAcknowledgeChange: (val: boolean) => {
-        setValue("acknowledged", val);
-        if (val) setShowTopicData(true);
-      },
-      handleAddTopic,
-      handleSend,
-      decisionNumber: decisionNumber || "",
-      isEditing,
-      mainCategoryData,
-      subCategoryData,
-      watch,
-      forAllowanceData,
-      typeOfRequestLookupData,
-      commissionTypeLookupData,
-      accordingToAgreementLookupData,
-      typesOfPenaltiesData,
-      matchedSubCategory,
-      subTopicsLoading,
-      amountPaidData,
-      leaveTypeData,
-      travelingWayData,
-      editTopic,
-      caseTopics,
-      setShowLegalSection,
-      setShowTopicData,
-      isValid,
-      isMainCategoryLoading: isFetching || isLoading,
-      isSubCategoryLoading,
-      control,
-    })
-    : useFormLayoutEstablishment({
-      t,
-      MainTopicID: mainCategory,
-      SubTopicID: subCategory,
-      FromLocation: fromPlace,
-      ToLocation: toPlace,
-      AcknowledgementTerms: acknowledged,
-      showLegalSection,
-      showTopicData,
-      setValue,
-      regulatoryText,
-      handleAdd: goToLegalStep,
-      handleAcknowledgeChange: (val: boolean) => {
-        setValue("acknowledged", val);
-        if (val) setShowTopicData(true);
-      },
-      handleAddTopic,
-      handleSend,
-      decisionNumber: decisionNumber || "",
-      isEditing,
-      mainCategoryData,
-      subCategoryData,
-      watch,
-      forAllowanceData,
-      typeOfRequestLookupData,
-      commissionTypeLookupData,
-      accordingToAgreementLookupData,
-      typesOfPenaltiesData,
-      matchedSubCategory,
-      subTopicsLoading,
-      amountPaidData,
-      leaveTypeData,
-      travelingWayData,
-      editTopic,
-      caseTopics,
-      setShowLegalSection,
-      setShowTopicData,
-      isValid,
-      isMainCategoryLoading: isFetching || isLoading,
-      isSubCategoryLoading,
-      control,
-    });
-
+  const formLayout =
+    userType === "Worker" || userType === "Embassy User"
+      ? useFormLayoutWorker({
+          t,
+          MainTopicID: mainCategory,
+          SubTopicID: subCategory,
+          FromLocation: fromLocation,
+          ToLocation: toLocation,
+          AcknowledgementTerms: acknowledged,
+          showLegalSection,
+          showTopicData,
+          setValue,
+          regulatoryText,
+          handleAdd: goToLegalStep,
+          handleAcknowledgeChange: (val: boolean) => {
+            setValue("acknowledged", val);
+            if (val) setShowTopicData(true);
+          },
+          handleAddTopic,
+          handleSend,
+          decisionNumber: decisionNumber || "",
+          isEditing,
+          mainCategoryData,
+          subCategoryData,
+          watch,
+          forAllowanceData,
+          typeOfRequestLookupData,
+          commissionTypeLookupData,
+          accordingToAgreementLookupData,
+          typesOfPenaltiesData,
+          matchedSubCategory,
+          subTopicsLoading: isSubCategoryLoading,
+          amountPaidData,
+          leaveTypeData,
+          travelingWayData,
+          editTopic,
+          caseTopics,
+          setShowLegalSection,
+          setShowTopicData,
+          isValid,
+          isMainCategoryLoading: isFetching || isLoading,
+          isSubCategoryLoading,
+          control,
+          trigger
+        })
+      : useFormLayoutEstablishment({
+          t,
+          MainTopicID: mainCategory,
+          SubTopicID: subCategory,
+          FromLocation: fromLocation,
+          ToLocation: toLocation,
+          AcknowledgementTerms: acknowledged,
+          showLegalSection,
+          showTopicData,
+          setValue,
+          regulatoryText,
+          handleAdd: goToLegalStep,
+          handleAcknowledgeChange: (val: boolean) => {
+            setValue("acknowledged", val);
+            if (val) setShowTopicData(true);
+          },
+          handleAddTopic,
+          handleSend,
+          decisionNumber: decisionNumber || "",
+          isEditing,
+          mainCategoryData,
+          subCategoryData,
+          watch,
+          forAllowanceData,
+          typeOfRequestLookupData,
+          commissionTypeLookupData,
+          accordingToAgreementLookupData,
+          typesOfPenaltiesData,
+          matchedSubCategory,
+          subTopicsLoading: isSubCategoryLoading,
+          amountPaidData,
+          leaveTypeData,
+          travelingWayData,
+          editTopic,
+          caseTopics,
+          setShowLegalSection,
+          setShowTopicData,
+          isValid,
+          isMainCategoryLoading: isFetching || isLoading,
+          isSubCategoryLoading,
+          control,
+        });
 
   // Fix the FormData type issue
   interface FormData {
@@ -1055,9 +1259,12 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
     legalSection?: any;
   }
 
-  const updateForm = useCallback((updates: Partial<FormData>) => {
-    reset(updates);
-  }, [reset]);
+  const updateForm = useCallback(
+    (updates: Partial<FormData>) => {
+      reset(updates);
+    },
+    [reset]
+  );
 
   const updateTopicData = useCallback((data: any) => {
     if (data?.TopicData) {
@@ -1086,14 +1293,14 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
     if (showTopicData && topicData) {
       setValue("topicData", topicData);
     }
-  }, [showTopicData, topicData, setValue]);
+  }, [showTopicData, topicData]);
 
   // Memoize the legal section update effect
   useEffect(() => {
     if (showLegalSection && legalSection) {
       setValue("legalSection", legalSection);
     }
-  }, [showLegalSection, legalSection, setValue]);
+  }, [showLegalSection, legalSection]);
 
   // Memoize the topic data fetch effect
   useEffect(() => {
@@ -1117,9 +1324,7 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
     if (!options) return null;
     return (
       options.find((opt: Option) =>
-        typeof opt === "object"
-          ? opt.value === value
-          : opt === value
+        typeof opt === "object" ? opt.value === value : opt === value
       ) || null
     );
   }
@@ -1127,14 +1332,54 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
   // In the useEffect or prefill logic where you set form values for editTopic:
   useEffect(() => {
     if (isEditing && editTopic && typeOfRequestLookupData?.DataElements) {
-      const code = editTopic.RequestType_Code || editTopic.RequestType || editTopic.TypeOfRequest;
+      const code =
+        editTopic.RequestType_Code ||
+        editTopic.RequestType ||
+        editTopic.TypeOfRequest;
       const matchedOption = findOption(
-        typeOfRequestLookupData.DataElements.map((item: any) => ({ value: item.ElementKey, label: item.ElementValue })),
+        typeOfRequestLookupData.DataElements.map((item: any) => ({
+          value: item.ElementKey,
+          label: item.ElementValue,
+        })),
         code
       );
       if (matchedOption) setValue("typeOfRequest", matchedOption);
     }
-  }, [isEditing, editTopic, typeOfRequestLookupData, setValue]);
+  }, [isEditing, editTopic, typeOfRequestLookupData]);
+
+  // Set region data for location fields when editing
+  useEffect(() => {
+    if (isEditing && editTopic && regionData?.DataElements) {
+      // Set From Location
+      if (editTopic.fromLocation) {
+        const fromLocationOption = regionData.DataElements.find(
+          (item: any) => item.ElementKey === editTopic.fromLocation?.value || item.ElementKey === editTopic.fromLocation
+        );
+        if (fromLocationOption) {
+          setValue("fromLocation", {
+            value: fromLocationOption.ElementKey,
+            label: fromLocationOption.ElementValue,
+          });
+        }
+      }
+
+      // Set To Location
+      if (editTopic.toLocation) {
+        const toLocationOption = regionData.DataElements.find(
+          (item: any) => item.ElementKey === editTopic.toLocation?.value || item.ElementKey === editTopic.toLocation
+        );
+        if (toLocationOption) {
+          setValue("toLocation", {
+            value: toLocationOption.ElementKey,
+            label: toLocationOption.ElementValue,
+          });
+        }
+      }
+    }
+  }, [isEditing, editTopic, regionData]);
+
+  // Replace the previous useTranslation usage for static texts
+  const { t: tCommon } = useTranslation('common');
 
   return (
     <Suspense fallback={<TableLoader />}>
@@ -1204,7 +1449,7 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
                     onAddClick={openAttachmentModal}
                     onRemove={handleRemoveAttachment}
                     onView={onClickedView}
-                  // onClickedView={onClickedView}  
+                    // onClickedView={onClickedView}
                   />
 
                   <AttachmentModal
@@ -1232,7 +1477,9 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
                       className="!max-h-max !m-0"
                     >
                       <div className="w-full h-[80vh] overflow-auto">
-                        {fileBase64?.pyFileName?.toLowerCase().endsWith(".pdf") ? (
+                        {fileBase64?.pyFileName
+                          ?.toLowerCase()
+                          .endsWith(".pdf") ? (
                           <iframe
                             src={`data:application/pdf;base64,${fileBase64?.Base64Stream}`}
                             className="w-full h-full border-none"
@@ -1268,23 +1515,41 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
                 className="h-[60vh] sm:h-[600px] overflow-y-auto w-full max-w-[800px]"
               >
                 {/* Add error message display */}
-                {mojContractError && (
-                  <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4 relative">
-                    <span>{mojContractError}</span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setMojContractError(null);
-                        if (timeoutRef.current) {
-                          clearTimeout(timeoutRef.current);
-                        }
-                      }}
-                      className="absolute top-0 bottom-0 right-0 px-4 py-3"
-                    >
-                      <span className="text-2xl font-bold">&times;</span>
-                    </button>
+                {/* {mojContractError && (
+                  <div
+                    className="flex flex-col items-start p-4 md:p-6 gap-4 relative w-full bg-[#FFFBFA] border border-[#FECDCA] rounded-lg mb-4"
+                    style={{ boxSizing: 'border-box', isolation: 'isolate' }}
+                  >
+                    <div className="flex items-center w-full">
+                      <div className="flex-shrink-0 me-4 md:me-6">
+                        <div className="w-12 h-12 flex items-center justify-center rounded-full bg-white">
+                          <img src={FeaturedIcon} alt="Notification Icon" className="w-10 h-10" />
+                        </div>
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-red-700 font-bold text-xl mb-1">
+                          {tCommon('notification')}
+                        </div>
+                        <div className="text-gray-700 text-base">
+                          {t(mojContractError) !== mojContractError ? t(mojContractError) : mojContractError}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMojContractError(null);
+                          if (timeoutRef.current) {
+                            clearTimeout(timeoutRef.current);
+                          }
+                        }}
+                        className="end-4 ms-4 md:ms-6 text-gray-400 hover:text-gray-600"
+                        aria-label="Close"
+                      >
+                        <span className="text-2xl font-bold">&times;</span>
+                      </button>
+                    </div>
                   </div>
-                )}
+                )} */}
                 <RHFFormProvider {...methods}>
                   <Suspense fallback={<TableLoader />}>
                     <DynamicForm
@@ -1325,10 +1590,10 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
                       {isEditing
                         ? t("update") || "Update"
                         : isStep3
-                          ? t("send") || "Send"
-                          : isStep2 && acknowledged
-                            ? t("Next") || "Next"
-                            : t("Next") || "Next"}
+                        ? t("send") || "Send"
+                        : isStep2 && acknowledged
+                        ? t("Next") || "Next"
+                        : t("Next") || "Next"}
                     </Button>
                   </div>
                 </RHFFormProvider>
@@ -1358,7 +1623,7 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
                 <Button
                   variant="primary"
                   onClick={() => {
-                    setCaseTopics((prev) => prev.filter((t) => t !== delTopic));
+                    setCaseTopics((prev) => prev.filter((_, i) => i !== delTopic?.index));
                     setShowDeleteConfirm(false);
                     setDelTopic(null);
                   }}
@@ -1374,5 +1639,4 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
   );
 }
 
-
-export default EditHearingTopicsDetails; 
+export default EditHearingTopicsDetails;

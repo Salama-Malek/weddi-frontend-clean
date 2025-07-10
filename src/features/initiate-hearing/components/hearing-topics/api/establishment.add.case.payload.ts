@@ -171,6 +171,8 @@ export function getPayloadBySubTopicID(
             ...basePayload,
             FromLocation: topic?.fromLocation?.value || topic?.FromLocation,
             ToLocation: topic?.toLocation?.value || topic?.ToLocation,
+            fromLocation: topic?.fromLocation?.value || topic?.FromLocation, // send as code only for testing
+            toLocation: topic?.toLocation?.value || topic?.ToLocation, // send as code only for testing
             Date_New: formatDateToYYYYMMDD(topic?.managerial_decision_date_hijri || topic?.Date_New),
             ManDecsDate: formatDateToYYYYMMDD(topic?.managerial_decision_date_gregorian || topic?.ManDecsDate),
             ManagerialDecisionNumber: topic?.managerialDecisionNumber || topic?.ManagerialDecisionNumber,
@@ -209,7 +211,33 @@ export function getPayloadBySubTopicID(
           };
           break;
 
-        case "HIR-1": {  //done
+        // case "HIR-1": {  //done
+        //   const {
+        //     doesBylawsIncludeAddingAccommodations,
+        //     doesContractIncludeAddingAccommodations,
+        //     housingSpecificationsInContract,
+        //     housingSpecificationInByLaws,
+        //     actualHousingSpecifications,
+        //   } = topic || {};
+
+        //   topicPayload = {
+        //     ...basePayload,
+        //     ...(doesBylawsIncludeAddingAccommodations && {
+        //       IsBylawsIncludeAddingAccommodiation: "Yes",
+        //       IsContractIncludeAddingAccommodiation: "No",
+        //       HousingSpecificationsInBylaws: housingSpecificationInByLaws || topic?.HousingSpecificationsInBylaws,
+        //     }),
+        //     ...(doesContractIncludeAddingAccommodations && {
+        //       IsContractIncludeAddingAccommodiation: "Yes",
+        //       IsBylawsIncludeAddingAccommodiation: "No",
+        //       HousingSpecificationsInContract: housingSpecificationsInContract || topic?.HousingSpecificationsInContract,
+        //       HousingSpecifications: actualHousingSpecifications || topic?.HousingSpecifications,
+        //     }),
+        //   };
+        //   break;
+        // }
+
+case "HIR-1": {  //done
           const {
             doesBylawsIncludeAddingAccommodations,
             doesContractIncludeAddingAccommodations,
@@ -217,7 +245,7 @@ export function getPayloadBySubTopicID(
             housingSpecificationInByLaws,
             actualHousingSpecifications,
           } = topic || {};
-
+ 
           topicPayload = {
             ...basePayload,
             ...(doesBylawsIncludeAddingAccommodations && {
@@ -234,7 +262,7 @@ export function getPayloadBySubTopicID(
           };
           break;
         }
-
+        
         case "JAR-2": //done
           topicPayload = {
             ...basePayload,

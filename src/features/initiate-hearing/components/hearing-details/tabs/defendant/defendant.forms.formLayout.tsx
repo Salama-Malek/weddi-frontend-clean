@@ -25,6 +25,7 @@ import {
 import { skipToken } from "@reduxjs/toolkit/query";
 import { UserTypesEnum } from "@/shared/types/userTypes.enum";
 import { useFormResetContext } from "@/providers/FormResetProvider";
+import { useAPIFormsData } from "@/providers/FormContext";
 
 export const useFormLayout = (
   setValue: UseFormSetValue<FormData>,
@@ -32,6 +33,7 @@ export const useFormLayout = (
   trigger: UseFormTrigger<FormData>,
   governmentData?: any,
   subGovernmentData?: any,
+  caseDetailsLoading?: boolean
 ): SectionLayout[] => {
   const { resetField } = useFormResetContext();
   const { IsGovernmentRadioOptions } = useFormOptions([]);
@@ -46,6 +48,13 @@ export const useFormLayout = (
   const [hasInteractedWithSubCategory, setHasInteractedWithSubCategory] = useState(false);
   const [hasInitiatedFileNumberSearch, setHasInitiatedFileNumberSearch] = useState(false);
   const [hasManuallySelectedSubCategory, setHasManuallySelectedSubCategory] = useState(false);
+  const [idNumberPlainteff, setIdNumberPlainteff] = useState<string>("");
+  const {
+    formState,
+    formData
+  } = useAPIFormsData();
+
+
 
   //#region hassan
   const userClaims: TokenClaims = getCookie("userClaims");
@@ -61,25 +70,24 @@ export const useFormLayout = (
     useState<boolean>(false);
 
 
+  useEffect(() => {
+    if (caseDetailsLoading) {
+      const id = JSON.parse(localStorage.getItem("CaseDetails") || "")?.PlaintiffId
+      setIdNumberPlainteff(id)
+    }
+  }, [caseDetailsLoading])
 
   const { data: getEstablismentWorkingData, isLoading: ExtractEstDataLoading } =
     useGetExtractedEstablishmentDataQuery(
       {
-        WorkerId:
-          watch("claimantStatus") === "representative"
-            ? watch("workerAgentIdNumber")
-            : userClaims?.UserID,
+        WorkerId: idNumberPlainteff,
         AcceptedLanguage: i18n.language.toUpperCase(),
         SourceSystem: "E-Services",
         UserType: userType,
         CaseID: getCookie("caseId"),
       },
       {
-        skip: !userClaims?.UserID || !userType || !getCookie("caseId"),
-        // Prevent refetching during save operations
-        refetchOnMountOrArgChange: false,
-        refetchOnFocus: false,
-        refetchOnReconnect: false
+        skip: !caseDetailsLoading || idNumberPlainteff === ""
       }
     );
 
@@ -125,19 +133,19 @@ export const useFormLayout = (
     if (establishmentData && establishmentData?.EstablishmentInfo?.length !== 0) {
       const establishmentInfo = establishmentData?.EstablishmentInfo?.[0];
       console.log("Setting establishment data:", establishmentInfo?.FileNumber);
-      
+
       // Set state
       setEstablishmentDetailsByFileNumber(establishmentInfo);
       setIsWaitingForEstablishment(false);
-      
+
       // Set cookies
       setCookie("getDefendEstablishmentData", establishmentInfo);
       setCookie("defendantDetails", establishmentInfo);
-      
+
       // Set form values only if not already set or if data is different
       setValue("Defendant_Establishment_data_NON_SELECTED", establishmentInfo);
       setValue("DefendantFileNumber", establishmentInfo?.FileNumber);
-      
+
       // Set region and city only if they exist and are not already set
       if (establishmentInfo?.Region && establishmentInfo?.Region_Code) {
         setValue("defendantRegion", {
@@ -149,7 +157,7 @@ export const useFormLayout = (
           value: establishmentInfo.Region_Code,
         });
       }
-      
+
       if (establishmentInfo?.City && establishmentInfo?.City_Code) {
         setValue("defendantCity", {
           label: establishmentInfo.City,
@@ -160,7 +168,7 @@ export const useFormLayout = (
           value: establishmentInfo.City_Code,
         });
       }
-      
+
       // Set Number700
       if (establishmentInfo?.Number700) {
         setValue("Defendant_Establishment_data_NON_SELECTED.Number700", establishmentInfo.Number700);
@@ -204,7 +212,7 @@ export const useFormLayout = (
   useEffect(() => {
     if (myEstablishment && myEstablishment?.EstablishmentInfo?.length !== 0) {
       const establishmentInfo = myEstablishment?.EstablishmentInfo?.[0];
-      
+
       // Set cookies
       setCookie("getDefendEstablishmentData", establishmentInfo);
       setCookie("defendantDetails", establishmentInfo);
@@ -228,7 +236,7 @@ export const useFormLayout = (
           }
         );
       }
-      
+
       if (establishmentInfo?.City && establishmentInfo?.City_Code) {
         setValue(
           "defendantCity",

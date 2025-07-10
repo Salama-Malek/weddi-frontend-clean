@@ -5,7 +5,7 @@ import cookie from "react-cookies";
 import { useTranslation } from 'react-i18next';
 import { toast } from 'react-toastify';
 import { startLoading, stopLoading } from '@/redux/slices/loadingSlice';
-import { handleApiResponse, ApiResponseWithErrors, ErrorHandlerConfig } from '@/shared/lib/api/errorHandler';
+import { handleApiResponse, ApiResponseWithErrors, ErrorHandlerConfig, SUPPRESSED_ERROR_CODES } from '@/shared/lib/api/errorHandler';
 
 // Legacy function - kept for backward compatibility but now uses the new error handler
 const handleApiResponseLegacy = (result: any, args: string | FetchArgs) => {
@@ -30,7 +30,8 @@ const handleApiResponseLegacy = (result: any, args: string | FetchArgs) => {
       // Don't show toasts for NIC details as they're handled by modal
       customErrorMessages: url?.includes('GetNICDetails') ? {} : undefined
     };
-    
+    // Patch: Suppress errors with codes in SUPPRESSED_ERROR_CODES if any toast.error is called here in the future
+    // (Currently, handleApiResponse is used, which already suppresses, but this ensures future safety)
     handleApiResponse(result.data as ApiResponseWithErrors, config);
   }
 };

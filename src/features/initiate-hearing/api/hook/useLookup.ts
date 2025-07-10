@@ -42,13 +42,19 @@ export const useLookup = () => {
       , { skip: !isOpen }
     ),
 
-    subCategory: (mainCategoryValue: string | undefined) => useSubLookupQuery(
+    subCategory: (
+      mainCategoryValue: string | undefined,
+      extraParams?: { PlaintiffID?: string; Number700?: string; DefendantType?: string }
+    ) => useSubLookupQuery(
       {
         LookupType: "CaseElements",
         ModuleKey: mainCategoryValue,
         ModuleName: "SubTopics",
         SourceSystem: "E-Services",
-        AcceptedLanguage: currentLanguage
+        AcceptedLanguage: currentLanguage,
+        ...(extraParams?.PlaintiffID ? { PlaintiffID: extraParams.PlaintiffID } : {}),
+        ...(extraParams?.Number700 ? { Number700: extraParams.Number700 } : {}),
+        ...(extraParams?.DefendantType ? { DefendantType: extraParams.DefendantType } : {}),
       },
       { skip: !mainCategoryValue }
     ),

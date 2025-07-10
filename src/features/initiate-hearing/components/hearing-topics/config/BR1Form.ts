@@ -38,6 +38,8 @@ export const getBR1FormFields = ({
       : accordingToAgreement?.value,
       onChange: (option: Option | null) =>
         setValue("accordingToAgreement", option),
+      validation: { required: "According to the agreement is required" },
+      notRequired: false,
     },
     {
       type: "input",
@@ -46,6 +48,8 @@ export const getBR1FormFields = ({
       inputType: "number",
       value: isEditing ? editTopic?.bonusAmount : bonusAmount,
       onChange: (value) => setValue("bonusAmount", value),
+      validation: { required: "Bonus amount is required" },
+      notRequired: false,
     },
     {
       name: "date",
@@ -55,6 +59,8 @@ export const getBR1FormFields = ({
       hijriFieldName: "date_hijri",
       value: isEditing && formatHijriDate(date_hijri),
       gregorianFieldName: "date_gregorian",
+      validation: { required: "Date is required" },
+      notRequired: false,
     },
   ];
 };

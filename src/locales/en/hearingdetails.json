@@ -203,7 +203,9 @@
   "plaintifNativeLanguage": "Plaintiff's Native Language  ",
   "error": {
     "invalidAgencyNumber": "Invalid agency number",
-    "agencyNumberNotBelong": "ID number not authorized in agency"
+    "agencyNumberNotBelong": "ID number not authorized in agency",
+    "idNotUnderAgency": "The entered ID is not under the agency or not authorized.",
+    "cannotUseOwnId": "You cannot use your own ID number as a representative."
   },
   "dateValidationDesc": "Please enter a valid date in YYYYMMDD format",
   "workDateValidation": {
@@ -230,5 +232,7 @@
   "workplaceValidation": "Please enter current working place.",
   "residenceAddressValidation": "Please enter residence address.",
   "nameValidation": "Please enter a valid name.",
-  "dateValidation": "Please enter a valid date."
+  "dateValidation": "Please enter a valid date.",
+  "spacesOnlyNotAllowed": "Spaces only are not allowed",
+  "fieldRequired": "This field is required."
 }

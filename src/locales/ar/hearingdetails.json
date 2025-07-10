@@ -216,7 +216,8 @@
   "max10ValidationDesc": "لا يمكن أن يتجاوز هذا الحقل 10 خانات",
   "error": {
     "invalidAgencyNumber": "خطأ في رقم الوكالة",
-    "agencyNumberNotBelong": "رقم الهوية غير معتمد في الوكالة"
+    "agencyNumberNotBelong": "هذه الوكالة لاتخص هذا الوكيل",
+    "idNotUnderAgency": "هذه الوكالة لاتخص هذا الوكيل"
   },
   "workDateValidation": {
     "endBeforeStart": "تاريخ آخر يوم عمل يجب أن يكون بعد تاريخ أول يوم عمل",
@@ -243,5 +244,7 @@
   "workplaceValidation": "الرجاء إدخال مكان العمل الحالي.",
   "residenceAddressValidation": "الرجاء إدخال عنوان الإقامة.",
   "nameValidation": "الرجاء إدخال اسم صحيح.",
-  "dateValidation": "الرجاء إدخال تاريخ صحيح."
+  "dateValidation": "الرجاء إدخال تاريخ صحيح.",
+  "spacesOnlyNotAllowed": "لا يسمح بالمسافات فقط",
+  "fieldRequired": "هذا الحقل مطلوب."
 }

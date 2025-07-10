@@ -77,6 +77,7 @@ export const SUPPRESSED_ERROR_CODES = [
   'ER4015',
   'ERR001',
   'ERR002',
+  'ER2016'
 ] as const;
 
 // Error handling configuration
@@ -127,7 +128,7 @@ export function extractApiErrors(response: ApiResponseWithErrors): ApiErrorItem[
     for (let i = 0; i <= maxIndex; i++) {
       const errorCode = errorCodeMap.get(i.toString());
       const errorDesc = errorDescMap.get(i.toString());
-      
+
       if (errorCode || errorDesc) {
         groupedErrors.push({
           ErrorCode: errorCode || "",

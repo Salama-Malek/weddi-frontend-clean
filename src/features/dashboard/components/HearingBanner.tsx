@@ -65,25 +65,21 @@ const Banner: React.FC<BannerProps> = ({
     triggerGetMySchedules,
     { data: mySchedualData, isLoading: mySchedualLoading },
   ] = useLazyGetMySchedulesQuery();
-  const [timeLeft, setTimeLeft] = useState<number>(0);
+  const [timeLeft, setTimeLeft] = useState<number>(-1);
 
   const getMySchedualDataFun = async () => {
     const userID = getCookie("userClaims").UserID;
     const fileNumber = getCookie("userClaims")?.File_Number;
     const mainCategory = getCookie("mainCategory")?.value;
     const subCategory = getCookie("subCategory")?.value;
-    const goveDetails = getCookie("storeAllUserTypeData");
     const uerType = getCookie("userType");
     const selectedUserType = getCookie("selectedUserType");
 
-    // For Legal representative users, check if they have made their selections
     if (uerType === "Legal representative") {
-      // If user hasn't selected their role yet, don't call the API
       if (!selectedUserType) {
         return;
       }
 
-      // If user selected Legal representative but hasn't selected main/sub categories, don't call the API
       if (
         selectedUserType === "Legal representative" &&
         (!mainCategory || !subCategory)
@@ -126,7 +122,7 @@ const Banner: React.FC<BannerProps> = ({
       },
     } as const;
 
-    setTimeLeft(0);
+    setTimeLeft(-1);
     const result = await triggerGetMySchedules({
       ...userConfigs[uerType],
       AcceptedLanguage: i18n.language.toUpperCase(),
@@ -135,19 +131,20 @@ const Banner: React.FC<BannerProps> = ({
     handleApiResponse(result);
   };
 
+
   const handleApiResponse = (result: any) => {
     const data = result?.data;
     if (data?.PlaintiffCases?.length > 0) {
-      const upcomingSessions = data.PlaintiffCases.map((s: any) => ({
+      const upcomingSessions = data?.PlaintiffCases.map((s: any) => ({
         minutesRemaining: parseFloat(s?.ScheduleTimeRemaining),
         webexLink: s?.ScheduleWebexLink,
       }))
-        .filter((s: any) => s.minutesRemaining >= -25)
-        .sort((a: any, b: any) => a.minutesRemaining - b.minutesRemaining);
+        .filter((s: any) => s?.minutesRemaining > 0)
+        .sort((a: any, b: any) => a?.minutesRemaining - b?.minutesRemaining);
 
-      if (upcomingSessions.length > 0) {
-        setTimeLeft(upcomingSessions?.[0].minutesRemaining * 60);
-        setNearestSession(upcomingSessions[0]);
+      if (upcomingSessions?.length > 0) {
+        setTimeLeft(upcomingSessions?.[0]?.minutesRemaining * 60);
+        setNearestSession(upcomingSessions?.[0]);
       } else {
         setNearestSession(null);
       }
@@ -156,42 +153,23 @@ const Banner: React.FC<BannerProps> = ({
     }
   };
 
-  // useEffect(() => {
-  //   // if (timeLeft <= 1500) {
-  //   //   return;
-  //   // }
 
-  //   const interval = setInterval(() => {
 
-  //     setTimeLeft(prev => {
-  //       if (prev === 1500) {
-  //         getMySchedualDataFun();
-  //       }
-  //       if (prev < 1500) {
-  //         clearInterval(interval);
-  //         return 0;
-  //       }
-  //       return prev - 1;
-  //     });
-  //   }, 1000);
-
-  //   return () => clearInterval(interval);
-  // }, [nearestSession]);
 
   useEffect(() => {
-    if (timeLeft < -1500) {
+    console.log("time left, == ", timeLeft);
+    let timer: NodeJS.Timeout | null = null;
+
+    if (timeLeft <= -1) {
+      if (timer) clearInterval(timer);
       return;
     }
-
-    let timer: NodeJS.Timeout | null = null;
-    // Only start timer if there is a session
-    if (nearestSession && timeLeft !== -1500) {
+    if (nearestSession && timeLeft > 0) {
       timer = setInterval(() => {
         setTimeLeft((prev) => prev - 1);
       }, 1000);
     }
-    if (timeLeft === -1500) {
-      setTimeLeft((prev) => prev - 2);
+    if (timeLeft === 0) {
       if (timer) clearInterval(timer);
       getMySchedualDataFun();
       return;
@@ -201,13 +179,13 @@ const Banner: React.FC<BannerProps> = ({
       if (timer) clearInterval(timer);
     };
   }, [nearestSession, timeLeft]);
-
   useEffect(() => {
     getMySchedualDataFun();
   }, [uerType, selectedUser, isMenueCahngeFlag]);
 
   const formatTime = (seconds: number) => {
-    const h = Math.floor(seconds / 3600);
+    const d = Math.floor(seconds / 86400);
+    const h = Math.floor((seconds % 86400) / 3600);
     const m = Math.floor((seconds % 3600) / 60)
       .toString()
       .padStart(2, "0");
@@ -215,11 +193,15 @@ const Banner: React.FC<BannerProps> = ({
       .toString()
       .padStart(2, "0");
 
-    if (h > 0) {
-      return `${h} ${t("Hour")}  ${m}  ${t("Minutes")}  ${s} ${t("Seconds")}`;
-    } else {
-      return ` ${m}  ${t("Minutes")}  ${s} ${t("Seconds")}`;
+    let result = "";
+    if (d > 0) {
+      result += `${d} ${d === 1 ? t("Day") : t("Days")}`;
     }
+    if (h > 0 || d > 0) {
+      result += ` ${h} ${t("Hour")}`;
+    }
+    result += `  ${m}  ${t("Minute")}  ${s} ${t("Second")}`;
+    return result.trim();
   };
 
   const handleCloseInfoBanner = () => {
@@ -256,7 +238,7 @@ const Banner: React.FC<BannerProps> = ({
         <div className="relative z-10 p-6">
           {nearestSession && (
             <div className="mb-4 bg-primary-960 rounded-md text-gray-100 p-4 flex justify-between items-center">
-              {timeLeft > 0 ? (
+              {timeLeft > 1500 ? (
                 <p className="text-1822">
                   <b>
                     {t("time_desc_start")} {":  "}
@@ -264,7 +246,9 @@ const Banner: React.FC<BannerProps> = ({
                   {formatTime(timeLeft)}{" "}
                 </p>
               ) : (
-                <p className="text-1822">{t("session_expired_or_ended")}</p>
+                <>
+                  <p className="text-1822">{t("session_expired_or_ended")}</p>
+                </>
               )}
               <Button
                 variant="secondary"
@@ -284,9 +268,8 @@ const Banner: React.FC<BannerProps> = ({
               {isEstablishment && (
                 <div className="flex">
                   <p
-                    className={`text-md text-gray-500 ${
-                      isRTL ? "ml-1" : "mr-1"
-                    }`}
+                    className={`text-md text-gray-500 ${isRTL ? "ml-1" : "mr-1"
+                      }`}
                   >
                     {t("registration_text")}
                   </p>

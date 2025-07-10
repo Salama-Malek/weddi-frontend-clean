@@ -23,6 +23,8 @@ export const LanguageDirectionProvider = ({ children }: { children: ReactNode })
       isRTL: i18n.language === "ar",
       loading: false, 
     });
+    // Set the dir attribute globally
+    document.documentElement.setAttribute("dir", i18n.language === "ar" ? "rtl" : "ltr");
   }, [i18n.language]);
 
   return (

@@ -45,6 +45,8 @@ import { useGetRegionLookupDataQuery } from "@/features/initiate-hearing/api/cre
 import { Option } from "@/shared/components/form/form.types";
 import { FormProvider as RHFFormProvider } from "react-hook-form";
 import { useApiErrorHandler } from "@/shared/hooks/useApiErrorHandler";
+import { SUPPRESSED_ERROR_CODES } from '@/shared/lib/api/errorHandler';
+import FeaturedIcon from '@/assets/Featured icon.svg';
 
 interface ApiResponse {
   ServiceStatus: string;
@@ -121,7 +123,7 @@ function HearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
       fromPlace: "",
       toPlace: "",
       additionalDetails: "",
-    }
+    },
   });
   const {
     register,
@@ -177,6 +179,7 @@ function HearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
   const { handleResponse, createError } = useApiErrorHandler();
 
   useEffect(() => {
+    console.log("Case details effect triggered:", { caseId, userType, userID, fileNumber, currentLanguage });
     if (caseId) {
       const userConfigs: any = {
         Worker: {
@@ -200,17 +203,24 @@ function HearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
         },
       };
 
-      triggerCaseDetailsQuery({
+      const queryParams = {
         ...userConfigs[userType],
         CaseID: caseId,
         AcceptedLanguage: currentLanguage,
         SourceSystem: "E-Services",
-      });
+      };
+      
+      console.log("Triggering case details query with params:", queryParams);
+      triggerCaseDetailsQuery(queryParams);
+    } else {
+      console.log("No caseId available, skipping case details query");
     }
-  }, [caseId, userClaims?.UserID, currentLanguage, triggerCaseDetailsQuery]);
+  }, [caseId, userType, userID, fileNumber, mainCategory2, subCategory2, currentLanguage, triggerCaseDetailsQuery]);
 
   useEffect(() => {
+    console.log("Case details data received:", caseDetailsData);
     if (caseDetailsData?.CaseDetails) {
+      console.log("Case details found, processing topics...");
       if (caseTopics.length === 0) {
         const formattedTopics = caseDetailsData.CaseDetails.CaseTopics.map(
           (topic: any) => ({
@@ -233,15 +243,34 @@ function HearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
             durationOfLeaveDue: topic.DurationOfLeaveDue,
             theReason: topic.TheReason,
             currentPosition: topic.CurrentPosition,
+            // doesBylawsIncludeAddingAccommodations:
+            //   topic.IsBylawsIncludeAddingAccommodiation === "Yes",
+            // doesContractIncludeAddingAccommodations:
+            //   topic.IsContractIncludeAddingAccommodiation === "Yes",
+            // housingSpecificationInByLaws:
+            //   topic.HousingSpecificationsInBylaws || "",
+            // housingSpecificationsInContract:
+            //   topic.HousingSpecificationsInContract || "",
+            // actualHousingSpecifications: topic.HousingSpecifications || "",
+
             doesBylawsIncludeAddingAccommodations:
-              topic.IsBylawsIncludeAddingAccommodiation === "Yes",
+              topic.IsBylawsIncludeAddingAccommodiation === "Yes" ||
+              topic.doesBylawsIncludeAddingAccommodations === true,
             doesContractIncludeAddingAccommodations:
-              topic.IsContractIncludeAddingAccommodiation === "Yes",
+              topic.IsContractIncludeAddingAccommodiation === "Yes" ||
+              topic.doesContractIncludeAddingAccommodations === true,
             housingSpecificationInByLaws:
-              topic.HousingSpecificationsInBylaws || "",
+              topic.HousingSpecificationsInBylaws ||
+              topic.housingSpecificationInByLaws ||
+              "",
             housingSpecificationsInContract:
-              topic.HousingSpecificationsInContract || "",
-            actualHousingSpecifications: topic.HousingSpecifications || "",
+              topic.HousingSpecificationsInContract ||
+              topic.housingSpecificationsInContract ||
+              "",
+            actualHousingSpecifications:
+              topic.HousingSpecifications ||
+              topic.actualHousingSpecifications ||
+              "",
             forAllowance: topic.ForAllowance
               ? {
                   value: topic.ForAllowance,
@@ -266,36 +295,49 @@ function HearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
                   label: topic.TravelingWay,
                 }
               : null,
-            typeOfRequest: (topic.RequestType || topic.RequestType_Code)
-              ? {
-                  value: topic.RequestType_Code || topic.RequestType,
-                  label: topic.RequestType || topic.RequestType_Code,
-                }
-              : null,
+            typeOfRequest:
+              topic.RequestType || topic.RequestType_Code
+                ? {
+                    value: topic.RequestType_Code || topic.RequestType,
+                    label: topic.RequestType || topic.RequestType_Code,
+                  }
+                : null,
             kindOfHoliday: topic.KindOfHoliday
               ? {
                   value: topic.KindOfHoliday,
                   label: topic.KindOfHoliday,
                 }
               : null,
-            fromLocation: (topic.FromLocation || topic.FromLocation_Code)
-              ? {
-                  value: topic.FromLocation_Code || topic.FromLocation,
-                  label: topic.FromLocation || topic.FromLocation_Code,
-                }
-              : null,
-            toLocation: (topic.ToLocation || topic.ToLocation_Code)
-              ? {
-                  value: topic.ToLocation_Code || topic.ToLocation,
-                  label: topic.ToLocation || topic.ToLocation_Code,
-                }
-              : null,
-            typesOfPenalties: (topic.PenalityType || topic.PenalityType_Code || topic.TypesOfPenalties)
-              ? {
-                  value: topic.PenalityType_Code || topic.PenalityType || topic.TypesOfPenalties,
-                  label: topic.PenalityTypeLabel || topic.TypesOfPenaltiesLabel || topic.PenalityType || topic.TypesOfPenalties,
-                }
-              : null,
+            fromLocation:
+              topic.FromLocation || topic.FromLocation_Code
+                ? {
+                    value: topic.FromLocation_Code || topic.FromLocation,
+                    label: topic.FromLocation || topic.FromLocation_Code,
+                  }
+                : null,
+            toLocation:
+              topic.ToLocation || topic.ToLocation_Code
+                ? {
+                    value: topic.ToLocation_Code || topic.ToLocation,
+                    label: topic.ToLocation || topic.ToLocation_Code,
+                  }
+                : null,
+            typesOfPenalties:
+              topic.PenalityType ||
+              topic.PenalityType_Code ||
+              topic.TypesOfPenalties
+                ? {
+                    value:
+                      topic.PenalityType_Code ||
+                      topic.PenalityType ||
+                      topic.TypesOfPenalties,
+                    label:
+                      topic.PenalityTypeLabel ||
+                      topic.TypesOfPenaltiesLabel ||
+                      topic.PenalityType ||
+                      topic.TypesOfPenalties,
+                  }
+                : null,
           })
         );
 
@@ -324,7 +366,15 @@ function HearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
   const mainCategory = watch("mainCategory") ?? null;
   const subCategory: any = watch("subCategory") ?? null;
   const { t } = useTranslation("hearingtopics");
+  const [hasModalOpened, setHasModalOpened] = useState(false);
   const { isOpen, close, toggle } = useToggle();
+
+  // Track first modal open
+  useEffect(() => {
+    if (isOpen && !hasModalOpened) {
+      setHasModalOpened(true);
+    }
+  }, [isOpen, hasModalOpened]);
 
   useEffect(() => {
     if (watch("subCategory")?.value && mainCategory?.value) {
@@ -338,9 +388,8 @@ function HearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
     data: mainCategoryData,
     isFetching,
     isLoading,
-  } = lookup.mainCategory(isOpen);
-  const { data: subCategoryData, isFetching: isSubCategoryLoading } =
-    lookup.subCategory(mainCategory?.value);
+  } = lookup.mainCategory(hasModalOpened); // Only fetch on first modal open
+  // Removed duplicate subCategory call - using useSubTopicsSubLookupQuery instead
 
   const { data: amountPaidData } = lookup.amountPaidCategory(
     watch("subCategory")?.value
@@ -350,8 +399,12 @@ function HearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
   const { data: travelingWayData } = lookup.travelingWayCategory(
     watch("subCategory")?.value
   );
-  const { data: leaveTypeData } = lookup.leaveTypeCategory(watch("subCategory")?.value);
-  const { data: forAllowanceData } = lookup.forAllowance(watch("subCategory")?.value);
+  const { data: leaveTypeData } = lookup.leaveTypeCategory(
+    watch("subCategory")?.value
+  );
+  const { data: forAllowanceData } = lookup.forAllowance(
+    watch("subCategory")?.value
+  );
   const { data: typeOfRequestLookupData } = lookup.typeOfRequest(
     watch("subCategory")?.value
   );
@@ -365,21 +418,32 @@ function HearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
     watch("subCategory")?.value
   );
 
-  const { data: subTopicsLookupData, isFetching: subTopicsLoading } =
+  const subTopicsLookupParams = useMemo(() => {
+    const base: any = {
+      LookupType: "CaseElements",
+      ModuleKey: mainCategory?.value,
+      ModuleName: "SubTopics",
+      SourceSystem: "E-Services",
+      AcceptedLanguage: currentLanguage,
+    };
+    if (caseDetailsData?.CaseDetails) {
+      base.PlaintiffID = caseDetailsData.CaseDetails.PlaintiffId;
+      base.Number700 = caseDetailsData.CaseDetails.Defendant_Number700;
+      base.DefendantType = caseDetailsData.CaseDetails.DefendantType;
+    }
+    console.log("subTopicsLookupParams:", base);
+    return base;
+  }, [mainCategory?.value, currentLanguage, caseDetailsData?.CaseDetails]);
+
+  const { data: subCategoryData, isFetching: isSubCategoryLoading } =
     useSubTopicsSubLookupQuery(
+      subTopicsLookupParams,
       {
-        LookupType: "CaseElements",
-        ModuleKey: mainCategory?.value,
-        ModuleName: "SubTopics",
-        SourceSystem: "E-Services",
-        AcceptedLanguage: currentLanguage,
-      },
-      {
-        skip: !watch("subCategory")?.value,
+        skip: !mainCategory?.value || !caseDetailsData?.CaseDetails,
       }
     );
 
-  const matchedSubCategory = subTopicsLookupData?.DataElements?.find(
+  const matchedSubCategory = subCategoryData?.DataElements?.find(
     (item: any) => item.ElementKey === watch("subCategory")?.value
   );
   const [delTopic, setDelTopic] = useState<any | null>(null);
@@ -410,12 +474,13 @@ function HearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
   }, [caseTopics, pagination.pageIndex, pagination.pageSize]);
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isProcessingError, setIsProcessingError] = useState(false);
 
   const handleTopicSelect = (topic: any, index: number) => {
     console.log("topicvvvvvvv", topic);
-    
+
     reset();
-    
+
     setEditTopic(topic);
     setEditTopicIndex(index);
 
@@ -432,8 +497,8 @@ function HearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
         onEdit: (topic, index) => {
           handleTopicSelect(topic, index);
         },
-        onDel: (topic) => {
-          setDelTopic(topic);
+        onDel: (topic, index) => {
+          setDelTopic({ topic, index });
           setShowDeleteConfirm(true);
         },
       }),
@@ -492,14 +557,26 @@ function HearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
     const updatedValues = getValues();
     console.log("Updated Values:", updatedValues);
 
-    const mainCategoryValue = updatedValues.mainCategory?.value || editTopic.MainTopicID || editTopic.mainCategory?.value;
-    const mainCategoryLabel = updatedValues.mainCategory?.label || editTopic.CaseTopicName || editTopic.mainCategory?.label;
-    const subCategoryValue = updatedValues.subCategory?.value || editTopic.SubTopicID || editTopic.subCategory?.value;
-    const subCategoryLabel = updatedValues.subCategory?.label || editTopic.SubTopicName || editTopic.subCategory?.label;
+    const mainCategoryValue =
+      updatedValues.mainCategory?.value ||
+      editTopic.MainTopicID ||
+      editTopic.mainCategory?.value;
+    const mainCategoryLabel =
+      updatedValues.mainCategory?.label ||
+      editTopic.CaseTopicName ||
+      editTopic.mainCategory?.label;
+    const subCategoryValue =
+      updatedValues.subCategory?.value ||
+      editTopic.SubTopicID ||
+      editTopic.subCategory?.value;
+    const subCategoryLabel =
+      updatedValues.subCategory?.label ||
+      editTopic.SubTopicName ||
+      editTopic.subCategory?.label;
 
     const formatDateForStorage = (date: string) => {
-      if (!date) return '';
-      return date.replace(/\//g, '');
+      if (!date) return "";
+      return date.replace(/\//g, "");
     };
 
     const updatedTopic = {
@@ -546,10 +623,12 @@ function HearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
       typeOfRequest: updatedValues.typeOfRequest || editTopic?.typeOfRequest,
       kindOfHoliday: updatedValues.kindOfHoliday || editTopic?.kindOfHoliday,
       commissionType: updatedValues.commissionType || editTopic?.commissionType,
-      accordingToAgreement: updatedValues.accordingToAgreement || editTopic?.accordingToAgreement,
+      accordingToAgreement:
+        updatedValues.accordingToAgreement || editTopic?.accordingToAgreement,
       forAllowance: updatedValues.forAllowance || editTopic?.forAllowance,
       travelingWay: updatedValues.travelingWay || editTopic?.travelingWay,
-      typesOfPenalties: updatedValues.typesOfPenalties || editTopic?.typesOfPenalties,
+      typesOfPenalties:
+        updatedValues.typesOfPenalties || editTopic?.typesOfPenalties,
       fromLocation: updatedValues.fromLocation || editTopic?.fromLocation,
       toLocation: updatedValues.toLocation || editTopic?.toLocation,
       loanAmount: updatedValues.loanAmount || editTopic?.loanAmount,
@@ -572,23 +651,35 @@ function HearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
       PrisonerId: updatedValues.DefendantsEstablishmentPrisonerId,
       from_date_hijri:
         updatedValues.from_date_hijri || editTopic?.from_date_hijri,
-      to_date_hijri:
-        updatedValues.to_date_hijri || editTopic?.to_date_hijri,
+      to_date_hijri: updatedValues.to_date_hijri || editTopic?.to_date_hijri,
       rewardType: updatedValues.rewardType || editTopic.rewardType,
       consideration: updatedValues.consideration || editTopic.consideration,
       AdditionalDetails:
         updatedValues.additionalDetails || editTopic.AdditionalDetails,
-      ManagerialDecisionDateHijri: formatDateForStorage(updatedValues.managerial_decision_date_hijri),
-      ManagerialDecisionDateGregorian: formatDateForStorage(updatedValues.managerial_decision_date_gregorian),
-      ManagerialDecisionNumber: updatedValues.managerialDecisionNumber || editTopic.ManagerialDecisionNumber || "",
+      ManagerialDecisionDateHijri: formatDateForStorage(
+        updatedValues.managerial_decision_date_hijri
+      ),
+      ManagerialDecisionDateGregorian: formatDateForStorage(
+        updatedValues.managerial_decision_date_gregorian
+      ),
+      ManagerialDecisionNumber:
+        updatedValues.managerialDecisionNumber ||
+        editTopic.ManagerialDecisionNumber ||
+        "",
       InjuryDateHijri: formatDateForStorage(updatedValues.injury_date_hijri),
-      InjuryDateGregorian: formatDateForStorage(updatedValues.injury_date_gregorian),
+      InjuryDateGregorian: formatDateForStorage(
+        updatedValues.injury_date_gregorian
+      ),
       RequestDateHijri: formatDateForStorage(updatedValues.request_date_hijri),
-      RequestDateGregorian: formatDateForStorage(updatedValues.request_date_gregorian),
+      RequestDateGregorian: formatDateForStorage(
+        updatedValues.request_date_gregorian
+      ),
       DateHijri: formatDateForStorage(updatedValues.date_hijri),
       DateGregorian: formatDateForStorage(updatedValues.date_gregorian),
       FromDateHijri: formatDateForStorage(updatedValues.from_date_hijri),
-      FromDateGregorian: formatDateForStorage(updatedValues.from_date_gregorian),
+      FromDateGregorian: formatDateForStorage(
+        updatedValues.from_date_gregorian
+      ),
       ToDateHijri: formatDateForStorage(updatedValues.to_date_hijri),
       ToDateGregorian: formatDateForStorage(updatedValues.to_date_gregorian),
     };
@@ -638,14 +729,19 @@ function HearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
       try {
         setLastAction("Save");
         const response = await saveHearingTopics(
-          getPayloadBySubTopicID(caseTopics, watch("subCategory"), "Save", caseId)
+          getPayloadBySubTopicID(
+            caseTopics,
+            watch("subCategory"),
+            "Save",
+            caseId
+          )
         ).unwrap();
 
         setLastSaved(true);
-        
+
         // Use centralized error handling
         const isSuccessful = handleResponse(response);
-        
+
         if (isSuccessful) {
           return response as ApiResponse;
         } else {
@@ -653,23 +749,34 @@ function HearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
           return {
             ServiceStatus: "Error",
             SuccessCode: "500",
-            ErrorCodeList: [{
-              ErrorCode: "API_ERROR",
-              ErrorDesc: t("error_saving_topics") || "Error saving topics"
-            }]
+            ErrorCodeList: [
+              {
+                ErrorCode: "API_ERROR",
+                ErrorDesc: t("error_saving_topics") || "Error saving topics",
+              },
+            ],
           };
         }
       } catch (error: any) {
         setLastAction(undefined);
-        const errorMessage = error?.data?.ErrorCodeList?.[0]?.ErrorDesc || error?.message || t("error_saving_topics") || "Error saving topics";
-        toast.error(errorMessage);
+        const errorCode = error?.data?.ErrorCodeList?.[0]?.ErrorCode || "API_ERROR";
+        const errorMessage =
+          error?.data?.ErrorCodeList?.[0]?.ErrorDesc ||
+          error?.message ||
+          t("error_saving_topics") ||
+          "Error saving topics";
+        if (!SUPPRESSED_ERROR_CODES.includes(errorCode)) {
+          toast.error(errorMessage);
+        }
         return {
           ServiceStatus: "Error",
           SuccessCode: "500",
-          ErrorCodeList: [{
-            ErrorCode: "API_ERROR",
-            ErrorDesc: errorMessage
-          }]
+          ErrorCodeList: [
+            {
+              ErrorCode: errorCode,
+              ErrorDesc: errorMessage,
+            },
+          ],
         };
       }
     } else {
@@ -678,10 +785,12 @@ function HearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
       return {
         ServiceStatus: "Error",
         SuccessCode: "400",
-        ErrorCodeList: [{
-          ErrorCode: "NO_TOPICS_TO_SAVE",
-          ErrorDesc: noTopicsMessage
-        }]
+        ErrorCodeList: [
+          {
+            ErrorCode: "NO_TOPICS_TO_SAVE",
+            ErrorDesc: noTopicsMessage,
+          },
+        ],
       };
     }
   };
@@ -689,12 +798,26 @@ function HearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
   const handleNext = async () => {
     const latestFormValues = getValues();
     setFormData(latestFormValues);
-    console.log("dkasjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjss");
+    console.log(
+      "dkasjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjss"
+    );
     try {
       setLastAction("Next");
-      console.log("[handleNext] Triggered. caseTopics:", caseTopics, "subCategory:", watch("subCategory"), "caseId:", caseId);
+      console.log(
+        "[handleNext] Triggered. caseTopics:",
+        caseTopics,
+        "subCategory:",
+        watch("subCategory"),
+        "caseId:",
+        caseId
+      );
 
-      const payload = getPayloadBySubTopicID(caseTopics, watch("subCategory"), "Next", caseId);
+      const payload = getPayloadBySubTopicID(
+        caseTopics,
+        watch("subCategory"),
+        "Next",
+        caseId
+      );
       console.log("[handleNext] Payload for saveHearingTopics:", payload);
 
       const response = await saveHearingTopics(payload).unwrap();
@@ -732,7 +855,11 @@ function HearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
 
     console.log(newTopic);
 
-    if (!newTopic.mainCategory?.value || !newTopic.subCategory?.value || !newTopic.acknowledged) {
+    if (
+      !newTopic.mainCategory?.value ||
+      !newTopic.subCategory?.value ||
+      !newTopic.acknowledged
+    ) {
       toast.error(
         t("required_fields_error") ||
           "Please fill in all required fields (Main Category, Sub Category, and Acknowledgement)."
@@ -757,8 +884,8 @@ function HearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
     console.log("Saving new topic:", newTopic);
 
     const formatDateForStorage = (date: string) => {
-      if (!date) return '';
-      return date.replace(/\//g, '');
+      if (!date) return "";
+      return date.replace(/\//g, "");
     };
 
     const topicToSave = {
@@ -810,13 +937,20 @@ function HearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
       RequestTypeLabel: newTopic.typeOfRequest?.label || "",
       LoanAmount: newTopic.loanAmount,
       ManagerialDecisionNumber: newTopic.managerialDecisionNumber,
-      ManagerialDecisionDateHijri: formatDateForStorage(newTopic.managerial_decision_date_hijri),
-      ManagerialDecisionDateGregorian: formatDateForStorage(newTopic.managerial_decision_date_gregorian),
-      kindOfHoliday: newTopic.kindOfHoliday?.value || editTopic?.kindOfHoliday?.label,
+      ManagerialDecisionDateHijri: formatDateForStorage(
+        newTopic.managerial_decision_date_hijri
+      ),
+      ManagerialDecisionDateGregorian: formatDateForStorage(
+        newTopic.managerial_decision_date_gregorian
+      ),
+      kindOfHoliday:
+        newTopic.kindOfHoliday?.value || editTopic?.kindOfHoliday?.label,
       InjuryDateHijri: formatDateForStorage(newTopic.injury_date_hijri),
       InjuryDateGregorian: formatDateForStorage(newTopic.injury_date_gregorian),
       RequestDateHijri: formatDateForStorage(newTopic.request_date_hijri),
-      RequestDateGregorian: formatDateForStorage(newTopic.request_date_gregorian),
+      RequestDateGregorian: formatDateForStorage(
+        newTopic.request_date_gregorian
+      ),
       DateHijri: formatDateForStorage(newTopic.date_hijri),
       DateGregorian: formatDateForStorage(newTopic.date_gregorian),
       FromDateHijri: formatDateForStorage(newTopic.from_date_hijri),
@@ -826,9 +960,9 @@ function HearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
     };
 
     setCaseTopics((prev) => [...prev, topicToSave]);
-    
+
     toast.success(t("topic_added_successfully") || "Topic added successfully");
-    
+
     return 1;
   };
 
@@ -852,95 +986,98 @@ function HearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
     setValue("regulatoryText", "");
   }, [setValue, setShowTopicData]);
 
-  const formLayout = userType === "Worker" || userType === "Embassy User"
-    ? useFormLayoutWorker({
-        t,
-        MainTopicID: mainCategory,
-        SubTopicID: isEditing ? editTopic?.subCategory : subCategory,
-        FromLocation: fromPlace,
-        ToLocation: toPlace,
-        AcknowledgementTerms: acknowledged,
-        showLegalSection,
-        showTopicData,
-        setValue,
-        regulatoryText,
-        handleAdd: goToLegalStep,
-        handleAcknowledgeChange: (val: boolean) => {
-          setValue("acknowledged", val);
-          if (val) {
-            setShowTopicData(true);
-          }
-        },
-        handleAddTopic,
-        handleSend: handleSend,
-        decisionNumber: decisionNumber || "",
-        isEditing,
-        mainCategoryData,
-        subCategoryData,
-        watch,
-        forAllowanceData,
-        typeOfRequestLookupData,
-        commissionTypeLookupData,
-        accordingToAgreementLookupData,
-        typesOfPenaltiesData,
-        matchedSubCategory,
-        subTopicsLoading,
-        amountPaidData,
-        leaveTypeData,
-        travelingWayData,
-        editTopic,
-        caseTopics,
-        setShowLegalSection,
-        setShowTopicData,
-        isValid,
-        isMainCategoryLoading: isFetching || isLoading,
-        isSubCategoryLoading,
-        control,
-      })
-    : useFormLayoutEstablishment({
-        t,
-        MainTopicID: mainCategory,
-        SubTopicID: isEditing ? editTopic?.subCategory : subCategory,
-        FromLocation: fromPlace,
-        ToLocation: toPlace,
-        AcknowledgementTerms: acknowledged,
-        showLegalSection,
-        showTopicData,
-        setValue,
-        regulatoryText,
-        handleAdd: goToLegalStep,
-        handleAcknowledgeChange: (val: boolean) => {
-          setValue("acknowledged", val);
-          if (val) {
-            setShowTopicData(true);
-          }
-        },
-        handleAddTopic,
-        handleSend: handleSend,
-        decisionNumber: decisionNumber || "",
-        isEditing,
-        mainCategoryData,
-        subCategoryData,
-        watch,
-        forAllowanceData,
-        typeOfRequestLookupData,
-        commissionTypeLookupData,
-        accordingToAgreementLookupData,
-        typesOfPenaltiesData,
-        matchedSubCategory,
-        subTopicsLoading,
-        amountPaidData,
-        leaveTypeData,
-        travelingWayData,
-        editTopic,
-        caseTopics,
-        setShowLegalSection,
-        setShowTopicData,
-        isValid,
-        isMainCategoryLoading: isFetching || isLoading,
-        isSubCategoryLoading,
-        control,
-      });
+  const formLayout =
+    userType === "Worker" || userType === "Embassy User"
+      ? useFormLayoutWorker({
+          t,
+          MainTopicID: mainCategory,
+          SubTopicID: isEditing ? editTopic?.subCategory : subCategory,
+          FromLocation: fromPlace,
+          ToLocation: toPlace,
+          AcknowledgementTerms: acknowledged,
+          showLegalSection,
+          showTopicData,
+          setValue,
+          regulatoryText,
+          handleAdd: goToLegalStep,
+          handleAcknowledgeChange: (val: boolean) => {
+            setValue("acknowledged", val);
+            if (val) {
+              setShowTopicData(true);
+            }
+          },
+          handleAddTopic,
+          handleSend: handleSend,
+          decisionNumber: decisionNumber || "",
+          isEditing,
+          mainCategoryData,
+          subCategoryData,
+          watch,
+          forAllowanceData,
+          typeOfRequestLookupData,
+          commissionTypeLookupData,
+          accordingToAgreementLookupData,
+          typesOfPenaltiesData,
+          matchedSubCategory,
+          subTopicsLoading: isSubCategoryLoading,
+          amountPaidData,
+          leaveTypeData,
+          travelingWayData,
+          editTopic,
+          caseTopics,
+          setShowLegalSection,
+          setShowTopicData,
+          isValid,
+          isMainCategoryLoading: isFetching || isLoading,
+          isSubCategoryLoading,
+          control,
+          trigger,
+        })
+      : useFormLayoutEstablishment({
+          t,
+          MainTopicID: mainCategory,
+          SubTopicID: isEditing ? editTopic?.subCategory : subCategory,
+          FromLocation: fromPlace,
+          ToLocation: toPlace,
+          AcknowledgementTerms: acknowledged,
+          showLegalSection,
+          showTopicData,
+          setValue,
+          regulatoryText,
+          handleAdd: goToLegalStep,
+          handleAcknowledgeChange: (val: boolean) => {
+            setValue("acknowledged", val);
+            if (val) {
+              setShowTopicData(true);
+            }
+          },
+          handleAddTopic,
+          handleSend: handleSend,
+          decisionNumber: decisionNumber || "",
+          isEditing,
+          mainCategoryData,
+          subCategoryData,
+          watch,
+          forAllowanceData,
+          typeOfRequestLookupData,
+          commissionTypeLookupData,
+          accordingToAgreementLookupData,
+          typesOfPenaltiesData,
+          matchedSubCategory,
+          subTopicsLoading: isSubCategoryLoading,
+          amountPaidData,
+          leaveTypeData,
+          travelingWayData,
+          editTopic,
+          caseTopics,
+          setShowLegalSection,
+          setShowTopicData,
+          isValid,
+          isMainCategoryLoading: isFetching || isLoading,
+          isSubCategoryLoading,
+          control,
+          trigger,
+        });
 
   const {
     attachments,
@@ -956,8 +1093,21 @@ function HearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
     setAttachments,
   } = useAttachments();
 
-useEffect(()=>{
-  console.log("this is from index",{
+  useEffect(() => {
+    console.log("this is from index", {
+      attachments,
+      attachmentFiles,
+      previewFile,
+      showAttachmentModal,
+      handleAttachmentSave,
+      handleRemoveAttachment,
+      handleViewAttachment,
+      openAttachmentModal,
+      closeAttachmentModal,
+      closePreview,
+      setAttachments,
+    });
+  }, [
     attachments,
     attachmentFiles,
     previewFile,
@@ -969,21 +1119,7 @@ useEffect(()=>{
     closeAttachmentModal,
     closePreview,
     setAttachments,
-  });
-  
-},[
-  attachments,
-    attachmentFiles,
-    previewFile,
-    showAttachmentModal,
-    handleAttachmentSave,
-    handleRemoveAttachment,
-    handleViewAttachment,
-    openAttachmentModal,
-    closeAttachmentModal,
-    closePreview,
-    setAttachments,
-])
+  ]);
 
   useEffect(() => {
     if (mainCategory) {
@@ -1026,10 +1162,11 @@ useEffect(()=>{
     setValue,
   ]);
 
-  const { data: regionData, isFetching: isRegionLoading } = useGetRegionLookupDataQuery({
-    AcceptedLanguage: currentLanguage,
-    context: "default",
-  });
+  const { data: regionData, isFetching: isRegionLoading } =
+    useGetRegionLookupDataQuery({
+      AcceptedLanguage: currentLanguage,
+      context: "default",
+    });
 
   useEffect(() => {
     if (editTopic && isOpen && watch("subCategory")?.value) {
@@ -1121,23 +1258,27 @@ useEffect(()=>{
           }
         }
 
-        if (typesOfPenaltiesData?.DataElements && (editTopic.PenalityType || editTopic.TypesOfPenalties)) {
-          const penaltyTypeValue = editTopic.PenalityType || editTopic.TypesOfPenalties;
+        if (
+          typesOfPenaltiesData?.DataElements &&
+          (editTopic.PenalityType || editTopic.TypesOfPenalties)
+        ) {
+          const penaltyTypeValue =
+            editTopic.PenalityType || editTopic.TypesOfPenalties;
           const penaltyTypeCode = editTopic.PenalityType_Code;
-          
+
           let typesOfPenaltiesOption = null;
           if (penaltyTypeCode) {
             typesOfPenaltiesOption = typesOfPenaltiesData.DataElements.find(
               (item: any) => item.ElementKey === penaltyTypeCode
             );
           }
-          
+
           if (!typesOfPenaltiesOption) {
             typesOfPenaltiesOption = typesOfPenaltiesData.DataElements.find(
               (item: any) => item.ElementKey === penaltyTypeValue
             );
           }
-          
+
           if (typesOfPenaltiesOption) {
             setValue(
               "typesOfPenalties",
@@ -1166,7 +1307,7 @@ useEffect(()=>{
               );
             }
           }
-          
+
           if (editTopic.ToLocation) {
             const toLocationOption = regionData.DataElements.find(
               (item: any) => item.ElementKey === editTopic.ToLocation
@@ -1217,28 +1358,39 @@ useEffect(()=>{
           dateObject: null,
         });
       }
-      
+
       setShowLegalSection(true);
       setShowTopicData(true);
     }
-  }, [isEditing, editTopic, isOpen, setDate, setShowLegalSection, setShowTopicData]);
+  }, [
+    isEditing,
+    editTopic,
+    isOpen,
+    setDate,
+    setShowLegalSection,
+    setShowTopicData,
+  ]);
 
   function findOption(options: Option[], value: string): Option | null {
     if (!options) return null;
     return (
       options.find((opt: Option) =>
-        typeof opt === "object"
-          ? opt.value === value
-          : opt === value
+        typeof opt === "object" ? opt.value === value : opt === value
       ) || null
     );
   }
 
   useEffect(() => {
     if (isEditing && editTopic && typeOfRequestLookupData?.DataElements) {
-      const code = editTopic.RequestType_Code || editTopic.RequestType || editTopic.TypeOfRequest;
+      const code =
+        editTopic.RequestType_Code ||
+        editTopic.RequestType ||
+        editTopic.TypeOfRequest;
       const matchedOption = findOption(
-        typeOfRequestLookupData.DataElements.map((item: any) => ({ value: item.ElementKey, label: item.ElementValue })),
+        typeOfRequestLookupData.DataElements.map((item: any) => ({
+          value: item.ElementKey,
+          label: item.ElementValue,
+        })),
         code
       );
       if (matchedOption) setValue("typeOfRequest", matchedOption);
@@ -1246,41 +1398,103 @@ useEffect(()=>{
   }, [isEditing, editTopic, typeOfRequestLookupData, setValue]);
 
   // Add new state for error message
-  const [mojContractError, setMojContractError] = useState<string | null>(null);
-
-  // Add effect to handle MOJ contract validation
+  // --- MOJ Contract Error UI and Handlers Disabled ---
+  // To re-enable, uncomment the following blocks as needed.
+  // Commenting out error state and UI rendering:
+  // const [mojContractError, setMojContractError] = useState<string | null>(null);
+  // const [lastErrorSubCategory, setLastErrorSubCategory] = useState<string | null>(null);
+  // Simplified MOJ contract validation
+  // --- MOJ Contract Error Validation Disabled ---
+  // To re-enable, uncomment the following useEffect block.
+  /*
   useEffect(() => {
-    if (userType === "Worker" || userType === "Embassy User" && defendantStatus === "Establishment") {
-      if (subCategory?.value && mainCategory?.value === 'WR') {
-        // Check if selected subtopic is WR-1 or WR-2
-        if (subCategory.value === 'WR-1' || subCategory.value === 'WR-2') {
-          // Get the MOJ contract validation from the API response
-          const mojContractExists = subCategoryData?.MOJContractExist === "false"; 
-        const errorMessage = subCategoryData?.MOJContractExistErrorMessage;
-          // const mojContractExists = true; // For local testing. Correct logic is: subCategoryData?.MOJContractExist === "true"
-          // const errorMessage = "This is a test error message for MOJ Contract validation."; // For local testing. Correct logic is: subCategoryData?.MOJContractExistErrorMessage
+    // Only run validation for Worker or Embassy User with Establishment defendant
+    if (
+      (userType === "Worker" ||
+        (userType === "Embassy User" && defendantStatus === "Establishment")) &&
+      subCategory?.value &&
+      mainCategory?.value === "WR" &&
+      (subCategory.value === "WR-1" || subCategory.value === "WR-2")
+    ) {
+      const mojSubtopic = matchedSubCategory;
+      const mojContractExists = mojSubtopic?.MojContractExist === "true";
+      const errorMessage = mojSubtopic?.MojContractExistError;
 
-          if (mojContractExists && errorMessage) {
-            setMojContractError(errorMessage);
-            // Clear the selected subtopic
-            setValue("subCategory", null);
-            setShowLegalSection(false);
-            setShowTopicData(false);
-
-            // Clear previous timeout if it exists
-            if (timeoutRef.current) {
-              clearTimeout(timeoutRef.current);
-            }
-
-            // Set new timeout
-            timeoutRef.current = setTimeout(() => {
-              setMojContractError(null);
-            }, 3000);
-          }
+      if (mojContractExists && errorMessage) {
+        // Clear any existing timeout
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
         }
+
+        // Set error and remember which subcategory caused it
+        setMojContractError(errorMessage);
+        setLastErrorSubCategory(subCategory.value);
+        
+        // Reset form state
+        setValue("subCategory", null);
+        setValue("acknowledged", false);
+        setShowLegalSection(false);
+        setShowTopicData(false);
+
+        // Set timeout to clear error after 10 seconds
+        timeoutRef.current = setTimeout(() => {
+          setMojContractError(null);
+          setLastErrorSubCategory(null);
+        }, 10000);
+      } else if (mojContractExists === false || !errorMessage) {
+        // If this subcategory doesn't have an error, clear any existing error
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
+        }
+        setMojContractError(null);
+        setLastErrorSubCategory(null);
       }
     }
-  }, [userType, defendantStatus, subCategory?.value, mainCategory?.value, subCategoryData, setValue]);
+  }, [
+    userType,
+    defendantStatus,
+    subCategory?.value,
+    mainCategory?.value,
+    matchedSubCategory,
+    setValue,
+  ]);
+  */
+  // --- END MOJ Contract Error Validation Disabled ---
+
+  // Clear error when main category changes away from WR
+  // useEffect(() => {
+  //   if (mainCategory?.value !== "WR" && mojContractError) {
+  //     if (timeoutRef.current) {
+  //       clearTimeout(timeoutRef.current);
+  //     }
+  //     setMojContractError(null);
+  //     setLastErrorSubCategory(null);
+  //   }
+  // }, [mainCategory?.value, mojContractError]);
+
+  // // Clear error when user selects a different subcategory and allow new validation
+  // useEffect(() => {
+  //   if (
+  //     mojContractError &&
+  //     subCategory?.value &&
+  //     subCategory.value !== lastErrorSubCategory &&
+  //     mainCategory?.value === "WR"
+  //   ) {
+  //     // Clear the previous error
+  //     if (timeoutRef.current) {
+  //       clearTimeout(timeoutRef.current);
+  //     }
+  //     setMojContractError(null);
+  //     setLastErrorSubCategory(null);
+      
+  //     // The validation effect will run again for the new subcategory
+  //     // because we cleared the error and the subcategory changed
+  //   }
+  // }, [subCategory?.value, mojContractError, lastErrorSubCategory, mainCategory?.value]);
+
+
+
+  const { t: tCommon } = useTranslation('common');
 
   return (
     <Suspense fallback={<TableLoader />}>
@@ -1380,23 +1594,41 @@ useEffect(()=>{
                 }
                 className="h-[60vh] sm:h-[600px] overflow-y-auto w-full max-w-[800px]"
               >
-                {mojContractError && (
-                  <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4 relative">
-                    <span>{mojContractError}</span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setMojContractError(null);
-                        if (timeoutRef.current) {
-                          clearTimeout(timeoutRef.current);
-                        }
-                      }}
-                      className="absolute top-0 bottom-0 right-0 px-4 py-3"
-                    >
-                      <span className="text-2xl font-bold">&times;</span>
-                    </button>
+                {/* {mojContractError && (
+                  <div
+                    className="flex flex-col items-start p-4 md:p-6 gap-4 relative w-full bg-[#FFFBFA] border border-[#FECDCA] rounded-lg mb-4"
+                    style={{ boxSizing: 'border-box', isolation: 'isolate' }}
+                  >
+                    <div className="flex items-center w-full">
+                      <div className="flex-shrink-0 me-4 md:me-6">
+                        <div className="w-12 h-12 flex items-center justify-center rounded-full bg-white">
+                          <img src={FeaturedIcon} alt="Notification Icon" className="w-10 h-10" />
+                        </div>
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-red-700 font-bold text-xl mb-1">
+                          {tCommon('notification')}
+                        </div>
+                        <div className="text-gray-700 text-base">
+                          {t(mojContractError) !== mojContractError ? t(mojContractError) : mojContractError}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMojContractError(null);
+                          if (timeoutRef.current) {
+                            clearTimeout(timeoutRef.current);
+                          }
+                        }}
+                        className="end-4 ms-4 md:ms-6 text-gray-400 hover:text-gray-600"
+                        aria-label="Close"
+                      >
+                        <span className="text-2xl font-bold">&times;</span>
+                      </button>
+                    </div>
                   </div>
-                )}
+                )} */}
                 <RHFFormProvider {...methods}>
                   <Suspense fallback={<TableLoader />}>
                     {formLayout && (
@@ -1474,7 +1706,7 @@ useEffect(()=>{
                   variant="primary"
                   type="button"
                   onClick={() => {
-                    setCaseTopics((prev) => prev.filter((t) => t !== delTopic));
+                    setCaseTopics((prev) => prev.filter((_, i) => i !== delTopic?.index));
                     setShowDeleteConfirm(false);
                     setDelTopic(null);
                   }}

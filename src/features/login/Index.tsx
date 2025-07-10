@@ -115,6 +115,17 @@ const LoginForm: React.FC = () => {
       lable: "Worker Agent User",
       data: {
         File_Number: "",
+        UserDOB: "18/05/1997",
+        UserID: "1099099598",
+        UserName: "Agent User",
+        AcceptedLanguage: LanguageArray[1].value,
+        UserType: userTypes[1].value,
+      }
+    },
+    {
+      lable: "Worker Agent User 222",
+      data: {
+        File_Number: "",
         UserDOB: "13/09/1984",
         UserID: "1028308656",
         UserName: "Agent User",
@@ -125,7 +136,7 @@ const LoginForm: React.FC = () => {
     {
       lable: "Esablishment User",
       data: {
-        File_Number: "1-204757",
+        File_Number: "11-1437115",
         UserDOB: "07/11/1985",
         UserID: "1100055753",
         UserName: "Est User",

@@ -198,6 +198,7 @@ export interface FormData {
   hijriDate: string;
   gregorianDate: string;
   phoneNumber: string;
+  agentPhoneNumber?: string;
   interPhoneNumber?: null | string;
   claimantStatus: string;
   defendantStatus?: string;
@@ -275,9 +276,11 @@ export interface FormData {
   injury_date_gregorian?: string;
   request_date_hijri?: string;
   request_date_gregorian?: string;
+  externalAgencyNumber?: string;
+  certifiedAgency?: string;
 }
 
-export interface UseFormLayoutParams {
+export type UseFormLayoutParams = {
   t: (key: string) => string;
   MainTopicID: any;
   SubTopicID: any;
@@ -315,7 +318,8 @@ export interface UseFormLayoutParams {
   isMainCategoryLoading?: boolean;
   isSubCategoryLoading?: boolean;
   control: any;
-}
+  trigger?: (fields: string[]) => void;
+};
 
 interface EstablishmentDetails {
   EconomicActivity?: string;

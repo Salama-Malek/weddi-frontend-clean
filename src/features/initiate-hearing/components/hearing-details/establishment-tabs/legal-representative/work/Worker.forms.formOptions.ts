@@ -28,10 +28,7 @@ export const useFormOptions = ({ context = "default" }: FormOptionsProps = {}) =
       { value: "weekly", label: "Weekly" },
     ] as Option[],
 
-    ContractTypeOptions: [
-      { value: "fullTime", label: "Full Time" },
-      { value: "partTime", label: "Part Time" },
-    ] as Option[],
+    // Removed ContractTypeOptions (should be fetched from API elsewhere)
 
     RegionOptions,
     CityOptions,

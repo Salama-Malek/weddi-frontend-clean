@@ -17,6 +17,7 @@ import { useAPIFormsData } from "@/providers/FormContext";
 import { legRepVsWorkerUseFormLayout } from "../../establishment-tabs/legal-representative/work/legworker.forms.formLayout";
 import { useTranslation } from "react-i18next";
 import { FormResetProvider } from '@/providers/FormResetProvider';
+import useWorkDetailsPrefill from "@/features/initiate-hearing/hooks/useWorkDetailsPrefill";
 
 export interface WorkDetailsProps {
   register?: any;
@@ -39,16 +40,13 @@ const WorkDetails = ({
   const currentLanguage = i18n.language.toUpperCase();
 
   const [getCookie, setCookie] = useCookieState({ caseId: "" });
-  // const [DefendantType, setDefendantApi] = useState(
-  //   getCookie("defendantTypeInfo")
-  // );
- 
-  // //console.log("DefendantType", DefendantType);
-//  const userType = getCookie("userType");
-const userType = getCookie("userType") || "";
 
-   const legalRepType = getCookie("legalRepType");
-   const defendantStatus = getCookie("defendantStatus") || "";
+  const caseDetailsLoading = useWorkDetailsPrefill(setValue as any);
+
+  const userType = getCookie("userType") || "";
+
+  const legalRepType = getCookie("legalRepType");
+  const defendantStatus = getCookie("defendantStatus") || "";
 
   const { formData, forceValidateForm, handleRemoveValidation } = useAPIFormsData();
   useEffect(() => {
@@ -79,31 +77,31 @@ const userType = getCookie("userType") || "";
   const { data } = useGetSalaryTypeLookupQuery({
     AcceptedLanguage: currentLanguage,
   });
-  
+
 
   // 1. Setup the lazy hook
-const [
-  triggerContractType,
-  { data: contractTypeData, isFetching: isContractTypeLoading }
-] = useLazyGetContractTypeLookupQuery();
+  const [
+    triggerContractType,
+    { data: contractTypeData, isFetching: isContractTypeLoading }
+  ] = useLazyGetContractTypeLookupQuery();
 
-// 2. Fire it once our cookies are decoded
-useEffect(() => {
-  if (userType || legalRepType || defendantStatus) {
-    triggerContractType({
-      userType,
-      legalRepType,
-      defendantStatus,
-      AcceptedLanguage: currentLanguage,
-    });
-  }
-}, [
-  userType,
-  legalRepType,
-  defendantStatus,
-  currentLanguage,
-  triggerContractType,
-]);
+  // 2. Fire it once our cookies are decoded
+  useEffect(() => {
+    if (userType || legalRepType || defendantStatus) {
+      triggerContractType({
+        userType,
+        legalRepType,
+        defendantStatus,
+        AcceptedLanguage: currentLanguage,
+      });
+    }
+  }, [
+    userType,
+    legalRepType,
+    defendantStatus,
+    currentLanguage,
+    triggerContractType,
+  ]);
 
 
 
@@ -171,7 +169,9 @@ useEffect(() => {
   const legRepVsWorkerLayouForm = legRepVsWorkerUseFormLayout(
     setValue,
     control,
-    watch);
+    watch,
+    caseDetailsLoading
+  );
 
 
   // hassan add this 

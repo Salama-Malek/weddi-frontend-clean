@@ -161,7 +161,20 @@ const withStepNavigation = <P extends object>(
     };
 
     const onInvalid = (errs: any) => {
-      console.error("Form validation failed:", errs);
+      // Find the first error message in errs
+      let firstErrorMsg = "";
+      if (errs && typeof errs === "object") {
+        const firstKey = Object.keys(errs)[0];
+        if (firstKey && errs[firstKey]?.message) {
+          firstErrorMsg = errs[firstKey].message;
+        }
+      }
+      if (firstErrorMsg) {
+        toast.error(firstErrorMsg);
+      } else {
+        toast.error("Form validation failed. Please check your input.");
+      }
+      // console.error("Form validation failed:", errs);
     };
 
     return (

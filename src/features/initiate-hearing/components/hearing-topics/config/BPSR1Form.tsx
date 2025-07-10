@@ -56,6 +56,8 @@ export const getBPSR1FormFields = ({
       label: t("amount"),
       inputType: "number",
       value: isEditing ? editTopic?.Amount || editTopic?.amount : amount,
+      validation: { required: "Amount is required" },
+      notRequired: false,
       onChange: (value) => setValue("amount", value),
     },
     {
@@ -64,6 +66,8 @@ export const getBPSR1FormFields = ({
       label: t("amountRatio"),
       inputType: "number",
       value: isEditing ? editTopic?.AmountRatio || editTopic?.amountRatio : amountRatio,
+      validation: { required: "Amount ratio is required" },
+      notRequired: false,
       onChange: (value) => setValue("amountRatio", value),
     },
     {
@@ -74,7 +78,7 @@ export const getBPSR1FormFields = ({
             control={control}
             name="from_date_hijri"
             label={t("fromDateHijri")}
-            rules={{}}
+            rules={{required: true}}
             onChangeHandler={(date, onChange) =>
               handleHijriDateChange(date, onChange, "from_date_gregorian")
             }
@@ -95,7 +99,7 @@ export const getBPSR1FormFields = ({
             control={control}
             name="to_date_hijri"
             label={t("toDateHijri")}
-            rules={{}}
+            rules={{required: true}}
             onChangeHandler={(date, onChange) =>
               handleHijriDateChange(date, onChange, "to_date_gregorian")
             }
@@ -115,6 +119,8 @@ export const getBPSR1FormFields = ({
       options: CommissionTypeLookUpOptions,
       value: editTopic ? editTopic?.commissionType : commissionType?.value,
       onChange: (option: Option | null) => setValue("commissionType", option),
+      validation: { required: "Commission type is required" },
+      notRequired: false,
     },
     ...((effectiveCommissionType?.label === "Other Commissions" || (isEditing && editTopic?.CommissionType === "Other Commissions"))
       ? [
@@ -125,6 +131,8 @@ export const getBPSR1FormFields = ({
             inputType: "number",
             value: isEditing ? editTopic?.OtherCommission || editTopic?.otherCommission : otherCommission,
             onChange: (value: string) => setValue("otherCommission", value),
+            validation: { required: "Other commission is required" },
+            notRequired: ((effectiveCommissionType?.label === "Other Commissions" || (isEditing && editTopic?.CommissionType === "Other Commissions")) ? false : true),
           } as const,
         ]
       : []),
@@ -135,6 +143,8 @@ export const getBPSR1FormFields = ({
       options: AccordingToAgreementLookupLookUpOptions,
       value: editTopic ? editTopic?.accordingToTheAgreement : accordingToTheAgreement?.value,
       onChange: (option: Option | null) => setValue("accordingToAgreement", option),
+      validation: { required: "According to the agreement is required" },
+      notRequired: false,
     },
   ];
 };

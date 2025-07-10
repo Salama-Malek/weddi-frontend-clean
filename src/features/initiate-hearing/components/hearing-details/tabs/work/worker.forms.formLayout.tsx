@@ -38,7 +38,7 @@ export const useFormLayout = (
   const contractType: any = watch("contractType");
 
   const TypeOfWageOptions = React.useMemo(() => {
-    if (!salaryTypeData?.DataElements) return options;
+    if (!salaryTypeData?.DataElements) return [];
     return salaryTypeData.DataElements.map((item: any) => ({
       value: item.ElementKey,
       label: item.ElementValue,
@@ -46,7 +46,7 @@ export const useFormLayout = (
   }, [salaryTypeData]);
 
   const ContractTypeOptions = React.useMemo(() => {
-    if (!contractTypeData?.DataElements) return options;
+    if (!contractTypeData?.DataElements) return [];
     return contractTypeData.DataElements.map((item: any) => ({
       value: item.ElementKey,
       label: item.ElementValue,

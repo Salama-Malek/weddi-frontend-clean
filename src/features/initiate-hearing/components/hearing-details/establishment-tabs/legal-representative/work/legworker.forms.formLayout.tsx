@@ -39,6 +39,7 @@ export const legRepVsWorkerUseFormLayout = (
   setValue: UseFormSetValue<FormData>,
   control: Control<FormData>,
   watch: UseFormWatch<FormData>,
+  caseDetailsLoading?: boolean
   // trigger: UseFormTrigger<FormData>
 ): SectionLayout[] => {
   const { resetField } = useFormResetContext();
@@ -48,11 +49,28 @@ export const legRepVsWorkerUseFormLayout = (
   const selectedWorkerCity = watch("city");
   const currentLanguage = i18n.language.toUpperCase();
   const contractType: any = watch("contractType");
-  
+
   // Add state tracking for manual selections
   const [prevSelectedWorkerRegion, setPrevSelectedWorkerRegion] = useState(selectedWorkerRegion);
   const [hasManuallySelectedCity, setHasManuallySelectedCity] = useState(false);
-  
+  const [idNumberPlainteff, setIdNumberPlainteff] = useState<string>("");
+  const [fileNumberEst, setFileNumberEst] = useState<string>("");
+  const [deffendentTypCode, setDeffendentTypCode] = useState<string>("");
+
+
+
+  useEffect(() => {
+    if (caseDetailsLoading) {
+      const id = JSON.parse(localStorage.getItem("CaseDetails") || "")?.PlaintiffId
+      const fileNumberEstData = JSON.parse(localStorage.getItem("CaseDetails") || "")?.DefendantType_Code === "Establishment" ?
+        JSON.parse(localStorage.getItem("CaseDetails") || "")?.DefendantEstFileNumber : ""
+      setIdNumberPlainteff(id)
+      setFileNumberEst(fileNumberEstData);
+      setDeffendentTypCode(JSON.parse(localStorage.getItem("CaseDetails") || "")?.DefendantType_Code)
+    }
+  }, [caseDetailsLoading])
+
+
   const { data: salaryTypeData } = useGetSalaryTypeLookupQuery({
     AcceptedLanguage: i18n.language.toUpperCase(),
   });
@@ -68,21 +86,13 @@ export const legRepVsWorkerUseFormLayout = (
   ] = useLazyGetContractTypeLookupQuery();
 
   useEffect(() => {
-    if (userType || legalRepType || defendantStatus) {
-      triggerContractType({
-        userType,
-        legalRepType,
-        defendantStatus,
-        AcceptedLanguage: currentLanguage,
-      });
-    }
-  }, [
-    userType,
-    legalRepType,
-    defendantStatus,
-    currentLanguage,
-    triggerContractType,
-  ]);
+    triggerContractType({
+      userType,
+      legalRepType,
+      defendantStatus: deffendentTypCode,
+      AcceptedLanguage: currentLanguage,
+    });
+  }, [deffendentTypCode, userType, legalRepType, currentLanguage, triggerContractType]);
 
 
   useEffect(() => {
@@ -124,7 +134,7 @@ export const legRepVsWorkerUseFormLayout = (
         selectedWorkerRegion: typeof selectedWorkerRegion === 'object' ? selectedWorkerRegion?.value : selectedWorkerRegion || "",
         ModuleName: "JobLocationCity",
       },
-      { 
+      {
         skip: !(typeof selectedWorkerRegion === 'object' ? selectedWorkerRegion?.value : selectedWorkerRegion),
         // Prevent refetching during save operations
         refetchOnMountOrArgChange: false,
@@ -140,7 +150,7 @@ export const legRepVsWorkerUseFormLayout = (
         SourceSystem: "E-Services",
         selectedWorkerCity: typeof selectedWorkerCity === 'object' ? selectedWorkerCity?.value : selectedWorkerCity || "",
       },
-      { 
+      {
         skip: !(typeof selectedWorkerCity === 'object' ? selectedWorkerCity?.value : selectedWorkerCity),
         // Prevent refetching during save operations
         refetchOnMountOrArgChange: false,
@@ -150,7 +160,7 @@ export const legRepVsWorkerUseFormLayout = (
     );
 
   const TypeOfWageOptions = React.useMemo(() => {
-    if (!salaryTypeData?.DataElements) return options;
+    if (!salaryTypeData?.DataElements) return [];
     return salaryTypeData.DataElements.map((item: any) => ({
       value: item.ElementKey,
       label: item.ElementValue,
@@ -158,7 +168,7 @@ export const legRepVsWorkerUseFormLayout = (
   }, [salaryTypeData]);
 
   const ContractTypeOptions = React.useMemo(() => {
-    if (!contractTypeData?.DataElements) return options;
+    if (!contractTypeData?.DataElements) return [];
     return contractTypeData.DataElements.map((item: any) => ({
       value: item.ElementKey,
       label: item.ElementValue,
@@ -274,54 +284,68 @@ export const legRepVsWorkerUseFormLayout = (
   const [triggerExtractData, { data: extractedData,
     isLoading: isExtractDataLoading }] = useLazyGetExtractEstablishmentDataQuery();
 
-  useEffect(() => {
-    if (userType?.toLowerCase() !== "legal representative") {
-      const extractedData = (formData: any) => {
-        // هو الي يحط الرقم القومي 
-        const workerId = userType?.toLowerCase() === "establishment" ?
-          formData?.nationalIdNumber
-          : formData?.applicantType === "representative"
-            ? formData?.workerAgentIdNumber
-            : formData?.idNumber;
 
-        let fileNumber = null;
-        if (userType.toLowerCase() === "establishment") {
-          fileNumber = formData?.PlaintiffsFileNumber;
-        } else {
-          // في حالة هو الي كتب اسم الملف 
-          if (
-            formData?.defendantDetails === "Others" &&
-            formData?.defendantStatus === "Establishment"
-          ) {
-            fileNumber = formData?.Defendant_Establishment_data_NON_SELECTED?.FileNumber || null;
-          }
-          // في حالة اختار من الي اشتغل فيهم قبل كدة 
-          if (
-            formData?.defendantDetails === formData?.defendantStatus &&
-            formData?.Defendant_Establishment_data
-          ) {
-            fileNumber = formData?.Defendant_Establishment_data?.FileNumber || null;
-          }
-        }
-        return {
-          workerId,
-          fileNumber,
-        };
-      }
-      const { workerId, fileNumber } = extractedData(formData);
-      if (workerId && fileNumber) {
-        // console.log("workerId", workerId);
-        // console.log("fileNumber", fileNumber);
-        triggerExtractData({
-          WorkerID: workerId,
-          AcceptedLanguage: i18n.language.toUpperCase(),
-          FileNumber: fileNumber,
-          CaseID: getCookie("caseId"),
-        });
-      } else {
-      }
+  useEffect(() => {
+    if (idNumberPlainteff !== "" && fileNumberEst !== "") {
+      triggerExtractData({
+        WorkerID: idNumberPlainteff,
+        AcceptedLanguage: i18n.language.toUpperCase(),
+        FileNumber: fileNumberEst,
+        CaseID: getCookie("caseId"),
+      });
     }
-  }, [formData]);
+
+  }, [idNumberPlainteff, fileNumberEst])
+
+
+  // useEffect(() => {
+  //   if (userType?.toLowerCase() !== "legal representative") {
+  //     const extractedData = (formData: any) => {
+  //       // هو الي يحط الرقم القومي 
+  //       const workerId = userType?.toLowerCase() === "establishment" ?
+  //         formData?.nationalIdNumber
+  //         : formData?.applicantType === "representative"
+  //           ? formData?.workerAgentIdNumber
+  //           : formData?.idNumber;
+
+  //       let fileNumber = null;
+  //       if (userType.toLowerCase() === "establishment") {
+  //         fileNumber = formData?.PlaintiffsFileNumber;
+  //       } else {
+  //         // في حالة هو الي كتب اسم الملف 
+  //         if (
+  //           formData?.defendantDetails === "Others" &&
+  //           formData?.defendantStatus === "Establishment"
+  //         ) {
+  //           fileNumber = formData?.Defendant_Establishment_data_NON_SELECTED?.FileNumber || null;
+  //         }
+  //         // في حالة اختار من الي اشتغل فيهم قبل كدة 
+  //         if (
+  //           formData?.defendantDetails === formData?.defendantStatus &&
+  //           formData?.Defendant_Establishment_data
+  //         ) {
+  //           fileNumber = formData?.Defendant_Establishment_data?.FileNumber || null;
+  //         }
+  //       }
+  //       return {
+  //         workerId,
+  //         fileNumber,
+  //       };
+  //     }
+  //     const { workerId, fileNumber } = extractedData(formData);
+  //     if (workerId && fileNumber) {
+  //       // console.log("workerId", workerId);
+  //       // console.log("fileNumber", fileNumber);
+  //       triggerExtractData({
+  //         WorkerID: workerId,
+  //         AcceptedLanguage: i18n.language.toUpperCase(),
+  //         FileNumber: fileNumber,
+  //         CaseID: getCookie("caseId"),
+  //       });
+  //     } else {
+  //     }
+  //   }
+  // }, [formData]);
 
   useEffect(() => {
     if (extractedData &&

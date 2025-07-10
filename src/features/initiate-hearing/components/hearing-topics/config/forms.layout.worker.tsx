@@ -12,7 +12,13 @@ import {
   initFormConfig,
   managerialDateConfigs,
 } from "@/config/formConfig";
-import { formatHijriDate, mapToOptions, toHijri_YYYYMMDD, formatDateString, formatDateToYYYYMMDD } from "@/shared/lib/helpers";
+import {
+  formatHijriDate,
+  mapToOptions,
+  toHijri_YYYYMMDD,
+  formatDateString,
+  formatDateToYYYYMMDD,
+} from "@/shared/lib/helpers";
 import { getMIR1FormFields } from "./MIR1Form";
 import { getBPSR1FormFields } from "./BPSR1Form";
 import { getBR1FormFields } from "./BR1Form";
@@ -63,14 +69,16 @@ export const useFormLayout = ({
   setShowLegalSection: setShowLegalSection,
   setShowTopicData: setShowTopicData,
   isValid: isValid,
-  control: control
-}: UseFormLayoutParams): SectionLayout[] => {
+  control: control,
+  trigger,
+}: UseFormLayoutParams & { trigger: (fields: string[]) => void }): SectionLayout[] => {
   const { t: tHearingTopics, i18n } = useTranslation("hearingtopics");
 
-  const { data: regionData, isFetching: isRegionLoading } = useGetRegionLookupDataQuery({
-    AcceptedLanguage: i18n.language.toUpperCase(),
-    context: "default",
-  });
+  const { data: regionData, isFetching: isRegionLoading } =
+    useGetRegionLookupDataQuery({
+      AcceptedLanguage: i18n.language.toUpperCase(),
+      context: "worker",
+    });
 
   const RegionOptions = React.useMemo(() => {
     return mapToOptions({
@@ -124,13 +132,17 @@ export const useFormLayout = ({
   const doesContractIncludeAdditionalUpgrade = watch(
     "doesContractIncludeAdditionalUpgrade"
   );
-  const managerial_decision_date_hijri = watch("managerial_decision_date_hijri");
-  const managerial_decision_date_gregorian = watch("managerial_decision_date_gregorian");
+  const managerial_decision_date_hijri = watch(
+    "managerial_decision_date_hijri"
+  );
+  const managerial_decision_date_gregorian = watch(
+    "managerial_decision_date_gregorian"
+  );
 
   const handleHijriDateChange = (
     date: DateObject | DateObject[] | null,
     setHijriValue: (value: string) => void,
-    gregorianFieldName: string,
+    gregorianFieldName: string
   ) => {
     if (!date || Array.isArray(date)) {
       setHijriValue("");
@@ -139,10 +151,14 @@ export const useFormLayout = ({
     }
 
     const hijri = date.convert(hijriCalendar, hijriLocale).format("YYYY/MM/DD");
-    const gregorian = date.convert(gregorianCalendar, gregorianLocale).format("YYYY/MM/DD");
+    const gregorian = date
+      .convert(gregorianCalendar, gregorianLocale)
+      .format("YYYY/MM/DD");
 
-    const hijriCompact = hijri ? (formatDateToYYYYMMDD(hijri) || "") : "";
-    const gregorianCompact = gregorian ? (formatDateToYYYYMMDD(gregorian) || "") : "";
+    const hijriCompact = hijri ? formatDateToYYYYMMDD(hijri) || "" : "";
+    const gregorianCompact = gregorian
+      ? formatDateToYYYYMMDD(gregorian) || ""
+      : "";
 
     setHijriValue(hijriCompact);
     setValue(gregorianFieldName, gregorianCompact);
@@ -262,8 +278,27 @@ export const useFormLayout = ({
     children: step2Children.filter(Boolean) as FormElement[],
   };
 
+  // Helper function to add the validate rule to text inputs
+  type FormElementType = any; // fallback for type
+  function addNoSpacesValidationToTextInputs(fields: FormElementType[], t: any): FormElementType[] {
+    return fields.map(field => {
+      if (field && field.type === 'input' && field.inputType === 'text') {
+        return {
+          ...field,
+          validation: {
+            ...(field.validation || {}),
+            validate: (value: string) => value.trim().length > 0 || tHearingTopics('fieldRequired'),
+          },
+        };
+      }
+      return field;
+    });
+  }
+
   const getFormBySubCategory = (): (FormElement | false)[] => {
-    const currentSubCategory = isEditing ? subCategory?.value : subCategoryValue?.value;
+    const currentSubCategory = isEditing
+      ? subCategory?.value
+      : subCategoryValue?.value;
     if (!currentSubCategory) {
       return [];
     }
@@ -322,43 +357,65 @@ export const useFormLayout = ({
             min: 0,
             value: watch("amount") || "",
             onChange: (value: string) => setValue("amount", value),
-            validation: { required: "Amount is required" },
+            validation: { required: tHearingTopics('fieldRequired') },
+            notRequired: false,
           },
-          dateFieldConfigs(t, isEditing, from_date_hijri, to_date_hijri, setValue, control, handleHijriDateChange)
-            .fromDate,
-          dateFieldConfigs(t, isEditing, to_date_hijri, to_date_hijri, setValue, control, handleHijriDateChange).toDate,
+          dateFieldConfigs(
+            t,
+            isEditing,
+            from_date_hijri,
+            to_date_hijri,
+            setValue,
+            control,
+            handleHijriDateChange
+          ).fromDate,
+          dateFieldConfigs(
+            t,
+            isEditing,
+            to_date_hijri,
+            to_date_hijri,
+            setValue,
+            control,
+            handleHijriDateChange
+          ).toDate,
         ];
         const shouldShowAllowanceFields =
-          watch("subCategory")?.value === "WR-1" || subCategory?.value === "WR-1";
+          watch("subCategory")?.value === "WR-1" ||
+          subCategory?.value === "WR-1";
 
         const allowanceFields = shouldShowAllowanceFields
           ? [
-            {
-              type: "autocomplete" as const,
-              name: "forAllowance",
-              label: t("forAllowance"),
-              options: ForAllowanceOptions,
-              value: watch("forAllowance")?.value,
-              onChange: (option: Option | null) =>
-                setValue("forAllowance", option),
-            },
-            ...((watch("forAllowance")?.label === "Other" || (isEditing && editTopic?.ForAllowance === "Other"))
-              ? [
-                {
-                  type: "input" as const,
-                  name: "otherAllowance",
-                  label: t("otherAllowance"),
-                  inputType: "text" as const,
-                  value: isEditing ? editTopic?.OtherAllowance || editTopic?.otherAllowance : watch("otherAllowance") || "",
-                  onChange: (value: string) =>
-                    setValue("otherAllowance", value),
-                },
-              ]
-              : []),
-          ]
+              {
+                type: "autocomplete" as const,
+                name: "forAllowance",
+                label: t("forAllowance"),
+                options: ForAllowanceOptions,
+                value: watch("forAllowance")?.value,
+                onChange: (option: Option | null) => setValue("forAllowance", option),
+                validation: { required: tHearingTopics('fieldRequired') },
+                notRequired: false,
+              },
+              ...(watch("forAllowance")?.label === "Other" ||
+              (isEditing && editTopic?.ForAllowance === "Other")
+                ? [
+                    {
+                      type: "input" as const,
+                      name: "otherAllowance",
+                      label: t("otherAllowance"),
+                      inputType: "text" as const,
+                      value: isEditing
+                        ? editTopic?.OtherAllowance || editTopic?.otherAllowance
+                        : watch("otherAllowance") || "",
+                      onChange: (value: string) =>
+                        setValue("otherAllowance", value),
+                      notRequired: true,
+                    },
+                  ]
+                : []),
+            ]
           : [];
 
-        return buildForm([...baseFields, ...allowanceFields]);
+        return buildForm(addNoSpacesValidationToTextInputs([...baseFields, ...allowanceFields], t));
       case "MIR-1":
         return buildForm(
           getMIR1FormFields({
@@ -400,7 +457,7 @@ export const useFormLayout = ({
           })
         );
       case "CMR-4":
-        return buildForm([
+        return buildForm(addNoSpacesValidationToTextInputs([
           {
             type: "input",
             name: "amount",
@@ -408,11 +465,13 @@ export const useFormLayout = ({
             inputType: "number",
             min: 0,
             value: watch("amount") || "",
-            onChange: (value) => setValue("amount", value),
+            onChange: (value: string) => setValue("amount", value),
+            validation: { required: tHearingTopics('fieldRequired') },
+            notRequired: false,
           },
-        ]);
+        ], t));
       case "CMR-3":
-        return buildForm([
+        return buildForm(addNoSpacesValidationToTextInputs([
           {
             type: "input",
             name: "compensationAmount",
@@ -420,7 +479,9 @@ export const useFormLayout = ({
             inputType: "number",
             min: 0,
             value: watch("compensationAmount") || "",
-            onChange: (value) => setValue("compensationAmount", value),
+            onChange: (value: string) => setValue("compensationAmount", value),
+            validation: { required: tHearingTopics('fieldRequired') },
+            notRequired: false,
           },
           {
             type: "custom",
@@ -430,7 +491,8 @@ export const useFormLayout = ({
                   control={control}
                   name="injury_date_hijri"
                   label={t("injuryDateHijri")}
-                  rules={{}}
+                  rules={{ required: tHearingTopics('fieldRequired') }}
+                  notRequired={false}
                   onChangeHandler={(date, onChange) =>
                     handleHijriDateChange(
                       date,
@@ -443,6 +505,7 @@ export const useFormLayout = ({
                   control={control}
                   name="injury_date_gregorian"
                   label={t("injuryDateGregorian")}
+                  notRequired={false}
                 />
               </div>
             ),
@@ -453,11 +516,13 @@ export const useFormLayout = ({
             label: t("injuryType"),
             inputType: "text",
             value: watch("injuryType") || "",
-            onChange: (value) => setValue("injuryType", value),
+            onChange: (value: string) => setValue("injuryType", value),
+            validation: { required: tHearingTopics('fieldRequired') },
+            notRequired: false,
           },
-        ]);
+        ], t));
       case "CMR-1":
-        return buildForm([
+        return buildForm(addNoSpacesValidationToTextInputs([
           {
             type: "autocomplete",
             name: "amountsPaidFor",
@@ -466,6 +531,8 @@ export const useFormLayout = ({
             value: watch("amountsPaidFor")?.value,
             onChange: (option: Option | null) =>
               setValue("amountsPaidFor", option),
+            validation: { required: tHearingTopics('fieldRequired') },
+            notRequired: false,
           },
           {
             type: "input",
@@ -474,11 +541,13 @@ export const useFormLayout = ({
             inputType: "number",
             min: 0,
             value: watch("theAmountRequired") || "",
-            onChange: (value) => setValue("theAmountRequired", value),
+            onChange: (value: string) => setValue("theAmountRequired", value),
+            validation: { required: tHearingTopics('fieldRequired') },
+            notRequired: false,
           },
-        ]);
+        ], t));
       case "CMR-5":
-        return buildForm([
+        return buildForm(addNoSpacesValidationToTextInputs([
           {
             type: "autocomplete",
             name: "kindOfHoliday",
@@ -487,6 +556,8 @@ export const useFormLayout = ({
             value: watch("kindOfHoliday")?.value,
             onChange: (option: Option | null) =>
               setValue("kindOfHoliday", option),
+            validation: { required: tHearingTopics('fieldRequired') },
+            notRequired: false,
           },
           {
             type: "input",
@@ -495,7 +566,9 @@ export const useFormLayout = ({
             inputType: "number",
             min: 0,
             value: watch("totalAmount") || "",
-            onChange: (value) => setValue("totalAmount", value),
+            onChange: (value: string) => setValue("totalAmount", value),
+            validation: { required: tHearingTopics('fieldRequired') },
+            notRequired: false,
           },
           {
             type: "input",
@@ -504,7 +577,9 @@ export const useFormLayout = ({
             inputType: "number",
             min: 0,
             value: watch("workingHours") || "",
-            onChange: (value) => setValue("workingHours", value),
+            onChange: (value: string) => setValue("workingHours", value),
+            validation: { required: tHearingTopics('fieldRequired') },
+            notRequired: false,
           },
           {
             type: "input",
@@ -512,12 +587,13 @@ export const useFormLayout = ({
             label: t("additionalDetails"),
             inputType: "textarea",
             value: watch("additionalDetails") || "",
-            notRequired: true,
-            onChange: (value) => setValue("additionalDetails", value),
+            onChange: (value: string) => setValue("additionalDetails", value),
+            validation: { required: tHearingTopics('fieldRequired') },
+            notRequired: false,
           },
-        ]);
+        ], t));
       case "CMR-8":
-        return buildForm([
+        return buildForm(addNoSpacesValidationToTextInputs([
           {
             type: "input",
             name: "wagesAmount",
@@ -525,7 +601,9 @@ export const useFormLayout = ({
             inputType: "number",
             min: 0,
             value: watch("wagesAmount") || "",
-            onChange: (value) => setValue("wagesAmount", value),
+            onChange: (value: string) => setValue("wagesAmount", value),
+            validation: { required: tHearingTopics('fieldRequired') },
+            notRequired: false,
           },
           {
             type: "custom",
@@ -535,19 +613,17 @@ export const useFormLayout = ({
                   control={control}
                   name="from_date_hijri"
                   label={t("fromDateHijri")}
-                  rules={{}}
+                  rules={{ required: tHearingTopics('fieldRequired') }}
+                  notRequired={false}
                   onChangeHandler={(date, onChange) =>
-                    handleHijriDateChange(
-                      date,
-                      onChange,
-                      "from_date_gregorian"
-                    )
+                    handleHijriDateChange(date, onChange, "from_date_gregorian")
                   }
                 />
                 <GregorianDateDisplayInput
                   control={control}
                   name="from_date_gregorian"
                   label={t("fromDateGregorian")}
+                  notRequired={false}
                 />
               </div>
             ),
@@ -560,26 +636,24 @@ export const useFormLayout = ({
                   control={control}
                   name="to_date_hijri"
                   label={t("toDateHijri")}
-                  rules={{}}
+                  rules={{ required: tHearingTopics('fieldRequired') }}
+                  notRequired={false}
                   onChangeHandler={(date, onChange) =>
-                    handleHijriDateChange(
-                      date,
-                      onChange,
-                      "to_date_gregorian"
-                    )
+                    handleHijriDateChange(date, onChange, "to_date_gregorian")
                   }
                 />
                 <GregorianDateDisplayInput
                   control={control}
                   name="to_date_gregorian"
                   label={t("toDateGregorian")}
+                  notRequired={false}
                 />
               </div>
             ),
           },
-        ]);
+        ], t));
       case "CMR-6":
-        return buildForm([
+        return buildForm(addNoSpacesValidationToTextInputs([
           {
             type: "input",
             name: "newPayAmount",
@@ -587,7 +661,9 @@ export const useFormLayout = ({
             inputType: "number",
             min: 0,
             value: watch("newPayAmount") || "",
-            onChange: (value) => setValue("newPayAmount", value),
+            onChange: (value: string) => setValue("newPayAmount", value),
+            validation: { required: tHearingTopics('fieldRequired') },
+            notRequired: false,
           },
           {
             type: "input",
@@ -595,7 +671,9 @@ export const useFormLayout = ({
             label: t("payIncreaseType"),
             inputType: "text",
             value: watch("payIncreaseType") || "",
-            onChange: (value) => setValue("payIncreaseType", value),
+            onChange: (value: string) => setValue("payIncreaseType", value),
+            validation: { required: tHearingTopics('fieldRequired') },
+            notRequired: false,
           },
           {
             type: "custom",
@@ -605,19 +683,17 @@ export const useFormLayout = ({
                   control={control}
                   name="from_date_hijri"
                   label={t("fromDateHijri")}
-                  rules={{}}
+                  rules={{ required: tHearingTopics('fieldRequired') }}
+                  notRequired={false}
                   onChangeHandler={(date, onChange) =>
-                    handleHijriDateChange(
-                      date,
-                      onChange,
-                      "from_date_gregorian"
-                    )
+                    handleHijriDateChange(date, onChange, "from_date_gregorian")
                   }
                 />
                 <GregorianDateDisplayInput
                   control={control}
                   name="from_date_gregorian"
                   label={t("fromDateGregorian")}
+                  notRequired={false}
                 />
               </div>
             ),
@@ -630,19 +706,17 @@ export const useFormLayout = ({
                   control={control}
                   name="to_date_hijri"
                   label={t("toDateHijri")}
-                  rules={{}}
+                  rules={{ required: tHearingTopics('fieldRequired') }}
+                  notRequired={false}
                   onChangeHandler={(date, onChange) =>
-                    handleHijriDateChange(
-                      date,
-                      onChange,
-                      "to_date_gregorian"
-                    )
+                    handleHijriDateChange(date, onChange, "to_date_gregorian")
                   }
                 />
                 <GregorianDateDisplayInput
                   control={control}
                   name="to_date_gregorian"
                   label={t("toDateGregorian")}
+                  notRequired={false}
                 />
               </div>
             ),
@@ -653,11 +727,13 @@ export const useFormLayout = ({
             label: t("wageDifference"),
             inputType: "text",
             value: watch("wageDifference") || "",
-            onChange: (value) => setValue("wageDifference", value),
+            onChange: (value: string) => setValue("wageDifference", value),
+            validation: { required: tHearingTopics('fieldRequired') },
+            notRequired: false,
           },
-        ]);
+        ], t));
       case "CMR-7":
-        return buildForm([
+        return buildForm(addNoSpacesValidationToTextInputs([
           {
             type: "custom",
             component: (
@@ -666,19 +742,17 @@ export const useFormLayout = ({
                   control={control}
                   name="from_date_hijri"
                   label={t("fromDateHijri")}
-                  rules={{}}
+                  rules={{ required: tHearingTopics('fieldRequired') }}
+                  notRequired={false}
                   onChangeHandler={(date, onChange) =>
-                    handleHijriDateChange(
-                      date,
-                      onChange,
-                      "from_date_gregorian"
-                    )
+                    handleHijriDateChange(date, onChange, "from_date_gregorian")
                   }
                 />
                 <GregorianDateDisplayInput
                   control={control}
                   name="from_date_gregorian"
                   label={t("fromDateGregorian")}
+                  notRequired={false}
                 />
               </div>
             ),
@@ -691,19 +765,17 @@ export const useFormLayout = ({
                   control={control}
                   name="to_date_hijri"
                   label={t("toDateHijri")}
-                  rules={{}}
+                  rules={{ required: tHearingTopics('fieldRequired') }}
+                  notRequired={false}
                   onChangeHandler={(date, onChange) =>
-                    handleHijriDateChange(
-                      date,
-                      onChange,
-                      "to_date_gregorian"
-                    )
+                    handleHijriDateChange(date, onChange, "to_date_gregorian")
                   }
                 />
                 <GregorianDateDisplayInput
                   control={control}
                   name="to_date_gregorian"
                   label={t("toDateGregorian")}
+                  notRequired={false}
                 />
               </div>
             ),
@@ -714,7 +786,9 @@ export const useFormLayout = ({
             label: t("durationOfLeaveDue"),
             inputType: "text",
             value: watch("durationOfLeaveDue") || "",
-            onChange: (value) => setValue("durationOfLeaveDue", value),
+            onChange: (value: string) => setValue("durationOfLeaveDue", value),
+            validation: { required: tHearingTopics('fieldRequired') },
+            notRequired: false,
           },
           {
             type: "input",
@@ -723,11 +797,13 @@ export const useFormLayout = ({
             inputType: "number",
             min: 0,
             value: watch("payDue") || "",
-            onChange: (value) => setValue("payDue", value),
+            onChange: (value: string) => setValue("payDue", value),
+            validation: { required: tHearingTopics('fieldRequired') },
+            notRequired: false,
           },
-        ]);
+        ], t));
       case "LCUT-1":
-        return buildForm([
+        return buildForm(addNoSpacesValidationToTextInputs([
           {
             type: "input",
             name: "amountOfCompensation",
@@ -735,19 +811,25 @@ export const useFormLayout = ({
             inputType: "number",
             min: 0,
             value: watch("amountOfCompensation") || "",
-            onChange: (value) => setValue("amountOfCompensation", value),
+            onChange: (value: string) => setValue("amountOfCompensation", value),
+            validation: { required: tHearingTopics('fieldRequired') },
+            notRequired: false,
           },
-        ]);
+        ], t));
       case "EDO-1":
-        return buildForm([
+        return buildForm(addNoSpacesValidationToTextInputs([
           {
             type: "autocomplete",
             name: "fromLocation",
             label: t("fromLocation"),
             options: RegionOptions,
             isLoading: isRegionLoading,
-            value: watch("fromLocation")?.value || editTopic?.fromLocation?.value,
-            onChange: (option: Option | null) => setValue("fromLocation", option),
+            value:
+              watch("fromLocation")?.value || editTopic?.fromLocation?.value,
+            onChange: (option: Option | null) =>
+              setValue("fromLocation", option),
+            validation: { required: tHearingTopics('fieldRequired') },
+            notRequired: false,
           },
           {
             type: "autocomplete",
@@ -757,6 +839,8 @@ export const useFormLayout = ({
             isLoading: isRegionLoading,
             value: watch("toLocation")?.value || editTopic?.toLocation?.value,
             onChange: (option: Option | null) => setValue("toLocation", option),
+            validation: { required: tHearingTopics('fieldRequired') },
+            notRequired: false,
           },
           {
             type: "custom",
@@ -766,7 +850,8 @@ export const useFormLayout = ({
                   control={control}
                   name="managerial_decision_date_hijri"
                   label={t("managerialDecisionDateHijri")}
-                  rules={{}}
+                  rules={{ required: tHearingTopics('fieldRequired') }}
+                  notRequired={false}
                   onChangeHandler={(date, onChange) =>
                     handleHijriDateChange(
                       date,
@@ -779,6 +864,7 @@ export const useFormLayout = ({
                   control={control}
                   name="managerial_decision_date_gregorian"
                   label={t("managerialDecisionDateGregorian")}
+                  notRequired={false}
                 />
               </div>
             ),
@@ -788,20 +874,24 @@ export const useFormLayout = ({
             name: "managerialDecisionNumber",
             label: t("managerialDecisionNumber"),
             inputType: "number",
-            notRequired: true,
             value: watch("managerialDecisionNumber") || "",
-            onChange: (value: string) => setValue("managerialDecisionNumber", value),
+            onChange: (value: string) =>
+              setValue("managerialDecisionNumber", value),
+            validation: { required: tHearingTopics('fieldRequired') },
+            notRequired: false,
           },
-        ]);
+        ], t));
       case "EDO-2":
-        return buildForm([
+        return buildForm(addNoSpacesValidationToTextInputs([
           {
             type: "input",
             name: "fromJob",
             label: t("fromJob"),
             inputType: "text",
             value: "",
-            onChange: (value) => setValue("fromJob", value),
+            onChange: (value: string) => setValue("fromJob", value),
+            validation: { required: tHearingTopics('fieldRequired') },
+            notRequired: false,
           },
           {
             type: "input",
@@ -809,13 +899,27 @@ export const useFormLayout = ({
             label: t("toJob"),
             inputType: "text",
             value: "",
-            onChange: (value) => setValue("toJob", value),
+            onChange: (value: string) => setValue("toJob", value),
+            validation: { required: tHearingTopics('fieldRequired') },
+            notRequired: false,
           },
-          managerialDateConfigs(t, setValue, watch, control, handleHijriDateChange).managerialDate,
-          managerialDateConfigs(t, setValue, watch, control, handleHijriDateChange).managerialNumber,
-        ]);
+          managerialDateConfigs(
+            t,
+            setValue,
+            watch,
+            control,
+            handleHijriDateChange
+          ).managerialDate,
+          managerialDateConfigs(
+            t,
+            setValue,
+            watch,
+            control,
+            handleHijriDateChange
+          ).managerialNumber,
+        ], t));
       case "EDO-4":
-        return buildForm([
+        return buildForm(addNoSpacesValidationToTextInputs([
           {
             type: "autocomplete",
             name: "typesOfPenalties",
@@ -824,12 +928,26 @@ export const useFormLayout = ({
             value: watch("typesOfPenalties")?.value,
             onChange: (option: Option | null) =>
               setValue("typesOfPenalties", option),
+            validation: { required: tHearingTopics('fieldRequired') },
+            notRequired: false,
           },
-          managerialDateConfigs(t, setValue, watch, control, handleHijriDateChange).managerialDate,
-          managerialDateConfigs(t, setValue, watch, control, handleHijriDateChange).managerialNumber,
-        ]);
+          managerialDateConfigs(
+            t,
+            setValue,
+            watch,
+            control,
+            handleHijriDateChange
+          ).managerialDate,
+          managerialDateConfigs(
+            t,
+            setValue,
+            watch,
+            control,
+            handleHijriDateChange
+          ).managerialNumber,
+        ], t));
       case "EDO-3":
-        return buildForm([
+        return buildForm(addNoSpacesValidationToTextInputs([
           {
             type: "input",
             name: "amountOfReduction",
@@ -837,53 +955,125 @@ export const useFormLayout = ({
             inputType: "number",
             min: 0,
             value: watch("amountOfReduction") || "",
-            onChange: (value) => setValue("amountOfReduction", value),
+            onChange: (value: string) => setValue("amountOfReduction", value),
+            validation: { required: tHearingTopics('fieldRequired') },
+            notRequired: false,
           },
-          managerialDateConfigs(t, setValue, watch, control, handleHijriDateChange).managerialDate,
-          managerialDateConfigs(t, setValue, watch, control, handleHijriDateChange).managerialNumber,
-        ]);
+          managerialDateConfigs(
+            t,
+            setValue,
+            watch,
+            control,
+            handleHijriDateChange
+          ).managerialDate,
+          managerialDateConfigs(
+            t,
+            setValue,
+            watch,
+            control,
+            handleHijriDateChange
+          ).managerialNumber,
+        ], t));
       case "HIR-1":
-        return buildForm([
+        return buildForm(addNoSpacesValidationToTextInputs([
           {
             type: "checkbox",
             name: "doesBylawsIncludeAddingAccommodations",
             label: t("doesBylawsIncludeAddingAccommodations"),
-            checked: watch("doesBylawsIncludeAddingAccommodations") || false,
+            checked: doesBylawsIncludeAddingAccommodations,
             onChange: (checked: boolean) => {
+              setValue("doesBylawsIncludeAddingAccommodations", checked);
               if (checked) {
                 setValue("doesContractIncludeAddingAccommodations", false);
                 setValue("housingSpecificationsInContract", "");
                 setValue("actualHousingSpecifications", "");
               }
-              setValue("doesBylawsIncludeAddingAccommodations", checked);
+              trigger(["doesBylawsIncludeAddingAccommodations", "doesContractIncludeAddingAccommodations"]);
             },
-            validation: { required: "Please select at least one option" },
+            rules: {
+              validate: () => {
+                if (
+                  !doesBylawsIncludeAddingAccommodations &&
+                  !doesContractIncludeAddingAccommodations
+                ) {
+                  return tHearingTopics('fieldRequired');
+                }
+                return true;
+              },
+            },
+            notRequired: false,
           },
           {
             type: "checkbox",
             name: "doesContractIncludeAddingAccommodations",
             label: t("doesContractIncludeAddingAccommodations"),
-            checked: watch("doesContractIncludeAddingAccommodations") || false,
+            checked: doesContractIncludeAddingAccommodations,
             onChange: (checked: boolean) => {
+              setValue("doesContractIncludeAddingAccommodations", checked);
               if (checked) {
                 setValue("doesBylawsIncludeAddingAccommodations", false);
                 setValue("housingSpecificationInByLaws", "");
               }
-              setValue("doesContractIncludeAddingAccommodations", checked);
+              trigger(["doesBylawsIncludeAddingAccommodations", "doesContractIncludeAddingAccommodations"]);
             },
-            validation: { required: "Please select at least one option" },
+            rules: {
+              validate: () => {
+                if (
+                  !doesBylawsIncludeAddingAccommodations &&
+                  !doesContractIncludeAddingAccommodations
+                ) {
+                  return tHearingTopics('fieldRequired');
+                }
+                return true;
+              },
+            },
+            notRequired: false,
           },
-        ]);
+          doesBylawsIncludeAddingAccommodations && {
+            type: "input",
+            name: "housingSpecificationInByLaws",
+            label: t("housingSpecificationInByLaws"),
+            inputType: "text",
+            value: "",
+            onChange: (value: string) =>
+              setValue("housingSpecificationInByLaws", value),
+            validation: { required: tHearingTopics('fieldRequired') },
+            notRequired: false,
+          },
+          doesContractIncludeAddingAccommodations && {
+            type: "input",
+            name: "housingSpecificationsInContract",
+            label: t("housingSpecificationsInContract"),
+            inputType: "text",
+            value: "",
+            onChange: (value: string) =>
+              setValue("housingSpecificationsInContract", value),
+            validation: { required: tHearingTopics('fieldRequired') },
+            notRequired: false,
+          },
+          doesContractIncludeAddingAccommodations && {
+            type: "input",
+            name: "actualHousingSpecifications",
+            label: t("actualHousingSpecifications"),
+            inputType: "text",
+            value: "",
+            onChange: (value: string) => setValue("actualHousingSpecifications", value),
+            validation: { required: tHearingTopics('fieldRequired') },
+            notRequired: false,
+          },
+        ], t));
+
       case "JAR-2":
-        return buildForm([
+        return buildForm(addNoSpacesValidationToTextInputs([
           {
             type: "input",
             name: "currentJobTitle",
             label: t("currentJobTitle"),
             inputType: "text",
             value: watch("currentJobTitle") || "",
-            onChange: (value) => setValue("currentJobTitle", value),
-            validation: { required: "Please select at least one option" },
+            onChange: (value: string) => setValue("currentJobTitle", value),
+            validation: { required: tHearingTopics('fieldRequired') },
+            notRequired: false,
           },
           {
             type: "input",
@@ -891,17 +1081,20 @@ export const useFormLayout = ({
             label: t("requiredJobTitle"),
             inputType: "text",
             value: watch("requiredJobTitle") || "",
-            onChange: (value) => setValue("requiredJobTitle", value),
-            validation: { required: "Please select at least one option" },
+            onChange: (value: string) => setValue("requiredJobTitle", value),
+            validation: { required: tHearingTopics('fieldRequired') },
+            notRequired: false,
           },
-        ]);
+        ], t));
       case "JAR-3":
-        return buildForm([
+        return buildForm(addNoSpacesValidationToTextInputs([
           {
             type: "checkbox",
             name: "doesTheInternalRegulationIncludePromotionMechanism",
             label: t("doesTheInternalRegulationIncludePromotionMechanism"),
-            checked: watch("doesTheInternalRegulationIncludePromotionMechanism") || false,
+            checked:
+              watch("doesTheInternalRegulationIncludePromotionMechanism") ||
+              false,
             onChange: (checked: boolean) => {
               if (checked) {
                 setValue("doesContractIncludeAdditionalUpgrade", false);
@@ -911,6 +1104,20 @@ export const useFormLayout = ({
                 checked
               );
             },
+            rules: {
+              validate: (value: boolean) => {
+                if (
+                  !watch(
+                    "doesTheInternalRegulationIncludePromotionMechanism"
+                  ) &&
+                  !watch("doesContractIncludeAdditionalUpgrade")
+                ) {
+                  return tHearingTopics('fieldRequired');
+                }
+                return true;
+              },
+            },
+            notRequired: false,
           },
           {
             type: "checkbox",
@@ -926,18 +1133,33 @@ export const useFormLayout = ({
               }
               setValue("doesContractIncludeAdditionalUpgrade", checked);
             },
+            rules: {
+              validate: (value: boolean) => {
+                if (
+                  !watch(
+                    "doesTheInternalRegulationIncludePromotionMechanism"
+                  ) &&
+                  !watch("doesContractIncludeAdditionalUpgrade")
+                ) {
+                  return tHearingTopics('fieldRequired');
+                }
+                return true;
+              },
+            },
+            notRequired: false,
           },
-        ]);
+        ], t));
       case "JAR-4":
-        return buildForm([
+        return buildForm(addNoSpacesValidationToTextInputs([
           {
             type: "input",
             name: "currentPosition",
             label: t("currentPosition"),
             inputType: "text",
             value: watch("currentPosition") || "",
-            onChange: (value) => setValue("currentPosition", value),
-            validation: { required: "Please select at least one option" },
+            onChange: (value: string) => setValue("currentPosition", value),
+            validation: { required: tHearingTopics('fieldRequired') },
+            notRequired: false,
           },
           {
             type: "input",
@@ -945,12 +1167,13 @@ export const useFormLayout = ({
             label: t("theWantedJob"),
             inputType: "text",
             value: watch("theWantedJob") || "",
-            onChange: (value) => setValue("theWantedJob", value),
-            validation: { required: "Please select at least one option" },
+            onChange: (value: string) => setValue("theWantedJob", value),
+            validation: { required: tHearingTopics('fieldRequired') },
+            notRequired: false,
           },
-        ]);
+        ], t));
       case "LRESR-1":
-        return buildForm([
+        return buildForm(addNoSpacesValidationToTextInputs([
           {
             type: "input",
             name: "amount",
@@ -958,12 +1181,13 @@ export const useFormLayout = ({
             inputType: "number",
             min: 0,
             value: watch("amount") || "",
-            onChange: (value) => setValue("amount", value),
-            validation: { required: t("amount") },
+            onChange: (value: string) => setValue("amount", value),
+            validation: { required: tHearingTopics('fieldRequired') },
+            notRequired: false,
           },
-        ]);
+        ], t));
       case "LRESR-2":
-        return buildForm([
+        return buildForm(addNoSpacesValidationToTextInputs([
           {
             type: "input",
             name: "amount",
@@ -971,8 +1195,9 @@ export const useFormLayout = ({
             inputType: "number",
             min: 0,
             value: watch("amount") || "",
-            onChange: (value) => setValue("amount", value),
-            validation: { required: t("amount") },
+            onChange: (value: string) => setValue("amount", value),
+            validation: { required: tHearingTopics('fieldRequired') },
+            notRequired: false,
           },
           {
             type: "input",
@@ -980,12 +1205,13 @@ export const useFormLayout = ({
             label: t("consideration"),
             inputType: "text",
             value: watch("consideration") || "",
-            onChange: (value) => setValue("consideration", value),
-            validation: { required: t("consideration") },
+            onChange: (value: string) => setValue("consideration", value),
+            validation: { required: tHearingTopics('fieldRequired') },
+            notRequired: false,
           },
-        ]);
+        ], t));
       case "LRESR-3":
-        return buildForm([
+        return buildForm(addNoSpacesValidationToTextInputs([
           {
             type: "input",
             name: "amount",
@@ -993,8 +1219,9 @@ export const useFormLayout = ({
             inputType: "number",
             min: 0,
             value: watch("amount") || "",
-            onChange: (value) => setValue("amount", value),
-            validation: { required: t("amount") },
+            onChange: (value: string) => setValue("amount", value),
+            validation: { required: tHearingTopics('fieldRequired') },
+            notRequired: false,
           },
           {
             type: "input",
@@ -1002,12 +1229,13 @@ export const useFormLayout = ({
             label: t("rewardType"),
             inputType: "text",
             value: watch("rewardType") || "",
-            onChange: (value) => setValue("rewardType", value),
-            validation: { required: t("rewardType") },
+            onChange: (value: string) => setValue("rewardType", value),
+            validation: { required: tHearingTopics('fieldRequired') },
+            notRequired: false,
           },
-        ]);
+        ], t));
       case "TTR-1":
-        return buildForm([
+        return buildForm(addNoSpacesValidationToTextInputs([
           {
             type: "autocomplete" as const,
             name: "travelingWay",
@@ -1016,10 +1244,12 @@ export const useFormLayout = ({
             value: travelingWay,
             onChange: (option: Option | null) =>
               setValue("travelingWay", option),
+            validation: { required: tHearingTopics('fieldRequired') },
+            notRequired: false,
           },
-        ]);
+        ], t));
       case "RFR-1":
-        return buildForm([
+        return buildForm(addNoSpacesValidationToTextInputs([
           {
             type: "input",
             name: "amount",
@@ -1027,8 +1257,9 @@ export const useFormLayout = ({
             inputType: "number",
             min: 0,
             value: watch("amount") || "",
-            onChange: (value) => setValue("amount", value),
-            validation: { required: "Please select at least one option" },
+            onChange: (value: string) => setValue("amount", value),
+            validation: { required: tHearingTopics('fieldRequired') },
+            notRequired: false,
           },
           {
             type: "input",
@@ -1036,8 +1267,9 @@ export const useFormLayout = ({
             label: t("consideration"),
             inputType: "text",
             value: watch("consideration") || "",
-            onChange: (value) => setValue("consideration", value),
-            validation: { required: "Please select at least one option" },
+            onChange: (value: string) => setValue("consideration", value),
+            validation: { required: tHearingTopics('fieldRequired') },
+            notRequired: false,
           },
           {
             type: "custom",
@@ -1050,14 +1282,8 @@ export const useFormLayout = ({
                   rules={{
                     required: true,
                   }}
-
                   onChangeHandler={(date, onChange) =>
-                    handleHijriDateChange(
-                      date,
-                      onChange,
-                      "date_gregorian"
-                    )
-
+                    handleHijriDateChange(date, onChange, "date_gregorian")
                   }
                 />
                 <GregorianDateDisplayInput
@@ -1068,9 +1294,9 @@ export const useFormLayout = ({
               </div>
             ),
           },
-        ]);
+        ], t));
       case "RR-1":
-        return buildForm([
+        return buildForm(addNoSpacesValidationToTextInputs([
           {
             type: "input",
             name: "amount",
@@ -1078,8 +1304,9 @@ export const useFormLayout = ({
             inputType: "number",
             min: 0,
             value: watch("amount") || "",
-            onChange: (value) => setValue("amount", value),
-            validation: { required: "Please select at least one option" },
+            onChange: (value: string) => setValue("amount", value),
+            validation: { required: tHearingTopics('fieldRequired') },
+            notRequired: false,
           },
           {
             type: "input",
@@ -1087,10 +1314,11 @@ export const useFormLayout = ({
             label: t("rewardType"),
             inputType: "text",
             value: watch("rewardType") || "",
-            onChange: (value) => setValue("rewardType", value),
-            validation: { required: "Please select at least one option" },
+            onChange: (value: string) => setValue("rewardType", value),
+            validation: { required: tHearingTopics('fieldRequired') },
+            notRequired: false,
           },
-        ]);
+        ], t));
       default:
         return [];
     }
@@ -1101,22 +1329,20 @@ export const useFormLayout = ({
     className: "step3",
     ...(getFormBySubCategory().filter(Boolean).length > 0
       ? {
-        title: t("topics_data"),
-        children: [
-          ...(getFormBySubCategory().filter(Boolean) as FormElement[]),
-          ...getCommonElements(isValid),
-        ],
-      }
+          title: t("topics_data"),
+          children: [
+            ...(getFormBySubCategory().filter(Boolean) as FormElement[]),
+            ...getCommonElements(isValid),
+          ],
+        }
       : {
-        children: [
-          {
-            type: "custom",
-            component: (
-              <></>
-            ),
-          },
-        ],
-      }),
+          children: [
+            {
+              type: "custom",
+              component: <></>,
+            },
+          ],
+        }),
   };
 
   const layout: SectionLayout[] = [];

@@ -27,7 +27,8 @@ export const getMIR1FormFields = ({
       options: TypeOfRequestLookUpOptions,
       value: typeOfRequest,
       onChange: (option: Option | null) => setValue("typeOfRequest", option),
-      validation:{required:"Type of request is required"}
+      validation: { required: "Type of request is required" },
+      notRequired: false,
     },
     ...((effectiveTypeOfRequest?.value === "REQT1" || effectiveTypeOfRequest?.value === "REQT2") ? [
       {
@@ -37,6 +38,8 @@ export const getMIR1FormFields = ({
         inputType: "number" as const,
         value: isEditing ? editTopic?.RequiredDegreeInsurance || editTopic?.requiredDegreeOfInsurance : requiredDegreeOfInsurance,
         onChange: (value: string) => setValue("requiredDegreeOfInsurance", value),
+        notRequired: false,
+        validation: { required: "Required degree of insurance is required" },
       }
     ] : []),
     ...(effectiveTypeOfRequest?.value === "REQT3" ? [
@@ -47,6 +50,8 @@ export const getMIR1FormFields = ({
         inputType: "textarea" as const,
         value:  isEditing ? editTopic?.Reason || editTopic?.theReason : theReason,
         onChange: (value: string) => setValue("theReason", value),
+        notRequired: false,
+        validation: { required: "Reason is required" },
       },
       {
         type: "input" as const,
@@ -55,6 +60,8 @@ export const getMIR1FormFields = ({
         inputType: "number" as const,
         value: isEditing ? editTopic?.CurrentInsuranceLevel || editTopic?.currentInsuranceLevel : currentInsuranceLevel,
         onChange: (value: string) => setValue("currentInsuranceLevel", value),
+        notRequired: false,
+        validation: { required: "Current insurance level is required" },
       },
       {
         type: "input" as const,
@@ -63,6 +70,8 @@ export const getMIR1FormFields = ({
         inputType: "number" as const,
         value: isEditing ? editTopic?.RequiredDegreeInsurance || editTopic?.requiredDegreeOfInsurance : requiredDegreeOfInsurance,
         onChange: (value: string) => setValue("requiredDegreeOfInsurance", value),
+        notRequired: false,
+        validation: { required: "Required degree of insurance is required" },
       }
     ] : [])
   ];

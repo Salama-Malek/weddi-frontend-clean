@@ -86,8 +86,9 @@ export const useEstablishmentPlaintiffFormLayout = ({
     setValue("region", { value: establishmentDetails?.Region_Code || "", label: establishmentDetails?.Region || "" });
     setValue("city", { value: establishmentDetails?.City_Code || "", label: establishmentDetails?.City || "" });
 
-
-
+    // Ensure city lookup is triggered by also setting plaintiffRegion and plaintiffCity
+    setValue("plaintiffRegion", { value: establishmentDetails?.Region_Code || "", label: establishmentDetails?.Region || "" });
+    setValue("plaintiffCity", { value: establishmentDetails?.City_Code || "", label: establishmentDetails?.City || "" });
 
   }, [establishmentDetails2])
 

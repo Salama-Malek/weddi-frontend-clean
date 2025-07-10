@@ -41,6 +41,11 @@ export const useFormOptions = () => {
       { value: "riyadh", label: "Riyadh" },
       { value: "makkah", label: "Makkah" },
     ] as Option[],
+
+    certifiedRadioOptions: [
+      { label: t("local_agency"), value: "CB1" },
+      { label: t("external_agency"), value: "CB2" },
+    ] as RadioOption[],
     
   };
 };

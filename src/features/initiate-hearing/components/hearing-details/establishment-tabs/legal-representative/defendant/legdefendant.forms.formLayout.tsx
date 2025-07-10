@@ -46,8 +46,8 @@ export const useLegelDefendantFormLayout = ({
   const { data: regionData, isLoading: isRegionLoading } = useGetWorkerRegionLookupDataQuery({
     AcceptedLanguage: i18n.language === "ar" ? "AR" : "EN",
     SourceSystem: "E-Services",
-    ModuleKey: "EstablishmentRegion",
-    ModuleName: "EstablishmentRegion",
+    ModuleKey: "WorkerRegion",
+    ModuleName: "WorkerRegion",
   });
 
   const { data: cityData, isLoading: isCityLoading } = useGetWorkerCityLookupDataQuery(
@@ -55,7 +55,7 @@ export const useLegelDefendantFormLayout = ({
       AcceptedLanguage: i18n.language === "ar" ? "AR" : "EN",
       SourceSystem: "E-Services",
       selectedWorkerRegion: typeof selectedWorkerRegion2 === 'object' ? selectedWorkerRegion2?.value : selectedWorkerRegion2 || "",
-      ModuleName: "EstablishmentCity",
+      ModuleName: "WorkerCity",
     },
     { skip: !(typeof selectedWorkerRegion2 === 'object' ? selectedWorkerRegion2?.value : selectedWorkerRegion2) }
   );

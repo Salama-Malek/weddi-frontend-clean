@@ -59,29 +59,55 @@ export const claimantDetailsPayload = (
   caseId?: string,
   language: string = "EN"
 ): CasePayload => {
-  const payload: CasePayload = {
+  // Log formData for debugging
+  let payload: CasePayload = {
     ...getBasePayload(userClaims, language, userType),
     Flow_ButtonName: buttonName,
     CaseID: caseId,
   };
+
+
+
 
   // Set DomesticWorker based on NIC details
   payload.DomesticWorker = nicDetailObj?.Applicant_Code === "DW1" ? "true" : "false";
 
   // Always use NIC details if available, otherwise fall back to form data
   payload.PlaintiffName = nicDetailObj?.PlaintiffName || formData?.userName || userClaims?.UserName;
-  payload.PlaintiffHijiriDOB = nicDetailObj?.DateOfBirthHijri || formData?.hijriDate || userClaims?.UserDOB || "";
-  payload.Plaintiff_ApplicantBirthDate = nicDetailObj?.DateOfBirthGregorian || formData?.gregorianDate;
+  payload.PlaintiffHijiriDOB = formData?.hijriDate || nicDetailObj?.DateOfBirthHijri || userClaims?.UserDOB || "";
+  payload.Plaintiff_ApplicantBirthDate = formData?.gregorianDate || nicDetailObj?.DateOfBirthGregorian;
   payload.Plaintiff_PhoneNumber = formData?.phoneNumber || "";
 
   // For dropdown fields, use the value property if it exists
-  payload.Plaintiff_Region = formData?.plaintiffRegion?.value || nicDetailObj?.Region_Code || (formData?.region?.value || formData?.region);
-  payload.Plaintiff_City = formData?.plaintiffCity?.value || (formData?.city?.value || formData?.city);
-  payload.JobPracticing = nicDetailObj?.Occupation_Code || (formData?.occupation?.value || formData?.occupation);
-  payload.Gender = nicDetailObj?.Gender_Code || (formData?.gender?.value || formData?.gender);
-  payload.Worker_Nationality = nicDetailObj?.Nationality_Code || (formData?.nationality?.value || formData?.nationality);
-  payload.Plaintiff_JobLocation = nicDetailObj?.Region_Code || (formData?.region?.value || formData?.region);
-  payload.Plaintiff_ClosestLaborOffice = formData?.laborOffice?.value || formData?.laborOffice;
+  payload.Plaintiff_Region = formData?.plaintiffRegion?.value
+    || nicDetailObj?.Region_Code
+    || formData?.region?.value
+    || formData?.plaintiffRegion
+    || formData?.region
+    || "";
+  payload.Plaintiff_City = formData?.plaintiffCity?.value
+    || nicDetailObj?.City_Code
+    || formData?.city?.value
+    || formData?.plaintiffCity
+    || formData?.city
+    || "";
+  payload.JobPracticing = formData?.occupation?.value
+    || nicDetailObj?.Occupation_Code
+    || formData?.occupation
+    || "";
+  payload.Gender = formData?.gender?.value
+    || nicDetailObj?.Gender_Code
+    || formData?.gender
+    || "";
+  payload.Worker_Nationality = formData?.nationality?.value
+    || nicDetailObj?.Nationality_Code
+    || formData?.nationality
+    || "";
+  // payload.Plaintiff_JobLocation = nicDetailObj?.Region_Code
+  //   || formData?.region?.value
+  //   || formData?.region
+  //   || "";
+  // payload.Plaintiff_ClosestLaborOffice = formData?.laborOffice?.value || formData?.laborOffice;
 
   // Ensure city is not null
   if (!payload.Plaintiff_City) {
@@ -95,35 +121,20 @@ export const claimantDetailsPayload = (
   payload.PlaintiffType = isAgent ? "Agent" : "Self(Worker)";
 
   if (isAgent) {
-    payload.Agent_AgentID =
-      attorneyData?.agentId || userClaims?.UserID;
-    payload.CertifiedBy =
-      formData?.certifiedAgency === "localAgency"
-        ? "CB1"
-        : formData?.certifiedAgency === "externalAgency"
-          ? "CB2"
-          : "";
-    payload.Agent_Name =
-      formData?.agentName || attorneyData?.agentName || "";
-    payload.Agent_MandateNumber =
-      formData?.agencyNumber || attorneyData?.mandateNumber || "";
-    payload.Agent_PhoneNumber = formData?.phoneNumber || attorneyData?.phoneNumber || "";
-    payload.Agent_MandateStatus =
-      formData?.agencyStatus || attorneyData?.mandateStatus ||
-      "";
-    payload.Agent_MandateSource =
-      formData?.agencySource || attorneyData?.mandateSource ||
-      "";
-    payload.Agent_ResidencyAddress = formData?.Agent_ResidencyAddress || "";
-    payload.Agent_CurrentPlaceOfWork =
-      formData?.Agent_CurrentPlaceOfWork || "";
-    payload.Agent_Mobilenumber = formData?.phoneNumber;
-
-    payload.PlaintiffId = formData?.workerAgentIdNumber || "";
+    payload = {
+      ...payload,
+      ...AgentClaimantPayload(
+        buttonName,
+        formData,
+        caseId,
+        userClaims,
+        language,
+        userType,
+        nicDetailObj,
+        attorneyData)
+    }
   }
 
-
-  // console.log("this if formData,", formData);
 
   switch (userType?.toLowerCase()) {
     case "legal representative":
@@ -146,6 +157,9 @@ export const claimantDetailsPayload = (
       };
 
     case "establishment":
+
+      console.log("this is payload from establishments", formData);
+
       return {
         ...getBasePayload(userClaims, language, userType),
         ApplicantType: "Establishment",
@@ -173,7 +187,7 @@ export const claimantDetailsPayload = (
           formData?.region?.value
         ),
         Plaintiff_City: extractValue(
-          formData?.city?.value
+          formData?.PlaintiffsCity?.value
         ),
         //hassan code 700
         Plaintiff_Number700: extractValue(
@@ -199,6 +213,62 @@ export const claimantDetailsPayload = (
       return payload;
   }
 };
+
+
+
+const AgentClaimantPayload = (
+  buttonName: "Next" | "Save",
+  formData: any,
+  getCaseId?: any,
+  userClaims?: any,
+  language: string = "EN",
+  userType?: string,
+  nicDetailObj?: any,
+  attorneyData?: any
+): CasePayload => {
+
+
+
+  return {
+    Agent_AgentID:
+      userClaims?.UserID || attorneyData?.agentId,
+    CertifiedBy:
+      formData?.agentType === "local_agency"
+        ? "CB1"
+        : formData?.agentType === "external_agency"
+          ? "CB2"
+          : "",
+    Agent_Name:
+      formData?.agentName || attorneyData?.agentName || "",
+    Agent_MandateNumber:
+      formData?.agentType === "local_agency"
+        ? formData?.agencyNumber || attorneyData?.mandateNumber || ""
+        : formData?.externalAgencyNumber || "",
+    ...(formData?.agentType === "external_agency" &&
+      { Agent_PhoneNumber: formData?.agentPhoneNumber }
+
+    ),
+    Agent_MandateStatus:
+      formData?.agencyStatus || attorneyData?.mandateStatus ||
+      "",
+    Agent_MandateSource:
+      formData?.agencySource || attorneyData?.mandateSource ||
+      "",
+    Agent_ResidencyAddress: formData?.Agent_ResidencyAddress || "",
+    Agent_CurrentPlaceOfWork:
+      formData?.Agent_CurrentPlaceOfWork || "",
+    // Agent_Mobilenumber: formData?.phoneNumber,
+    PlaintiffId: formData?.workerAgentIdNumber || "",
+    PlaintiffName: formData?.userName || "",
+
+
+  }
+}
+
+
+
+
+
 
 /**
  * When claimant is Legal Rep or Establishment, defendant must be a Worker
@@ -267,7 +337,7 @@ export const defendantDetailsPayload = (
   // console.log("defendantDetailsPayload: defendantCity", formData?.defendantCity);
   // console.log("defendantDetailsPayload: region", formData?.region);
   // console.log("defendantDetailsPayload: city", formData?.city);
-  
+
   switch (lowUserType) {
     case "legal representative":
       return {
@@ -406,7 +476,7 @@ export const defendantDetailsPayload = (
             ?.CRNumber,
         //hassan code 700
         Defendant_Number700: formData?.Defendant_Establishment_data
-          ?.Number700 ,
+          ?.Number700,
         Defendant_Region: formData?.Defendant_Establishment_data
           ?.Region_Code || formData?.defendantRegion?.value || formData?.region?.value || "",
         Defendant_City:
@@ -677,6 +747,7 @@ const emabsyClaimantPayload = (
     };
   }
 
+  // Embassy agent/representative
   return {
     ...getBasePayload(userClaims, language, userType),
     Flow_ButtonName: buttonName,
@@ -684,31 +755,25 @@ const emabsyClaimantPayload = (
     UserType: "Embassy User",
     ApplicantType: "Worker",
     PlaintiffType: "Agent",
-    Agent_EmbassyName:
-      formData?.Agent_EmbassyName || "",
-    Agent_EmbassyNationality: formData?.Nationality_Code || "",
-    Agent_EmbassyPhone:
-      formData?.Agent_EmbassyPhone || "",
-    Agent_EmbassyEmailAddress:
-      formData?.Agent_EmbassyEmailAddress || "",
-    Agent_EmbassyFirstLanguage:
-      formData?.Agent_EmbassyFirstLanguage || "",
-    //Nationality_Code: formData?.Nationality_Code || "",
-    PlaintiffId: formData?.workerAgentIdNumber || "",
-    PlaintiffName: formData?.userName || "",
+    Agent_EmbassyName: formData?.embassyAgent_Agent_EmbassyName || "",
+    Agent_EmbassyNationality: formData?.embassyAgent_Agent_EmbassyNationality || "",
+    Agent_EmbassyPhone: formData?.embassyAgent_Agent_EmbassyPhone || "",
+    Agent_EmbassyEmailAddress: formData?.embassyAgent_Agent_EmbassyEmailAddress || "",
+    Agent_EmbassyFirstLanguage: formData?.embassyAgent_Agent_EmbassyFirstLanguage || "",
+    PlaintiffId: formData?.embassyAgent_workerAgentIdNumber || "",
+    PlaintiffName: formData?.embassyAgent_userName || "",
     PlaintiffHijiriDOB: formatDateToYYYYMMDD(
-      formData?.workerAgentDateOfBirthHijri
+      formData?.embassyAgent_workerAgentDateOfBirthHijri
     ),
     Plaintiff_ApplicantBirthDate: formatDateToYYYYMMDD(
-      formData?.gregorianDate
+      formData?.embassyAgent_gregorianDate
     ),
-    Plaintiff_PhoneNumber: formData?.phoneNumber || "",
-    Plaintiff_Region: formData?.region?.value || "",
-    Plaintiff_City: formData?.city?.value || "",
-    JobPracticing: formData?.occupation?.value || "",
-    Gender: formData?.gender?.value || "",
-    Worker_Nationality:
-      formData?.nationality?.value || "",
+    Plaintiff_PhoneNumber: formData?.embassyAgent_phoneNumber || "",
+    Plaintiff_Region: formData?.embassyAgent_region?.value || formData?.embassyAgent_region || "",
+    Plaintiff_City: formData?.embassyAgent_city?.value || formData?.embassyAgent_city || "",
+    JobPracticing: formData?.embassyAgent_occupation?.value || formData?.embassyAgent_occupation || "",
+    Gender: formData?.embassyAgent_gender?.value || formData?.embassyAgent_gender || "",
+    Worker_Nationality: formData?.embassyAgent_nationality?.value || formData?.embassyAgent_nationality || "",
     IsGNRequired: formData?.isPhone || false,
     CountryCode: formData?.phoneCode?.value || "",
     GlobalPhoneNumber: formData?.interPhoneNumber || "",

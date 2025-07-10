@@ -4,6 +4,7 @@ import TableLoader from "@/shared/components/loader/TableLoader";
 import AuthProvider from "../login/components/AuthProvider";
 import { useCookieState } from "@/features/initiate-hearing/hooks/useCookieState";
 import { useUser } from "@/shared/context/userTypeContext";
+import { AuthTokenProvider } from "@/providers/AuthTokenProvider";
 
 const Banner = lazy(() => import("./components/HearingBanner"));
 const HearingContent = lazy(() => import("./components/HearingContent"));
@@ -16,7 +17,7 @@ const Main = () => {
   const {
     isLegalRep,
     isEstablishment,
-    
+
     setLegelRepState,
     setEstablishmentState,
     setUserType
@@ -53,25 +54,27 @@ const Main = () => {
       setIsEstablishment={setEstablishmentState}
       setUserTypeState={setUserType}
     >
-      <main className="!space-y-[16px] bg-gray-100">
-        <div className="container">
-          <Suspense fallback={<BannerSkeleton />}>
-            <Banner
+      <AuthTokenProvider>
+        <main className="!space-y-[16px] bg-gray-100">
+          <div className="container">
+            <Suspense fallback={<BannerSkeleton />}>
+              <Banner
+                isLegalRep={isLegalRep}
+                isEstablishment={isEstablishment}
+                showInfoBanner={showInfoBanner}
+                onCloseInfoBanner={handleCloseInfoBanner}
+              />
+            </Suspense>
+          </div>
+          <Suspense fallback={<TableLoader />}>
+            <HearingContent
               isLegalRep={isLegalRep}
               isEstablishment={isEstablishment}
-              showInfoBanner={showInfoBanner}
-              onCloseInfoBanner={handleCloseInfoBanner}
+              popupHandler={popupHandler}
             />
           </Suspense>
-        </div>
-        <Suspense fallback={<TableLoader />}>
-          <HearingContent
-            isLegalRep={isLegalRep}
-            isEstablishment={isEstablishment}
-            popupHandler={popupHandler}
-          />
-        </Suspense>
-      </main>
+        </main>
+      </AuthTokenProvider>
     </AuthProvider>
   );
 };

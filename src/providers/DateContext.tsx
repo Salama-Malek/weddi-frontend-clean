@@ -1,55 +1,51 @@
-import { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useCallback } from "react";
+import { DateObject } from "react-multi-date-picker";
 
-interface DateInfo {
+interface IDateInfo {
   hijri: string | null;
   gregorian: string | null;
-  convertedDate: string | null;
+  dateObject: DateObject | null;
 }
 
 interface DateContextType {
-  calendarType: 'hijri' | 'gregorian';
-  dateInfo: DateInfo;
-  setDate: (date: DateInfo) => void;
-  registerDateField: (name: string, setFormValue: (value: string) => void) => void;
+  calendarType: "hijri" | "gregorian";
+  setCalendarType: (type: "hijri" | "gregorian") => void;
+  dateInfo: IDateInfo;
+  setDate: (info: Partial<IDateInfo>) => void;
 }
 
-const DateContext = createContext<DateContextType>({} as DateContextType);
+const DateContext = createContext<DateContextType | undefined>(undefined);
 
-export const DateProvider = ({ children }: { children: React.ReactNode }) => {
-  const [calendarType, setCalendarType] = useState<'hijri' | 'gregorian'>('hijri');
-  const [dateInfo, setDateInfo] = useState<DateInfo>({
-    hijri: null,
-    gregorian: null,
-    convertedDate: null
+export const DateProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [calendarType, setCalendarType] = useState<"hijri" | "gregorian">("hijri");
+  const [dateInfo, setDateInfo] = useState<IDateInfo>({
+    hijri: "",
+    gregorian: "",
+    dateObject: null
   });
-  const [formFields, setFormFields] = useState<Record<string, (value: string) => void>>({});
 
-  const setDate = (info: DateInfo) => {
-    setDateInfo(info);
-    Object.entries(formFields).forEach(([name, setValue]) => {
-        
-      // if (name === 'hijriDate' && info.hijri) setValue(info.hijri);
-      // if (name === 'gregorianDate' && info.gregorian) setValue(info.gregorian);
-        if (name === 'hijriDate') setValue(info.hijri || '');
-        if (name === 'gregorianDate') setValue(info.gregorian || '');
-    });
-  };
-
-  const registerDateField = (name: string, setFormValue: (value: string) => void) => {
-    setFormFields(prev => ({ ...prev, [name]: setFormValue }));
-    return () => {
-      setFormFields(prev => {
-        const { [name]: _, ...rest } = prev;
-        return rest;
-      });
-    };
-  };
+  const setDate = useCallback((info: Partial<IDateInfo>) => {
+    setDateInfo(prev => ({ ...prev, ...info }));
+  }, []);
 
   return (
-    <DateContext.Provider value={{ calendarType, dateInfo, setDate, registerDateField }}>
+    <DateContext.Provider
+      value={{
+        calendarType,
+        setCalendarType,
+        dateInfo,
+        setDate
+      }}
+    >
       {children}
     </DateContext.Provider>
   );
 };
 
-export const useDateContext = () => useContext(DateContext);
+export const useDateContext = () => {
+  const context = useContext(DateContext);
+  if (!context) {
+    throw new Error("useDateContext must be used within a DateProvider");
+  }
+  return context;
+};

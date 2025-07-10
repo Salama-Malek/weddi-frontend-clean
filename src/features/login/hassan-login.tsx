@@ -115,7 +115,7 @@ const LoginForm: React.FC = () => {
         .sign(secret);
 
       // //console.log("Generated JWT Token:", token);
-      navegator(`?MyClientsToken=${token}`);
+      navegator(`/?MyClientsToken=${token}`);
     } catch (error) {
       console.error("Submission failed:", error);
     } finally {

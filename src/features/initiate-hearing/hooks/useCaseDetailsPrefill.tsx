@@ -1,12 +1,13 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useLazyGetCaseDetailsQuery } from "@/features/manage-hearings/api/myCasesApis";
 import { useCookieState } from "./useCookieState";
 import { formatDateString, formatHijriDate } from "@/shared/lib/helpers";
+import { json } from "stream/consumers";
 
 const useCaseDetailsPrefill = (setValue: (field: string, value: any) => void, trigger?: (name?: string | string[]) => Promise<boolean>) => {
-  const [getCookie] = useCookieState();
-  const [triggerCaseDetailsQuery] = useLazyGetCaseDetailsQuery();
-
+  const [getCookie, setCookie] = useCookieState();
+  const [triggerCaseDetailsQuery, { isLoading }] = useLazyGetCaseDetailsQuery();
+  const [isFeatched, setIsfetched] = useState<boolean>(false);
   useEffect(() => {
     const caseId = getCookie("caseId");
     const userClaims = getCookie("userClaims");
@@ -28,8 +29,9 @@ const useCaseDetailsPrefill = (setValue: (field: string, value: any) => void, tr
 
     triggerCaseDetailsQuery(payload).then((result) => {
       const details = result?.data?.CaseDetails;
+      setIsfetched(true);
       if (!details) return;
-
+      localStorage.setItem("CaseDetails", JSON.stringify(details));
       // Set form state based on PlaintiffType
       if (userType === "Worker" && details.PlaintiffType === "Self(Worker)") {
         setValue("claimantStatus", "principal");
@@ -51,7 +53,7 @@ const useCaseDetailsPrefill = (setValue: (field: string, value: any) => void, tr
       setValue("phoneNumber", details.Plaintiff_PhoneNumber || "");
       setValue("gregorianDate", details.Plaintiff_ApplicantBirthDate || "");
       setValue("firstLanguage", details.Plaintiff_FirstLanguage || "");
-      
+
       // Map select fields with value/label pairs
       setValue("plaintiffRegion", {
         value: details.Plaintiff_Region_Code || "",
@@ -107,12 +109,16 @@ const useCaseDetailsPrefill = (setValue: (field: string, value: any) => void, tr
       setValue("dateoflastworkingdayHijri", details.Plaintiff_JobEndDateHijri ? formatHijriDate(details.Plaintiff_JobEndDateHijri) : "");
       setValue("stillWorking", details.Plaintiff_StillWorking || "");
 
+      // store the plantif Id From The GetCaseDetails
+      setCookie("p_id", details.PlaintiffId);
       // Trigger validation after setting all values
       if (trigger) {
         trigger();
       }
     });
   }, []);
+
+  return isFeatched
 };
 
 export default useCaseDetailsPrefill;

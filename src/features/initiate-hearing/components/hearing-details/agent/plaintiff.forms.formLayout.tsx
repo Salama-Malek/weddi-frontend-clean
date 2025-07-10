@@ -5,6 +5,7 @@ import { SectionLayout } from "@/shared/components/form/form.types";
 import { useAgentFormOptions } from "./plaintiff.forms.formOptions";
 import { useGetNICDetailsQuery } from "@/features/initiate-hearing/api/create-case/plaintiffDetailsApis";
 import { formatDateToYYYYMMDD } from "@/shared/utils/dateUtils";
+import { DigitOnlyInput } from '@/shared/components/form/InputField';
 
 /**
  * Builds dynamic form sections for PlaintiffDetails,
@@ -28,7 +29,6 @@ export const usePlaintiffFormLayout = (): SectionLayout[] => {
   const {
     applicantTypeOptions,
     plaintiffCapacityOptions,
-    certifiedRadioOptions,
     RegionOptions,
     CityOptions,
     OccupationOptions,
@@ -116,9 +116,10 @@ export const usePlaintiffFormLayout = (): SectionLayout[] => {
               type: "radio" as const,
               name: "certifiedAgency", 
               label: t("certifiedByAgency"), 
-              options: certifiedRadioOptions,
+              options: applicantTypeOptions, // This will need to be updated based on new logic
               value: watch("certifiedAgency"),
-              onChange: (value: string) => setValue("certifiedAgency", value)
+              onChange: (value: string) => setValue("certifiedAgency", value),
+              validation: { required: t("certifiedByAgencyValidation") },
             },
           ],
         },

@@ -239,7 +239,17 @@ const AuthProvider: React.FC<AuthProviderProps> = ({
     initializeUserSession();
   }, [isTokenReady]);
 
+  useEffect(() => {
+    if (!isTokenReady) return;
 
+    const storedClaims = getCookie("userClaims");
+    if (!shouldUseStoredClaims(storedClaims)) {
+      // Redirect to login if not authenticated
+      window.location.href = process.env.VITE_REDIRECT_URL || "";
+      return;
+    }
+  }, [isTokenReady]);
+  
   const navigate = useNavigate();
   const { isRTL } = useLanguageDirection();
   const { t, i18n } = useTranslation();

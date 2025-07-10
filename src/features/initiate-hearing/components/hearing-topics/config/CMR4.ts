@@ -30,7 +30,8 @@ export const getBPSR1FormFields = ({
       label: t("amount"),
       inputType: "number",
       value: "",
-      validation:{required:"Type of request is required"},
+      validation: { required: "Type of request is required" },
+      notRequired: false,
       onChange: (value) => setValue("amount", value),
     },
     {
@@ -39,7 +40,8 @@ export const getBPSR1FormFields = ({
       label: t("amountRatio"),
       inputType: "number",
       value: "",
-      validation:{required:"Type of request is required"},
+      validation: { required: "Type of request is required" },
+      notRequired: false,
       onChange: (value) => setValue("amountRatio", value),
     },
     dateFieldConfigs(t).fromDate,
@@ -50,7 +52,8 @@ export const getBPSR1FormFields = ({
       label: t("commissionType"),
       options: CommissionTypeLookUpOptions,
       value: commissionType,
-      validation:{required:"Type of request is required"},
+      validation: { required: "Type of request is required" },
+      notRequired: false,
       onChange: (option: Option | null) =>
         setValue("commissionType", option),
     },
@@ -60,7 +63,8 @@ export const getBPSR1FormFields = ({
       label: t("otherCommission"),
       inputType: "number",
       value: "",
-      validation:{required:"Type of request is required"},
+      validation: { required: "Type of request is required" },
+      notRequired: false,
       onChange: (value: string) => setValue("otherCommission", value),
     } as const] : []),
     {
@@ -69,7 +73,8 @@ export const getBPSR1FormFields = ({
       label: t("accordingToTheAgreement"),
       options: AccordingToAgreementLookupLookUpOptions,
       value: accordingToAgreement,
-      validation:{required:"Type of request is required"},
+      validation: { required: "Type of request is required" },
+      notRequired: false,
       onChange: (option: Option | null) =>
         setValue("accordingToAgreement", option),
     }

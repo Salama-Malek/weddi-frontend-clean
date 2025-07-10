@@ -32,14 +32,25 @@ export const DateOfBirthField: React.FC<DateOfBirthFieldProps> = ({
 
   // whenever dateObject changes, write back the eight-digit strings
   useEffect(() => {
+    if (!setValue) return;
+
+    // @ts-ignore
+    const currentHijri = control?._formValues?.[hijriFieldName];
+    // @ts-ignore
+    const currentGregorian = control?._formValues?.[gregorianFieldName];
+
     if (dateInfo.dateObject) {
-      setValue?.(hijriFieldName, dateInfo.hijri);
-      setValue?.(gregorianFieldName, dateInfo.gregorian);
+      if (currentHijri !== dateInfo.hijri) {
+        setValue(hijriFieldName, dateInfo.hijri);
+      }
+      if (currentGregorian !== dateInfo.gregorian) {
+        setValue(gregorianFieldName, dateInfo.gregorian);
+      }
     } else {
-      setValue?.(hijriFieldName, "");
-      setValue?.(gregorianFieldName, "");
+      if (currentHijri !== "") setValue(hijriFieldName, "");
+      if (currentGregorian !== "") setValue(gregorianFieldName, "");
     }
-  }, [dateInfo, setValue, hijriFieldName, gregorianFieldName]);
+  }, [dateInfo, setValue, hijriFieldName, gregorianFieldName, control]);
 
   // Get gregorian value from form if available
   let gregorianValue = dateInfo.gregorian;

@@ -69,7 +69,7 @@ export const dateFieldConfigs = (
             control={control}
             name="from_date_hijri"
             label={t("fromDateHijri")}
-            rules={{}}
+            rules={{required: true}}
             onChangeHandler={(date, onChange) =>
               handleHijriDateChange(
                 date,
@@ -94,7 +94,7 @@ export const dateFieldConfigs = (
             control={control}
             name="to_date_hijri"
             label={t("toDateHijri")}
-            rules={{}}
+            rules={{required: true}}
             onChangeHandler={(date, onChange) =>
               handleHijriDateChange(
                 date,
@@ -127,7 +127,7 @@ export const managerialDateConfigs = (t: any, setValue?: any, watch?: any, contr
             control={control}
             name="managerial_decision_date_hijri"
             label={t("managerialDecisionDateHijri")}
-            rules={{}}
+            rules={{required: true}}
             onChangeHandler={(date, onChange) =>
               handleHijriDateChange(
                 date,

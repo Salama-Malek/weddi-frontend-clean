@@ -70,8 +70,8 @@ export const useFormLayout = ({
   // Add region lookup hook
   const { data: regionData, isFetching: isRegionLoading } = useGetRegionLookupDataQuery({
     AcceptedLanguage: i18n.language.toUpperCase(),
-    context: "default", // This uses RegionName module
-  });
+    context: "worker",
+    });
 
   // Create region options for dropdowns
   const RegionOptions = React.useMemo(() => {
@@ -185,6 +185,23 @@ export const useFormLayout = ({
     setValue(gregorianFieldName, gregorianStorage);
   };
 
+  // Helper function to add the validate rule to text inputs
+  type FormElementType = any; // fallback for type
+  function addNoSpacesValidationToTextInputs(fields: FormElementType[], t: any): FormElementType[] {
+    return fields.map(field => {
+      if (field && field.type === 'input' && field.inputType === 'text') {
+        return {
+          ...field,
+          validation: {
+            ...(field.validation || {}),
+            validate: (value: string) => value.trim().length > 0 || t('spacesOnlyNotAllowed'),
+          },
+        };
+      }
+      return field;
+    });
+  }
+
   const step1: SectionLayout = {
     gridCols: 2,
     className: "step1-class", // Add a valid className here
@@ -291,17 +308,18 @@ export const useFormLayout = ({
       case "AWRW-2":
         return buildForm([]);
       case "LCUTE-1":
-        return buildForm([
+        return buildForm(addNoSpacesValidationToTextInputs([
           {
             type: "input",
             name: "amountOfCompensation",
             label: tHearingTopics("amountOfCompensation"),
             inputType: "text",
             value: watch("amountOfCompensation") || "",
-            onChange: (value) => setValue("amountOfCompensation", value),
+            onChange: (value: string) => setValue("amountOfCompensation", value),
             validation: { required: tHearingTopics("amountOfCompensation") },
+            notRequired: false,
           },
-        ]);
+        ], tHearingTopics));
       case "CR-1":
         return buildForm([
           {
@@ -313,18 +331,20 @@ export const useFormLayout = ({
             value: watch("amount") || "",
             onChange: (value) => setValue("amount", value),
             validation: { required: tHearingTopics("amount") },
+            notRequired: false,
           },
         ]);
       case "DPVR-1":
-        return buildForm([
+        return buildForm(addNoSpacesValidationToTextInputs([
           {
             type: "input",
             name: "damagedType",
             label: tHearingTopics("damagedType"),
             inputType: "text",
             value: watch("damagedType") || "",
-            onChange: (value) => setValue("damagedType", value),
+            onChange: (value: string) => setValue("damagedType", value),
             validation: { required: tHearingTopics("damagedType") },
+            notRequired: false,
           },
           {
             type: "input",
@@ -333,10 +353,11 @@ export const useFormLayout = ({
             inputType: "number",
             min: 0,
             value: watch("damagedValue") || "",
-            onChange: (value) => setValue("damagedValue", value),
+            onChange: (value: string) => setValue("damagedValue", value),
             validation: { required: tHearingTopics("damagedValue") },
+            notRequired: false,
           },
-        ]);
+        ], tHearingTopics));
       case "RLRAHI-1":
         const fields: any = [
           {
@@ -348,6 +369,7 @@ export const useFormLayout = ({
             onChange: (option: Option | null) =>
               setValue("typeOfRequest", option),
             validation: { required: tHearingTopics("typeOfRequest") },
+            notRequired: false,
           },
         ];
 
@@ -367,7 +389,7 @@ export const useFormLayout = ({
                     control={control}
                     name="request_date_hijri"
                     label={tHearingTopics("requestDateHijri")}
-                    rules={{}}
+                    rules={{ required: tHearingTopics("requestDateHijri") }}
                     onChangeHandler={(date, onChange) =>
                       handleHijriDateChange(
                         date,
@@ -375,15 +397,18 @@ export const useFormLayout = ({
                         "request_date_gregorian"
                       )
                     }
+                    notRequired={false}
                   />
                   <GregorianDateDisplayInput
                     control={control}
                     name="request_date_gregorian"
                     label={tHearingTopics("requestDateGregorian")}
+                    notRequired={false}
                   />
                 </div>
               ),
               showWhen: "RLRAHI1",
+              notRequired: false,
             },
             {
               type: "input",
@@ -406,21 +431,23 @@ export const useFormLayout = ({
             value: isEditing ? editTopic?.LoanAmount || editTopic?.loanAmount : watch("loanAmount") || "",
             onChange: (value: string) => setValue("loanAmount", value),
             validation: { required: tHearingTopics("loanAmount") },
+            notRequired: false,
           });
         }
 
-        return buildForm(fields);
+        return buildForm(addNoSpacesValidationToTextInputs(fields, tHearingTopics));
 
       case "RUF-1":
-        return buildForm([
+        return buildForm(addNoSpacesValidationToTextInputs([
           {
             type: "input",
             name: "RefundType",
             label: tHearingTopics("RefundType"),
             inputType: "text",
             value: watch("RefundType") || "",
-            onChange: (value) => setValue("RefundType", value),
+            onChange: (value: string) => setValue("RefundType", value),
             validation: { required: tHearingTopics("RefundType") },
+            notRequired: false,
           },
           {
             type: "input",
@@ -429,10 +456,11 @@ export const useFormLayout = ({
             inputType: "number",
             min: 0,
             value: watch("amount") || "",
-            onChange: (value) => setValue("amount", value),
+            onChange: (value: string) => setValue("amount", value),
             validation: { required: tHearingTopics("amount") },
+            notRequired: false,
           },
-        ]);
+        ], tHearingTopics));
 
       case "EDO-1":
         return buildForm([
@@ -444,6 +472,8 @@ export const useFormLayout = ({
             isLoading: isRegionLoading,
             value: watch("fromLocation")?.value || editTopic?.fromLocation?.value,
             onChange: (option: Option | null) => setValue("fromLocation", option),
+            validation: { required: tHearingTopics("fromLocation") },
+            notRequired: false,
           },
           {
             type: "autocomplete",
@@ -453,6 +483,8 @@ export const useFormLayout = ({
             isLoading: isRegionLoading,
             value: watch("toLocation")?.value || editTopic?.toLocation?.value,
             onChange: (option: Option | null) => setValue("toLocation", option),
+            validation: { required: tHearingTopics("toLocation") },
+            notRequired: false,
           },
           {
             type: "custom",
@@ -462,17 +494,11 @@ export const useFormLayout = ({
                 control={control}
                 name="managerial_decision_date_hijri"
                 label={tHearingTopics("managerialDecisionDateHijri")}
-                rules={{
-                  required: false,
-                  pattern: {
-                    value: /^\d{4}\/\d{2}\/\d{2}$/,
-                    message: tHearingTopics("dateValidationDesc"),
-                  },
-                }}
+                rules={{ required: tHearingTopics("managerialDecisionDateHijri") }}
                 onChangeHandler={(date, onChange) =>
                   handleHijriDateChange(date, onChange, "managerial_decision_date_gregorian")
                 }
-                notRequired={true}
+                notRequired={false}
               />
             ),
           },
@@ -484,7 +510,7 @@ export const useFormLayout = ({
                 control={control}
                 name="managerial_decision_date_gregorian"
                 label={tHearingTopics("managerialDecisionDateGregorian")}
-                notRequired={true}
+                notRequired={false}
               />
             ),
           },
@@ -493,10 +519,11 @@ export const useFormLayout = ({
             name: "managerialDecisionNumber",
             label: tHearingTopics("managerialDecisionNumber"),
             inputType: "number",
-            notRequired: true,
             value: watch("managerialDecisionNumber") || "",
             onChange: (value) => setValue("managerialDecisionNumber", value),
-          },
+            validation: { required: tHearingTopics("managerialDecisionNumber") },
+            notRequired: false,
+            },
         ]);
 
       default:

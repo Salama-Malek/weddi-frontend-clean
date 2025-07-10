@@ -4,13 +4,12 @@ import { useTranslation } from "react-i18next";
 import withStepNavigation, {
   WithStepNavigationProps,
 } from "@/shared/HOC/withStepNavigation";
-import Modal from "@/shared/components/modal/Modal";
-import Button from "@/shared/components/button";
 import { DynamicForm } from "@/shared/components/form/DynamicForm";
 import { FormData } from "@/shared/components/form/form.types";
 import { toast } from "react-toastify";
 import Loader from "@/shared/components/loader";
 import { formatDateToYYYYMMDD } from "@/shared/lib/helpers";
+import { useWatch } from "react-hook-form";
 
 import {
   useGetNICDetailsQuery,
@@ -32,12 +31,12 @@ import { useCookieState } from "@/features/initiate-hearing/hooks/useCookieState
 import useCaseDetailsPrefill from "@/features/initiate-hearing/hooks/useCaseDetailsPrefill";
 import { useSaveClaimantDetailsMutation } from "@/features/initiate-hearing/api/create-case/apis";
 import { useAPIFormsData } from "@/providers/FormContext";
-import { useIncompleteCaseHandler } from '@/features/initiate-hearing/hooks/useIncompleteCaseHandler';
+import { useIncompleteCaseHandler } from "@/features/initiate-hearing/hooks/useIncompleteCaseHandler";
 
 import { useFormLayout } from "./claimant.forms.formLayout";
 import { useEstablishmentPlaintiffFormLayout } from "../../establishment-tabs/plaintiff/plaintiff.forms.formLayout";
 import { useLegalRepPlaintiffFormLayout } from "../../establishment-tabs/legal-representative/plaintiff.forms.formLayout";
-import { embasyUserFormLayout } from "../../embasy/plaintiff/embasyCalimnt.forms.formLayout";
+import { EmbassyClaimantFormLayout } from "../../embasy/modern/EmbassyClaimantFormLayout";
 
 interface NICDetailsResponse {
   DataElements: Array<{
@@ -112,507 +111,652 @@ const ClaimantDetailsContainer: React.FC<
     trigger: (name: string) => void;
     isValid: boolean;
   }
-> = ({ register, errors, setValue, watch, control, setError, clearErrors, trigger, isValid }) => {
-  const { t, i18n } = useTranslation("hearingdetails");
-  const lang = i18n.language.toUpperCase();
-  const [showSelfIdErrorModal, setShowSelfIdErrorModal] = useState(false);
-  const [isAgencyValidating, setIsAgencyValidating] = useState(false);
+> = ({
+  register,
+  errors,
+  setValue,
+  watch,
+  control,
+  setError,
+  clearErrors,
+  trigger,
+  isValid,
+}) => {
+    const { t, i18n } = useTranslation("hearingdetails");
+    const lang = i18n.language.toUpperCase();
+    const [isAgencyValidating, setIsAgencyValidating] = useState(false);
 
-  const [getCookie, setCookie] = useCookieState();
-  const userClaims = getCookie("userClaims");
-  const userId = userClaims?.UserID || '';
-  const userName = userClaims?.FullName || '';
-  const userType = getCookie("userType");
+    const [getCookie, setCookie] = useCookieState();
+    const userClaims = getCookie("userClaims");
+    const userId = userClaims?.UserID || "";
+    const userName = userClaims?.FullName || "";
+    const userType = getCookie("userType");
+    const { clearFormData } = useAPIFormsData();
+    useEffect(() => {
+      // Keep this for initial setup, but individual fields are managed
+      // by useIncompleteCaseHandler and other hooks.
+    }, [clearFormData]);
 
-  const { clearFormData } = useAPIFormsData();
-  useEffect(() => {
-    // Keep this for initial setup, but individual fields are managed
-    // by useIncompleteCaseHandler and other hooks.
-  }, [clearFormData]);
+    useIncompleteCaseHandler(setValue, trigger);
+    useCaseDetailsPrefill(setValue, trigger);
 
-  useIncompleteCaseHandler(setValue, trigger);
-  useCaseDetailsPrefill(setValue, trigger);
+    const claimantStatus = watch("claimantStatus") as
+      | "principal"
+      | "representative";
 
-  const claimantStatus = watch("claimantStatus") as "principal" | "representative";
+    useEffect(() => {
+      // Set default claimant status on mount to avoid race conditions
+      if (!claimantStatus) {
+        setValue("claimantStatus", "principal");
+      }
+    }, [claimantStatus, setValue]);
 
-  useEffect(() => {
-    // Set default claimant status on mount to avoid race conditions
-    if (!watch("claimantStatus")) {
-      setValue("claimantStatus", "principal");
-    }
-  }, [watch, setValue]);
-  
-  const principalId = userId;
-  const principalDob = formatDateToYYYYMMDD(userClaims.UserDOB);
+    const principalId = userId;
+    const principalDob = formatDateToYYYYMMDD(userClaims.UserDOB);
 
-  const representativeId = watch("workerAgentIdNumber") as string;
-  const representativeDob = formatDateToYYYYMMDD(watch("workerAgentDateOfBirthHijri"));
+    const representativeId = watch("workerAgentIdNumber") as string;
+    const representativeDob = formatDateToYYYYMMDD(
+      watch("workerAgentDateOfBirthHijri")
+    );
 
-  // Debug NIC query parameters
-  console.log("=== NIC QUERY DEBUG ===");
-  console.log("principalId:", principalId);
-  console.log("principalDob:", principalDob);
-  console.log("userClaims.UserDOB:", userClaims.UserDOB);
-  console.log("claimantStatus:", claimantStatus);
-  console.log("principalId.length:", principalId?.length);
-  console.log("principalDob.length:", principalDob?.length);
+    // --- OTP setup ---
+    const [sendOtp] = useSendOtpMutation();
+    const {
+      sendOtpHandler,
+      isVerified,
+      isNotVerified,
+      setIsNotVerified,
+      lastSentOtp,
+    } = useOtpVerification({
+      phoneCode: { value: (watch("phoneCode") as string) || "" },
+      phoneNumber: (watch("phoneNumber") as string) || "",
+      plaintiffId: claimantStatus === "principal" ? userId : representativeId,
+      plaintiffName: claimantStatus === "principal" ? userName : "",
+      setValue: setValue as any,
+    });
 
-  // --- OTP setup ---
-  const [sendOtp] = useSendOtpMutation();
-  const {
-    sendOtpHandler,
-    isVerified,
-    isNotVerified,
-    setIsNotVerified,
-    lastSentOtp,
-  } = useOtpVerification({
-    phoneCode: { value: (watch("phoneCode") as string) || "" },
-    phoneNumber: (watch("phoneNumber") as string) || "",
-    plaintiffId: claimantStatus === "principal" ? userId : representativeId,
-    plaintiffName: claimantStatus === "principal" ? userName : "",
-    setValue: setValue as any,
-  });
-
-  // --- Lookup data queries ---
-  const { data: regionData } = useGetWorkerRegionLookupDataQuery({
-    AcceptedLanguage: lang,
-    SourceSystem: "E-Services",
-    ModuleKey: userType.toLowerCase().includes("establishment")
-      ? "EstablishmentRegion"
-      : "WorkerRegion",
-    ModuleName: userType.toLowerCase().includes("establishment")
-      ? "EstablishmentRegion"
-      : "WorkerRegion",
-  });
-  const { data: cityData } = useGetWorkerCityLookupDataQuery(
-    {
+    // --- Lookup data queries ---
+    const { data: regionData } = useGetWorkerRegionLookupDataQuery({
       AcceptedLanguage: lang,
       SourceSystem: "E-Services",
-      selectedWorkerRegion: typeof watch("plaintiffRegion") === 'object' ? watch("plaintiffRegion")?.value : watch("plaintiffRegion") || "",
+      ModuleKey: userType.toLowerCase().includes("establishment")
+        ? "EstablishmentRegion"
+        : "WorkerRegion",
       ModuleName: userType.toLowerCase().includes("establishment")
-        ? "EstablishmentCity"
-        : "WorkerCity",
-    },
-    { skip: !(typeof watch("plaintiffRegion") === 'object' ? watch("plaintiffRegion")?.value : watch("plaintiffRegion")) }
-  );
-  const { data: occupationData } = useGetOccupationLookupDataQuery({
-    AcceptedLanguage: lang,
-    SourceSystem: "E-Services",
-  });
-  const { data: genderData } = useGetGenderLookupDataQuery({
-    AcceptedLanguage: lang,
-    SourceSystem: "E-Services",
-  });
-  const { data: nationalityData } = useGetNationalityLookupDataQuery({
-    AcceptedLanguage: lang,
-    SourceSystem: "E-Services",
-  });
-  const { data: countryData } = useGetCountryCodeLookupDataQuery({
-    AcceptedLanguage: lang,
-    SourceSystem: "E-Services",
-  });
-
-  // --- NIC details hooks, one for each case ---
-  const {
-    data: principalNICResponse,
-    isFetching: principalNICLoading,
-    refetch: principalNICRefetch,
-  } = useGetNICDetailsQuery(
-    {
-      IDNumber: principalId,
-      DateOfBirth: principalDob || "",
+        ? "EstablishmentRegion"
+        : "WorkerRegion",
+    });
+    const { data: cityData } = useGetWorkerCityLookupDataQuery(
+      {
+        AcceptedLanguage: lang,
+        SourceSystem: "E-Services",
+        selectedWorkerRegion:
+          typeof watch("plaintiffRegion") === "object"
+            ? watch("plaintiffRegion")?.value
+            : watch("plaintiffRegion") || "",
+        ModuleName: userType.toLowerCase().includes("establishment")
+          ? "EstablishmentCity"
+          : "WorkerCity",
+      },
+      {
+        skip: !(typeof watch("plaintiffRegion") === "object"
+          ? watch("plaintiffRegion")?.value
+          : watch("plaintiffRegion")),
+      }
+    );
+    const { data: occupationData } = useGetOccupationLookupDataQuery({
       AcceptedLanguage: lang,
       SourceSystem: "E-Services",
-    },
-    {
-      skip:
-        claimantStatus !== "principal" ||
-        !principalId ||
-        principalId.length !== 10 ||
-        !principalDob,
-    }
-  );
-
-  const {
-    data: representativeNICResponse,
-    isFetching: representativeNICLoading,
-    refetch: representativeNICRefetch,
-  } = useGetNICDetailsQuery(
-    {
-      IDNumber: representativeId,
-      DateOfBirth: representativeDob || "",
+    });
+    const { data: genderData } = useGetGenderLookupDataQuery({
       AcceptedLanguage: lang,
       SourceSystem: "E-Services",
-    },
-    {
-      skip:
-        claimantStatus !== "representative" ||
-        !representativeId ||
-        representativeId.length !== 10 ||
-        !representativeDob ||
-        representativeDob.length !== 8,
-    }
-  );
-  
-  const nicLoading = principalNICLoading || representativeNICLoading;
-
-  // --- Agent info ---
-  const {
-    data: agentInfo,
-    error: agentError,
-    isError: isAgentError,
-    isFetching: isAgentFetching,
-    refetch: refetchAttorneyDetails,
-  } = useGetAttorneyDetailsQuery(
-    {
-      AgentID: userId,
-      MandateNumber: watch("agencyNumber") as string,
+    });
+    const { data: nationalityData } = useGetNationalityLookupDataQuery({
       AcceptedLanguage: lang,
       SourceSystem: "E-Services",
-    },
-    {
-      skip:
-        !watch("agencyNumber") ||
-        watch("agencyNumber").length !== 9 ||
-        watch("agentType") !== "local_agency",
-      refetchOnMountOrArgChange: true, // ← ensure a fresh fetch even if the same number is entered again
-    }
-  );
+    });
+    const { data: countryData } = useGetCountryCodeLookupDataQuery({
+      AcceptedLanguage: lang,
+      SourceSystem: "E-Services",
+    });
 
-  // Track if error toast has been shown to prevent duplicates
-  const errorToastShownRef = useRef(false);
+    // --- NIC details hooks, one for each case ---
+    const {
+      data: principalNICResponse,
+      isFetching: principalNICLoading,
+      refetch: principalNICRefetch,
+    } = useGetNICDetailsQuery(
+      {
+        IDNumber: principalId,
+        DateOfBirth: principalDob || "",
+        AcceptedLanguage: lang,
+        SourceSystem: "E-Services",
+      },
+      {
+        skip:
+          claimantStatus !== "principal" ||
+          !principalId ||
+          principalId.length !== 10 ||
+          !principalDob,
+      }
+    );
 
-  useEffect(() => {
-    if (!agentInfo && !isAgentFetching) return;
+    const {
+      data: representativeNICResponse,
+      isFetching: representativeNICLoading,
+      refetch: representativeNICRefetch,
+    } = useGetNICDetailsQuery(
+      {
+        IDNumber: representativeId,
+        DateOfBirth: representativeDob || "",
+        AcceptedLanguage: lang,
+        SourceSystem: "E-Services",
+      },
+      {
+        skip:
+          claimantStatus !== "representative" ||
+          !representativeId ||
+          representativeId.length !== 10 ||
+          !representativeDob ||
+          representativeDob.length !== 8,
+      }
+    );
 
-    if (isAgentFetching) {
-      setIsAgencyValidating(true);
-      errorToastShownRef.current = false; // Reset when starting new fetch
-      return;
-    }
+    const nicLoading = principalNICLoading || representativeNICLoading;
 
-    setIsAgencyValidating(false);
+    // --- Agent info ---
+    const {
+      data: agentInfo,
+      error: agentError,
+      isError: isAgentError,
+      isFetching: isAgentFetching,
+      refetch: refetchAttorneyDetails,
+      isUninitialized,
+    } = useGetAttorneyDetailsQuery(
+      {
+        AgentID: userId,
+        MandateNumber: watch("agencyNumber") as string,
+        AcceptedLanguage: lang,
+        SourceSystem: "E-Services",
+      },
+      {
+        skip:
+        !isAgencyValidating ||
+          watch("agentType") !== "local_agency",
+        refetchOnMountOrArgChange: true, // ← ensure a fresh fetch even if the same number is entered again
+      }
+    );
 
-    // ERROR branch: no data or explicit error details
-    const hasNoData =
-      agentInfo?.Agent?.ErrorDescription === "SuccessNoData" ||
-      (Array.isArray(agentInfo?.ErrorDetails) &&
-        agentInfo.ErrorDetails.length > 0);
+    // Track if error toast has been shown to prevent duplicates
+    const errorToastShownRef = useRef(false);
 
-    if (hasNoData) {
-      // pull out an actual array
-      const errorDetailsArr = Array.isArray(agentInfo?.ErrorDetails)
-        ? agentInfo!.ErrorDetails!
-        : [];
+    useEffect(() => {
+      if (!agentInfo && !isAgentFetching) return;
 
-      const errorDesc = errorDetailsArr.find(
-        (d) => d.ErrorDesc !== undefined
-      )?.ErrorDesc;
-
-      // Only show toast if not already shown
-      if (!errorToastShownRef.current) {
-        toast.error(errorDesc || t("error.invalidAgencyNumber"));
-        errorToastShownRef.current = true;
+      if (isAgentFetching) {
+        setIsAgencyValidating(true);
+        errorToastShownRef.current = false; // Reset when starting new fetch
+        return;
       }
 
-      setError("agencyNumber", {
-        type: "validate",
-        message: errorDesc || t("error.invalidAgencyNumber"),
-      });
+      setIsAgencyValidating(false);
 
-      // clear agency fields
-      [
-        "agencyNumber",
-        "agentName",
-        "agencyStatus",
-        "agencySource",
-        "Agent_CurrentPlaceOfWork",
-        "Agent_ResidencyAddress",
-      ].forEach((f) => {
-        setValue(f as any, "");
-        clearErrors(f);
-      });
+      // ERROR branch: no data or explicit error details
+      const hasNoData =
+        agentInfo?.Agent?.ErrorDescription === "SuccessNoData" ||
+        (Array.isArray(agentInfo?.ErrorDetails) &&
+          agentInfo.ErrorDetails.length > 0);
 
-      [
-        "workerAgentIdNumber",
-        "workerAgentDateOfBirthHijri",
-        "gregorianDate",
-        "userName",
-        "region",
-        "city",
-        "occupation",
-        "gender",
-        "nationality",
-        "hijriDate",
-        "phoneNumber",
-      ].forEach((f) => {
-        setValue(f as any, "");
-        clearErrors(f);
-      });
+      if (hasNoData) {
+        // pull out an actual array
+        const errorDetailsArr = Array.isArray(agentInfo?.ErrorDetails)
+          ? agentInfo!.ErrorDetails!
+          : [];
 
-      return;
-    }
+        const errorDesc = errorDetailsArr.find(
+          (d) => d.ErrorDesc !== undefined
+        )?.ErrorDesc;
 
-    // SUCCESS branch
-    if (agentInfo?.Agent.ErrorDescription === "Success") {
-      setValue("agentName", agentInfo?.Agent.AgentName || "");
-      setValue("agencyStatus", agentInfo?.Agent.MandateStatus || "");
-      setValue("agencySource", agentInfo?.Agent.MandateSource || "");
-      toast.success(t("agencyFound"));
-      clearErrors("agencyNumber");
-      errorToastShownRef.current = false; // Reset on success
-    }
-  }, [agentInfo, isAgentFetching, setValue, setError, clearErrors, t]);
+        // Only show toast if not already shown
+        if (!errorToastShownRef.current) {
+          toast.error(errorDesc || t("error.invalidAgencyNumber"));
+          errorToastShownRef.current = true;
+        }
 
-  const allowedIds =
-    agentInfo?.Agent?.AgentDetails?.map((d) => d.IdentityNumber) || [];
-
-  // --- Validate agent-entered ID ---
-  useEffect(() => {
-    if (claimantStatus === "representative" && representativeId) {
-      if (representativeId === userId) {
-        setShowSelfIdErrorModal(true);
-        setValue("idNumber", "");
-      } else if (!allowedIds.includes(representativeId)) {
-        setError("idNumber", {
+        setError("agencyNumber", {
           type: "validate",
-          message: t("error.idNotUnderAgency"),
+          message: errorDesc || t("error.invalidAgencyNumber"),
         });
-      } else {
-        clearErrors("idNumber");
+
+        // clear agency fields
+        [
+          "agencyNumber",
+          "agentName",
+          "agencyStatus",
+          "agencySource",
+          "Agent_CurrentPlaceOfWork",
+          "Agent_ResidencyAddress",
+        ].forEach((f) => {
+          setValue(f as any, "");
+          clearErrors(f);
+        });
+
+        // [
+        //   "workerAgentIdNumber",
+        //   "workerAgentDateOfBirthHijri",
+        //   "gregorianDate",
+        //   "userName",
+        //   "region",
+        //   "city",
+        //   "occupation",
+        //   "gender",
+        //   "nationality",
+        //   "hijriDate",
+        //   "phoneNumber",
+        // ].forEach((f) => {
+        //   setValue(f as any, "");
+        //   clearErrors(f);
+        // });
+
+        return;
       }
-    }
-  }, [claimantStatus, representativeId, allowedIds, userId, setValue]);
 
-  // --- Save mutation ---
-  const [saveClaimantDetails] = useSaveClaimantDetailsMutation();
-  const handleSubmitStep = async () => {
-    const formData = watch();
-    console.log("=== PAYLOAD DEBUG ===");
-    console.log("claimantStatus:", formData?.claimantStatus);
-    console.log("applicantType:", formData?.applicantType);
-    console.log("agentType:", formData?.agentType);
-    console.log("Full formData:", formData);
-    console.log("userName:", formData?.userName);
-    console.log("plaintiffRegion:", formData?.plaintiffRegion);
-    console.log("plaintiffCity:", formData?.plaintiffCity);
-    console.log("occupation:", formData?.occupation);
-    console.log("gender:", formData?.gender);
-    console.log("nationality:", formData?.nationality);
-    console.log("hijriDate:", formData?.hijriDate);
-    console.log("gregorianDate:", formData?.gregorianDate);
-    console.log("phoneNumber:", formData?.phoneNumber);
-    
-    const payload: any = {
-      CreatedBy: userId,
-      SourceSystem: "E-Services",
-      Flow_CurrentScreen: "PlaintiffDetails",
-      AcceptedLanguage: "EN",
-      Flow_ButtonName: "Next",
-      CaseID: getCookie("caseId") || "",
-      UserType: "Worker",
-      ApplicantType: "Worker",
-      PlaintiffId: formData?.applicantType === "principal" ? userId : formData?.workerAgentIdNumber,
-      PlaintiffType: formData?.applicantType === "principal" ? "Self(Worker)" : "Agent",
-      PlaintiffName: formData?.userName,
-      PlaintiffHijiriDOB: formData?.hijriDate,
-      Plaintiff_ApplicantBirthDate: formData?.gregorianDate,
-      Plaintiff_PhoneNumber: formData?.phoneNumber,
-      Plaintiff_Region: formData?.plaintiffRegion?.value || formData?.region?.value || formData?.plaintiffRegion || formData?.region || "",
-      Plaintiff_City: formData?.plaintiffCity?.value || formData?.city?.value || formData?.plaintiffCity || formData?.city || "",
-      JobPracticing: formData?.occupation?.value || formData?.occupation || "",
-      Gender: formData?.gender?.value || formData?.gender || "",
-      Worker_Nationality: formData?.nationality?.value || formData?.nationality || "",
-      Plaintiff_JobLocation: formData?.plaintiffRegion?.value || formData?.region?.value || formData?.plaintiffRegion || formData?.region || "",
-      IsGNRequired: formData?.isPhone || false,
-      CountryCode: formData?.phoneCode?.value || "",
-      GlobalPhoneNumber: formData?.interPhoneNumber || "",
-      IsGNOtpVerified: formData?.isVerified || false,
-      DomesticWorker: formData?.isDomestic ? "true" : "false",
-      IDNumber: formData?.applicantType === "principal" ? userId : formData?.workerAgentIdNumber,
+      // SUCCESS branch
+      if (agentInfo?.Agent.ErrorDescription === "Success") {
+        setValue("agentName", agentInfo?.Agent.AgentName || "");
+        setValue("agencyStatus", agentInfo?.Agent.MandateStatus || "");
+        setValue("agencySource", agentInfo?.Agent.MandateSource || "");
+        toast.success(t("agencyFound"));
+        clearErrors("agencyNumber");
+        errorToastShownRef.current = false; // Reset on success
+      }
+    }, [agentInfo, isAgentFetching, setValue, setError, clearErrors, t]);
+
+    const allowedIds =
+      agentInfo?.Agent?.AgentDetails?.map((d) => d.IdentityNumber) || [];
+
+    const idNumber = watch("idNumber");
+
+    const agentType = watch("agentType");
+
+    useEffect(() => {
+      if (
+        claimantStatus === "representative" &&
+        representativeId &&
+        representativeId.length === 10 // Only trigger when 10 digits
+      ) {
+        if (representativeId === userId) {
+          // Show toast instead of modal
+          toast.error(t("error.cannotUseOwnId"));
+          // Clear the ID field
+          setValue("workerAgentIdNumber", "");
+          clearErrors("workerAgentIdNumber");
+          // Clear other related fields
+          [
+            "workerAgentDateOfBirthHijri",
+            "gregorianDate",
+            "userName",
+            "region",
+            "city",
+            "occupation",
+            "gender",
+            "nationality",
+            "hijriDate",
+            "phoneNumber",
+          ].forEach((f) => {
+            setValue(f as any, "");
+            clearErrors(f);
+          });
+        } else if (
+          agentType === "local_agency" &&
+          !allowedIds.includes(representativeId)
+        ) {
+          if (
+            !errors.idNumber ||
+            errors.idNumber.message !== t("error.idNotUnderAgency")
+          ) {
+            setError("idNumber", {
+              type: "validate",
+              message: t("error.idNotUnderAgency"),
+            });
+            toast.error(t("error.idNotUnderAgency"));
+            [
+              "workerAgentIdNumber",
+              "workerAgentDateOfBirthHijri",
+              "gregorianDate",
+              "userName",
+              "region",
+              "city",
+              "occupation",
+              "gender",
+              "nationality",
+              "hijriDate",
+              "phoneNumber",
+            ].forEach((f) => {
+              setValue(f as any, "");
+              clearErrors(f);
+            });
+          }
+        } else {
+          if (errors.idNumber) {
+            clearErrors("idNumber");
+          }
+        }
+      }
+    }, [
+      claimantStatus,
+      representativeId,
+      allowedIds,
+      userId,
+      setValue,
+      setError,
+      clearErrors,
+      t,
+      idNumber,
+      errors,
+      agentType,
+      agentInfo,
+    ]);
+
+    const embasyUserData = getCookie("storeAllUserTypeData");
+    const embassyUserNationalityCode =
+      embasyUserData?.EmbassyInfo?.[0]?.Nationality_Code;
+    const watchedNationality = useWatch({ control, name: "nationality" });
+    const watchedClaimantStatus = useWatch({ control, name: "claimantStatus" });
+
+    const nationalityToastShownOnceRef = useRef(false);
+
+    useEffect(() => {
+      const isPrincipal = claimantStatus === "principal";
+      const nicResponse = isPrincipal ? principalNICResponse : representativeNICResponse;
+      const id = isPrincipal ? principalId : representativeId;
+      const dob = isPrincipal ? principalDob : representativeDob;
+
+      if (
+        !nicLoading &&
+        id?.length === 10 &&
+        dob?.length === 8 &&
+        nicResponse?.NICDetails
+      ) {
+        const nicNationality = nicResponse.NICDetails.Nationality_Code || "";
+        const formNationality =
+          typeof watchedNationality === "object"
+            ? watchedNationality?.value
+            : watchedNationality || "";
+
+        const isMismatch =
+          embassyUserNationalityCode &&
+          nicNationality &&
+          embassyUserNationalityCode.trim().toUpperCase() !== formNationality.trim().toUpperCase();
+
+        // Show toast ONCE only — forever, regardless of future changes
+        if (isMismatch && !nationalityToastShownOnceRef.current) {
+          nationalityToastShownOnceRef.current = true;
+          toast.error(t("error.nationalityMismatch"));
+        }
+      }
+    }, [
+      nicLoading,
+      principalNICResponse,
+      representativeNICResponse,
+      principalId,
+      representativeId,
+      principalDob,
+      representativeDob,
+      claimantStatus,
+      t,
+      embassyUserNationalityCode,
+      watchedNationality,
+    ]);
+
+    // --- Save mutation ---
+    const [saveClaimantDetails] = useSaveClaimantDetailsMutation();
+    const handleSubmitStep = async () => {
+      const formData = watch();
+      // Debug: log form data before payload construction
+      console.log("FORM DATA BEFORE PAYLOAD:", formData);
+      const isEmbassyUser = userType?.toLowerCase().includes("embassy user");
+      const payload: any = {
+        CreatedBy: userId,
+        SourceSystem: "E-Services",
+        Flow_CurrentScreen: "PlaintiffDetails",
+        AcceptedLanguage: lang,
+        Flow_ButtonName: "Next",
+        CaseID: getCookie("caseId") || "",
+        UserType: isEmbassyUser ? "Embassy User" : "Worker",
+        ApplicantType: "Worker",
+        PlaintiffId: isEmbassyUser
+          ? formData?.embassyAgent_workerAgentIdNumber
+          : formData?.applicantType === "principal"
+            ? userId
+            : formData?.workerAgentIdNumber,
+        PlaintiffType: isEmbassyUser
+          ? "Agent"
+          : formData?.applicantType === "principal"
+            ? "Self(Worker)"
+            : "Agent",
+        // Embassy-specific fields
+        Agent_EmbassyName: isEmbassyUser ? formData?.embassyAgent_Agent_EmbassyName : undefined,
+        Agent_EmbassyNationality: isEmbassyUser ? formData?.embassyAgent_Agent_EmbassyNationality : undefined,
+        Agent_EmbassyPhone: isEmbassyUser ? formData?.embassyAgent_Agent_EmbassyPhone : undefined,
+        Agent_EmbassyEmailAddress: isEmbassyUser ? formData?.embassyAgent_Agent_EmbassyEmailAddress : undefined,
+        Agent_EmbassyFirstLanguage: isEmbassyUser ? formData?.embassyAgent_Agent_EmbassyFirstLanguage : undefined,
+        PlaintiffName: isEmbassyUser ? formData?.embassyAgent_userName : formData?.userName,
+        Plaintiff_PhoneNumber: isEmbassyUser ? formData?.embassyAgent_phoneNumber : formData?.phoneNumber,
+        Plaintiff_Region: isEmbassyUser
+          ? formData?.embassyAgent_region?.value || formData?.embassyAgent_region || ""
+          : formData?.plaintiffRegion?.value || formData?.region?.value || formData?.plaintiffRegion || formData?.region || "",
+        Plaintiff_City: isEmbassyUser
+          ? formData?.embassyAgent_city?.value || formData?.embassyAgent_city || ""
+          : formData?.plaintiffCity?.value || formData?.city?.value || formData?.plaintiffCity || formData?.city || "",
+        JobPracticing: isEmbassyUser
+          ? formData?.embassyAgent_occupation?.value || formData?.embassyAgent_occupation || ""
+          : formData?.occupation?.value || formData?.occupation || "",
+        Gender: isEmbassyUser
+          ? formData?.embassyAgent_gender?.value || formData?.embassyAgent_gender || ""
+          : formData?.gender?.value || formData?.gender || "",
+        Worker_Nationality: isEmbassyUser
+          ? formData?.embassyAgent_nationality?.value || formData?.embassyAgent_nationality || ""
+          : formData?.nationality?.value || formData?.nationality || "",
+        IsGNRequired: formData?.isPhone || false,
+        CountryCode: formData?.phoneCode?.value || "",
+        GlobalPhoneNumber: formData?.interPhoneNumber || "",
+        IsGNOtpVerified: formData?.isVerified || false,
+        DomesticWorker: formData?.isDomestic ? "true" : "false",
+        IDNumber: isEmbassyUser
+          ? formData?.embassyAgent_workerAgentIdNumber
+          : formData?.applicantType === "principal"
+            ? userId
+            : formData?.workerAgentIdNumber,
+      };
+      // Remove undefined embassy fields for non-embassy users
+      if (!isEmbassyUser) {
+        delete payload.Agent_EmbassyName;
+        delete payload.Agent_EmbassyNationality;
+        delete payload.Agent_EmbassyPhone;
+        delete payload.Agent_EmbassyEmailAddress;
+        delete payload.Agent_EmbassyFirstLanguage;
+      }
+      if (!payload.Plaintiff_City) {
+        payload.Plaintiff_City = "1";
+      }
+      if (formData?.applicantType === "representative") {
+        payload.Agent_AgentID = userId;
+        payload.Agent_MandateNumber = formData?.agencyNumber;
+        payload.Agent_PhoneNumber = formData?.agentPhoneNumber;
+        payload.Agent_Name = formData?.agentName;
+        payload.Agent_MandateStatus = formData?.agencyStatus;
+        payload.Agent_MandateSource = formData?.agencySource;
+        payload.Agent_ResidencyAddress = formData?.Agent_ResidencyAddress;
+        payload.Agent_CurrentPlaceOfWork = formData?.Agent_CurrentPlaceOfWork;
+        payload.Agent_Mobilenumber = formData?.agentPhoneNumber;
+        payload.CertifiedBy =
+          formData?.agentType === "local_agency" ? "CB1" : "CB2";
+      }
+      const isCaseCreated = !!getCookie("caseId");
+      await saveClaimantDetails({ data: payload, isCaseCreated });
     };
-    console.log("Final PlaintiffType in payload:", payload.PlaintiffType);
-    console.log("Full payload:", payload);
-    
-    if (!payload.Plaintiff_City) {
-      payload.Plaintiff_City = "1";
-    }
 
-    if (formData?.applicantType === "representative") {
-      payload.Agent_AgentID = userId;
-      payload.Agent_MandateNumber = formData?.agencyNumber;
-      payload.Agent_PhoneNumber = formData?.mobileNumber;
-      payload.Agent_Name = formData?.agentName;
-      payload.Agent_MandateStatus = formData?.agencyStatus;
-      payload.Agent_MandateSource = formData?.agencySource;
-      payload.Agent_ResidencyAddress = formData?.Agent_ResidencyAddress;
-      payload.Agent_CurrentPlaceOfWork = formData?.Agent_CurrentPlaceOfWork;
-      payload.Agent_Mobilenumber = formData?.mobileNumber;
-      payload.CertifiedBy = formData?.agentType === "local_agency" ? "CB1" : "CB2";
-    }
+    // --- Establishment & Legal-Rep ---
+    const { data: est } = useGetEstablishmentDetailsQuery(
+      {
+        AcceptedLanguage: lang,
+        SourceSystem: "E-Services",
+        FileNumber: userClaims.File_Number || skipToken,
+      },
+      { skip: !userClaims.File_Number }
+    );
+    const { data: legalRep } = useGetUserTypeLegalRepQuery(
+      {
+        IDNumber: userId,
+        UserType: userClaims.UserType,
+        AcceptedLanguage: lang,
+        SourceSystem: "E-Services",
+      },
+      { skip: watch("plaintiffStatus") !== "legal_representative" }
+    );
 
-    const isCaseCreated = !!getCookie("caseId");
-    await saveClaimantDetails({ data: payload, isCaseCreated });
-  };
+    const apiLoadingStates = {
+      agent: isAgencyValidating,
+      nic: claimantStatus === "principal" ? nicLoading : nicLoading,
+      estab: false,
+      incomplete: false,
+    };
 
-  // --- Establishment & Legal-Rep ---
-  const { data: est } = useGetEstablishmentDetailsQuery(
-    {
-      AcceptedLanguage: lang,
-      SourceSystem: "E-Services",
-      FileNumber: userClaims.File_Number || skipToken,
-    },
-    { skip: !userClaims.File_Number }
-  );
-  const { data: legalRep } = useGetUserTypeLegalRepQuery(
-    {
-      IDNumber: userId,
-      UserType: userClaims.UserType,
-      AcceptedLanguage: lang,
-      SourceSystem: "E-Services",
-    },
-    { skip: watch("plaintiffStatus") !== "legal_representative" }
-  );
-
-  const apiLoadingStates = {
-    agent: isAgencyValidating,
-    nic: claimantStatus === "principal" ? nicLoading : nicLoading,
-    estab: false,
-    incomplete: false,
-  };
-
-  const loadFormLayoutFunction = () => {
-    if (userType?.toLowerCase().includes("establishment")) {
-      return useEstablishmentPlaintiffFormLayout({
-        establishmentDetails: est?.EstablishmentInfo?.[0] || null,
-        apiLoadingStates,
-        regionData: regionData?.DataElements,
-        cityData: cityData?.DataElements,
-        setValue,
-      });
-    }
-    if (userType?.toLowerCase().includes("legal representative")) {
-      return useLegalRepPlaintiffFormLayout(
-        watch as any,
-        legalRep,
-        setValue as any
-      );
-    }
-    if (userType?.toLowerCase().includes("embassy user")) {
-      return embasyUserFormLayout({
+    const loadFormLayoutFunction = () => {
+      if (userType?.toLowerCase().includes("establishment")) {
+        return useEstablishmentPlaintiffFormLayout({
+          establishmentDetails: est?.EstablishmentInfo?.[0] || null,
+          apiLoadingStates,
+          regionData: regionData?.DataElements,
+          cityData: cityData?.DataElements,
+          setValue,
+        });
+      }
+      if (userType?.toLowerCase().includes("legal representative")) {
+        return useLegalRepPlaintiffFormLayout(
+          watch as any,
+          legalRep,
+          setValue as any
+        );
+      }
+      if (userType?.toLowerCase().includes("embassy user")) {
+        // Map lookup data to { value, label } format for embassy forms
+        const mapOptions = (data: {
+          DataElements?: { ElementKey: string; ElementValue: string }[];
+        }) =>
+          data?.DataElements?.map(
+            (item: { ElementKey: string; ElementValue: string }) => ({
+              value: item.ElementKey,
+              label: item.ElementValue,
+            })
+          ) || [];
+        return EmbassyClaimantFormLayout({
+          control,
+          setValue: setValue as any,
+          watch: watch as any,
+          RegionOptions: mapOptions(regionData),
+          CityOptions: mapOptions(cityData),
+          OccupationOptions: mapOptions(occupationData),
+          GenderOptions: mapOptions(genderData),
+          NationalityOptions: mapOptions(nationalityData),
+          setError,
+          clearErrors,
+          isVerified,
+        });
+      }
+      // Default return if no specific user type matches
+      return useFormLayout({
         control,
         setValue: setValue as any,
         watch: watch as any,
-        regionData: regionData?.DataElements,
-        cityData: cityData?.DataElements,
+        plaintiffRegionData: regionData?.DataElements,
+        plaintiffCityData: cityData?.DataElements,
         occupationData: occupationData?.DataElements,
         genderData: genderData?.DataElements,
         nationalityData: nationalityData?.DataElements,
         countryData: countryData?.DataElements,
+        sendOtpHandler,
+        lastSentOtp,
         isVerified,
+        isNotVerified,
+        setIsNotVerified,
+        agentInfoData: (agentInfo ?? {}) as AgentInfo,
+        apiLoadingStates: {
+          agent: isAgencyValidating,
+          nic: claimantStatus === "principal" ? nicLoading : nicLoading,
+          estab: false,
+          incomplete: false,
+        },
+        userTypeLegalRepData: legalRep,
+        onAgencyNumberChange: (value: string) => {
+          if (
+            value.length >= 1 &&
+            value.length <= 10 &&
+            watch("agentType") === "local_agency"
+          ) {
+            setIsAgencyValidating(true);
+            setError("agencyNumber", {
+              type: "validate",
+              message: t("validatingAgencyNumber"),
+            });
+            if (!isUninitialized && refetchAttorneyDetails) {
+              refetchAttorneyDetails();
+            }
+          } else {
+            setValue("agentName", "");
+            setValue("agencyStatus", "");
+            setValue("agencySource", "");
+            setIsAgencyValidating(false);
+          }
+        },
         setError,
         clearErrors,
+        verifyOtp: sendOtpHandler,
+        isVerify: isVerified,
+        principalNICResponse,
+        principalNICRefetch,
+        representativeNICResponse,
+        register,
+        errors,
+        trigger,
+        isValid,
+        // addthion
+        allowedIds,
       });
-    }
-    // Default return if no specific user type matches
-    return useFormLayout({
-      control,
-      setValue: setValue as any,
-      watch: watch as any,
-      plaintiffRegionData: regionData?.DataElements,
-      plaintiffCityData: cityData?.DataElements,
-      occupationData: occupationData?.DataElements,
-      genderData: genderData?.DataElements,
-      nationalityData: nationalityData?.DataElements,
-      countryData: countryData?.DataElements,
-      sendOtpHandler,
-      lastSentOtp,
-      isVerified,
-      isNotVerified,
-      setIsNotVerified,
-      agentInfoData: (agentInfo ?? {}) as AgentInfo,
-      apiLoadingStates: {
-        agent: isAgencyValidating,
-        nic: claimantStatus === "principal" ? nicLoading : nicLoading,
-        estab: false,
-        incomplete: false,
-      },
-      userTypeLegalRepData: legalRep,
-      onAgencyNumberChange: (value: string) => {
-        if (value.length === 9 && watch("agentType") === "local_agency") {
-          setIsAgencyValidating(true);
-          setError("agencyNumber", {
-            type: "validate",
-            message: t("validatingAgencyNumber"),
-          });
-          refetchAttorneyDetails();
-        } else {
-          setValue("agentName", "");
-          setValue("agencyStatus", "");
-          setValue("agencySource", "");
-          setIsAgencyValidating(false);
-        }
-      },
-      setError,
-      clearErrors,
-      verifyOtp: sendOtpHandler,
-      isVerify: isVerified,
-      principalNICResponse,
-      principalNICRefetch,
-      representativeNICResponse,
-      register,
-      errors,
-      trigger,
-      isValid,
-    });
-  };
+    };
 
-  const rightLayout = loadFormLayoutFunction();
+    const rightLayout = loadFormLayoutFunction();
 
-  return (
-    <>
-      {(nicLoading) && <Loader />}
-      {isAgencyValidating && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-25 backdrop-blur-sm z-[9999]">
-          <Loader />
-        </div>
-      )}
-      {showSelfIdErrorModal && (
-        <Modal
-          close={() => setShowSelfIdErrorModal(false)}
-          header={t("error.invalidIdNumber")}
-          modalWidth={500}
-        >
-          <p className="text-sm text-gray-700">{t("error.cannotUseOwnId")}</p>
-          <div className="flex justify-end mt-6">
-            <Button
-              variant="primary"
-              onClick={() => setShowSelfIdErrorModal(false)}
-            >
-              {t("ok")}
-            </Button>
+    return (
+      <>
+        {nicLoading && <Loader />}
+        {isAgencyValidating && (
+          <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-25 backdrop-blur-sm z-[9999]">
+            <Loader />
           </div>
-        </Modal>
-      )}
+        )}
 
-      <div
-        className={`relative ${isAgencyValidating || nicLoading ? "pointer-events-none" : ""
-          }`}
-      >
-        <div className={isAgencyValidating || nicLoading ? "blur-sm" : ""}>
-          <PureClaimantDetails
-            register={register}
-            errors={errors}
-            setValue={setValue}
-            watch={watch}
-            control={control}
-            formLayout={rightLayout}
-            nicIsLoading={apiLoadingStates.nic}
-          />
+
+        <div
+          className={`relative ${isAgencyValidating || nicLoading ? "pointer-events-none" : ""
+            }`}
+        >
+          <div className={isAgencyValidating || nicLoading ? "blur-sm" : ""}>
+            <PureClaimantDetails
+              register={register}
+              errors={errors}
+              setValue={setValue}
+              watch={watch}
+              control={control}
+              formLayout={rightLayout}
+              nicIsLoading={apiLoadingStates.nic}
+            />
+          </div>
         </div>
-      </div>
-    </>
-  );
-};
+      </>
+    );
+  };
 
 export default withStepNavigation(ClaimantDetailsContainer);
