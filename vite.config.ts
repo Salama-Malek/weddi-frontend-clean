@@ -18,12 +18,8 @@ export default defineConfig(({ mode }) => {
       viteStaticCopy({
         targets: [
           {
-            src: 'src/locales/ar/*.json',
-            dest: 'locales/ar',
-          },
-          {
-            src: 'src/locales/en/*.json',
-            dest: 'locales/en',
+            src: 'src/locales/*.json',
+            dest: 'locales',
           },
           {
             src: 'src/assets/fonts/*',
