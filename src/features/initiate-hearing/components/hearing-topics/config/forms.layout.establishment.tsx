@@ -80,7 +80,6 @@ export const useFormLayout = ({
     });
   }, [regionData]);
 
-  // //console.log('matchedSubCategory', matchedSubCategory)
   const amount = watch("amount");
   const loanAmount = watch("loanAmount");
   const typeOfCustody = watch("typeOfCustody");

@@ -8,7 +8,7 @@ import "./i18n/i18n";
 import Loader from "./shared/components/loader";
 import { MainErrorFallback } from "./shared/components/errors/ErrorFallback";
 import { OfflineLayout } from "./shared/layouts/OfflineLayout";
-import StepperWithTabs from "./Test";
+
 import MainLayout from "./shared/layouts/MainLayout";
 import StepperSkeleton from "./shared/components/loader/StepperSkeleton";
 import { TokenExpirationProvider } from "./providers/TokenExpirationProvider";
@@ -59,7 +59,7 @@ const routesConfig: RouteObject[] = [
           },
         ],
       },
-      { path: "test", element: <StepperWithTabs /> },
+
       {
         path: "manage-hearings",
         element: (

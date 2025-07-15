@@ -18,6 +18,7 @@ import { legRepVsWorkerUseFormLayout } from "../../establishment-tabs/legal-repr
 import { useTranslation } from "react-i18next";
 import { FormResetProvider } from '@/providers/FormResetProvider';
 import useWorkDetailsPrefill from "@/features/initiate-hearing/hooks/useWorkDetailsPrefill";
+import { SectionLayout } from "@/shared/components/form/form.types";
 
 export interface WorkDetailsProps {
   register?: any;
@@ -36,243 +37,128 @@ const WorkDetails = ({
   control,
   isVerifiedInput = true,
 }: WorkDetailsProps) => {
+
   const { i18n } = useTranslation();
   const currentLanguage = i18n.language.toUpperCase();
-
-  const [getCookie, setCookie] = useCookieState({ caseId: "" });
-
-  const caseDetailsLoading = useWorkDetailsPrefill(setValue as any);
-
+  const [getCookie] = useCookieState({ caseId: "" });
   const userType = getCookie("userType") || "";
-
   const legalRepType = getCookie("legalRepType");
   const defendantStatus = getCookie("defendantStatus") || "";
-
-  const { formData, forceValidateForm, handleRemoveValidation } = useAPIFormsData();
-  useEffect(() => {
-    forceValidateForm();
-
-    setValue("region", null);
-    setValue("city", null);
-  }, []);
-
-  // Prefill fields when continuing an incomplete case for Legal representative
-  // useCaseDetailsPrefill(setValue as any);
-
-
-
-  const [ExtractEstbAData] = useState(
-    getCookie("estPlatif-WorkDefentef") &&
-      typeof getCookie("estPlatif-WorkDefentef").ErrorDetails === "object"
-      ? null
-      : getCookie("estPlatif-WorkDefentef") &&
-        getCookie("estPlatif-WorkDefentef").EstablishmentData &&
-        getCookie("estPlatif-WorkDefentef").EstablishmentData.length > 0
-        ? getCookie("estPlatif-WorkDefentef").EstablishmentData[0]
-        : ""
-  );
-
-  const selectedWorkerRegion = watch("region");
   const selectedWorkerCity = watch("city");
-  const { data } = useGetSalaryTypeLookupQuery({
-    AcceptedLanguage: currentLanguage,
-  });
+
+  const { forceValidateForm, handleRemoveValidation } = useAPIFormsData();
+
+  // this is prefill, 
+  // it's roll to get data from case details and pull it in the feilds 
+  // so the loading is for trigger the api related to the extractEstData 
+  // the workedata have the work data for the palinteff or the defendnet 
+  const {
+    isFeatched: caseDetailsLoading,
+    workData
+  } = useWorkDetailsPrefill(setValue as any);
+ useEffect(() => {
+    [
+      "typeOfWage",
+      "salary",
+      "contractType",
+      "contractNumber",
+      "contractDateHijri",
+      "contractDateGregorian",
+      "contractExpiryDateHijri",
+      "contractExpiryDateGregorian",
+      "isStillEmployed",
+      "dateofFirstworkingdayHijri",
+      "dateOfFirstWorkingDayGregorian",
+      "dateoflastworkingdayHijri",
+      "dateOfLastWorkingDayGregorian",
+      "region",
+      "city",
+      "laborOffice",
+
+    ].forEach((e: any) => setValue(e, null));
+  }, [])
+
+
+  // useEffect(() => {
+  //   forceValidateForm();
+
+  //   setValue("region", null);
+  //   setValue("city", null);
+  // }, []);
+
+
+
+
 
 
   // 1. Setup the lazy hook
-  const [
-    triggerContractType,
-    { data: contractTypeData, isFetching: isContractTypeLoading }
-  ] = useLazyGetContractTypeLookupQuery();
+  // const [
+  //   triggerContractType,
+  // ] = useLazyGetContractTypeLookupQuery();
 
   // 2. Fire it once our cookies are decoded
-  useEffect(() => {
-    if (userType || legalRepType || defendantStatus) {
-      triggerContractType({
-        userType,
-        legalRepType,
-        defendantStatus,
-        AcceptedLanguage: currentLanguage,
-      });
-    }
-  }, [
-    userType,
-    legalRepType,
-    defendantStatus,
-    currentLanguage,
-    triggerContractType,
-  ]);
+  // useEffect(() => {
+  //   if (userType || legalRepType || defendantStatus) {
+  //     triggerContractType({
+  //       userType,
+  //       legalRepType,
+  //       defendantStatus,
+  //       AcceptedLanguage: currentLanguage,
+  //     });
+  //   }
+  // }, [
+  //   userType,
+  //   legalRepType,
+  //   defendantStatus,
+  //   currentLanguage,
+  //   triggerContractType,
+  // ]);
+
+  // const { data: laborOfficeData, isFetching: isLaborLoading } =
+  //   useGetLaborOfficeLookupDataQuery(
+  //     {
+  //       AcceptedLanguage: currentLanguage, // Pass current language
+  //       SourceSystem: "E-Services",
+  //       selectedWorkerCity: typeof selectedWorkerCity === 'object' ? selectedWorkerCity?.value : selectedWorkerCity || "",
+  //     },
+  //     { skip: !(typeof selectedWorkerCity === 'object' ? selectedWorkerCity?.value : selectedWorkerCity) }
+  //   );
+
+  // useEffect(() => {
+  //   if (laborOfficeData && laborOfficeData?.DataElements && laborOfficeData?.DataElements?.length !== 0
+  //   ) {
+  //     setValue("laborOffice", {
+  //       value: laborOfficeData?.DataElements?.[0]?.ElementKey || "",
+  //       label:
+  //         laborOfficeData?.DataElements?.[0]?.ElementValue || ""
+  //     });
+
+  //   }
+  // }, [laborOfficeData])
 
 
 
-  const { data: regionData, isFetching: isRegionLoading } =
-    useGetWorkerRegionLookupDataQuery({
-      AcceptedLanguage: currentLanguage, // Pass current language
-      SourceSystem: "E-Services",
-      ModuleKey: "JobLocation",
-      ModuleName: "JobLocation",
-    });
 
-  const { data: cityData, isFetching: isCityLoading } =
-    useGetWorkerCityLookupDataQuery(
-      {
-        AcceptedLanguage: currentLanguage, // Pass current language
-        SourceSystem: "E-Services",
-        selectedWorkerRegion: typeof selectedWorkerRegion === 'object' ? selectedWorkerRegion?.value : selectedWorkerRegion || "",
-        ModuleName: "JobLocationCity",
-      },
-      { skip: !(typeof selectedWorkerRegion === 'object' ? selectedWorkerRegion?.value : selectedWorkerRegion) }
+
+
+  const getFormLayout = () => {
+    return legRepVsWorkerUseFormLayout(
+      setValue,
+      control,
+      watch,
+      caseDetailsLoading,
+      workData
     );
-
-  const { data: laborOfficeData, isFetching: isLaborLoading } =
-    useGetLaborOfficeLookupDataQuery(
-      {
-        AcceptedLanguage: currentLanguage, // Pass current language
-        SourceSystem: "E-Services",
-        selectedWorkerCity: typeof selectedWorkerCity === 'object' ? selectedWorkerCity?.value : selectedWorkerCity || "",
-      },
-      { skip: !(typeof selectedWorkerCity === 'object' ? selectedWorkerCity?.value : selectedWorkerCity) }
-    );
-
-  useEffect(() => {
-    if (laborOfficeData && laborOfficeData?.DataElements && laborOfficeData?.DataElements?.length !== 0
-    ) {
-      console.log(laborOfficeData?.DataElements?.[0]);
-      setValue("laborOffice", {
-        value: laborOfficeData?.DataElements?.[0]?.ElementKey || "",
-        label:
-          laborOfficeData?.DataElements?.[0]?.ElementValue || ""
-      });
-
-    }
-  }, [laborOfficeData])
+  }
 
 
 
-  const formLayout = useFormLayout(
-    setValue,
-    control,
-    watch,
-    data?.DataElements,
-    contractTypeData?.DataElements,
-    ExtractEstbAData,
-    regionData?.DataElements,
-    cityData?.DataElements,
-    laborOfficeData?.DataElements,
-    selectedWorkerCity,
-    isRegionLoading,
-    isCityLoading,
-    isLaborLoading,
-    defendantStatus
-  );
-
-  const legRepVsWorkerLayouForm = legRepVsWorkerUseFormLayout(
-    setValue,
-    control,
-    watch,
-    caseDetailsLoading
-  );
-
-
-  // hassan add this 
-  const memoizedFormLayout = useMemo(
-    () => formLayout,
-    [formLayout]
-  );
-  const memoizedLegleFormLayout = useMemo(
-    () => legRepVsWorkerLayouForm,
-    [legRepVsWorkerLayouForm]
-  );
-
-  // Determine which form layout to use based on userType
-  const getFormLayout = (getUserType: string) => {
-    // hassan edit this 
-    getUserType = getUserType?.toLocaleLowerCase();
-    switch (getUserType) {
-      case "legal representative":
-        return memoizedLegleFormLayout;
-      // hassan change this  memoizedFormLayout  with memoizedLegleFormLayout  
-      default:
-        return memoizedLegleFormLayout;
-    }
-  };
-
-
-
-
-  // const workFormLayout = useWorkFormLayout(setValue, watch);
-
-
-
-
-  const getWorkDetails = async (queryParams: Record<string, string> = {}) => {
-    try {
-      const params = new URLSearchParams({
-        ...queryParams,
-        AcceptedLanguage: currentLanguage, // Pass current language
-        SourceSystem: "E-Services",
-      });
-      const response = await fetch(`WeddiServices/V1/WorkDetails?${params.toString()}`);
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      console.error("Error fetching work details:", error);
-      throw error;
-    }
-  };
-
-  const getWorkDetailsByCaseId = async (queryParams: Record<string, string> = {}) => {
-    try {
-      const params = new URLSearchParams({
-        ...queryParams,
-        AcceptedLanguage: currentLanguage, // Pass current language
-        SourceSystem: "E-Services",
-      });
-      const response = await fetch(`WeddiServices/V1/WorkDetailsByCaseId?${params.toString()}`);
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      console.error("Error fetching work details by case ID:", error);
-      throw error;
-    }
-  };
-
-  const getWorkDetailsByWorkerId = async (queryParams: Record<string, string> = {}) => {
-    try {
-      const params = new URLSearchParams({
-        ...queryParams,
-        AcceptedLanguage: currentLanguage, // Pass current language
-        SourceSystem: "E-Services",
-      });
-      const response = await fetch(`WeddiServices/V1/WorkDetailsByWorkerId?${params.toString()}`);
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      console.error("Error fetching work details by worker ID:", error);
-      throw error;
-    }
-  };
 
   return (
     <FormResetProvider setValue={setValue} clearErrors={handleRemoveValidation}>
       <div className="flex flex-col gap-4">
         <DynamicForm
-          formLayout={getFormLayout(userType)}
+          formLayout={getFormLayout()}
           register={register}
           errors={errors}
           setValue={setValue}

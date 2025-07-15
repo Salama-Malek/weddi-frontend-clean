@@ -37,7 +37,6 @@ const LegalEntitySelection = ({
   const [getCookie] = useCookieState();
   const userTypeData = getCookie("storeAllUserTypeData") as UserTypeData;
 
-  // If there's exactly one GovRepDetail, pre-select both main & sub
   useEffect(() => {
     if (userTypeData?.GovRepDetails?.length === 1) {
       const singleItem = userTypeData.GovRepDetails[0];
@@ -52,7 +51,6 @@ const LegalEntitySelection = ({
     }
   }, [userTypeData]);
 
-  // Build unique "main" list from all GovRepDetails
   const mainCategories = userTypeData?.GovRepDetails
     ? Array.from(
         new Set(
@@ -73,7 +71,6 @@ const LegalEntitySelection = ({
       })
     : [];
 
-  // Build "sub" list based on selectedMainCategory
   const subCategories =
     selectedMainCategory && userTypeData?.GovRepDetails
       ? userTypeData.GovRepDetails
@@ -95,19 +92,16 @@ const LegalEntitySelection = ({
     setSelectedSubCategory(option);
   };
 
-  // If there's no GovRepDetails at all, show a "no data" message
   if (!userTypeData?.GovRepDetails) {
     return <div>{t("no_data_available")}</div>;
   }
 
   const isSingleItem = userTypeData.GovRepDetails.length === 1;
 
-  // If there's exactly one, we've already auto-selected; no need to render either dropdown.
   if (isSingleItem) {
     return null;
   }
 
-  // Otherwise: render two AutoCompleteField side by side
   return (
     <div className="flex gap-4">
       <div className="flex-1">

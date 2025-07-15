@@ -49,9 +49,8 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
               const colSpan = child?.colSpan || 1;
               if (!child) return null;
 
-              const childKey = `${sectionKey}-${
-                "name" in child ? child.name : childIndex
-              }-${child.type}`;
+              const childKey = `${sectionKey}-${"name" in child ? child.name : childIndex
+                }-${child.type}`;
 
               switch (child.type) {
                 case "radio":
@@ -109,6 +108,8 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
                         onClear={child.onClear}
                         value={child.value}
                         onChange={child.onChange}
+                        autoSelectValue={child.autoSelectValue}
+
                       />
                     </div>
                   );

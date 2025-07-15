@@ -106,5 +106,3 @@ export function buildReviewSections(details: Details): ReviewSection[] {
     },
   ];
 }
-
-// comment to test changes

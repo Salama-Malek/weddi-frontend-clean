@@ -14,7 +14,6 @@ export function getPayloadBySubTopicID(
     CaseTopics: [] as any[],
   };
 
-  console.log("caseTopics", caseTopics);
   caseTopics.forEach((topic) => {
 
     const basePayload = {

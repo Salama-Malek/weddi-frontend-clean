@@ -45,7 +45,6 @@ const CaseRecordsModal = ({
     setIsMenueCahngeFlag,
     isMenueCahngeFlag
   } = useUser();
-  // //console.log('propSelected', propSelected)
   const navigate = useNavigate();
   const { t } = useTranslation("login");
   const [getCookie, setCookie] = useCookieState({
@@ -57,7 +56,6 @@ const CaseRecordsModal = ({
   const [selectedMainCategory, setSelectedMainCategory] = useState<any | null>(
     getCookie("mainCategory")
   );
-  // //console.log('selectedMainCategory', selectedMainCategory)
   const [selectedSubCategory, setSelectedSubCategory] = useState<any | null>(
     getCookie("subCategory")
   );
@@ -110,13 +108,7 @@ const CaseRecordsModal = ({
       hasSeenLegalRepModal === "true" &&
       selectedMainCategory
       && selectedSubCategory) {
-      console.log("Selected Is Calied Here", {
-        selectedMainCategory,
-        selectedSubCategory,
-        localSelected,
-        selectedUser,
-        userTypeContext
-      });
+
       setIsMenueCahngeFlag(!isMenueCahngeFlag);
     }
     const existingCaseId = getCookie("caseId");

@@ -29,7 +29,6 @@ export const AuthTokenProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const [getCookie, setCookie] = useCookieState();
     const [triggerGetToken] = useLazyGetUserTokenQuery();
 
-    // call the apis and store the new token 
     const refreshTokweFun = async () => {
         const newToken = await triggerGetToken().unwrap();
         if (newToken && newToken?.access_token) {
@@ -57,8 +56,6 @@ export const AuthTokenProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             } catch (error) {
                 setIsTokenExpired(true);
                 setTimeUntilExpiration(0);
-                console.log(error);
-
             }
         };
 

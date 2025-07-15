@@ -32,7 +32,6 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ steps, children }) => {
     }
   }, [currentStep, currentTab, updateParams]);
 
-  // إضافة useEffect جديد للاستماع إلى تغييرات localStorage
   useEffect(() => {
     const handleStorageChange = () => {
       const savedStep = localStorage.getItem("step");
@@ -51,19 +50,6 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ steps, children }) => {
     window.addEventListener("storage", handleStorageChange);
     return () => window.removeEventListener("storage", handleStorageChange);
   }, []);
-
-  // console.log("MultiStepForm - Current state:", {
-  //   step,
-  //   tab,
-  //   currentStep,
-  //   currentTab,
-  // });
-
-  // console.log("Moving to next step/tab:", { nextStep: step + 1, nextTab: tab });
-  // console.log("Moving to previous step/tab:", {
-  //   prevStep: step - 1,
-  //   prevTab: tab,
-  // });
 
   return (
     <div className="flex flex-col md:flex-row h-full md:min-h-screen p-4 mb-4">

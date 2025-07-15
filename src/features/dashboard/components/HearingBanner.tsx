@@ -68,7 +68,7 @@ const Banner: React.FC<BannerProps> = ({
   const [timeLeft, setTimeLeft] = useState<number>(-1);
 
   const getMySchedualDataFun = async () => {
-    const userID = getCookie("userClaims").UserID;
+    const userID = getCookie("userClaims")?.UserID;
     const fileNumber = getCookie("userClaims")?.File_Number;
     const mainCategory = getCookie("mainCategory")?.value;
     const subCategory = getCookie("subCategory")?.value;
@@ -157,7 +157,6 @@ const Banner: React.FC<BannerProps> = ({
 
 
   useEffect(() => {
-    console.log("time left, == ", timeLeft);
     let timer: NodeJS.Timeout | null = null;
 
     if (timeLeft <= -1) {

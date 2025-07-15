@@ -74,8 +74,6 @@ const ContentRenderer: React.FC<ContentRendererProps> = ({
   }, []);
 
   const renderContent = () => {
-    // console.log("Rendering content with step:", step, "tab:", tab);
-
     if (step === 0) {
       switch (tab) {
         case 0:

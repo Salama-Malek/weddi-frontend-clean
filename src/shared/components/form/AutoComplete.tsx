@@ -23,6 +23,9 @@ export type AutoCompleteFieldProps = {
   isLoading?: boolean;
   disabled?: boolean;
   onClear?: () => void;
+    autoSelectValue?: string | { value: string; label: string };
+
+  forcePortal?: boolean;
 };
 
 const CustomDropdownIndicator = (props: any) => (
@@ -31,7 +34,6 @@ const CustomDropdownIndicator = (props: any) => (
   </div>
 );
 
-// Custom Clear Indicator that stops propagation to avoid closing parent modals
 const CustomClearIndicator = (props: any) => {
   const { innerProps, clearValue, onClear } = props;
   return (
@@ -39,15 +41,12 @@ const CustomClearIndicator = (props: any) => {
       {...innerProps}
       onMouseDown={(e) => {
         e.stopPropagation();
-        // call default handler
         innerProps.onMouseDown(e);
-        // call custom clear handler if provided
         if (onClear) {
           onClear();
         }
       }}
     >
-      {/* You can use the default clear icon */}
       <components.ClearIndicator {...props} />
     </div>
   );
@@ -69,13 +68,12 @@ export const AutoCompleteField: React.FC<AutoCompleteFieldProps> = memo(({
   isLoading,
   disabled,
   onClear,
+  autoSelectValue,
+
+  forcePortal,
 }) => {
   const { t } = useTranslation();
 
-  // Debug log for value prop
-  // console.log(`[AutoCompleteField] name: ${name}, value prop:`, value);
-
-  // Ensure errorMessage is always a string
   const errorMessage = typeof invalidFeedback === 'string'
     ? invalidFeedback
     : (invalidFeedback && typeof invalidFeedback === 'object' && invalidFeedback.message)
@@ -83,6 +81,21 @@ export const AutoCompleteField: React.FC<AutoCompleteFieldProps> = memo(({
       : '';
 
   const hasError = !!errorMessage;
+  
+ // Auto-select logic
+  React.useEffect(() => {
+    if (!autoSelectValue || !options || options.length === 0) return;
+    let match = null;
+    if (typeof autoSelectValue === "string") {
+      match = options.find((opt: any) => opt.value === autoSelectValue);
+    } else if (autoSelectValue.value) {
+      match = options.find((opt: any) => opt.value === autoSelectValue.value);
+    }
+    if (match && (!value || (value && typeof value === "object" && value?.value !== match.value))) {
+      onChange?.(match);
+    }
+  }, [autoSelectValue, options]);
+
 
   const customStyles = {
     control: (provided: any, state: { isFocused: boolean }) => ({
@@ -92,16 +105,15 @@ export const AutoCompleteField: React.FC<AutoCompleteFieldProps> = memo(({
       borderRadius: "0.25rem",
       minHeight: "2.5rem",
       boxShadow: state.isFocused
-        ? `0 0 0 2px ${
-            hasError ? "rgba(239, 68, 68, 0.2)" : "rgba(191, 219, 254, 0.5)"
-          }`
+        ? `0 0 0 2px ${hasError ? "rgba(239, 68, 68, 0.2)" : "rgba(191, 219, 254, 0.5)"
+        }`
         : "none",
       "&:hover": {
         borderColor: hasError
           ? "#EF4444"
           : state.isFocused
-          ? "#3B82F6"
-          : "#9CA3AF",
+            ? "#3B82F6"
+            : "#9CA3AF",
       },
       transition: "all 0.2s ease",
     }),
@@ -113,8 +125,8 @@ export const AutoCompleteField: React.FC<AutoCompleteFieldProps> = memo(({
       backgroundColor: state.isSelected
         ? "#2563EB"
         : state.isFocused
-        ? "#E5E7EB"
-        : "white",
+          ? "#E5E7EB"
+          : "white",
       color: state.isSelected ? "white" : "black",
       "&:active": {
         backgroundColor: "#2563EB",
@@ -158,6 +170,7 @@ export const AutoCompleteField: React.FC<AutoCompleteFieldProps> = memo(({
       ...provided,
       backgroundColor: hasError ? "#EF4444" : "#E5E7EB",
     }),
+    menuPortal: (base: any) => ({ ...base, zIndex: 9999 }),
   };
 
   const selectProps = {
@@ -175,6 +188,7 @@ export const AutoCompleteField: React.FC<AutoCompleteFieldProps> = memo(({
         <CustomClearIndicator {...props} onClear={onClear} />
       ),
     },
+    ...(forcePortal ? { menuPortalTarget: document.body, menuPosition: 'fixed' as const } : {}),
   };
 
   const selectComponent = control ? (
@@ -188,7 +202,6 @@ export const AutoCompleteField: React.FC<AutoCompleteFieldProps> = memo(({
           {...selectProps}
           onChange={(selectedOption) => {
             const newValue = selectedOption;
-            // console.log(`[AutoCompleteField] name: ${name}, onChange value:`, newValue);
             field.onChange(newValue);
             if (onChange) {
               onChange(newValue);
@@ -204,7 +217,6 @@ export const AutoCompleteField: React.FC<AutoCompleteFieldProps> = memo(({
       id={id}
       value={value}
       onChange={(selectedOption) => {
-        // console.log(`[AutoCompleteField] name: ${name}, onChange value:`, selectedOption);
         onChange?.(selectedOption);
       }}
       name={name}

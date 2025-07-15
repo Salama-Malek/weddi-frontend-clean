@@ -24,10 +24,11 @@ export const useMyCasesColumns = (
         header: t("table_headers.case_number"),
         accessorKey: "SettlementID",
       },
-      {
-        header: t("table_headers.code_700"),
-        accessorKey: "Number700",
-      },
+      // {
+      //   header: t("table_headers.code_700"),
+      //   accessorKey: "Number700",
+      // },
+      // Temporarily commented out كود 700 (code 700) column as requested. Will be shown later.
     ];
 
     // Optional column: LegalRepName (for establishment/gov plaintiff cases)

@@ -10,9 +10,8 @@ const UserTypeContext = createContext<UserTypeContextType | undefined>(undefined
 
 export function UserTypeProvider({ children }: { children: React.ReactNode }) {
   const [userType, setUserType] = useState<string | null>(null);
-  // //console.log('userType', userType)
   const [getCookie, setCookie] = useCookieState({ userType: "" });
-// //console.log('userType', userType)
+
 useEffect(()=>{
   if(userType){
     setCookie("legalRepType",userType)

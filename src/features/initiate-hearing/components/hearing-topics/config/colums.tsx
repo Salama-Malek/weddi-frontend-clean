@@ -16,7 +16,7 @@ export const getHearingTopicsColumns = ({
 }: HearingTopicsColumnsProps): ColumnDef<Topic>[] => [
   {
     id: "no",
-    header: "No.",
+    header: t("no."),
     cell: ({ row }) => row.index + 1,
   },
   {

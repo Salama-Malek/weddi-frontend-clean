@@ -116,7 +116,6 @@ export const dateFieldConfigs = (
 export type DateFieldKey = keyof typeof dateFieldConfigs;
 
 export const managerialDateConfigs = (t: any, setValue?: any, watch?: any, control?: any, handleHijriDateChange?: any) => {
-  // console.log('managerialDateConfigs called with:', { t, setValue, watch, control, handleHijriDateChange });
   
   return ({
     managerialDate: {

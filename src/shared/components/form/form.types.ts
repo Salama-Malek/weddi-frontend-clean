@@ -88,6 +88,8 @@ export type FormElement =
     disabled?: boolean;
     condition?: boolean;
     onClear?: () => void;
+    autoSelectValue?: string | { value: string; label: string };
+
   }
   | {
     type: "checkbox";

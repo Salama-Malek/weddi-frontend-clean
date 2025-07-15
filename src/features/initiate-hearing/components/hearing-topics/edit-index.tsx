@@ -113,7 +113,6 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
 
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Clear timeout on unmount
   useEffect(() => {
     return () => {
       if (timeoutRef.current) {
@@ -134,23 +133,18 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
   const defendantStatus = getCookie("defendantStatus");
   const mainCategory2 = getCookie("mainCategory")?.value;
   const subCategory2 = getCookie("subCategory")?.value;
-  const userID = getCookie("userClaims").UserID;
+  const userID = getCookie("userClaims")?.UserID;
   const fileNumber = getCookie("userClaims")?.File_Number;
 
   const { i18n } = useTranslation();
   const currentLanguage = i18n.language.toUpperCase();
 
-  // Use the centralized error handler
   const { handleResponse } = useApiErrorHandler();
 
-  // Submit handler
   const onSubmit = (data: TopicFormValues) => {};
 
   const mainCategory = watch("mainCategory") ?? null;
   const subCategory: any = watch("subCategory") ?? null;
-  // Debug logs for watched values
-  console.log("[EditHearingTopicsDetails] mainCategory:", mainCategory);
-  console.log("[EditHearingTopicsDetails] subCategory:", subCategory);
   const { t } = useTranslation("hearingtopics");
   const { isOpen, close, toggle } = useToggle();
   const userClaims = getCookie("userClaims");
@@ -225,7 +219,6 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
       base.Number700 = caseDetailsData.CaseDetails.Defendant_Number700;
       base.DefendantType = caseDetailsData.CaseDetails.DefendantType;
     }
-    console.log("subTopicsLookupParams:", base);
     return base;
   }, [mainCategory?.value, currentLanguage, caseDetailsData?.CaseDetails]);
 
@@ -237,7 +230,7 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
       }
     );
 
-
+  const [triggerFileDetails, { data: fileBase64 }] = useLazyGetFileDetailsQuery();
   const {
     attachments,
     attachmentFiles,
@@ -250,35 +243,31 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
     closeAttachmentModal,
     closePreview,
     setAttachments,
-  } = useAttachments();
+  } = useAttachments({ triggerFileDetails, fileBase64 });
   const [topicData, setTopicData] = useState<any>(null);
   const [legalSection, setLegalSection] = useState<any>(null);
   const [fileKey, setFileKey] = useState("");
   const [fileName, setFileName] = useState("");
   const [previewFileModule, setPreviewFile] = useState(false);
+  const [localPreviewBase64, setLocalPreviewBase64] = useState<string | null>(null);
   const [attachmentsModule, setAttachmentsModule] =
     useState<AttachmentFile[]>();
-  const [triggerFileDetails, { data: fileBase64 }] =
-    useLazyGetFileDetailsQuery();
 
-  const onClickedView = (index: number) => {
-    if (attachmentsModule?.[index]) {
-      console.log(attachmentsModule?.[index]);
-      handleView(
-        attachmentsModule?.[index]?.FileKey,
-        attachmentsModule?.[index]?.FileName
-      );
+  const handleView = async (attachment: any) => {
+    if (attachment.FileKey) {
+      setFileKey(attachment.FileKey);
+      setFileName(attachment.FileName);
+      setPreviewFile(true);
+      setLocalPreviewBase64(null);
+      await triggerFileDetails({
+        AttachmentKey: attachment.FileKey,
+        AcceptedLanguage: i18n.language.toUpperCase(),
+      });
+    } else if (attachment.base64) {
+      setFileName(attachment.FileName);
+      setLocalPreviewBase64(attachment.base64);
+      setPreviewFile(true);
     }
-  };
-
-  const handleView = async (key: string, name: string) => {
-    setFileKey(key);
-    setFileName(name);
-    setPreviewFile(true);
-    await triggerFileDetails({
-      AttachmentKey: key,
-      AcceptedLanguage: i18n.language.toUpperCase(),
-    });
   };
 
   useEffect(() => {
@@ -508,7 +497,6 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
   }, [caseTopics, pagination.pageIndex, pagination.pageSize]);
 
   const handleTopicSelect = (topic: any, index: number) => {
-    console.log("Selected topic for editing:", topic);
 
     // Reset form first to clear any previous data
     reset();
@@ -706,7 +694,6 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
       ToDateGregorian: formatDateForStorage(updatedValues.to_date_gregorian),
     };
 
-    console.log("Updated Topic:", updatedTopic);
 
     setCaseTopics((prev) =>
       prev.map((topic, idx) => (idx === editTopicIndex ? updatedTopic : topic))
@@ -816,7 +803,6 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
   const saveTopic = (): number => {
     const newTopic = getValues();
 
-    console.log("Saving new topic:", newTopic);
 
     // التحقق من القيم الفارغة
     for (const [key, value] of Object.entries(newTopic)) {
@@ -934,12 +920,10 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
       ToDateGregorian: formatDateForStorage(newTopic.to_date_gregorian),
     };
 
-    console.log("Topic to save:", topicToSave);
 
     // تحديث حالة caseTopics
     setCaseTopics((prev) => {
       const newTopics = [...prev, topicToSave];
-      console.log("Updated caseTopics:", newTopics);
       return newTopics;
     });
 
@@ -1285,41 +1269,34 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
   }, []);
 
   const fetchLegalSection = useCallback(async () => {
-    // Implementation will be added when the API is available
   }, []);
 
-  // Memoize the topic data update effect
   useEffect(() => {
     if (showTopicData && topicData) {
       setValue("topicData", topicData);
     }
   }, [showTopicData, topicData]);
 
-  // Memoize the legal section update effect
   useEffect(() => {
     if (showLegalSection && legalSection) {
       setValue("legalSection", legalSection);
     }
   }, [showLegalSection, legalSection]);
 
-  // Memoize the topic data fetch effect
   useEffect(() => {
     fetchTopicData();
   }, [fetchTopicData]);
 
-  // Memoize the legal section fetch effect
   useEffect(() => {
     fetchLegalSection();
   }, [fetchLegalSection]);
 
-  // Memoize the acknowledged effect
   useEffect(() => {
     if (acknowledged) {
       setShowTopicData(true);
     }
   }, [acknowledged]);
 
-  // Add this utility function at the top or in a utils file
   function findOption(options: Option[], value: string): Option | null {
     if (!options) return null;
     return (
@@ -1329,7 +1306,6 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
     );
   }
 
-  // In the useEffect or prefill logic where you set form values for editTopic:
   useEffect(() => {
     if (isEditing && editTopic && typeOfRequestLookupData?.DataElements) {
       const code =
@@ -1347,10 +1323,8 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
     }
   }, [isEditing, editTopic, typeOfRequestLookupData]);
 
-  // Set region data for location fields when editing
   useEffect(() => {
     if (isEditing && editTopic && regionData?.DataElements) {
-      // Set From Location
       if (editTopic.fromLocation) {
         const fromLocationOption = regionData.DataElements.find(
           (item: any) => item.ElementKey === editTopic.fromLocation?.value || item.ElementKey === editTopic.fromLocation
@@ -1363,7 +1337,6 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
         }
       }
 
-      // Set To Location
       if (editTopic.toLocation) {
         const toLocationOption = regionData.DataElements.find(
           (item: any) => item.ElementKey === editTopic.toLocation?.value || item.ElementKey === editTopic.toLocation
@@ -1378,7 +1351,6 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
     }
   }, [isEditing, editTopic, regionData]);
 
-  // Replace the previous useTranslation usage for static texts
   const { t: tCommon } = useTranslation('common');
 
   return (
@@ -1432,14 +1404,14 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
                   <ReusableTable
                     data={getPaginatedTopics}
                     columns={columns}
-                    page={pagination.pageIndex + 1} // Convert to 1-based index
+                    page={pagination.pageIndex + 1} 
                     totalPages={Math.ceil(
                       caseTopics.length / pagination.pageSize
                     )}
                     onPageChange={(newPage) => {
                       setPagination((prev) => ({
                         ...prev,
-                        pageIndex: newPage - 1, // Convert back to 0-based index
+                        pageIndex: newPage - 1,
                       }));
                     }}
                     PaginationComponent={CustomPagination}
@@ -1448,8 +1420,7 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
                     attachments={attachments}
                     onAddClick={openAttachmentModal}
                     onRemove={handleRemoveAttachment}
-                    onView={onClickedView}
-                    // onClickedView={onClickedView}
+                    onView={handleViewAttachment}
                   />
 
                   <AttachmentModal
@@ -1465,35 +1436,7 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
                       className="w-full mt-3"
                     />
                   ))} */}
-                  {previewFileModule && fileBase64?.Base64Stream && (
-                    <Modal
-                      header={fileName}
-                      close={() => {
-                        setPreviewFile(false);
-                        setFileKey("");
-                        setFileName("");
-                      }}
-                      modalWidth={800}
-                      className="!max-h-max !m-0"
-                    >
-                      <div className="w-full h-[80vh] overflow-auto">
-                        {fileBase64?.pyFileName
-                          ?.toLowerCase()
-                          .endsWith(".pdf") ? (
-                          <iframe
-                            src={`data:application/pdf;base64,${fileBase64?.Base64Stream}`}
-                            className="w-full h-full border-none"
-                          />
-                        ) : (
-                          <img
-                            src={`data:image/*;base64,${fileBase64?.Base64Stream}`}
-                            alt={fileName}
-                            className="w-full h-full object-contain"
-                          />
-                        )}
-                      </div>
-                    </Modal>
-                  )}
+                  <FilePreviewModal file={previewFile} onClose={closePreview} />
                 </Suspense>
               </>
             ) : (

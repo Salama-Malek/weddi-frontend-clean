@@ -106,33 +106,11 @@ export class CaseTopicsPrefillService {
    */
   static extractDateFields(topic: CaseTopicData): CaseTopicDateFields {
     if (!topic) {
-      console.warn('extractDateFields called with null/undefined topic');
       return {};
     }
 
     const dateFields: CaseTopicDateFields = {};
-    
-    // Debug: Log all available fields that might contain dates
-    console.log('Available date-related fields in topic:', {
-      FromDateHijri: topic.FromDateHijri,
-      FromDate_New: topic.FromDate_New,
-      ToDateHijri: topic.ToDateHijri,
-      ToDate_New: topic.ToDate_New,
-      Date_New: topic.Date_New,
-      pyTempDate: topic.pyTempDate,
-      pyTempText: topic.pyTempText,
-      InjuryDate_New: topic.InjuryDate_New,
-      ManDecsDate: topic.ManDecsDate,
-      RequestDate_New: topic.RequestDate_New,
-      // Add any other potential date fields
-      ...Object.fromEntries(
-        Object.entries(topic).filter(([key, value]) => 
-          key.toLowerCase().includes('date') && value
-        )
-      )
-    });
-
-    switch (topic.SubTopicID) {
+      switch (topic.SubTopicID) {
       case "WR-1":
       case "WR-2":
       case "CMR-6":
@@ -169,14 +147,6 @@ export class CaseTopicsPrefillService {
       case "EDO-3":
       case "EDO-4":
         // Managerial decision date topics
-        console.log('Processing EDO date fields:', {
-          Date_New: topic.Date_New,
-          ManDecsDate: topic.ManDecsDate,
-          // Try alternative field names
-          ManagerialDecisionDate: (topic as any).ManagerialDecisionDate,
-          ManagerialDecisionDateHijri: (topic as any).ManagerialDecisionDateHijri,
-          ManagerialDecisionDateGregorian: (topic as any).ManagerialDecisionDateGregorian,
-        });
         
         if (topic.Date_New) {
           dateFields.managerial_decision_date_hijri = formatHijriDate(topic.Date_New);
@@ -220,7 +190,6 @@ export class CaseTopicsPrefillService {
         break;
     }
 
-    console.log('Extracted date fields:', dateFields);
     return dateFields;
   }
 
@@ -229,15 +198,10 @@ export class CaseTopicsPrefillService {
    */
   static extractFormFields(topic: CaseTopicData): Record<string, any> {
     if (!topic) {
-      console.warn('extractFormFields called with null/undefined topic');
       return {};
     }
 
     const dateFields = this.extractDateFields(topic);
-    
-    console.log('Extracting form fields from topic:', topic);
-    console.log('Extracted date fields:', dateFields);
-    console.log('All available topic fields:', Object.keys(topic));
     
     const formFields = {
       // Main category and sub category
@@ -330,14 +294,6 @@ export class CaseTopicsPrefillService {
       } : null,
     };
     
-    // Debug managerial decision number specifically
-    console.log('Managerial Decision Number debugging:', {
-      originalValue: topic.ManagerialDecisionNumber,
-      extractedValue: formFields.managerialDecisionNumber,
-      topicKeys: Object.keys(topic).filter(key => key.toLowerCase().includes('managerial') || key.toLowerCase().includes('decision')),
-    });
-    
-    console.log('Final form fields:', formFields);
     return formFields;
   }
 

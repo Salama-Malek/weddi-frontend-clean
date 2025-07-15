@@ -10,12 +10,10 @@ interface Props {
   attachments: FileAttachmentType[];
   onAddClick: () => void;
   onRemove: (index: number) => void;
-  onView?: (index: number) => void;
+  onView?: (attachment: FileAttachmentType) => void;
 }
 
 const AttachmentSection: React.FC<Props> = ({ attachments, onAddClick, onRemove, onView }) => {
-  
-  console.log("dfshkfhskdhkhksh",attachments);
   
   const { t } = useTranslation("hearingtopics");
 
@@ -50,7 +48,7 @@ const AttachmentSection: React.FC<Props> = ({ attachments, onAddClick, onRemove,
                 <FileAttachment
                   fileName={`${att.fileName || t("attachment")} - ${att.file?.name || t("unnamed_file")}`}
                   onRemove={() => onRemove(idx)}
-                  onView={onView ? () => onView(idx) : undefined}
+                  onView={onView ? () => { console.log('AttachmentSection onView:', att); onView(att); } : undefined}
                 />
               </Suspense>
             ))}

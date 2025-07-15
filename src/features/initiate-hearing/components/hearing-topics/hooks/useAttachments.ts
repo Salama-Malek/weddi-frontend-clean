@@ -12,24 +12,24 @@ interface AttachmentFile {
   FileData: string;
 }
 
-interface UseAttachmentsParams {
+export interface UseAttachmentsParams {
   initialAttachmentFiles?: AttachmentFile[]; // base64 files from backend
+  triggerFileDetails?: any;
+  fileBase64?: any;
 }
 
-export const useAttachments = ({ initialAttachmentFiles = [] }: UseAttachmentsParams = {}) => {
+export function useAttachments(params: UseAttachmentsParams = {}) {
   const [attachments, setAttachments] = useState<any[]>([]);
   const [attachmentFiles, setAttachmentFiles] = useState<AttachmentFile[]>([]);
   const [showAttachmentModal, setShowAttachmentModal] = useState(false);
-  const [previewFile, setPreviewFile] = useState<File | null>(null);
+  const [previewFile, setPreviewFile] = useState<any>(null);
 
   // Initialize with existing files if provided
   useEffect(() => {
-    if (initialAttachmentFiles.length > 0) {
-      setAttachmentFiles(initialAttachmentFiles);
+    if (params.initialAttachmentFiles && params.initialAttachmentFiles.length > 0) {
+      setAttachmentFiles(params.initialAttachmentFiles);
 
-      const mappedAttachments: FileAttachment[] = initialAttachmentFiles.map((f) => {
-        console.log(f);
-
+      const mappedAttachments: FileAttachment[] = params.initialAttachmentFiles.map((f) => {
         return ({
           file: null,
           fileType: f.FileType,
@@ -39,7 +39,13 @@ export const useAttachments = ({ initialAttachmentFiles = [] }: UseAttachmentsPa
 
       setAttachments(mappedAttachments);
     }
-  }, [initialAttachmentFiles]);
+  }, [params.initialAttachmentFiles]);
+
+  useEffect(() => {
+    if (params.fileBase64 && params.fileBase64.Base64Stream) {
+      setPreviewFile(params.fileBase64);
+    }
+  }, [params.fileBase64]);
 
   const handleAttachmentSave = (newAttachments: FileAttachment[]) => {
     setAttachments((prev) => [...prev, ...newAttachments]);
@@ -74,9 +80,20 @@ export const useAttachments = ({ initialAttachmentFiles = [] }: UseAttachmentsPa
     setAttachmentFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleViewAttachment = (index: number) => {
-    const file = attachments[index]?.file;
-    if (file) setPreviewFile(file);
+  const handleViewAttachment = (attachment: any) => {
+    console.log('[useAttachments] handleViewAttachment called with:', attachment);
+    const key = attachment.FileKey || attachment.fileKey;
+    if (key && params.triggerFileDetails) {
+      console.log('[useAttachments] Calling triggerFileDetails API for FileKey:', key);
+      params.triggerFileDetails({
+        AttachmentKey: key,
+        AcceptedLanguage: (attachment.AcceptedLanguage || 'EN').toUpperCase(),
+      });
+    } else if (attachment.base64) {
+      console.log('[useAttachments] Using local base64 data for preview.');
+    } else {
+      console.log('[useAttachments] No FileKey or base64 found on attachment.');
+    }
   };
 
   const openAttachmentModal = () => setShowAttachmentModal(true);
@@ -97,4 +114,4 @@ export const useAttachments = ({ initialAttachmentFiles = [] }: UseAttachmentsPa
     setAttachments,
     setAttachmentFiles,
   };
-};
+}

@@ -70,7 +70,6 @@ export function ReusableTable<TData extends object>({
 }: ReusableTableProps<TData>) {
   const { t } = useTranslation("managehearings");
  
-  // تصفية الأعمدة بناءً على خاصية showEdit
   const filteredColumns = React.useMemo(() => {
     if (!showEdit) {
       return columns.filter((column) => column.id !== "edit");

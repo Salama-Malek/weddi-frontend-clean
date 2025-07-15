@@ -33,12 +33,21 @@ const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
       return URL.createObjectURL(blob);
     };
 
+    // --- API file (Base64Stream) ---
+    if (typeof file === 'object' && file !== null && 'Base64Stream' in file) {
+      // Use base64 directly, no FileReader
+      setObjectUrl(null); // Not using objectUrl
+      setMimeType((file as any).fileType || ((file as any).pyFileName?.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/*'));
+      setError(null);
+      return;
+    }
+
     if (typeof file === "string") {
       // We assume "file" is already a base64 string without data: prefix
       setMimeType("application/pdf");
       url = createBlobUrl(file, "application/pdf");
       setObjectUrl(url);
-    } else {
+    } else if (file instanceof File) {
       // It's a File → read as DataURL, then strip prefix
       const reader = new FileReader();
       reader.onerror = () => {
@@ -58,20 +67,48 @@ const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
         }
       };
       reader.readAsDataURL(file);
+    } else {
+      setError("Unsupported file type for preview.");
     }
 
-    // Cleanup old URL on unmount or when file changes
     return () => {
       if (url) URL.revokeObjectURL(url);
     };
   }, [file]);
 
-  // useEffect(()=>{
-    // console.log({file,fileName,onClose});
-    
-  // },[])
+  // --- API file (Base64Stream) ---
+  if (typeof file === 'object' && file !== null && 'Base64Stream' in file) {
+    const isPDF = ((file as any).pyFileName?.toLowerCase().endsWith('.pdf') || (file as any).fileType === 'pdf');
+    const headerText = fileName ?? (file as any).pyFileName ?? (file as any).fileName ?? "Preview File";
+    const src = isPDF
+      ? `data:application/pdf;base64,${(file as any).Base64Stream}`
+      : `data:image/*;base64,${(file as any).Base64Stream}`;
+    return (
+      <Modal
+        header={headerText}
+        close={onClose}
+        modalWidth={800}
+        className="!max-h-max !m-0"
+      >
+        <div className="w-full h-[80vh] overflow-auto">
+          {isPDF ? (
+            <iframe
+              src={src}
+              className="w-full h-full border-none"
+              title="PDF Preview"
+            />
+          ) : (
+            <img
+              src={src}
+              alt={headerText}
+              className="w-full h-full object-contain"
+            />
+          )}
+        </div>
+      </Modal>
+    );
+  }
 
-  // If there's an error or nothing to preview, render nothing (or you could show a message)
   if (!file || !objectUrl) {
     if (error) {
       return (

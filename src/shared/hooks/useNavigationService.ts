@@ -24,21 +24,16 @@ export const useNavigationService = () => {
   }, []);
 
   const updateParams = (step: number, tab?: number) => {
-    // console.log('Updating navigation params:', { step, tab });
-
-    // تحديث localStorage أولاً
     localStorage.setItem('step', step.toString());
     if (tab !== undefined) {
       localStorage.setItem('tab', tab.toString());
     }
 
-    // ثم تحديث الحالة
     setCurrentStep(step);
     if (tab !== undefined) {
       setCurrentTab(tab);
     }
 
-    // إطلاق حدث التخزين
     window.dispatchEvent(new Event('storage'));
   };
 

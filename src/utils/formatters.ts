@@ -16,7 +16,6 @@ export function formatDate(yyyymmdd: string): string {
 export function setFormatDate(yyyymmdd: string): string {
   if (!yyyymmdd) return yyyymmdd;
   const data = yyyymmdd.split("/");
-  //console.log(yyyymmdd);
 
   return `${data[0]}${data[1]}${data[2]}`;
 }

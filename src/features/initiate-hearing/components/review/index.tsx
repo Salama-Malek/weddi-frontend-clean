@@ -24,6 +24,23 @@ import { Topic } from "../hearing-topics/hearing.topics.types";
 import { TokenClaims } from "@/features/login/components/AuthProvider";
 import { formatDate } from "@/utils/formatters";
 
+function formatHijriWithSlashes(date: string): string {
+  if (!date) return "";
+  // If already contains slashes, return as is
+  if (date.includes("/")) return date;
+  // If 8 digits, format as DD/MM/YYYY
+  if (/^\d{8}$/.test(date)) return formatDate(date);
+  // If 6 digits (YYMMDD), try to format as best as possible
+  if (/^\d{6}$/.test(date)) {
+    const year = date.substring(0, 2);
+    const month = date.substring(2, 4);
+    const day = date.substring(4, 6);
+    return `${day}/${month}/14${year}`;
+  }
+  // Otherwise, return as is
+  return date;
+}
+
 const FileAttachment = lazy(
   () => import("@/shared/components/ui/file-attachment/FileAttachment")
 );
@@ -86,7 +103,7 @@ const ReviewDetails = ({
   const userType = getCookie("userType");
   const mainCategory = getCookie("mainCategory")?.value;
   const subCategory = getCookie("subCategory")?.value;
-  const userID = getCookie("userClaims").UserID;
+  const userID = getCookie("userClaims")?.UserID;
   const fileNumber = getCookie("userClaims")?.File_Number;
   const defendantStatus = getCookie("defendantStatus");
 
@@ -128,7 +145,6 @@ const ReviewDetails = ({
   }, []);
 
   const details = caseDetailsData?.CaseDetails || {};
-  // console.log("details", details);
 
   const { data: ackData } = useGetAcknowledgementQuery({
     LookupType: "DataElements",
@@ -224,7 +240,7 @@ const ReviewDetails = ({
           { label: t("city"), value: details?.Plaintiff_City || "" },
           {
             label: t("hijriDate"),
-            value: formatDate(details?.PlaintiffHijiriDOB) || "",
+            value: formatHijriWithSlashes(details?.PlaintiffHijiriDOB) || "",
           },
           {
             label: t("gregorianDate"),
@@ -350,7 +366,7 @@ const ReviewDetails = ({
           { label: t("city"), value: details?.Plaintiff_City || "" },
           {
             label: t("hijriDate"),
-            value: formatDate(details?.PlaintiffHijiriDOB) || "",
+            value: formatHijriWithSlashes(details?.PlaintiffHijiriDOB) || "",
           },
           {
             label: t("gregorianDate"),
@@ -424,7 +440,7 @@ const ReviewDetails = ({
             value:
               details?.Plaintiff_StillWorking_Code === "SW1"
                 ? t("yes")
-                : t("no") || "",
+                : t("not") || "",
           },
           {
             label: t("fristWorkingDayDate"),
@@ -489,7 +505,7 @@ const ReviewDetails = ({
           { label: t("city"), value: details?.Plaintiff_City || "" },
           {
             label: t("hijriDate"),
-            value: formatDate(details?.PlaintiffHijiriDOB) || "",
+            value: formatHijriWithSlashes(details?.PlaintiffHijiriDOB) || "",
           },
           {
             label: t("gregorianDate"),
@@ -578,7 +594,7 @@ const ReviewDetails = ({
             value:
               details?.Plaintiff_StillWorking_Code === "SW1"
                 ? t("yes")
-                : t("no") || "",
+                : t("not") || "",
           },
           {
             label: t("fristWorkingDayDate"),
@@ -697,7 +713,7 @@ const ReviewDetails = ({
           { label: t("city"), value: details?.Plaintiff_City || "" },
           {
             label: t("hijriDate"),
-            value: formatDate(details?.PlaintiffHijiriDOB) || "",
+            value: formatHijriWithSlashes(details?.PlaintiffHijiriDOB) || "",
           },
           {
             label: t("gregorianDate"),
@@ -760,7 +776,7 @@ const ReviewDetails = ({
             value:
               details?.Plaintiff_StillWorking_Code === "SW1"
                 ? t("yes")
-                : t("no") || "",
+                : t("not") || "",
           },
           {
             label: t("fristWorkingDayDate"),
@@ -845,7 +861,7 @@ const ReviewDetails = ({
           { label: t("city"), value: details?.Plaintiff_City || "" },
           {
             label: t("hijriDate"),
-            value: formatDate(details?.PlaintiffHijiriDOB) || "",
+            value: formatHijriWithSlashes(details?.PlaintiffHijiriDOB) || "",
           },
           {
             label: t("gregorianDate"),
@@ -909,7 +925,7 @@ const ReviewDetails = ({
             value:
               details?.Plaintiff_StillWorking_Code === "SW1"
                 ? t("yes")
-                : t("no") || "",
+                : t("not") || "",
           },
           {
             label: t("fristWorkingDayDate"),
@@ -1008,7 +1024,7 @@ const ReviewDetails = ({
           },
           {
             label: t("hijriDate"),
-            value: formatDate(details?.DefendantHijiriDOB) || "",
+            value: formatHijriWithSlashes(details?.DefendantHijiriDOB) || "",
           },
           {
             label: t("gregorianDate"),
@@ -1068,7 +1084,7 @@ const ReviewDetails = ({
             value:
               details?.Defendant_StillWorking_Code === "SW1"
                 ? t("yes")
-                : t("no") || "",
+                : t("not") || "",
           },
           {
             label: t("fristWorkingDayDate"),
@@ -1162,7 +1178,7 @@ const ReviewDetails = ({
           { label: t("name"), value: details?.DefendantName || "" },
           {
             label: t("hijriDate"),
-            value: formatDate(details?.DefendantHijiriDOB) || "",
+            value: formatHijriWithSlashes(details?.DefendantHijiriDOB) || "",
           },
           {
             label: t("phoneNumber"),
@@ -1209,7 +1225,7 @@ const ReviewDetails = ({
             value:
               details?.Defendant_StillWorking_Code === "SW1"
                 ? t("yes")
-                : t("no") || "",
+                : t("not") || "",
           },
           {
             label: t("fristWorkingDayDate"),
@@ -1365,7 +1381,10 @@ const ReviewDetails = ({
           }}
           invalidFeedback={selectedLang === null ? "Select language" : ""}
         />
-        <div className="w-full space-y-4 medium tracking-wider">
+        <div
+          className="w-full space-y-4 medium tracking-wider"
+          dir={selectedLang.value === 'AR' ? 'rtl' : 'ltr'}
+        >
           {ackData?.DataElements?.map((val: any, idx: number) => (
             <p key={idx}>{val.ElementValue}</p>
           ))}

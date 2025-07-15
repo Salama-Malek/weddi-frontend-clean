@@ -132,7 +132,6 @@ export const useFormLayout = (
   useEffect(() => {
     if (establishmentData && establishmentData?.EstablishmentInfo?.length !== 0) {
       const establishmentInfo = establishmentData?.EstablishmentInfo?.[0];
-      console.log("Setting establishment data:", establishmentInfo?.FileNumber);
 
       // Set state
       setEstablishmentDetailsByFileNumber(establishmentInfo);
@@ -363,7 +362,6 @@ export const useFormLayout = (
   useEffect(() => {
     const shouldBeIn = ["Establishment", "Government", "Others"];
     if (shouldBeIn.includes(defendantStatus?.toString() || "")) {
-      console.log("this is defTime ", defendantStatus);
       setShowGovNonGovRadios(true);
     } else {
       setShowGovNonGovRadios(false);

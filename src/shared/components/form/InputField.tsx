@@ -3,6 +3,7 @@ import { FieldWrapper } from "./FieldWrapper";
 import { useDebouncedCallback } from "@/shared/hooks/use-debounced-callback";
 import { Controller } from "react-hook-form";
 import { classes } from "@/shared/lib/clsx";
+import { useTranslation } from "react-i18next";
 
 type InputOrTextareaProps = React.InputHTMLAttributes<HTMLInputElement> &
   React.TextareaHTMLAttributes<HTMLTextAreaElement>;
@@ -50,6 +51,7 @@ export const InputField = forwardRef<HTMLInputElement | HTMLTextAreaElement, Inp
     },
     ref
   ) => {
+    const { i18n } = useTranslation();
     const uniqueId = useId();
     const id = inputProps.id ?? uniqueId;
     const [inputValue, setInputValue] = useState(propValue);
@@ -62,7 +64,10 @@ export const InputField = forwardRef<HTMLInputElement | HTMLTextAreaElement, Inp
       setInputValue(propValue);
     }, [propValue]);
 
-    const commonProps: any = {
+    // RTL placeholder alignment for Arabic
+    const placeholderStyle = i18n.language === "ar" ? { textAlign: "right" } : {};
+
+    const commonProps: Record<string, unknown> = {
       id,
       className: classes(
         "w-full px-3 py-2 border rounded-xs transition-all duration-200",
@@ -75,6 +80,7 @@ export const InputField = forwardRef<HTMLInputElement | HTMLTextAreaElement, Inp
         className
       ),
       "aria-invalid": hasError ? "true" : "false",
+      style: placeholderStyle,
       ...inputProps,
     };
 
@@ -82,7 +88,7 @@ export const InputField = forwardRef<HTMLInputElement | HTMLTextAreaElement, Inp
       setInputValue(e.target.value);
       onChange?.(e);
     };
-    const handleBlur = (e: React.FocusEventHandler<HTMLInputElement | undefined>) => {
+    const handleBlur = () => {
       onBlur?.();
     };
 
@@ -100,7 +106,7 @@ export const InputField = forwardRef<HTMLInputElement | HTMLTextAreaElement, Inp
       debouncedOnChange(e);
     };
 
-    const renderInput = (field?: any) => {
+    const renderInput = (field?: { value?: string; onChange?: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void }) => {
       const valueToUse = field?.value ?? inputValue;
       const inputOnChange = field?.onChange ?? handleChange;
 
@@ -215,7 +221,12 @@ export const DigitOnlyInput = React.forwardRef<HTMLInputElement, InputFieldProps
     const handleKeyDownUniversal: React.KeyboardEventHandler<HTMLInputElement | HTMLTextAreaElement> = (e) => {
       if (e.target instanceof HTMLInputElement) {
         const allowedKeys = ["Backspace", "Delete", "Tab", "ArrowLeft", "ArrowRight"];
-        if (!/^\d$/.test(e.key) && !allowedKeys.includes(e.key)) {
+        // Allow Ctrl+V (Windows/Linux) and Cmd+V (Mac) for paste
+        if (
+          (!/^\d$/.test(e.key) && !allowedKeys.includes(e.key)) &&
+          !(e.ctrlKey && (e.key === "v" || e.key === "V")) &&
+          !(e.metaKey && (e.key === "v" || e.key === "V"))
+        ) {
           e.preventDefault();
         }
         if (onKeyDown) {
@@ -223,20 +234,6 @@ export const DigitOnlyInput = React.forwardRef<HTMLInputElement, InputFieldProps
         }
       } else if (onKeyDown) {
         onKeyDown(e as React.KeyboardEvent<HTMLTextAreaElement>);
-      }
-    };
-
-    const handlePasteUniversal: React.ClipboardEventHandler<HTMLInputElement | HTMLTextAreaElement> = (e) => {
-      if (e.target instanceof HTMLInputElement) {
-        const pasted = e.clipboardData.getData("text");
-        if (!/^\d+$/.test(pasted)) {
-          e.preventDefault();
-        }
-        if (onPaste) {
-          onPaste(e as React.ClipboardEvent<HTMLInputElement>);
-        }
-      } else if (onPaste) {
-        onPaste(e as React.ClipboardEvent<HTMLTextAreaElement>);
       }
     };
 
@@ -251,7 +248,7 @@ export const DigitOnlyInput = React.forwardRef<HTMLInputElement, InputFieldProps
         value={typeof value === "string" ? value.replace(/\D/g, "").slice(0, maxLength) : value}
         onChange={handleChangeUniversal}
         onKeyDown={handleKeyDownUniversal}
-        onPaste={handlePasteUniversal}
+        onPaste={onPaste}
         onBlur={onBlur}
       />
     );

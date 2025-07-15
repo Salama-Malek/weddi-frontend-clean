@@ -40,10 +40,12 @@ export const useCaseApiService = () => {
               "CaseID": isCaseCreated
             } : { ...payload };
 
+            console.log("[Create API] Calling saveClaimantDetails", payloadPoint);
             response = await saveClaimantDetails({
               data: payloadPoint,
               isCaseCreated,
             }).unwrap();
+            console.log("[Create API] Response received", response);
 
             if (response?.CaseNumber) {
               setCookie("caseId", response?.CaseNumber);
@@ -67,15 +69,8 @@ export const useCaseApiService = () => {
       }
 
       if (response) {
-        // Use the centralized error handler
-        const isSuccessful = handleResponse(response);
-        
-        if (isSuccessful) {
-          return response;
-        } else {
-          // If there are errors, they've already been handled by the error handler
-          throw new Error("API request was not successful");
-        }
+        // Use the centralized error handler (handled globally, so just return response)
+        return response;
       }
 
       return response;

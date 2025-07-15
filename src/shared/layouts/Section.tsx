@@ -1,31 +1,3 @@
-// 
-
-// export const Section = ({
-//   title,
-//   children,
-//   isRadio,
-//   isAdd,
-//   isManageHearing,
-//   className = "grid-cols-3 gap-x-6 gap-y-6",
-// }: {
-//   title?: string;
-//   children: React.ReactNode;
-//   isRadio?: boolean;
-//   isAdd?: boolean;
-//   className?: string;
-//   isManageHearing?: boolean;
-// }) => {
-//   const computedClassName = isRadio ? "grid grid-cols-1" : className;
-//   const widthClass = isManageHearing ? "max-w-[50rem] min-w-auto" : "w-full";
-
-//   return (
-//     <div className={`${widthClass} space-y-${isAdd ? "3" : "6"}`}>
-//       {title && <h2 className="text-md text-primary-600 semibold">{title}</h2>}
-//       <div className={`grid ${computedClassName}`}>{children}</div>
-//     </div>
-//   );
-// };
-
 import React from "react";
 
 interface SectionProps {

@@ -36,42 +36,36 @@ const MainLayout = () => {
  
  
   useEffect(() => {
-    // console.log("isLegalRep detected Changed", isLegalRep);
     if (isLegalRep !== undefined) {
       setCookie("isLegalRep", JSON.stringify(isLegalRep));
     }
   }, [isLegalRep, setCookie]);
  
   useEffect(() => {
-    // console.log("isEstablishment detected Changed", isEstablishment);
     if (isEstablishment !== undefined) {
       setCookie("isEstablishment", JSON.stringify(isEstablishment));
     }
   }, [isEstablishment, setCookie]);
  
   useEffect(() => {
-    // console.log("openModule detected Changed", openModule);
     if (openModule !== undefined) {
       setCookie("openModule", JSON.stringify(openModule));
     }
   }, [openModule, setCookie]);
  
   useEffect(() => {
-    // console.log("selected detected Changed", selected);
     if (selected) {
       setCookie("selected", selected);
     }
   }, [selected, setCookie]);
  
   useEffect(() => {
-    // console.log("usertype detected Changed", userType);
     if (userType) {
       setCookie("userType", userType);
     }
   }, [userType, setCookie]);
  
   useEffect(() => {
-    // console.log("isMenueCahngeFlag detected Changed", isMenueCahngeFlag);
     if (isMenueCahngeFlag !== undefined) {
       setCookie("isMenueCahngeFlag", JSON.stringify(isMenueCahngeFlag));
     }

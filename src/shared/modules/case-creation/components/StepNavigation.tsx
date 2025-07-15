@@ -77,22 +77,12 @@ const StepNavigation = <T extends FieldValues>({
   const [isCancelling, setIsCancelling] = useState(false);
   const { hasErrors } = useApiErrorHandler();
 
-  // Correctly extract needed form methods and helpers
   const { clearErrors: handleRemoveValidation, formState: { errors } } = useAPIFormsData();
 
   const isPassedVerifiedInput =
     typeof isVerifiedInput === "object"
       ? Object.values(isVerifiedInput).every(Boolean)
       : isVerifiedInput;
-
-  // console.log("StepNavigation Debug:", {
-  //   isLastStep,
-  //   canProceed,
-  //   isValid,
-  //   isPassedVerifiedInput,
-  //   isButtonDisabled: isButtonDisabled?.("next"),
-  //   formErrors: errors
-  // });
 
   const isNextEnabled =
     isLastStep
@@ -111,17 +101,14 @@ const StepNavigation = <T extends FieldValues>({
     try {
       const response = await handleSave() as ApiResponse;
 
-      // Check for errors in response, filtering out empty error objects
       const validErrors = response?.ErrorCodeList?.filter(
         (element: any) => element.ErrorCode || element.ErrorDesc
       ) || [];
 
       if (validErrors.length > 0) {
-        // Errors are now handled by the central handler, just prevent success toast.
         return;
       }
 
-      // Only show success if no *valid* errors
       if (response?.SuccessCode === "200") {
         handleRemoveValidation?.();
         toast.success(tStepper("save_success"));
@@ -136,16 +123,13 @@ const StepNavigation = <T extends FieldValues>({
   };
 
   const handleCancel = async () => {
-    // Get caseId from URL or cookie
     const caseIdToCancel = caseId || getCookie("caseId");
     
-    // If no caseId exists or we're in the first step, navigate directly
     if (!caseIdToCancel || (currentStep === 0 && currentTab === 0)) {
       navigate("/");
       return;
     }
 
-    // Show cancel confirmation modal only if we have a caseId and we're not in the first step
     setShowCancelModal(true);
   };
 
@@ -166,13 +150,9 @@ const StepNavigation = <T extends FieldValues>({
         ResolveStatus: "Resolved-Request Cancelled",
       }).unwrap() as ApiResponse;
 
-      // Use centralized error handling to check if response is successful
       const isSuccessful = !hasErrors(response) && (response?.SuccessCode === "200" || response?.ServiceStatus === "Success");
 
       if (isSuccessful) {
-        // Clear case related cookies
-        console.log("response", response);
-        
         removeCookie("caseId");
         removeCookie("incompleteCaseMessage");
         removeCookie("incompleteCaseNumber");

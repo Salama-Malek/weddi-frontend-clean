@@ -4,6 +4,7 @@ import { toast } from "react-toastify";
 import { EmbassyAgentFormProps, EmbassyUserInfo, NICDetails } from "./types";
 import { useCookieState } from "@/features/initiate-hearing/hooks/useCookieState";
 import { useLazyGetNICDetailsForEmbasyQuery } from "@/features/initiate-hearing/api/create-case/plaintiffDetailsApis";
+import { toWesternDigits } from '@/shared/lib/helpers';
 
 export function useEmbassyAgentFormLogic({
   control,
@@ -96,7 +97,7 @@ export function useEmbassyAgentFormLogic({
     if (shouldFetchNic) {
       triggerNicAgent({
         IDNumber: PlaintiffId,
-        DateOfBirth: formattedPlaintifDOB || "",
+        DateOfBirth: toWesternDigits(formattedPlaintifDOB || ""),
         AcceptedLanguage: i18n.language.toUpperCase(),
         SourceSystem: "E-Services",
       });
@@ -123,7 +124,7 @@ export function useEmbassyAgentFormLogic({
           errorMessage = errorDetail.ErrorDesc;
         }
       }
-      toast.error(errorMessage);
+      // toast.error(errorMessage); // Commented to prevent duplicate error messages (handled by centralized error handler)
       setError("embassyAgent_workerAgentIdNumber", { type: "validate", message: errorMessage });
       // Only clear non-ID, non-DOB fields
       [

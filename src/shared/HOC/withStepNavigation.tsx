@@ -83,8 +83,6 @@ const withStepNavigation = <P extends object>(
       name: "acknowledge",
       defaultValue: false,
     });
-    // console.log("withStepNavigation - formState.isValid:", isValid);
-    // console.log("Debug ack:", acknowledgeValue, "currentStep:", currentStep);
 
     const [submitFinalReview, { isLoading: isSubmittingFinalReview }] = useSubmitFinalReviewMutation();
 
@@ -93,7 +91,6 @@ const withStepNavigation = <P extends object>(
         const caseId = getCookie("caseId");
         if (currentStep === 2) {
           setIsSubmitting(true);
-          // Build acknowledgment list based on selected language
           const ackList = acknowledgementsState.map((item: any) => ({
             ElementKey: selectedLanguageState === "EN" ? "English" : "Arabic",
             ElementValue: item.ElementValue,
@@ -110,7 +107,6 @@ const withStepNavigation = <P extends object>(
 
             const response = await submitFinalReview(payload).unwrap();
             
-            // Use centralized error handling to check if response is successful
             const isSuccessful = !hasErrors(response) && (response?.SuccessCode === "200" || response?.ServiceStatus === "Success");
 
             if (isSuccessful) {
@@ -119,25 +115,18 @@ const withStepNavigation = <P extends object>(
 
               toast.success(t("Submission successful!"));
 
-              // Handle survey link
               const serviceLink = response?.S2Cservicelink;
               if (serviceLink) {
-                // Navigate to manage-hearings first
                 navigate(`/manage-hearings/${response?.CaseNumber}`);
-                // Open survey in new tab
                 window.open(serviceLink, '_blank');
               } else {
-                console.warn("Survey link missing from successful response:", response);
-                // Navigate to manage-hearings even if survey link is missing
                 navigate(`/manage-hearings/${response?.CaseNumber}`);
               }
               
-              // Clear caseId from cookie
               removeCookie("caseId");
               
               return;
             } else {
-              // Handle error cases. ErrorCodeList is handled by the interceptor.
               if (response?.ErrorDescription) {
                 toast.error(response.ErrorDescription);
               }
@@ -148,20 +137,16 @@ const withStepNavigation = <P extends object>(
 
         setFormData(data);
         
-        // Call goToNextStep after successful form submission
         if (handleNext) {
           handleNext();
         }
       } catch (error: any) {
-        console.error("❌ Final Submit Failed:", error);
-        // The toast is now handled by the central error handler
       } finally {
         setIsSubmitting(false);
       }
     };
 
     const onInvalid = (errs: any) => {
-      // Find the first error message in errs
       let firstErrorMsg = "";
       if (errs && typeof errs === "object") {
         const firstKey = Object.keys(errs)[0];
@@ -170,11 +155,10 @@ const withStepNavigation = <P extends object>(
         }
       }
       if (firstErrorMsg) {
-        toast.error(firstErrorMsg);
+        // toast.error(firstErrorMsg);
       } else {
         toast.error("Form validation failed. Please check your input.");
       }
-      // console.error("Form validation failed:", errs);
     };
 
     return (

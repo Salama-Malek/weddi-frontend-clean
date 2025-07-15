@@ -39,7 +39,7 @@ module.exports = {
         "8xl": "7680px", // 8K resolution
       },
       container: {
-        center: true, // Ensures content is centered when needed
+        center: true,
         padding: {
           DEFAULT: "1rem",
           sm: "1rem",

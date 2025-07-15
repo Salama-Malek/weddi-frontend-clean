@@ -43,7 +43,6 @@ const DefendantDetailsContainer: React.FC = () => {
         // Only restore if we don't already have form data
         const currentFormData = watch();
         if (!currentFormData.defendantRegion && !currentFormData.defendantCity) {
-          console.log("Restoring saved defendant form data:", parsedData);
           Object.entries(parsedData).forEach(([key, value]) => {
             if (value !== null && value !== undefined) {
               setValue(key as any, value, { shouldValidate: false });
@@ -51,7 +50,7 @@ const DefendantDetailsContainer: React.FC = () => {
           });
         }
       } catch (error) {
-        console.error("Error restoring form data:", error);
+        // Error handling
       }
     }
   }, [setValue, watch]);
@@ -143,12 +142,14 @@ const DefendantDetailsContainer: React.FC = () => {
         return useLegelDefendantFormLayout({
           setValue,
           watch,
+          control,
         });
 
       case "establishment":
         return useLegelDefendantFormLayout({
           setValue,
           watch,
+          control,
         })
       case "individual":
       default:
@@ -167,7 +168,7 @@ const DefendantDetailsContainer: React.FC = () => {
     ? "Establishment"
     : defendantStatus;
 
-  console.log("this is new data ", { isNotOthersDefendant, DefendantType });
+
 
   useEffect(() => {
     setCookie("defendantTypeInfo", DefendantType);

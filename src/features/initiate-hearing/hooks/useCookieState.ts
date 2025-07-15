@@ -46,7 +46,6 @@ export function useCookieState(defaults?: Record<string, any>, options: CookieOp
         try {
           cookieValue = JSON.stringify(value);
         } catch (err) {
-          console.error("Failed to stringify cookie value:", err);
           return;
         }
       }

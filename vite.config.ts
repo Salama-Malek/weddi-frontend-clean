@@ -4,12 +4,10 @@ import { viteStaticCopy } from 'vite-plugin-static-copy';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-// Establish __dirname for ESM context.
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export default defineConfig(({ mode }) => {
-  // Load environment variables (consider filtering sensitive keys if needed)
   const env = loadEnv(mode, process.cwd());
 
   return {
@@ -43,7 +41,6 @@ export default defineConfig(({ mode }) => {
     },
     base: '/portal/',
     define: {
-      // Caution: Exposing entire env may leak sensitive info.
       'process.env': env,
     },
     resolve: {

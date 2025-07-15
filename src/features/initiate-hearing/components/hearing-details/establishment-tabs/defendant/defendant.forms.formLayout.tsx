@@ -8,6 +8,7 @@ import { useCookieState } from "@/features/initiate-hearing/hooks/useCookieState
 import { useGetGenderLookupDataQuery, useGetNationalityLookupDataQuery, useGetNICDetailsQuery, useGetOccupationLookupDataQuery, useGetWorkerCityLookupDataQuery, useGetWorkerRegionLookupDataQuery } from "@/features/initiate-hearing/api/create-case/plaintiffDetailsApis";
 import { setFormatDate } from "@/utils/formatters";
 import { formatDateToYYYYMMDD } from "@/shared/utils/dateUtils";
+import { toWesternDigits } from '@/shared/lib/helpers';
 
 interface EstablishmentDefendantFormLayoutProps {
   setValue?: UseFormSetValue<FormData>;
@@ -83,7 +84,7 @@ export const useEstablishmentDefendantFormLayout = ({
   } = useGetNICDetailsQuery(
     {
       IDNumber: watchNationalId || "",
-      DateOfBirth: formatDateToYYYYMMDD(watchDateOfBirth) || "",
+      DateOfBirth: toWesternDigits(formatDateToYYYYMMDD(watchDateOfBirth) || ""),
       AcceptedLanguage: i18n.language === "ar" ? "AR" : "EN",
       SourceSystem: "E-Services",
     },
@@ -97,7 +98,6 @@ export const useEstablishmentDefendantFormLayout = ({
   useEffect(() => {
 
     const isValid = watchNationalId?.length === 10;
-    //console.log(watchNationalId, watchDateOfBirth);
 
     if (isValid && watchDateOfBirth) {
       setIsValidCallNic(isValid);

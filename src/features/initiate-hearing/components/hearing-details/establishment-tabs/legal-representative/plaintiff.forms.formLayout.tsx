@@ -25,7 +25,6 @@ export const useLegalRepPlaintiffFormLayout = (
   const [selectedMainCategory, setSelectedMainCategory] = useState<any | null>(
     getCookie("mainCategory")
   );
-  // //console.log("selectedMainCategory$$$", selectedMainCategory);
   const [selectedSubCategory, setSelectedSubCategory] = useState<any | null>(
     getCookie("subCategory")
   );
@@ -34,7 +33,6 @@ export const useLegalRepPlaintiffFormLayout = (
   );
 
 
-  //#region Hassan Code Here  
   const userClaims: TokenClaims = getCookie("userClaims");
 
   const [userLegDataState, setUserLegDataState] = useState<any | null>({});

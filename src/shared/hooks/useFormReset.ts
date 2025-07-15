@@ -7,7 +7,6 @@ interface ResetConfig {
 }
 
 export const useFormReset = (setValue: any, clearErrors?: any) => {
-  // Define field dependencies
   const fieldDependencies: Record<string, ResetConfig> = {
     mainCategory: {
       field: 'mainCategory',
@@ -83,7 +82,6 @@ export const useFormReset = (setValue: any, clearErrors?: any) => {
     }
   };
 
-  // Reset single field and its dependencies
   const resetField = useCallback((fieldName: string) => {
     const config = fieldDependencies[fieldName];
     if (config) {
@@ -95,12 +93,10 @@ export const useFormReset = (setValue: any, clearErrors?: any) => {
     }
   }, [setValue, clearErrors]);
 
-  // Reset multiple fields
   const resetFields = useCallback((fields: string[]) => {
     fields.forEach(field => resetField(field));
   }, [resetField]);
 
-  // Reset all fields
   const resetAll = useCallback(() => {
     Object.keys(fieldDependencies).forEach(field => resetField(field));
   }, [resetField]);

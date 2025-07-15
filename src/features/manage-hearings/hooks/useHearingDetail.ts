@@ -22,7 +22,7 @@ const useHearingDetail = () => {
   const userType = getCookie("userType");
   const mainCategory = getCookie("mainCategory")?.value;
   const subCategory = getCookie("subCategory")?.value;
-  const userID = getCookie("userClaims").UserID;
+  const userID = getCookie("userClaims")?.UserID;
   const fileNumber = getCookie("userClaims")?.File_Number;
 
   const userConfigs: any = {

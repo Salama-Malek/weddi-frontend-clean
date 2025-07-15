@@ -1,11 +1,13 @@
 import React, { useId } from "react";
 import DatePicker, { DateObject } from "react-multi-date-picker";
 import arabic from "react-date-object/calendars/arabic";
+import arabic_locale from "react-date-object/locales/arabic_ar";
 import gregorian from "react-date-object/calendars/gregorian";
-import arabic_locale from "react-date-object/locales/arabic_en";
-import gregorian_locale from "react-date-object/locales/gregorian_en";
+import gregorian_locale_ar from "react-date-object/locales/gregorian_ar";
+import gregorian_locale_en from "react-date-object/locales/gregorian_en";
 import { FieldWrapper } from "../form";
 import { Calculator01Icon } from "hugeicons-react";
+import { useTranslation } from "react-i18next";
 
 export type DatePickerFieldProps = {
   label?: string;
@@ -29,6 +31,9 @@ export const DatePickerField: React.FC<DatePickerFieldProps> = ({
   onDateChange,
 }) => {
   const uniqueId = useId();
+  const { t } = useTranslation('placeholder');
+  const { i18n } = useTranslation();
+  const isArabic = i18n.language === 'ar';
 
   const handleDateChange = (date: DateObject | DateObject[] | null) => {
     if (!date || Array.isArray(date)) {
@@ -41,9 +46,9 @@ export const DatePickerField: React.FC<DatePickerFieldProps> = ({
 
     // Inside handleDateChange
     if (calendarType === "hijri") {
-      hijri = date.format("YYYY/MM/DD"); // forces 4-digit Hijri year
+      hijri = date.format("YYYY/MM/DD");
       gregorianStr = date
-        .convert(gregorian, gregorian_locale)
+        .convert(gregorian, gregorian_locale_ar)
         .format("YYYY/MM/DD");
     } else {
       gregorianStr = date.format("YYYY/MM/DD");
@@ -67,20 +72,19 @@ export const DatePickerField: React.FC<DatePickerFieldProps> = ({
       <div className="relative">
         <DatePicker
           id={uniqueId}
-          calendar={calendarType === "hijri" ? arabic : gregorian}
-          locale={calendarType === "hijri" ? arabic_locale : gregorian_locale}
-          // format="YYYY/MM/DD"
-          format={calendarType === "hijri" ? "YYYY/MM/DD" : "YYYY/MM/DD"}
-          placeholder="YYYY/MM/DD"
+          calendar={isArabic ? arabic : gregorian}
+          locale={isArabic ? arabic_locale : gregorian_locale_en}
+          format="YYYY/MM/DD"
+          placeholder={t('date')}
           value={
             value && /^\d{4}\/\d{2}\/\d{2}$/.test(value.toString())
               ? new DateObject({
                   date: value,
-                  calendar: calendarType === "hijri" ? arabic : gregorian,
+                  calendar: isArabic ? arabic : gregorian,
                   locale:
-                    calendarType === "hijri" ? arabic_locale : gregorian_locale,
+                    isArabic ? arabic_locale : gregorian_locale_en,
                   format:
-                    calendarType === "hijri" ? "YYYY/MM/DD" : "YYYY/MM/DD",
+                    "YYYY/MM/DD",
                 })
               : undefined
           }

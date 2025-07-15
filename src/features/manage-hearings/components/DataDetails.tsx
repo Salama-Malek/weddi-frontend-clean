@@ -5,6 +5,19 @@ import { ReadOnlyField } from "@/shared/components/ui/read-only-view";
 import { formatDate } from "@/utils/formatters";
 import { useCookieState } from "@/features/initiate-hearing/hooks/useCookieState";
 
+function formatHijriWithSlashes(date: string): string {
+  if (!date) return "";
+  if (date.includes("/")) return date;
+  if (/^\d{8}$/.test(date)) return formatDate(date);
+  if (/^\d{6}$/.test(date)) {
+    const year = date.substring(0, 2);
+    const month = date.substring(2, 4);
+    const day = date.substring(4, 6);
+    return `${day}/${month}/14${year}`;
+  }
+  return date;
+}
+
 interface DataDetailsProps {
   hearing: any;
 }
@@ -588,9 +601,7 @@ const filterAndOrderData = (data: any, userType?: string) => {
 const DataDetails: React.FC<DataDetailsProps> = ({ hearing }) => {
   const { t } = useTranslation("manageHearingDetails");
   const caseData = hearing || {};
-  // console.log(hearing);
 
-  // hassan add this
   const [getCookie] = useCookieState();
   const userType = getCookie("userType");
   const newCaseDetailsView = filterAndOrderData(caseData, userType);
@@ -624,7 +635,7 @@ const DataDetails: React.FC<DataDetailsProps> = ({ hearing }) => {
             label={t(key) !== key ? t(key) : formatLabel(key)}
             value={
               value !== null && value !== undefined && value !== ""
-                ? value
+                ? formatHijriWithSlashes(value)
                 : "-------"
             }
             notRequired
@@ -683,7 +694,6 @@ const DataDetails: React.FC<DataDetailsProps> = ({ hearing }) => {
       ...mergedRepFields,
     ].map(([key]) => key)
   );
-  // console.log(defendantFields);
 
   const additionalFields = entries.filter(([key]) => !usedKeys.has(key));
 
@@ -722,51 +732,8 @@ const DataDetails: React.FC<DataDetailsProps> = ({ hearing }) => {
           )}
         </>
       )}
-
-      {/* {renderSection(
-        t("plaintiff_details") || "Plaintiff's Details",
-        plaintiffFields
-      )}
-      {isGovernmentUser &&
-        mergedRepFields.length > 0 &&
-        renderSection(
-          t("representative_details") || "Legal Representative's Details",
-          mergedRepFields
-        )}
-      {renderSection(
-        t("defendant_details") || "Defendant Details",
-        defendantFields
-      )}
-      {renderSection(t("work_details") || "Work Details", workFields)}
-      {renderSection(
-        t("work_location_details") || "Work Location Details",
-        workLocationFields
-      )}
-       */}
     </div>
   );
 };
 
 export default DataDetails;
-
-// import React from "react";
-// import ReviewSectionRenderer, {
-//   ReviewSection,
-// } from "@/shared/components/review/ReviewSectionRenderer";
-// import { buildReviewSections } from "@/shared/components/review/ReviewDetailsBuilder";
-
-// interface DataDetailsProps {
-//   hearing: any;
-// }
-
-// const DataDetails: React.FC<DataDetailsProps> = ({ hearing }) => {
-//   const sections: ReviewSection[] = buildReviewSections(hearing);
-
-//   return (
-//     <div className="space-y-6">
-//       <ReviewSectionRenderer sections={sections} />
-//     </div>
-//   );
-// };
-
-// export default DataDetails;

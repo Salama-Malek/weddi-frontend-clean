@@ -45,9 +45,6 @@ export const CheckboxField = forwardRef<HTMLInputElement, CheckboxFieldProps>(
     const control = propControl || context?.control;
 
     if (!control) {
-      console.error(
-        "CheckboxField must be used within a FormProvider or have control prop"
-      );
       return null;
     }
     const uniqueId = useId();

@@ -18,7 +18,6 @@ export const TokenExpirationProvider: React.FC<{ children: React.ReactNode }> = 
         const checkTokenExpiration = () => {
             const token = cookie.load("token");
             if (!token) {
-                // window.location.href = `${process.env.VITE_REDIRECT_URL}`;
                 return;
             }
 
@@ -29,15 +28,11 @@ export const TokenExpirationProvider: React.FC<{ children: React.ReactNode }> = 
                 const timeLeft = expirationTime - currentTime;
 
                 setTimeUntilExpiration(timeLeft);
-                // console.log(`Your session will expire in ${timeLeft} sec.`);
 
                 if (timeLeft < 1) {
                     setIsTokenExpired(true);
                     toast.error('Your session has expired. Please log in again.');
                     cookie.remove("token");
-                    //  لما اشوف الرابط ;
-                    // navigate("/login") = > 
-                    // window.location.href = "http://localhost:5173/login"
 
                     if (process.env.VITE_LOGIN_SWITCH === "true") {
                         window.location.href = `${process.env.VITE_REDIRECT_URL_LOCAL}`;
@@ -51,7 +46,6 @@ export const TokenExpirationProvider: React.FC<{ children: React.ReactNode }> = 
                     toast.warning(`Your session will expire in ${Math.floor(timeLeft / 60000)} minutes.`);
                 }
             } catch (error) {
-                console.error('Error checking token expiration:', error);
             }
         };
 

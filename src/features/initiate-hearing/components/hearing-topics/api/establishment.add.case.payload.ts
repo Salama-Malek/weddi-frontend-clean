@@ -7,7 +7,6 @@ export function getPayloadBySubTopicID(
   lastAction: "Save" | "Next" | null = "Next",
   caseId: string = "default caseId"
 ) {
-  console.log("[getPayloadBySubTopicID] called with", { caseTopics, subCategory, lastAction, caseId });
   const structuredTopics: any[] = [];
 
   try {
@@ -23,7 +22,7 @@ export function getPayloadBySubTopicID(
       switch (topic?.SubTopicID) {
 
         /***************************Establishment Topics***************************/
-        case "CR-1": //done
+        case "CR-1": 
           topicPayload = {
             ...basePayload,
             Amount: topic?.amount || topic.Amount,
@@ -31,8 +30,7 @@ export function getPayloadBySubTopicID(
           };
           break;
 
-        case "LCUTE-1": //done
-          console.log("ttt", topic);
+        case "LCUTE-1": 
           topicPayload = {
             ...basePayload,
             AmountOfCompensation: topic?.amountOfCompensation || topic?.AmountOfCompensation,
@@ -46,7 +44,7 @@ export function getPayloadBySubTopicID(
           };
           break;
 
-        case "DPVR-1": //done
+        case "DPVR-1": 
           topicPayload = {
             ...basePayload,
             SpoilerType: topic?.damagedType || topic?.SpoilerType,
@@ -54,13 +52,13 @@ export function getPayloadBySubTopicID(
           };
           break;
 
-        case "AWRW-1": //done
+        case "AWRW-1": 
           topicPayload = {
             ...basePayload,
           }
           break;
         
-        case "AWRW-2": //done
+        case "AWRW-2": 
           topicPayload = {
             ...basePayload,
           };
@@ -95,7 +93,7 @@ export function getPayloadBySubTopicID(
           break;
 
         /***************************Worker Topics***************************/
-        case "CMR-1": //done
+        case "CMR-1": 
           topicPayload = {
             ...basePayload,
             AmountsPaidFor: topic?.amountsPaidFor.value || topic.AmountsPaidFor,
@@ -103,25 +101,17 @@ export function getPayloadBySubTopicID(
           };
           break;
 
-        case "CMR-3": //done
-        console.log(topic);
-          topicPayload = {
-            ...basePayload,
-            Amount: topic?.compensationAmount || topic?.Amount,
-            pyTempText: formatDateToYYYYMMDD(topic?.injury_date_hijri || topic?.pyTempText),
-            InjuryDate_New: formatDateToYYYYMMDD(topic?.injury_date_gregorian || topic?.InjuryDate_New),
-            TypeOfWorkInjury: topic?.injuryType || topic?.TypeOfWorkInjury,
-          };
+        case "CMR-3": 
           break;
 
-        case "CMR-4": //done
+        case "CMR-4": 
           topicPayload = {
             ...basePayload,
             Amount: topic?.amount || topic?.Amount,
           };
           break;
 
-        case "CMR-5": //done
+        case "CMR-5": 
           topicPayload = {
             ...basePayload,
             LeaveType: topic?.kindOfHoliday || topic?.LeaveType,
@@ -131,7 +121,7 @@ export function getPayloadBySubTopicID(
           };
           break;
 
-        case "CMR-6": //done
+        case "CMR-6": 
           topicPayload = {
             ...basePayload,
             pyTempDate: formatDateToYYYYMMDD(topic?.from_date_hijri || topic?.pyTempDate),
@@ -143,7 +133,7 @@ export function getPayloadBySubTopicID(
             WageDifference: topic?.wageDifference || topic?.WageDifference,
           };
           break;
-        case "CMR-7": //done
+        case "CMR-7": 
           topicPayload = {
             ...basePayload,
             pyTempDate: formatDateToYYYYMMDD(topic?.from_date_hijri || topic?.pyTempDate),
@@ -155,7 +145,7 @@ export function getPayloadBySubTopicID(
           };
           break;
 
-        case "CMR-8": //done
+        case "CMR-8": 
           topicPayload = {
             ...basePayload,
             pyTempDate: formatDateToYYYYMMDD(topic?.from_date_hijri || topic?.pyTempDate),
@@ -166,20 +156,20 @@ export function getPayloadBySubTopicID(
           };
           break;
 
-        case "EDO-1": //done
+        case "EDO-1": 
           topicPayload = {
             ...basePayload,
             FromLocation: topic?.fromLocation?.value || topic?.FromLocation,
             ToLocation: topic?.toLocation?.value || topic?.ToLocation,
-            fromLocation: topic?.fromLocation?.value || topic?.FromLocation, // send as code only for testing
-            toLocation: topic?.toLocation?.value || topic?.ToLocation, // send as code only for testing
+            fromLocation: topic?.fromLocation?.value || topic?.FromLocation,
+            toLocation: topic?.toLocation?.value || topic?.ToLocation, 
             Date_New: formatDateToYYYYMMDD(topic?.managerial_decision_date_hijri || topic?.Date_New),
             ManDecsDate: formatDateToYYYYMMDD(topic?.managerial_decision_date_gregorian || topic?.ManDecsDate),
             ManagerialDecisionNumber: topic?.managerialDecisionNumber || topic?.ManagerialDecisionNumber,
           };
           break;
 
-        case "EDO-2": //done
+        case "EDO-2": 
           topicPayload = {
             ...basePayload,
             FromJob: topic?.fromJob || topic?.FromJob,
@@ -190,7 +180,7 @@ export function getPayloadBySubTopicID(
           };
           break;
 
-        case "EDO-3": //done
+        case "EDO-3": 
           topicPayload = {
             ...basePayload,
             AmountOfReduction: topic?.amountOfReduction || topic?.AmountOfReduction,
@@ -200,7 +190,7 @@ export function getPayloadBySubTopicID(
           };
           break;
 
-        case "EDO-4": //done
+        case "EDO-4": 
           topicPayload = {
             ...basePayload,
             PenalityType: topic?.typesOfPenalties?.value || topic?.TypesOfPenalties || topic?.PenalityType,
@@ -211,7 +201,7 @@ export function getPayloadBySubTopicID(
           };
           break;
 
-        // case "HIR-1": {  //done
+        // case "HIR-1": {  
         //   const {
         //     doesBylawsIncludeAddingAccommodations,
         //     doesContractIncludeAddingAccommodations,
@@ -237,7 +227,7 @@ export function getPayloadBySubTopicID(
         //   break;
         // }
 
-case "HIR-1": {  //done
+case "HIR-1": {  
           const {
             doesBylawsIncludeAddingAccommodations,
             doesContractIncludeAddingAccommodations,
@@ -263,7 +253,7 @@ case "HIR-1": {  //done
           break;
         }
         
-        case "JAR-2": //done
+        case "JAR-2": 
           topicPayload = {
             ...basePayload,
             CurrentJobTitle: topic?.currentJobTitle || topic?.CurrentJobTitle,
@@ -271,7 +261,7 @@ case "HIR-1": {  //done
           };
           break;
 
-        case "JAR-3": //done
+        case "JAR-3": 
           topicPayload = {
             ...basePayload,
             PromotionMechanism:
@@ -280,7 +270,7 @@ case "HIR-1": {  //done
           };
           break;
 
-        case "JAR-4": //done
+        case "JAR-4": 
           topicPayload = {
             ...basePayload,
             CurrentPosition: topic?.currentPosition || topic?.CurrentPosition,
@@ -288,7 +278,7 @@ case "HIR-1": {  //done
           };
           break;
 
-        case "RR-1": //done
+        case "RR-1": 
 
           topicPayload = {
             ...basePayload,
@@ -297,7 +287,7 @@ case "HIR-1": {  //done
           };
           break;
 
-        case "WR-1": //done
+        case "WR-1": 
           topicPayload = {
             ...basePayload,
             Amount: topic?.amount || topic?.Amount,
@@ -310,7 +300,7 @@ case "HIR-1": {  //done
           };
           break;
 
-        case "WR-2": //done
+        case "WR-2": 
           topicPayload = {
             ...basePayload,
             OverdueWagesAmount: topic?.amount || topic?.OverdueWagesAmount,
@@ -321,13 +311,13 @@ case "HIR-1": {  //done
           };
           break;
 
-        case "TTR-1": //done
+        case "TTR-1": 
           topicPayload = {
             ...basePayload,
             TravelingWay: topic?.travelingWay.value || topic?.TravelingWay,
           };
           break;
-        case "MIR-1": //done
+        case "MIR-1": 
           topicPayload = {
             ...basePayload,
             RequestType: topic?.typeOfRequest?.value || topic?.RequestType,
@@ -337,14 +327,14 @@ case "HIR-1": {  //done
           };
           break;
 
-        case "LRESR-1"://done
+        case "LRESR-1":
           topicPayload = {
             ...basePayload,
             Amount: topic?.amount || topic?.Amount,
           };
           break;
 
-        case "RFR-1": //done
+        case "RFR-1": 
           topicPayload = {
             ...basePayload,
             Amount: topic?.amount || topic?.Amount,
@@ -354,7 +344,7 @@ case "HIR-1": {  //done
           };
           break;
 
-        case "BPSR-1": //done
+        case "BPSR-1": 
           topicPayload = {
             ...basePayload,
             Amount: topic?.amount || topic?.Amount,
@@ -369,7 +359,7 @@ case "HIR-1": {  //done
           };
           break;
 
-        case "BR-1": //done
+        case "BR-1": 
           topicPayload = {
             ...basePayload,
             AccordingToAgreement: topic?.accordingToAgreement?.value || topic?.AccordingToAgreement,
@@ -380,7 +370,6 @@ case "HIR-1": {  //done
           break;
 
         default:
-          // Fall back to sending the topic as-is
           topicPayload = { ...topic };
           break;
       }

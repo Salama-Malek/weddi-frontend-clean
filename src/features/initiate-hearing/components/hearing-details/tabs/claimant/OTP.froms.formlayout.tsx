@@ -43,6 +43,7 @@ const OTPFormLayout = ({
   const phoneNumber = watch("interPhoneNumber");
   const enteredOtp = watch("otp");
   const { t, i18n } = useTranslation("hearingtopics");
+  const { t: tPlaceholder } = useTranslation("placeholder");
 
   const [otp, setOtp] = useState<string[]>(Array(6).fill(""));
   const [otpSent, setOtpSent] = useState(false);
@@ -60,14 +61,6 @@ const OTPFormLayout = ({
     SourceSystem: "E-Services",
   });
 
-
-
-  // useEffect(()=>{
-  //   console.log("this is phone ",isPhone);
-  // },[isPhone]) 
-
-
-  // set the userId Based On The User Selected Type
   useEffect(() => {
     if (applicantType === "principal") {
       setUserId(userClaims.UserID)
@@ -153,7 +146,6 @@ const OTPFormLayout = ({
   const handleCerifyOtp = () => {
 
     verifyOtp(otp.join(""));
-    // console.log("sdfhdsjsf", lastSentOtp);
   }
 
 
@@ -185,7 +177,7 @@ const OTPFormLayout = ({
       children: [
         {
           type: "autocomplete",
-          label: t("countryCode"),
+          label: t("countryCode", { ns: "hearingdetails" }),
           name: "phoneCode",
           options: CountryCodeOptions,
           value: phoneCode,
@@ -201,14 +193,14 @@ const OTPFormLayout = ({
         {
           type: "input",
           name: "interPhoneNumber",
-          label: t("nicDetails.phoneNumber"),
+          label: t("nicDetails.phoneNumber", { ns: "hearingdetails" }),
           inputType: "tel",
           maxLength: 10,
           value: phoneNumber ?? "",
           onChange: (v: string) => setValue("interPhoneNumber", v),
           placeholder: phoneCode
             ? getPhoneConfig(phoneCode).placeholder
-            : "Enter phone number",
+            : tPlaceholder("international_phone"),
           ...(isPhone
             ? {
               validation: {

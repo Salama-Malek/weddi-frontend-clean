@@ -55,10 +55,8 @@ const HearingDetails = () => {
     refetch,
   } = useHearingDetail();
 
-  // map the actual API flags (strings) into booleans
   const canReopen = hearing?.Reopen === "true";
   const canDownloadMinutes = hearing?.DownloadPDF === "true";
-  // const canGenerateLawSuit = hearing?.GenerateLawSuit === "true";
   const canDownloadClaimForm = hearing?.DownloadClaimForm === "true";
   const canResend = hearing?.ResendAppointment === "true";
   const canCancel = hearing?.CancelCase === "true";
@@ -74,13 +72,11 @@ const HearingDetails = () => {
   const SourceSystem = "E-Services";
   const statusCode = hearing?.StatusWork_Code;
 
-  // Use the centralized error handler
   const { handleResponse, hasErrors } = useApiErrorHandler();
 
   const handleCancelCase = async () => {
     try {
       setLoadingAction("cancel");
-      // Determine the appropriate ResolveStatus based on the case status
       const isInFlight = ["Under-Investigation", "Under-Negotiations", "Under-NegotiationsCI"].includes(hearing?.StatusWork_Code || "");
       const resolveStatus = isInFlight ? "Resolved-Waived" : "Resolved-Request Cancelled";
 
@@ -91,7 +87,6 @@ const HearingDetails = () => {
         ResolveStatus: resolveStatus,
       }).unwrap();
       
-      // Use centralized error handling
       const isSuccessful = handleResponse(cancelCaseResponse);
       
       if (isSuccessful) {
@@ -116,7 +111,6 @@ const HearingDetails = () => {
         ReopenComments: reason || "",
       }).unwrap();
       
-      // Use centralized error handling to check if response is successful
       const isSuccessful = !hasErrors(reOpenCaseResponse) && (reOpenCaseResponse?.SuccessCode === "200" || reOpenCaseResponse?.ServiceStatus === "Success");
 
       if (isSuccessful) {
@@ -124,10 +118,8 @@ const HearingDetails = () => {
         toast.success(t("reopen_success"));
         setShowReopenModal(false);
         
-        // If the case was rejected, navigate to case creation
         if (statusCode === "Resolved-Rejected") {
           setCookie("caseId", caseId);
-          // Reset navigation to the first step and tab
           localStorage.setItem("step", "0");
           localStorage.setItem("tab", "0");
           navigate("/initiate-hearing/case-creation");
@@ -152,7 +144,6 @@ const HearingDetails = () => {
         CaseTopics: hearing?.CaseTopics || [],
       }).unwrap();
       
-      // Use centralized error handling to check if response is successful
       const isSuccessful = !hasErrors(updateCaseTopicsResponse) && (updateCaseTopicsResponse?.SuccessCode === "200" || updateCaseTopicsResponse?.ServiceStatus === "Success");
 
       if (isSuccessful) {
@@ -197,7 +188,6 @@ const HearingDetails = () => {
     actionType: "GenerateLawSuit" | "Download",
     fileName: string
   ) => {
-    //console.log(userClaims.UserID);
 
     try {
       const response: any = await triggerDownloadPDF({
@@ -237,13 +227,11 @@ const HearingDetails = () => {
   };
 
   const handleReopenClick = () => {
-    // For Resolved-Rejected status, show simple confirmation
     if (statusCode === "Resolved-Rejected") {
       setModalType("confirm-reopen-generic");
       return;
     }
 
-    // Only these specific statuses require acknowledgment
     const acknowledgmentStatuses = [
       "Resolved-Applicant didnot attend",
       "Resolved-Save the case"
@@ -252,10 +240,8 @@ const HearingDetails = () => {
     const needsAcknowledgment = acknowledgmentStatuses.includes(statusCode || "");
     
     if (needsAcknowledgment) {
-      // For these specific statuses, show the full modal with acknowledgment
       setShowReopenModal(true);
     } else {
-      // For all other cases, show simple confirmation popup
       setModalType("confirm-reopen-generic");
     }
   };
@@ -589,7 +575,7 @@ const HearingDetails = () => {
               variant="primary"
               onClick={() => {
                 setModalType(null);
-                handleReopenSubmit(""); // Directly call reopen without showing another modal
+                handleReopenSubmit("");
               }}
             >
               {t("yes")}

@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useGetNICDetailsQuery } from '@/features/initiate-hearing/api/create-case/plaintiffDetailsApis';
 import type { NICDetailsResponse } from '@/features/initiate-hearing/api/create-case/plaintiffDetailsApis';
+import { toWesternDigits } from '@/shared/lib/helpers';
 
 
 
@@ -33,7 +34,7 @@ export function useNICTrigger(
   const { data, isFetching, isError, refetch } = useGetNICDetailsQuery(
     {
       IDNumber: id,
-      DateOfBirth: hijriDob,
+      DateOfBirth: toWesternDigits(hijriDob),
       AcceptedLanguage: language,
       SourceSystem: 'E-Services',
     },

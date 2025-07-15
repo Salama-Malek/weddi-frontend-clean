@@ -63,7 +63,7 @@ export const useEstablishmentPlaintiffFormLayout = ({
       setValue("PlaintiffsCRNumber", establishmentDetails?.CRNumber, {
         shouldValidate: establishmentDetails?.CRNumber,
       }),
-      setValue("PlaintiffsRegion", establishmentDetails?.Region_Code, {
+      setValue("plaintiffRegion", establishmentDetails?.Region_Code, {
         shouldValidate: establishmentDetails?.Region_Code,
       }),
       setValue("PlaintiffsCity", establishmentDetails?.City_Code, {
@@ -129,7 +129,7 @@ export const useEstablishmentPlaintiffFormLayout = ({
       //hassan code 700
       {
         type: !establishmentDetails?.Region ? "autocomplete" : "readonly",
-        name: "PlaintiffsRegion",
+        name: "plaintiffRegion",
         ...(establishmentDetails?.Region && {
           isLoading: apiLoadingStates?.estab,
         }),

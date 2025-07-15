@@ -8,7 +8,7 @@ import { DynamicForm } from "@/shared/components/form/DynamicForm";
 import { FormData } from "@/shared/components/form/form.types";
 import { toast } from "react-toastify";
 import Loader from "@/shared/components/loader";
-import { formatDateToYYYYMMDD } from "@/shared/lib/helpers";
+import { formatDateToYYYYMMDD, toWesternDigits } from "@/shared/lib/helpers";
 import { useWatch } from "react-hook-form";
 
 import {
@@ -176,6 +176,23 @@ const ClaimantDetailsContainer: React.FC<
     });
 
     // --- Lookup data queries ---
+    const isEmbassyUser = userType?.toLowerCase().includes("embassy user");
+    // Determine which region field to watch for city lookup
+    let selectedRegionForCity: any = null;
+    if (isEmbassyUser) {
+      // For embassy user, check both possible region fields
+      selectedRegionForCity =
+        (typeof watch("embassyAgent_region") === "object" && watch("embassyAgent_region")?.value)
+          ? watch("embassyAgent_region")?.value
+          : (typeof watch("region") === "object" && watch("region")?.value)
+            ? watch("region")?.value
+            : watch("embassyAgent_region") || watch("region") || "";
+    } else {
+      selectedRegionForCity =
+        typeof watch("plaintiffRegion") === "object"
+          ? watch("plaintiffRegion")?.value
+          : watch("plaintiffRegion") || "";
+    }
     const { data: regionData } = useGetWorkerRegionLookupDataQuery({
       AcceptedLanguage: lang,
       SourceSystem: "E-Services",
@@ -190,18 +207,13 @@ const ClaimantDetailsContainer: React.FC<
       {
         AcceptedLanguage: lang,
         SourceSystem: "E-Services",
-        selectedWorkerRegion:
-          typeof watch("plaintiffRegion") === "object"
-            ? watch("plaintiffRegion")?.value
-            : watch("plaintiffRegion") || "",
+        selectedWorkerRegion: selectedRegionForCity,
         ModuleName: userType.toLowerCase().includes("establishment")
           ? "EstablishmentCity"
           : "WorkerCity",
       },
       {
-        skip: !(typeof watch("plaintiffRegion") === "object"
-          ? watch("plaintiffRegion")?.value
-          : watch("plaintiffRegion")),
+        skip: !selectedRegionForCity
       }
     );
     const { data: occupationData } = useGetOccupationLookupDataQuery({
@@ -229,7 +241,7 @@ const ClaimantDetailsContainer: React.FC<
     } = useGetNICDetailsQuery(
       {
         IDNumber: principalId,
-        DateOfBirth: principalDob || "",
+        DateOfBirth: toWesternDigits(principalDob || ""),
         AcceptedLanguage: lang,
         SourceSystem: "E-Services",
       },
@@ -249,7 +261,7 @@ const ClaimantDetailsContainer: React.FC<
     } = useGetNICDetailsQuery(
       {
         IDNumber: representativeId,
-        DateOfBirth: representativeDob || "",
+        DateOfBirth: toWesternDigits(representativeDob || ""),
         AcceptedLanguage: lang,
         SourceSystem: "E-Services",
       },
@@ -266,6 +278,12 @@ const ClaimantDetailsContainer: React.FC<
     const nicLoading = principalNICLoading || representativeNICLoading;
 
     // --- Agent info ---
+    const agentType = watch("agentType");
+    const mandateNumber = agentType === "local_agency"
+      ? watch("agencyNumber")
+      : agentType === "external_agency"
+        ? watch("externalAgencyNumber")
+        : "";
     const {
       data: agentInfo,
       error: agentError,
@@ -276,7 +294,7 @@ const ClaimantDetailsContainer: React.FC<
     } = useGetAttorneyDetailsQuery(
       {
         AgentID: userId,
-        MandateNumber: watch("agencyNumber") as string,
+        MandateNumber: mandateNumber,
         AcceptedLanguage: lang,
         SourceSystem: "E-Services",
       },
@@ -284,11 +302,10 @@ const ClaimantDetailsContainer: React.FC<
         skip:
         !isAgencyValidating ||
           watch("agentType") !== "local_agency",
-        refetchOnMountOrArgChange: true, // ← ensure a fresh fetch even if the same number is entered again
+        refetchOnMountOrArgChange: true, 
       }
     );
 
-    // Track if error toast has been shown to prevent duplicates
     const errorToastShownRef = useRef(false);
 
     useEffect(() => {
@@ -319,10 +336,10 @@ const ClaimantDetailsContainer: React.FC<
         )?.ErrorDesc;
 
         // Only show toast if not already shown
-        if (!errorToastShownRef.current) {
-          toast.error(errorDesc || t("error.invalidAgencyNumber"));
-          errorToastShownRef.current = true;
-        }
+        // if (!errorToastShownRef.current) {
+        //   toast.error(errorDesc || t("error.invalidAgencyNumber"));
+        //   errorToastShownRef.current = true;
+        // }
 
         setError("agencyNumber", {
           type: "validate",
@@ -362,14 +379,13 @@ const ClaimantDetailsContainer: React.FC<
         return;
       }
 
-      // SUCCESS branch
       if (agentInfo?.Agent.ErrorDescription === "Success") {
         setValue("agentName", agentInfo?.Agent.AgentName || "");
         setValue("agencyStatus", agentInfo?.Agent.MandateStatus || "");
         setValue("agencySource", agentInfo?.Agent.MandateSource || "");
         toast.success(t("agencyFound"));
         clearErrors("agencyNumber");
-        errorToastShownRef.current = false; // Reset on success
+        errorToastShownRef.current = false; 
       }
     }, [agentInfo, isAgentFetching, setValue, setError, clearErrors, t]);
 
@@ -378,21 +394,16 @@ const ClaimantDetailsContainer: React.FC<
 
     const idNumber = watch("idNumber");
 
-    const agentType = watch("agentType");
-
     useEffect(() => {
       if (
         claimantStatus === "representative" &&
         representativeId &&
-        representativeId.length === 10 // Only trigger when 10 digits
+        representativeId.length === 10 
       ) {
         if (representativeId === userId) {
-          // Show toast instead of modal
           toast.error(t("error.cannotUseOwnId"));
-          // Clear the ID field
           setValue("workerAgentIdNumber", "");
           clearErrors("workerAgentIdNumber");
-          // Clear other related fields
           [
             "workerAgentDateOfBirthHijri",
             "gregorianDate",
@@ -515,7 +526,6 @@ const ClaimantDetailsContainer: React.FC<
     const handleSubmitStep = async () => {
       const formData = watch();
       // Debug: log form data before payload construction
-      console.log("FORM DATA BEFORE PAYLOAD:", formData);
       const isEmbassyUser = userType?.toLowerCase().includes("embassy user");
       const payload: any = {
         CreatedBy: userId,
@@ -583,7 +593,9 @@ const ClaimantDetailsContainer: React.FC<
       }
       if (formData?.applicantType === "representative") {
         payload.Agent_AgentID = userId;
-        payload.Agent_MandateNumber = formData?.agencyNumber;
+        payload.Agent_MandateNumber = formData?.agentType === "local_agency"
+          ? formData?.agencyNumber
+          : formData?.externalAgencyNumber;
         payload.Agent_PhoneNumber = formData?.agentPhoneNumber;
         payload.Agent_Name = formData?.agentName;
         payload.Agent_MandateStatus = formData?.agencyStatus;
@@ -593,6 +605,16 @@ const ClaimantDetailsContainer: React.FC<
         payload.Agent_Mobilenumber = formData?.agentPhoneNumber;
         payload.CertifiedBy =
           formData?.agentType === "local_agency" ? "CB1" : "CB2";
+      }
+      // Add attachment for domestic worker (principal, DW1)
+      const isDomesticWorker = formData?.isDomestic === true || formData?.isDomestic === 'true';
+      if (isDomesticWorker && formData?.attachment && formData?.attachment.base64) {
+        payload.Attachment = {
+          classification: formData.attachment.classification || '',
+          base64: formData.attachment.base64,
+          fileName: formData.attachment.fileName,
+          fileType: formData.attachment.fileType,
+        };
       }
       const isCaseCreated = !!getCookie("caseId");
       await saveClaimantDetails({ data: payload, isCaseCreated });

@@ -59,6 +59,7 @@
     "no_results_found": "No results found."
   },
   "hearingdetails": {
+    "workerType": "Worker Type",
     "nicDetails": {
       "idNumber": "ID Number",
       "name": "Name",
@@ -415,7 +416,8 @@
     "topic_added_successfully": "Topic Added Successfully",
     "cases_updated_successfully": "Cases Updated Successfully",
     "duplicate_topic_error": "This topic is already added. Please choose a different topic.",
-    "save_success": "Case saved successfully"
+    "save_success": "Case saved successfully",
+    "verifyOtp": "Verify OTP"
   },
   "legal_rep": {
     "legal_representative": "Legal Representative",
@@ -585,7 +587,7 @@
     "mobile": "Mobile",
     "name": "Name",
     "nationality": "Nationality",
-    "no": "No.",
+    "no.": "No.",
     "no_review_data_available": "No Review Data",
     "nonGovernmentalEntities": "Non-Governmental Entities",
     "occupation": "Occupation",
@@ -1048,9 +1050,23 @@
         "file_type": "File \"{{name}}\" has invalid type. Only {{types}} files are allowed",
         "process_failed": "Failed to process files. Please try again.",
         "upload_failed": "Failed to upload attachments. Please try again."
-      }
+      },
+      "upload_success": "Attachment uploaded successfully"
     },
     "homePageWarning": "Switch account from home page",
     "homePageWarningDesc": "You are currently using the legal representative account. To change the account, change the account in the home page"
+  },
+  "placeholder": {
+    "date": "1445/01/01",
+    "phone": "05xxxxxxxx",
+    "alt_phone": "10xxxxxxxx",
+    "salary": "10000 SAR",
+    "id": "123457543",
+    "international_phone": "Enter international phone number"
+  },
+  "verifyOtp": "Verify OTP",
+  "unprofessionalLetterAttachments": {
+    "title": "Unprofessional Letter Attachments",
+    "unnamed": "Unnamed File"
   }
 }

@@ -9,15 +9,9 @@ import {
   ErrorHandlerConfig 
 } from '@/shared/lib/api/errorHandler';
 
-/**
- * React hook for handling API responses with consistent error handling
- */
 export const useApiErrorHandler = () => {
   const { t } = useTranslation();
 
-  /**
-   * Handles an API response and returns whether it was successful
-   */
   const handleResponse = useCallback((
     response: ApiResponseWithErrors,
     config: ErrorHandlerConfig = {}
@@ -25,23 +19,14 @@ export const useApiErrorHandler = () => {
     return handleApiResponse(response, config);
   }, []);
 
-  /**
-   * Checks if a response has any errors
-   */
   const hasErrors = useCallback((response: ApiResponseWithErrors): boolean => {
     return hasApiErrors(response);
   }, []);
 
-  /**
-   * Extracts all errors from a response
-   */
   const getErrors = useCallback((response: ApiResponseWithErrors) => {
     return extractApiErrors(response);
   }, []);
 
-  /**
-   * Creates a standardized error response
-   */
   const createError = useCallback((
     errorCode: string,
     errorDesc: string,
@@ -50,9 +35,6 @@ export const useApiErrorHandler = () => {
     return createErrorResponse(errorCode, errorDesc, additionalData);
   }, []);
 
-  /**
-   * Handles API errors with translation support
-   */
   const handleErrorsWithTranslation = useCallback((
     response: ApiResponseWithErrors,
     config: ErrorHandlerConfig = {}
@@ -61,12 +43,10 @@ export const useApiErrorHandler = () => {
     
     if (errors.length === 0) return;
 
-    // Add translation support for common error messages
     const translatedConfig: ErrorHandlerConfig = {
       ...config,
       customErrorMessages: {
         ...config.customErrorMessages,
-        // Add common error translations
         'API_ERROR': t('api_error_generic') || 'An API error occurred',
         'VALIDATION_ERROR': t('validation_error') || 'Validation error',
         'NETWORK_ERROR': t('network_error') || 'Network error',
@@ -78,9 +58,6 @@ export const useApiErrorHandler = () => {
     handleApiResponse(response, translatedConfig);
   }, [t]);
 
-  /**
-   * Wraps an async API call with error handling
-   */
   const withErrorHandling = useCallback(async <T>(
     apiCall: () => Promise<T>,
     config: ErrorHandlerConfig = {}
@@ -88,7 +65,6 @@ export const useApiErrorHandler = () => {
     try {
       const result = await apiCall();
       
-      // If the result is an API response with errors, handle them
       if (result && typeof result === 'object' && ('ErrorCodeList' in result || 'ErrorDetails' in result)) {
         const success = handleApiResponse(result as ApiResponseWithErrors, config);
         return success ? result : null;
@@ -96,7 +72,6 @@ export const useApiErrorHandler = () => {
       
       return result;
     } catch (error) {
-      // Handle unexpected errors
       const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
       const errorResponse = createErrorResponse('UNEXPECTED_ERROR', errorMessage);
       handleApiResponse(errorResponse, config);
@@ -113,3 +88,14 @@ export const useApiErrorHandler = () => {
     withErrorHandling
   };
 }; 
+
+/*
+import { toast } from "react-toastify";
+import { useCallback } from "react";
+
+export function useApiErrorHandler() {
+  return useCallback((message?: string) => {
+    toast.error(message || "Unexpected response from server. Please try again later.");
+  }, []);
+} 
+*/

@@ -7,7 +7,6 @@ import { toast } from 'react-toastify';
 import { startLoading, stopLoading } from '@/redux/slices/loadingSlice';
 import { handleApiResponse, ApiResponseWithErrors, ErrorHandlerConfig, SUPPRESSED_ERROR_CODES } from '@/shared/lib/api/errorHandler';
 
-// Legacy function - kept for backward compatibility but now uses the new error handler
 const handleApiResponseLegacy = (result: any, args: string | FetchArgs) => {
   const url = typeof args === 'string' ? args : args.url;
 
@@ -23,7 +22,6 @@ const handleApiResponseLegacy = (result: any, args: string | FetchArgs) => {
 
   // Use the new centralized error handler
   if (result?.data) {
-    // console.log('API Response:', url, result.data); // Debug log
     const config: ErrorHandlerConfig = {
       showToasts: true,
       redirectOnTokenExpired: true,
@@ -44,15 +42,8 @@ const customBaseQuery: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQueryEr
     const result = await fetchBaseQuery({
       baseUrl: process.env.VITE_API_URL,
       prepareHeaders: (headers) => {
-        // const username = process.env.VITE_API_USERNAME;
-        // const password = process.env.VITE_API_PASSWORD;
-        // const encodedCredentials = btoa(`${username}:${password}`);
-
         // Token Should Be Send In The Header
         headers.set('Content-Type', 'application/json');
-        // if (encodedCredentials) {
-        //   headers.set('Authorization', `Basic ${encodedCredentials}`);
-        // }
         // Token Should Be Send In The Header
         const token = cookie.load("token");
         if (token) {
@@ -177,7 +168,7 @@ const transformRequest = (args: FetchArgs): FetchArgs => {
         SourceSystem: string;
         IDNumber?: string;
         PlaintiffId?: string;
-        AcceptedLanguage: string;
+        AcceptedLanguage?: string;
         UserType?: string;
         FileNumber?: string;
         MainGovernment?: string;
@@ -185,7 +176,8 @@ const transformRequest = (args: FetchArgs): FetchArgs => {
       } = {
         SourceSystem: "E-Services",
         IDNumber: userClaims?.UserID,
-        AcceptedLanguage: userClaims?.AcceptedLanguage?.toUpperCase() || 'EN',
+        // Only set AcceptedLanguage if not already present
+        ...(args.params.AcceptedLanguage ? {} : { AcceptedLanguage: userClaims?.AcceptedLanguage?.toUpperCase() || 'EN' }),
         // UserType: userTypeOrdinary
       };
 
@@ -206,13 +198,12 @@ const transformRequest = (args: FetchArgs): FetchArgs => {
       }
 
       args.params = {
-        ...args.params,
         ...commonParams,
+        ...args.params,
       };
     }
   }
 
-  // console.log("this is from transformRequest", args);
   return args;
 };
 
@@ -266,7 +257,6 @@ const tokenQuery: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQueryError, 
 export const api = createApi({
   baseQuery: (args, api, extraOptions) => {
     if (args?.url?.includes("token")) {
-      // console.log("this is token ", args?.url);
       return tokenQuery(args, api, extraOptions)
     }
     const transformedArgs = transformRequest(typeof args === 'string' ? { url: args } : args);

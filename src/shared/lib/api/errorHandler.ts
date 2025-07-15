@@ -1,12 +1,10 @@
 import { toast } from 'react-toastify';
 
-// Common error structure that both ErrorCodeList and ErrorDetails follow
 export interface ApiErrorItem {
   ErrorCode: string;
   ErrorDesc: string;
 }
 
-// API response structure that may contain errors
 export interface ApiResponseWithErrors {
   ErrorCodeList?: ApiErrorItem[];
   ErrorDetails?: ApiErrorItem[];
@@ -15,14 +13,12 @@ export interface ApiResponseWithErrors {
   [key: string]: any;
 }
 
-// Special error codes that need special handling
 export const SPECIAL_ERROR_CODES = {
   TOKEN_EXPIRED: 'ERR001',
   SESSION_EXPIRED: 'ERR002',
   UNAUTHORIZED: 'ERR003',
 } as const;
 
-// Error codes that should not be shown to users
 export const SUPPRESSED_ERROR_CODES = [
   'ER1081',
   'ER3008',
@@ -80,21 +76,16 @@ export const SUPPRESSED_ERROR_CODES = [
   'ER2016'
 ] as const;
 
-// Error handling configuration
 export interface ErrorHandlerConfig {
   showToasts?: boolean;
   redirectOnTokenExpired?: boolean;
   customErrorMessages?: Record<string, string>;
-  suppressErrorCodes?: string[]; // Additional error codes to suppress
+  suppressErrorCodes?: string[];
 }
 
-/**
- * Extracts all errors from an API response, handling both ErrorCodeList and ErrorDetails
- */
 export function extractApiErrors(response: ApiResponseWithErrors): ApiErrorItem[] {
   const errors: ApiErrorItem[] = [];
 
-  // Handle ErrorCodeList
   if (response?.ErrorCodeList && Array.isArray(response.ErrorCodeList)) {
     errors.push(...response.ErrorCodeList.filter(error =>
       error &&
@@ -103,9 +94,7 @@ export function extractApiErrors(response: ApiResponseWithErrors): ApiErrorItem[
     ));
   }
 
-  // Handle ErrorDetails
   if (response?.ErrorDetails && Array.isArray(response.ErrorDetails)) {
-    // Group ErrorCode and ErrorDesc objects that belong together
     const groupedErrors: ApiErrorItem[] = [];
     const errorCodeMap = new Map<string, string>();
     const errorDescMap = new Map<string, string>();
@@ -119,7 +108,6 @@ export function extractApiErrors(response: ApiResponseWithErrors): ApiErrorItem[
       }
     });
 
-    // Combine ErrorCode and ErrorDesc into single error items
     const maxIndex = Math.max(
       ...Array.from(errorCodeMap.keys()).map(k => parseInt(k)),
       ...Array.from(errorDescMap.keys()).map(k => parseInt(k))
@@ -147,16 +135,10 @@ export function extractApiErrors(response: ApiResponseWithErrors): ApiErrorItem[
   return errors;
 }
 
-/**
- * Checks if an API response has any errors
- */
 export function hasApiErrors(response: ApiResponseWithErrors): boolean {
   return extractApiErrors(response).length > 0;
 }
 
-/**
- * Handles API errors by displaying appropriate messages and taking actions
- */
 export function handleApiErrors(
   response: ApiResponseWithErrors,
   config: ErrorHandlerConfig = {}
@@ -170,27 +152,24 @@ export function handleApiErrors(
 
   const errors = extractApiErrors(response);
 
-  console.log('handleApiErrors called with:', { response, errors, config }); // Debug log
-
   if (errors.length === 0) {
     return;
   }
 
+  // Deduplicate error messages by ErrorDesc (and ErrorCode for safety)
+  const shownMessages = new Set<string>();
   errors.forEach((error) => {
     const { ErrorCode, ErrorDesc } = error;
 
-    // Check if this error code should be suppressed
     const isSuppressed = SUPPRESSED_ERROR_CODES.includes(ErrorCode as any) ||
       suppressErrorCodes.includes(ErrorCode);
 
-    console.log('Processing error:', { ErrorCode, ErrorDesc, isSuppressed }); // Debug log
-
-    // Handle special error codes
     if (ErrorCode === SPECIAL_ERROR_CODES.TOKEN_EXPIRED && redirectOnTokenExpired) {
-      if (showToasts && !isSuppressed) {
+      if (showToasts && !isSuppressed && !shownMessages.has("TOKEN_EXPIRED")) {
+        console.log("[handleApiErrors] Showing toast for TOKEN_EXPIRED");
         toast.error("The Token Is Expired");
+        shownMessages.add("TOKEN_EXPIRED");
       }
-
       setTimeout(() => {
         if (process.env.VITE_LOGIN_SWITCH === "true") {
           window.location.href = `${process.env.VITE_REDIRECT_URL_LOCAL}`;
@@ -201,36 +180,25 @@ export function handleApiErrors(
       return;
     }
 
-    // Use custom error message if available
     const errorMessage = customErrorMessages[ErrorCode] || ErrorDesc;
-
-    // Only show toast if not suppressed and showToasts is true
-    if (errorMessage && showToasts && !isSuppressed) {
-      console.log('Showing toast for error:', errorMessage); // Debug log
+    const dedupKey = (errorMessage || "") + "::" + (ErrorCode || "");
+    if (errorMessage && showToasts && !isSuppressed && !shownMessages.has(dedupKey)) {
+      console.log(`[handleApiErrors] Showing toast for error:`, { errorMessage, ErrorCode });
       toast.error(errorMessage);
-    } else {
-      console.log('Suppressing error:', { ErrorCode, ErrorDesc }); // Debug log
+      shownMessages.add(dedupKey);
     }
   });
 }
 
-/**
- * Validates if an API response is successful
- */
 export function isApiResponseSuccessful(response: ApiResponseWithErrors): boolean {
-  // Check for explicit success indicators
   const hasSuccessCode = response?.SuccessCode === "200";
   const hasSuccessStatus = response?.ServiceStatus === "Success";
 
-  // Check for absence of errors
   const hasNoErrors = !hasApiErrors(response);
 
   return (hasSuccessCode || hasSuccessStatus) && hasNoErrors;
 }
 
-/**
- * Creates a standardized error response object
- */
 export function createErrorResponse(
   errorCode: string,
   errorDesc: string,
@@ -247,19 +215,14 @@ export function createErrorResponse(
   };
 }
 
-/**
- * Handles API response with automatic error detection and handling
- */
 export function handleApiResponse(
   response: ApiResponseWithErrors,
   config: ErrorHandlerConfig = {}
 ): boolean {
-  // Handle errors if any exist
   if (hasApiErrors(response)) {
     handleApiErrors(response, config);
     return false;
   }
 
-  // Check if response is successful
   return isApiResponseSuccessful(response);
 } 

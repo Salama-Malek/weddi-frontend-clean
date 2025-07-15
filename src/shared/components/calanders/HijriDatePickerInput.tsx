@@ -6,6 +6,7 @@ import hijriLocale from "react-date-object/locales/arabic_en";
 import { FieldWrapper } from "@/shared/components/form";
 import { Calculator01Icon } from "hugeicons-react";
 import { FormData } from "@/shared/components/form/form.types";
+import { useTranslation } from "react-i18next";
 
 interface HijriDatePickerInputProps {
   control: Control<any>;
@@ -24,6 +25,8 @@ export const HijriDatePickerInput: React.FC<HijriDatePickerInputProps> = ({
   onChangeHandler,
   notRequired,
 }) => {
+  const { t, i18n } = useTranslation('placeholder');
+
   const formatDateForDisplay = (date: string) => {
     if (!date || date.length !== 8) return date;
     return `${date.slice(0, 4)}/${date.slice(4, 6)}/${date.slice(6)}`;
@@ -77,7 +80,7 @@ export const HijriDatePickerInput: React.FC<HijriDatePickerInputProps> = ({
               }`}
               calendarPosition="bottom-right"
             />
-            <div className="absolute right-2 top-1/2 transform -translate-y-1/2 pointer-events-none">
+              <div className={`absolute ${i18n.dir() === "rtl" ? "left-2" : "right-2"} top-1/2 transform -translate-y-1/2 pointer-events-none`}>
               <Calculator01Icon className="text-gray-500" />
             </div>
           </div>

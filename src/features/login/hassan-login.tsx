@@ -73,7 +73,7 @@ const getCurrentDateTime = () => {
 
 const LoginForm: React.FC = () => {
   const [form, setForm] = useState<FormState>({
-    File_Number: "", //check if the file number is being sent then u must login as establishment no matter the user type
+    File_Number: "",
     UserDOB: "14041218",
     UserID: "1028308656",
     UserName: "salama agent",
@@ -114,10 +114,8 @@ const LoginForm: React.FC = () => {
         .setExpirationTime("1d")
         .sign(secret);
 
-      // //console.log("Generated JWT Token:", token);
       navegator(`/?MyClientsToken=${token}`);
     } catch (error) {
-      console.error("Submission failed:", error);
     } finally {
       setIsLoading(false);
     }

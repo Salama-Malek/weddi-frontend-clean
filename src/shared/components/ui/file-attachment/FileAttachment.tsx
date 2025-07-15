@@ -5,7 +5,6 @@ interface FileAttachmentProps {
   onView?: () => void;
   onRemove?: () => void;
   isClaimant?: boolean;
-  // New props you want to add:
   fileSize?: string | number;
   fileType?: string;
   className?: string;
@@ -16,7 +15,6 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
   onView,
   onRemove,
   isClaimant,
-  // New props
   fileSize,
   fileType,
   className,
@@ -48,7 +46,6 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
         <p className="medium text-gray-900 truncate">
           {fileName}
         </p>
-        {/* Optional file size display */}
         {fileSize && (
           <p className="text-xs text-gray-500">
             {typeof fileSize === 'number' 

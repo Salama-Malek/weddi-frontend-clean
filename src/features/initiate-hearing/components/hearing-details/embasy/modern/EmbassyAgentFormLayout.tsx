@@ -5,6 +5,12 @@ import { useTranslation } from "react-i18next";
 import { useCookieState } from "@/features/initiate-hearing/hooks/useCookieState";
 import { Controller } from "react-hook-form";
 import { AutoCompleteField } from "@/shared/components/form/AutoComplete";
+import { HijriDatePickerInput } from "@/shared/components/calanders/HijriDatePickerInput";
+import { GregorianDateDisplayInput } from "@/shared/components/calanders/GregorianDateDisplayInput";
+import hijriCalendar from "react-date-object/calendars/arabic";
+import hijriLocale from "react-date-object/locales/arabic_ar";
+import gregorianCalendar from "react-date-object/calendars/gregorian";
+import gregorianLocaleEn from "react-date-object/locales/gregorian_en";
 
 export function EmbassyAgentFormLayout(props: EmbassyAgentFormProps): SectionLayout[] {
   const { t } = useTranslation("hearingdetails");
@@ -51,14 +57,37 @@ export function EmbassyAgentFormLayout(props: EmbassyAgentFormProps): SectionLay
           // isLoading: nicAgentLoading,
         },
         {
+          type: "custom" as const,
           name: "embassyAgent_dateOfBirth",
-          type: "dateOfBirth",
-          hijriLabel: t("nicDetails.dobHijri"),
-          gregorianLabel: t("nicDetails.dobGrog"),
-          hijriFieldName: "embassyAgent_workerAgentDateOfBirthHijri",
-          gregorianFieldName: "embassyAgent_gregorianDate",
-          validation: { required: t("dateValidation") },
-          value: watch("embassyAgent_workerAgentDateOfBirthHijri"),
+          component: (
+              <div className="flex flex-col gap-2">
+              <HijriDatePickerInput
+                control={props.control}
+                name={"embassyAgent_workerAgentDateOfBirthHijri" as any}
+                label={t("nicDetails.dobHijri")}
+                rules={{ required: t("dateValidation") }}
+                notRequired={false}
+                onChangeHandler={(date: any, onChange: (value: string) => void) => {
+                  if (date && !Array.isArray(date)) {
+                    // Ensure the date is a Hijri date object
+                    const hijriDate = date.convert(hijriCalendar, hijriLocale);
+                    const gregorianDate = date.convert(gregorianCalendar, gregorianLocaleEn);
+                    const hijri = hijriDate.format("YYYYMMDD");
+                    const gregorian = gregorianDate.format("YYYYMMDD");
+                    console.log('Hijri:', hijri, 'Gregorian:', gregorian);
+                    props.setValue("embassyAgent_gregorianDate" as any, gregorian);
+                  } else {
+                    props.setValue("embassyAgent_gregorianDate" as any, "");
+                  }
+                }}
+              />
+              <GregorianDateDisplayInput
+                control={props.control}
+                name={"embassyAgent_gregorianDate" as any}
+                label={t("nicDetails.dobGrog")}
+              />
+            </div>
+          ),
         },
         // Name
         ...(nic?.PlaintiffName && validNationality

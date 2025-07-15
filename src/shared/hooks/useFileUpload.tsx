@@ -11,8 +11,8 @@ export const useFileUpload = ({ onFileUpload }: UseFileUploadProps) => {
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
       if (acceptedFiles.length > 0) {
-        setUploadedFiles((prevFiles) => [...prevFiles, ...acceptedFiles]); // Append new files
-        onFileUpload([...uploadedFiles, ...acceptedFiles]); // Pass files to parent
+        setUploadedFiles((prevFiles) => [...prevFiles, ...acceptedFiles]);
+        onFileUpload([...uploadedFiles, ...acceptedFiles]);
       }
     },
     [onFileUpload, uploadedFiles]

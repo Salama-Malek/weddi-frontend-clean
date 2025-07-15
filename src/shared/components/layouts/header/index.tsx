@@ -79,7 +79,6 @@ const Header = () => {
     });
  
   useEffect(() => {
-    console.log("userTypeState From Notifcations", userTypeState);
     if (userTypeState) {
       const payload = {
         IDNumber: userClaims?.UserID || "",
@@ -112,7 +111,6 @@ const Header = () => {
   };
  
   const handleSwitchAccount = () => {
-    console.log("pathname", pathname);
     if (pathname === "/") {
       setOpenModule(true);
       setSelected(null);
@@ -192,7 +190,6 @@ const Header = () => {
  
   useEffect(() => {
     if (isNotificationClicked) {
-      console.log("open");
       triggerSave({
         IDNumber: userClaims?.UserID || "",
         AcceptedLanguage: currentLanguage === "ar" ? "AR" : "EN",

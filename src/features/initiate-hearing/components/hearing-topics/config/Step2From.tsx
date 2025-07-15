@@ -33,7 +33,6 @@ export const getStep2FormFields = ({
   showTopicData,
   handleAcknowledgeChange,
 }: Step2FormProps): FormElement | any => {
-  // console.log('matchedSubCategory', matchedSubCategory)
   // const excludeAcknowledgment = subCategory?.value === "AWRW-1" || subCategory?.value === "AWRW-2";
 
   return [

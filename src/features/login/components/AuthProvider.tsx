@@ -133,7 +133,6 @@ const AuthProvider: React.FC<AuthProviderProps> = ({
         
         setCookie("oauth_token_expires_at", expiresAt.toString());
       } catch (err) {
-        console.error('Token refresh failed.', err);
         throw err; 
       }
     }
@@ -145,7 +144,7 @@ const AuthProvider: React.FC<AuthProviderProps> = ({
         await checkAndFetchToken();
         setIsTokenReady(true);
       } catch {
-        console.error("Initial token fetch failed. Application cannot proceed.");
+        // Error handling
       }
     };
     initialize();
@@ -230,8 +229,7 @@ const AuthProvider: React.FC<AuthProviderProps> = ({
           }
         }
       } catch (error) {
-        console.error("Error in auth effect:", error);
-        // window.location.href = `${process.env.VITE_REDIRECT_URL}`;
+        // Error handling
       } finally {
         setIsDataLoaded(true);
       }
@@ -268,24 +266,21 @@ const AuthProvider: React.FC<AuthProviderProps> = ({
       setNicErrorMessage(errorMessage);
       setShowNICError(true);
     } catch (error) {
-      console.error("Error in handleErrorResponse:", error);
+      // Error handling
     }
   };
 
   const fetchUserType = async (claims: TokenClaims) => {
     try {
       if (!claims.UserID || !claims.UserType) {
-        console.error("Missing required user data:", { claims });
         return;
       }
       return await triggerGetUserType({
         IDNumber: claims.UserID!,
         UserRequestType: claims.UserType!,
-        AcceptedLanguage: isRTL ? "AR" : "EN",
         SourceSystem: "E-Services",
       }).unwrap();
     } catch (error) {
-      console.error("Error in fetchUserType:", error);
       throw error;
     }
   };
@@ -293,7 +288,6 @@ const AuthProvider: React.FC<AuthProviderProps> = ({
   const getNICData = async (IDNumber?: string, DateOfBirth?: string) => {
     try {
       if (!IDNumber || !DateOfBirth) {
-        console.error("Missing required NIC data:", { IDNumber, DateOfBirth });
         return;
       }
       return await triggerGetNICDetailsQuery({
@@ -303,7 +297,6 @@ const AuthProvider: React.FC<AuthProviderProps> = ({
         SourceSystem: "E-Services",
       }).unwrap();
     } catch (error) {
-      console.error("Error in getNICData:", error);
       throw error;
     }
   };

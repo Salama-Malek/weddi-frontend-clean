@@ -63,7 +63,6 @@ export const myCasesApi = api.injectEndpoints({
           params.Number700 = Number700;
         }
 
-        // //console.log("UserType", UserType);
  
  
         if (UserType === "Establishment" && FileNumber) {
@@ -105,7 +104,6 @@ export const myCasesApi = api.injectEndpoints({
           SourceSystem,
         };
  
-        // //console.log("UserType", UserType);
  
  
         if (UserType === "Establishment" && FileNumber) {

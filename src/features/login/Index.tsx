@@ -171,7 +171,6 @@ const LoginForm: React.FC = () => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  // Add handler for user selection
   const handleUserSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedUser = userLoginlistData.find(user => user.lable === e.target.value);
     if (selectedUser) {
@@ -200,22 +199,13 @@ const LoginForm: React.FC = () => {
         .setExpirationTime(`${process.env.VITE_API_EXPIR_TIME}`)
         .sign(secret);
 
-      // //console.log("Generated JWT Token:", token);
       navegator(`/?MyClientsToken=${token}`)
 
     } catch (error) {
-      console.error("Submission failed:", error);
     } finally {
       setIsLoading(false);
     }
   };
-
-  // to test the date converter 
-  // const handelTest = async (e?: React.BaseSyntheticEvent) => {
-  //   e?.preventDefault();
-  //   //console.log("Before ", form.UserDOB);
-  //   //console.log("Affter ", toHijri_YYYYMMDD(form?.UserDOB || ""));
-  // }
 
   return (
     <main>
@@ -226,7 +216,6 @@ const LoginForm: React.FC = () => {
             <p className="text-red-500 text-center">The Date Format Should Be  (DD/MM/YYYY)</p>
             <p className="text-red-500 text-center">In Worker User , Delete File Number</p>
 
-            {/* Add the new dropdown for user selection */}
             <div className="w-full p-2">
               <label className="block mb-2">
                 Select User

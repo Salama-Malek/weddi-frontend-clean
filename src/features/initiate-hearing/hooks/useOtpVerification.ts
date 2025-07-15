@@ -45,7 +45,7 @@ export const useOtpVerification = ({
     try {
       await sendOtp(payload).unwrap();
     } catch (error) {
-      console.error("Failed to send OTP:", error);
+      // Error handling
     }
   }, [phoneCode, phoneNumber, plaintiffId, plaintiffName, sendOtp]);
 

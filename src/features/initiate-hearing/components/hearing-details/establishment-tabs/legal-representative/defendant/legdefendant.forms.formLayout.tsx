@@ -11,6 +11,13 @@ import { useLazyGetCaseDetailsQuery } from "@/features/manage-hearings/api/myCas
 import { toast } from "react-toastify";
 import useCaseDetailsPrefill from "@/features/initiate-hearing/hooks/useCaseDetailsPrefill";
 import { formatDateToYYYYMMDD } from "@/shared/utils/dateUtils";
+import { toWesternDigits } from '@/shared/lib/helpers';
+import { HijriDatePickerInput } from "@/shared/components/calanders/HijriDatePickerInput";
+import { GregorianDateDisplayInput } from "@/shared/components/calanders/GregorianDateDisplayInput";
+import hijriCalendar from "react-date-object/calendars/arabic";
+import hijriLocale from "react-date-object/locales/arabic_ar";
+import gregorianCalendar from "react-date-object/calendars/gregorian";
+import gregorianLocaleEn from "react-date-object/locales/gregorian_en";
 
 interface EstablishmentDefendantFormLayoutProps {
   setValue?: UseFormSetValue<FormData>;
@@ -22,7 +29,8 @@ interface EstablishmentDefendantFormLayoutProps {
 
 export const useLegelDefendantFormLayout = ({
   setValue,
-  watch
+  watch,
+  control
 }: any): SectionLayout[] => {
   const { t, i18n } = useTranslation("hearingdetails");
   const [getCookie, setCookie] = useCookieState();
@@ -88,7 +96,7 @@ export const useLegelDefendantFormLayout = ({
     watchNationalId && watchDateOfBirth
       ? {
         IDNumber: watchNationalId,
-        DateOfBirth: formatDateToYYYYMMDD(watchDateOfBirth) || "",
+        DateOfBirth: toWesternDigits(formatDateToYYYYMMDD(watchDateOfBirth) || ""),
         AcceptedLanguage: i18n.language === "ar" ? "AR" : "EN",
         SourceSystem: "E-Services",
       }
@@ -309,20 +317,38 @@ export const useLegelDefendantFormLayout = ({
               value?.length === 10 || t("max10Validation"),
           },
         },
+        // Date of Birth (Hijri/Gregorian)
         {
+          type: "custom" as const,
           name: "establishmentDefendantDateBirth",
-          type: "dateOfBirth" as const,
-          hijriLabel: t("establishment_tab2.dobHijri"),
-          gregorianLabel: t("establishment_tab2.dobGrog"),
-          hijriFieldName: "def_date_hijri",
-          gregorianFieldName: "def_date_gregorian",
-          validation: { required: t("dateOfBirthValidation") },
-          value: {
-            hijri: caseDetailsData?.CaseDetails?.DefendantHijiriDOB || "",
-            gregorian: caseDetailsData?.CaseDetails?.Defendant_ApplicantBirthDate ?
-              `${caseDetailsData.CaseDetails.Defendant_ApplicantBirthDate.substring(0, 4)}-${caseDetailsData.CaseDetails.Defendant_ApplicantBirthDate.substring(4, 6)}-${caseDetailsData.CaseDetails.Defendant_ApplicantBirthDate.substring(6, 8)}` : ""
-          },
-          disabled: disableNicFields,
+          component: (
+            <div className="flex flex-col gap-2">
+              <HijriDatePickerInput
+                control={control}
+                name={"def_date_hijri" as any}
+                label={t("establishment_tab2.dobHijri")}
+                rules={{ required: t("dateOfBirthValidation") }}
+                notRequired={false}
+                onChangeHandler={(date: any, onChange: (value: string) => void) => {
+                  if (date && !Array.isArray(date)) {
+                    const hijriDate = date.convert(hijriCalendar, hijriLocale);
+                    const gregorianDate = date.convert(gregorianCalendar, gregorianLocaleEn);
+                    const hijri = hijriDate.format("YYYYMMDD");
+                    const gregorian = gregorianDate.format("YYYYMMDD");
+                    console.log('Hijri:', hijri, 'Gregorian:', gregorian);
+                    setValue("def_date_gregorian" as any, gregorian);
+                  } else {
+                    setValue("def_date_gregorian" as any, "");
+                  }
+                }}
+              />
+              <GregorianDateDisplayInput
+                control={control}
+                name={"def_date_gregorian" as any}
+                label={t("establishment_tab2.dobGrog")}
+              />
+            </div>
+          ),
         },
         {
           type: !nicData?.NICDetails?.PlaintiffName ? "input" : "readonly",

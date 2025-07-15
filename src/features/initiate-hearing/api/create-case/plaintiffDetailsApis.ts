@@ -256,3 +256,4 @@ export const {
  
 // Backward compatibility: alias for old hook name
 export const useGetAgentInfoDataQuery = useGetAttorneyDetailsQuery;
+ 

@@ -26,15 +26,20 @@ import {
 import { NICDetailsParams } from "../../hearing.details.types";
 import { formatHijriDate } from "@/shared/lib/helpers";
 import AddAttachment from "../../../add-attachments";
-// import { useNICTrigger } from "@/features/initiate-hearing/hooks/useNICTrigger";
 import { DateOfBirthField } from "@/shared/components/calanders";
 import { useAPIFormsData } from "@/providers/FormContext";
 import OTPFormLayout from "./OTP.froms.formlayout";
 import { boolean } from "ts-pattern/dist/patterns";
-import { formatDateString, formatDateToYYYYMMDD } from "@/shared/lib/helpers";
+import { formatDateString, formatDateToYYYYMMDD, toWesternDigits } from "@/shared/lib/helpers";
 import { toast } from "react-toastify";
 import { DigitOnlyInput } from '@/shared/components/form/InputField';
 import { FieldWrapper } from '@/shared/components/form/FieldWrapper';
+import { HijriDatePickerInput } from "@/shared/components/calanders/HijriDatePickerInput";
+import { GregorianDateDisplayInput } from "@/shared/components/calanders/GregorianDateDisplayInput";
+import { useFormContext } from "react-hook-form";
+import gregorian from "react-date-object/calendars/gregorian";
+import gregorianLocaleEn from "react-date-object/locales/gregorian_en";
+import FileAttachment from "@/shared/components/ui/file-attachment/FileAttachment";
 
 interface AgentInfo {
   Agent?: {
@@ -57,22 +62,17 @@ interface FormLayoutProps {
   setValue: UseFormSetValue<FormData>;
   watch: UseFormWatch<FormData>;
   control: Control<FormData>;
-  // lookups
   plaintiffRegionData: any;
   plaintiffCityData: any;
   occupationData: any;
   genderData: any;
   nationalityData: any;
   countryData: any;
-
-  // OTP
   sendOtpHandler: () => void;
   lastSentOtp: string;
   isVerified: boolean;
   isNotVerified: boolean;
   setIsNotVerified: (value: boolean) => void;
-
-  // agent lookup
   agentInfoData: AgentInfo;
   apiLoadingStates: {
     agent: boolean;
@@ -80,27 +80,17 @@ interface FormLayoutProps {
     estab: boolean;
     incomplete: boolean;
   };
-
-  // legal-rep metadata
   userTypeLegalRepData: any;
-
-  // callbacks
   onAgencyNumberChange: (value: string) => void;
-  // onIdNumberChange: (id: string, hijriDate: string) => void;
-
-  // form error handlers
   setError: (name: string, error: any) => void;
   clearErrors: (name: string) => void;
 
-  // OTP verify
   verifyOtp: () => void;
   isVerify: boolean;
 
-  // **NEW NIC responses**
   principalNICResponse?: NICDetailsResponse;
   principalNICRefetch: () => void;
   representativeNICResponse?: NICDetailsResponse;
-  // Add useFormReturn types as props
   register: any;
   errors: any;
   trigger: any;
@@ -132,23 +122,23 @@ export const useFormLayout = ({
   principalNICResponse,
   principalNICRefetch,
   representativeNICResponse,
-  // Destructure the new props
-  register, // New prop
-  errors, // New prop
-  trigger, // New prop
-  isValid, // New prop
+  register, 
+  errors, 
+  trigger, 
+  isValid, 
   allowedIds
 }: FormLayoutProps): SectionLayout[] => {
+  // --- NEW: State for UnprofessionalLetterAttachments ---
+  const [unprofessionalLetterAttachments, setUnprofessionalLetterAttachments] = useState<any[]>([]);
+
   const currentClaimantStatus = useWatch({ name: "claimantStatus", control });
 
   const { t, i18n } = useTranslation("hearingdetails");
   const { t: LegalRep } = useTranslation("legal_rep");
   const [getCookie] = useCookieState();
 
-  // Get incomplete case type from cookie
   const incompleteCaseType = getCookie("incompleteCase");
 
-  // Determine enforced claimant status based on incomplete case type
   const enforcedStatus = useMemo(() => {
     if (incompleteCaseType?.PlaintiffType === "Self(Worker)")
       return "principal";
@@ -156,11 +146,9 @@ export const useFormLayout = ({
     return null;
   }, [incompleteCaseType]);
 
-  // Current claimant status from form state with sensible default
   const claimantStatus =
     watch("claimantStatus") || enforcedStatus || "principal";
 
-  // Ensure form state matches enforced status or default
   const currentStatus = useWatch({ name: "claimantStatus", control });
 
   const hasMountedRef = React.useRef(false);
@@ -171,17 +159,14 @@ export const useFormLayout = ({
 
       const defaultStatus = enforcedStatus ?? "principal";
 
-      // Only set on first mount if empty
       if (!currentClaimantStatus) {
         setValue("claimantStatus", defaultStatus);
       }
     }
   }, [enforcedStatus, currentClaimantStatus, setValue]);
 
-  // Determine if we should show the claimant status selection
   const shouldShowClaimantStatus = !enforcedStatus;
 
-  // Determine which fields to show based on status
   const showPrincipalFields = claimantStatus === "principal";
   const showRepresentativeFields = claimantStatus === "representative";
 
@@ -216,13 +201,6 @@ export const useFormLayout = ({
     register("agentType");
   }, [register]);
 
-  // Set default value for certifiedAgency if representative and not set
-  useEffect(() => {
-    if (claimantStatus === "representative" && !watch("agentType")) {
-      setValue("agentType", "local_agency"); // or "externalAgency" as default
-    }
-  }, [claimantStatus, setValue, watch]);
-
   const userClaims = getCookie("userClaims") as TokenClaims;
   const idNumber = userClaims?.UserID || "";
   const dobirth = userClaims?.UserDOB || "";
@@ -231,117 +209,10 @@ export const useFormLayout = ({
   const { plaintiffTypeOptions, AgentTypeOptions } = useLegalRepFormOptions();
   const { clearFormData } = useAPIFormsData();
 
-  // Use incompleteCaseType directly
   const showOnlyPrincipal =
     incompleteCaseType?.PlaintiffType === "Self(Worker)";
   const showOnlyRepresentative = incompleteCaseType?.PlaintiffType === "Agent";
 
-  // --- Field watchers for NIC trigger ---
-  // const workerAgentIdNumber = watch("workerAgentIdNumber") || "";
-  // const workerAgentHijriDob = watch("workerAgentDateOfBirthHijri") || "";
-
-  // /******************* new  ************ */
-
-  // inside your component or layout hook
-  // const applicantType = watch("applicant");
-  // const plaintiffId =
-  //   applicantType === "representative"
-  //     ? (watch("workerAgentIdNumber") as string)
-  //     : undefined;
-  // const plaintiffHijriDOB = watch("workerAgentDateOfBirthHijri") as string;
-
-  // only fetch once both are exactly the right lengths
-  // const shouldFetchNicAgent =
-  //   applicantType === "representative" &&
-  //   plaintiffId?.length === 10 &&
-  //   plaintiffHijriDOB.length === 8;
-
-  // /******************* new  ************ */
-
-  // testtttttttttttttttttt
-
-  // const {
-  //   data: testNicData,
-  //   isFetching: testLoading,
-  //   error: testError,
-  // } = useGetNICDetailsQuery(
-  //   {
-  //     IDNumber: workerAgentIdNumber,
-  //     DateOfBirth: workerAgentHijriDob,
-  //     AcceptedLanguage: "EN",
-  //     SourceSystem: "E-Services",
-  //   },
-  //   { skip: false } // <— always call
-  // );
-
-  // useEffect(() => {
-  //   if (testLoading) {
-  //     //console.log("NIC lookup in flight…");
-  //   } else if (testError) {
-  //     console.error("NIC lookup error", testError);
-  //   } else if (testNicData?.NICDetails) {
-  //     //console.log("NIC result:", testNicData.NICDetails);
-
-  //     // Auto-populate fields for testing:
-  //     const nic = testNicData.NICDetails;
-  //     setValue("userName", nic.PlaintiffName || "");
-  //     setValue("plaintiffRegion", nic.Region || "");
-  //     setValue("plaintiffCity", nic.City || "");
-  //     setValue("occupation", nic.Occupation || "");
-  //     setValue("gender", nic.Gender || "");
-  //     setValue("nationality", nic.Nationality || "");
-  //     setValue("hijriDate", nic.DateOfBirthHijri || "");
-  //     setValue("gregorianDate", nic.DateOfBirthGregorian || "");
-  //     if (nic.PhoneNumber) {
-  //       setValue("phoneNumber", Number(nic.PhoneNumber));
-  //     }
-  //   }
-  // }, [testNicData, testLoading, testError, setValue]);
-
-  // testtttttttttttttttttt
-  // --- NIC trigger integration ---
-  // const { isFetching: nicLoading } = useNICTrigger(
-  //   workerAgentIdNumber,
-  //   workerAgentHijriDob,
-  //   (nic) => {
-  //     setValue("userName", nic.PlaintiffName || "");
-  //     setValue("plaintiffRegion", nic.Region || "");
-  //     setValue("plaintiffCity", nic.City || "");
-  //     setValue("occupation", nic.Occupation || "");
-  //     setValue("gender", nic.Gender || "");
-  //     setValue("nationality", nic.Nationality || "");
-  //     setValue("gregorianDate", nic.DateOfBirthGregorian || "");
-  //     if (nic.PhoneNumber) setValue("phoneNumber", Number(nic.PhoneNumber));
-  //   },
-  //   () => {
-  //     setError("workerAgentIdNumber", {
-  //       type: "validate",
-  //       message: t("error.noNicData"),
-  //     });
-  //   }
-  // );
-  // 2) straight NIC query, skipped until we want it
-  // const {
-  //   data: nicAgent,
-  //   isFetching: nicAgentLoading,
-  //   isError: nicAgentError,
-  // } = useGetNICDetailsQuery(
-  //   {
-  //     IDNumber: workerAgentIdNumber,
-  //     DateOfBirth: workerAgentHijriDob,
-  //     AcceptedLanguage: "EN",
-  //     SourceSystem: "E-Services",
-  //   },
-  //   { skip: !shouldFetchNicAgent }
-  // );
-
-  // // –––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
-  // // **NEW**: default claimantStatus to "principal" on mount
-  // useEffect(() => {
-  //   setValue("claimantStatus", "principal");
-  // }, [setValue]);
-
-  // --- 1) form watches for rep‐only fields ---
   const applicantType = watch("applicant");
   const workerAgentIdNumber = watch("workerAgentIdNumber") || "";
   const workerAgentHijriDob = watch("workerAgentDateOfBirthHijri") || "";
@@ -349,106 +220,29 @@ export const useFormLayout = ({
     formatDateToYYYYMMDD(workerAgentHijriDob);
   const claimType = watch("claimantStatus");
   const applicant = watch("applicant");
-  // 1): Fetch All Nic Data From The Data
-  // Removed the problematic useEffect that was causing an infinite re-render.
-  // useEffect(() => {
-  //   clearFormData();
-  //   [
-  //     "userName",
-  //     "plaintiffRegion",
-  //     "plaintiffCity",
-  //     "occupation",
-  //     "gender",
-  //     "nationality",
-  //     "hijriDate",
-  //     "gregorianDate",
-  //     "applicant",
-  //     "phoneNumber",
-  //   ].forEach((f) => setValue(f as any, ""));
 
-  //   // For autocomplete fields that expect Option type, set to null
-  //   setValue("plaintiffRegion", null);
-  //   setValue("plaintiffCity", null);
-  //   setValue("occupation", null);
-  //   setValue("gender", null);
-  //   setValue("nationality", null);
-
-  //   // Also clear errors for these fields explicitly
-  //   clearErrors("plaintiffRegion");
-  //   clearErrors("plaintiffCity");
-  //   clearErrors("occupation");
-  //   clearErrors("gender");
-  //   clearErrors("nationality");
-  // }, [claimType, setValue, clearFormData, clearErrors]);
-
-  // 1) compute when we're ready to fire:
   const shouldFetchNic =
     claimantStatus === "representative" &&
     workerAgentIdNumber?.length === 10 &&
     formattedWorkerAgentHijriDob?.length === 8;
 
-  // console.log("Claimant Status:", claimantStatus);
-  // console.log("Worker Agent ID Number:", workerAgentIdNumber);
-  // console.log("Worker Agent Hijri DOB:", workerAgentHijriDob);
-  // console.log("Should Fetch NIC:", shouldFetchNic);
-  // console.log("Claimant Status Check:", claimantStatus === "representative");
-  // console.log("ID Number Length Check:", workerAgentIdNumber?.length === 10);
-  // console.log(
-  //   "Hijri DOB Length Check:",
-  //   formattedWorkerAgentHijriDob?.length === 8
-  // );
-
-  // useEffect(() => {
-  //   if (!shouldFetchNic) {
-  //     [
-  //       "userName",
-  //       "plaintiffRegion",
-  //       "plaintiffCity",
-  //       "occupation",
-  //       "gender",
-  //       "nationality",
-  //       "hijriDate",
-  //       "gregorianDate",
-  //       "applicant",
-  //       "phoneNumber",
-  //     ].forEach((f) => setValue(f as any, ""));
-  //   }
-  // }, [shouldFetchNic, setValue]);
-
-  // 2) one NIC query, only when both inputs are valid:
-  const {
-    data: nicAgent,
-    isFetching: nicAgentLoading,
-    isError: nicAgentError,
-  } = useGetNICDetailsQuery(
-    {
-      IDNumber: workerAgentIdNumber,
-      DateOfBirth: formattedWorkerAgentHijriDob || "",
-      AcceptedLanguage: "EN",
-      SourceSystem: "E-Services",
-    },
-    { skip: !shouldFetchNic }
-  );
-
-  // console.log("NIC Agent Data:", nicAgent);
-  // console.log("NIC Agent Loading:", nicAgentLoading);
-  // console.log("NIC Agent Error:", nicAgentError);
+  const nicAgent = representativeNICResponse;
+  const nicAgentLoading = false;
+  const nicAgentError = false;
+  const refetchNICAgent = () => {};
 
   const disableNicFields = !shouldFetchNic || nicAgentLoading;
 
-  // 3) effect to populate or error exactly once per fetch:
   useEffect(() => {
-    // Clear error if inputs are incomplete
     if (!shouldFetchNic) {
       clearErrors("workerAgentIdNumber");
       return;
     }
 
-    // Only proceed after fetch has completed (not loading)
     if (nicAgentLoading) return;
 
-    if (nicAgentError || !nicAgent?.NICDetails) {
-      let errorMessage = t("error.noNicData"); // Default message if ErrorDesc is not found
+    if (nicAgentError || (nicAgent && !nicAgent?.NICDetails)) {
+      let errorMessage = t("error.noNicData");
       if (
         nicAgent &&
         nicAgent.ErrorDetails &&
@@ -461,22 +255,20 @@ export const useFormLayout = ({
           errorMessage = errorDetail.ErrorDesc;
         }
       }
-      toast.error(errorMessage);
+      // toast.error(errorMessage); // Commented to prevent duplicate error messages (handled by centralized error handler)
       if (typeof setError === "function") {
         setError("workerAgentIdNumber", {
           type: "validate",
           message: errorMessage,
         });
       }
-    } else {
-      // Success branch: clear error and populate fields
+    } else if (nicAgent?.NICDetails) {
       clearErrors("workerAgentIdNumber");
       const d = nicAgent.NICDetails;
       setValue("userName", d.PlaintiffName || "", {
         shouldValidate: d.PlaintiffName !== "",
       });
 
-      // Set region and city with proper code and label
       if (d.Region_Code) {
         setValue(
           "plaintiffRegion",
@@ -558,21 +350,8 @@ export const useFormLayout = ({
         });
       }
     }
-  }, [shouldFetchNic, nicAgent, nicAgentError, setValue, setError, t]);
+  }, [shouldFetchNic, nicAgent, nicAgentError, nicAgentLoading, setValue, setError, t]);
 
-  // Add validation for city field
-  // useEffect(() => {
-  //   const currentCity = watch("plaintiffCity");
-  //   if (
-  //     !currentCity ||
-  //     (typeof currentCity === "object" && !currentCity.value)
-  //   ) {
-  //     setValue("plaintiffCity", { value: "1", label: "RIYADH" }); // Default to Riyadh
-  //     clearErrors("plaintiffCity");
-  //   }
-  // }, [watch("plaintiffCity"), setValue, clearErrors]);
-
-  // –––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
   const plaintiffStatus = watch("plaintiffStatus");
   const isPhone = watch("isPhone");
   const phoneCode = watch("phoneCode");
@@ -584,7 +363,6 @@ export const useFormLayout = ({
   const [timeLeft, setTimeLeft] = useState(60);
   const [showResend, setShowResend] = useState(false);
 
-  // const applicantType = watch("applicant");
   const selectedMainCategory = getCookie("mainCategory");
   const selectedSubCategory = getCookie("subCategory");
   const agentType = watch("agentType");
@@ -593,49 +371,24 @@ export const useFormLayout = ({
     (item: any) => item.GOVTID === selectedMainCategory?.value
   );
 
-  // // Define NIC parameters for the worker user
-  // const nicParams: NICDetailsParams = {
-  //   IDNumber: idNumber,
-  //   DateOfBirth: dobirth,
-  //   AcceptedLanguage: "EN",
-  //   SourceSystem: "E-Services",
-  // };
-
-  // // Fetch NIC details for the worker
-  // const { data: nicData, isFetching: nicIsLoading } = useGetNICDetailsQuery(
-  //   nicParams,
-  //   {
-  //     skip: !nicParams.IDNumber || !nicParams.DateOfBirth,
-  //   }
-  // ) as { data: NICDetailsResponse | undefined; isFetching: boolean };
 
   const [attachment, setAttachment] = useState<FormData["attachment"] | null>(
     null
   );
 
-  // Autofill principal-claimant fields when we have that response
   useEffect(() => {
-    // console.log("=== PRINCIPAL NIC EFFECT ===");
-    // console.log("claimantStatus:", watch("claimantStatus"));
-    // console.log("principalNICResponse:", principalNICResponse);
-    // console.log("principalNICResponse?.NICDetails:", principalNICResponse?.NICDetails);
-
     if (
       watch("claimantStatus") === "principal" &&
       principalNICResponse?.NICDetails
     ) {
       const nic = principalNICResponse.NICDetails;
-      // console.log("NIC Details:", nic);
-
       if (nic.PlaintiffName) {
-        // console.log("Setting userName to:", nic.PlaintiffName);
         setValue("userName", nic.PlaintiffName || "", {
           shouldValidate: nic.PlaintiffName !== "",
         });
       }
 
       if (nic.Region_Code) {
-        // console.log("Setting plaintiffRegion to:", { value: nic.Region_Code, label: nic.Region });
         setValue(
           "plaintiffRegion",
           {
@@ -649,7 +402,6 @@ export const useFormLayout = ({
       }
 
       if (nic.City_Code) {
-        // console.log("Setting plaintiffCity to:", { value: nic.City_Code, label: nic.City });
         setValue(
           "plaintiffCity",
           { value: nic.City_Code || "", label: nic.City || "" },
@@ -660,7 +412,6 @@ export const useFormLayout = ({
       }
 
       if (nic.Occupation_Code) {
-        // console.log("Setting occupation to:", { value: nic.Occupation_Code, label: nic.Occupation });
         setValue(
           "occupation",
           {
@@ -674,7 +425,6 @@ export const useFormLayout = ({
       }
 
       if (nic.Gender_Code) {
-        // console.log("Setting gender to:", { value: nic.Gender_Code, label: nic.Gender });
         setValue(
           "gender",
           {
@@ -688,7 +438,6 @@ export const useFormLayout = ({
       }
 
       if (nic.Nationality_Code) {
-        // console.log("Setting nationality to:", { value: nic.Nationality_Code, label: nic.Nationality });
         setValue(
           "nationality",
           {
@@ -702,14 +451,12 @@ export const useFormLayout = ({
       }
 
       if (nic.DateOfBirthHijri) {
-        // console.log("Setting hijriDate to:", nic.DateOfBirthHijri);
         setValue("hijriDate", nic.DateOfBirthHijri || "", {
           shouldValidate: nic.DateOfBirthHijri !== "",
         });
       }
 
       if (nic?.DateOfBirthGregorian) {
-        // console.log("Setting gregorianDate to:", nic.DateOfBirthGregorian);
         setValue("gregorianDate", nic?.DateOfBirthGregorian || "", {
           shouldValidate: nic?.DateOfBirthGregorian !== "",
         });
@@ -718,7 +465,6 @@ export const useFormLayout = ({
       setValue("applicant", nic.Applicant || "");
 
       if (nic.PhoneNumber) {
-        // console.log("Setting phoneNumber to:", nic.PhoneNumber);
         setValue("phoneNumber", nic.PhoneNumber.toString(), {
           shouldValidate: nic.PhoneNumber !== "",
         });
@@ -726,7 +472,6 @@ export const useFormLayout = ({
     }
   }, [principalNICResponse, setValue, watch, claimantStatus]);
 
-  // Autofill or clear rep-plaintiff fields based on the representative response
   useEffect(() => {
     const currentClaimantStatus = watch("claimantStatus");
     if (currentClaimantStatus !== "representative") return;
@@ -819,8 +564,6 @@ export const useFormLayout = ({
         });
       }
     } else {
-      // cleared or invalid ID => clear all
-      // Set text/date fields to empty string
       [
         "userName",
         "hijriDate",
@@ -828,8 +571,6 @@ export const useFormLayout = ({
         "applicant",
         "phoneNumber",
       ].forEach((f) => setValue(f as any, ""));
-
-      // Set autocomplete fields to null
       setValue("plaintiffRegion", null);
       setValue("plaintiffCity", null);
       setValue("occupation", null);
@@ -846,33 +587,6 @@ export const useFormLayout = ({
       })) || [],
     [plaintiffRegionData]
   );
-
-  // Add effect to clear city when region changes
-  // useEffect(() => {
-  //   const currentRegion = watch("plaintiffRegion");
-  //   console.log("this is before ", {
-  //     hh: currentRegion,
-  //     h2: representativeNICResponse?.NICDetails?.City_Code
-  //   });
-  //   if (currentRegion && representativeNICResponse?.NICDetails?.City_Code == "") {
-  //     console.log("dhfjsdfgdfgjsdgfsjhdgfjsd");
-
-  //     setValue("plaintiffCity", null);
-  //     clearErrors("plaintiffCity");
-  //   }
-  // }, [watch("plaintiffRegion"), setValue, clearErrors]);
-
-  // Add validation for city field
-  // useEffect(() => {
-  //   const currentCity = watch("plaintiffCity");
-  //   if (
-  //     !currentCity ||
-  //     (typeof currentCity === "object" && !currentCity.value)
-  //   ) {
-  //     setValue("plaintiffCity", { value: "1", label: "RIYADH" }); // Default to Riyadh
-  //     clearErrors("plaintiffCity");
-  //   }
-  // }, [watch("plaintiffCity"), setValue, clearErrors]);
 
   const CityOptions = useMemo(
     () =>
@@ -910,7 +624,6 @@ export const useFormLayout = ({
     [nationalityData]
   );
 
-  //#region OTP
   const CountryCodeOptions = useMemo(
     () =>
       countryData?.map((item: DataElement) => ({
@@ -977,208 +690,6 @@ export const useFormLayout = ({
     setValue("attachment.fileType", fileData.fileType || "");
   };
 
-  // International Phone Number Section (always included)
-  // const InternationalPhoneNumberSection: SectionLayout[] = [
-  //   {
-  //     gridCols: 3,
-  //     className: "international-phone-number-section",
-  //     children: [
-  //       {
-  //         type: "checkbox",
-  //         name: "isPhone",
-  //         label: t("addInternationalNumber"),
-  //         checked: isPhone,
-  //         onChange: (checked: boolean) => {
-  //           setValue("isPhone", checked);
-  //           if (!checked) {
-  //             setOtpSent(false);
-  //             setOtp(Array(6).fill(""));
-  //             setTimeLeft(60);
-  //             setShowResend(false);
-  //           }
-  //         },
-  //       },
-  //     ],
-  //   },
-  //   {
-  //     condition: isPhone && !otpSent,
-  //     children: [
-  //       {
-  //         type: "autocomplete",
-  //         label: t("countryCode"),
-  //         name: "phoneCode",
-  //         options: CountryCodeOptions,
-  //         value: phoneCode,
-  //         onChange: (value: string) => setValue("phoneCode", value),
-  //         ...(isPhone
-  //           ? {
-  //             validation: {
-  //               required: t("codeValidation"),
-  //             },
-  //           }
-  //           : {}),
-  //       },
-  //       {
-  //         type: "input",
-  //         name: "interPhoneNumber",
-  //         label: t("nicDetails.phoneNumber"),
-  //         inputType: "tel",
-  //         maxLength: 10,
-  //         value: phoneNumber ?? "",
-  //         onChange: (v: string) => setValue("interPhoneNumber", v),
-  //         placeholder: phoneCode
-  //           ? getPhoneConfig(phoneCode).placeholder
-  //           : "Enter phone number",
-  //         ...(isPhone
-  //           ? {
-  //             validation: {
-  //               required: t("interPhoneNumberValidation"),
-  //               validate: (value: string) => {
-  //                 if (!phoneCode) return "Please select country code first";
-  //                 const pattern = getPhoneConfig(phoneCode).pattern;
-  //                 return pattern.test(value) || t("phoneNumberValidation");
-  //               },
-  //             },
-  //           }
-  //           : {}),
-  //       },
-  //       {
-  //         type: "custom",
-  //         component: (
-  //           <Button
-  //             size="sm"
-  //             className="h-8 mt-[35px]"
-  //             onClick={handleSendOtp}
-  //             disabled={isSendOtpDisabled}
-  //             variant={isSendOtpDisabled ? "disabled" : "primary"}
-  //             typeVariant={isSendOtpDisabled ? "freeze" : "primary"}
-  //           >
-  //             {t("verifyOtp")}
-  //           </Button>
-  //         ),
-  //       },
-  //     ],
-  //     className: "",
-  //     gridCols: 3,
-  //   },
-  //   {
-  //     title: "Enter OTP",
-  //     condition: otpSent && !isVerified,
-  //     children: [
-  //       {
-  //         type: "custom",
-  //         component: (
-  //           <div className="space-y-4">
-  //             <p className="text-sm text-gray-600">
-  //               Enter the 6-digit verification OTP code sent to the mobile
-  //               number linked to your account.
-  //             </p>
-  //             <div className="flex justify-between gap-2">
-  //               {otp.map((digit, index) => (
-  //                 <input
-  //                   key={index}
-  //                   id={`otp-input-${index}`}
-  //                   type="text"
-  //                   inputMode="numeric"
-  //                   maxLength={1}
-  //                   className={`w-12 h-12 border rounded text-center text-xl focus:outline-none focus:ring-2 focus:ring-blue-500 ${isNotVerified && "border-2 border-red-300 shadow-lg"
-  //                     }`}
-  //                   value={digit}
-  //                   onChange={(e) => handleOtpChange(index, e.target.value)}
-  //                   onKeyDown={(e) => handleKeyDown(index, e, otp)}
-  //                   autoFocus={index === 0}
-  //                 />
-  //               ))}
-  //             </div>
-  //             <div className="flex justify-end items-center gap-3">
-  //               {showResend ? (
-  //                 <Button
-  //                   variant="secondary"
-  //                   typeVariant="outline"
-  //                   onClick={handleResendOtp}
-  //                   size="xs"
-  //                   disabled={isSendOtpDisabled}
-  //                 >
-  //                   {t("sendOtp")}
-  //                 </Button>
-  //               ) : (
-  //                 <div className="flex items-center gap-2">
-  //                   <div className="relative w-5 h-5">
-  //                     <div className="absolute inset-0 rounded-full border-2 border-gray-200"></div>
-  //                     <div
-  //                       className="absolute inset-0 rounded-full border-2 border-blue-500 border-t-transparent transition-all duration-300"
-  //                       style={{
-  //                         transform: `rotate(${progress * 3.6}deg)`,
-  //                         clipPath:
-  //                           progress >= 50 ? "inset(0)" : "inset(0 0 0 50%)",
-  //                       }}
-  //                     ></div>
-  //                     {progress < 50 && (
-  //                       <div
-  //                         className="absolute inset-0 rounded-full border-2 border-blue-500 border-t-transparent transition-all duration-300"
-  //                         style={{
-  //                           transform: `rotate(180deg)`,
-  //                           clipPath: `inset(0 ${100 - progress * 2}% 0 0)`,
-  //                         }}
-  //                       ></div>
-  //                     )}
-  //                   </div>
-  //                   <span className="text-sm text-gray-600">
-  //                     Resend OTP in {timeLeft}s
-  //                   </span>
-  //                 </div>
-  //               )}
-  //             </div>
-  //           </div>
-  //         ),
-  //       },
-  //     ],
-  //     className: undefined,
-  //     gridCols: 0,
-  //   },
-  //   {
-  //     condition: otpSent && !isVerified,
-  //     children: [
-  //       {
-  //         type: "custom",
-  //         component: (
-  //           <Button
-  //             size="sm"
-  //             onClick={verifyOtp}
-  //             className="w-full"
-  //             disabled={isVerifyOtpDisabled || isVerified}
-  //             variant={
-  //               isVerifyOtpDisabled || isVerified ? "disabled" : "primary"
-  //             }
-  //             typeVariant={
-  //               isVerifyOtpDisabled || isVerified ? "freeze" : "primary"
-  //             }
-  //           >
-  //             {t("verifyOtp")}
-  //           </Button>
-  //         ),
-  //       },
-  //     ],
-  //     className: undefined,
-  //     gridCols: 0,
-  //   },
-  //   {
-  //     condition: isVerified,
-  //     children: [
-  //       {
-  //         type: "custom",
-  //         component: (
-  //           <div className="p-4 bg-green-50 text-green-700 rounded-md">
-  //             <p className="font-medium">Phone number verified successfully!</p>
-  //           </div>
-  //         ),
-  //       },
-  //     ],
-  //     className: undefined,
-  //     gridCols: 0,
-  //   },
-  // ];
-  //#endregion OTP
 
   const baseSections =
     userType === "legal_representative"
@@ -1205,14 +716,12 @@ export const useFormLayout = ({
   const getWorkerSections = () => {
     const sections: any[] = [];
 
-    // Set default claimant status to "principal" on mount
     useEffect(() => {
       if (!incompleteCaseType) {
         setValue("claimantStatus", "principal");
       }
-    }, []); // Empty dependency array means this runs once on mount
+    }, []);
 
-    // Set ID number when principal is selected
     useEffect(() => {
       if (claimantStatus === "principal" && idNumber) {
         setValue("idNumber", idNumber);
@@ -1425,8 +934,36 @@ export const useFormLayout = ({
               },
             }),
           },
+          ...(principalNICResponse?.NICDetails?.Applicant_Code === "DW1"
+            ? [
+                {
+                  type: "readonly" as const,
+                  label: t("workerType"),
+                  value: t("domestic_worker"),
+                },
+              ]
+            : []),
         ],
       });
+
+      if (principalNICResponse?.NICDetails?.Applicant_Code === "DW1") {
+        sections.push({
+          title: t("attach_title"),
+          className: "attachment-section",
+          gridCols: 1,
+          children: [
+            {
+              type: "custom",
+              component: (
+                <AddAttachment
+                  onFileSelect={handleFileSelect}
+                  selectedFile={attachment}
+                />
+              ),
+            },
+          ],
+        });
+      }
     }
     if (showRepresentativeFields) {
       // 1) Agent-Type radio
@@ -1495,7 +1032,6 @@ export const useFormLayout = ({
                       onBlur={() => {
 
                         const v = watch("agencyNumber") + "";
-                        console.log("thi is sidsjdhsj", v);
                         if (v && v.length >= 1 && v.length <= 10) {
                           onAgencyNumberChange(v);
                         }
@@ -1628,24 +1164,45 @@ export const useFormLayout = ({
                     const v = typeof e === "string" ? e : e.target.value;
                     setValue("workerAgentIdNumber", v);
                   }}
+                  onBlur={() => {
+                    if (shouldFetchNic) refetchNICAgent();
+                  }}
                   maxLength={10}
                 />
               </FieldWrapper>
             ),
           },
           {
-            name: "dateOfBirth",
-            type: "dateOfBirth" as const,
-            hijriLabel: t("nicDetails.dobHijri"),
-            gregorianLabel: t("nicDetails.dobGrog"),
-            hijriFieldName: "workerAgentDateOfBirthHijri",
-            gregorianFieldName: "gregorianDate",
-            validation: { required: t("dateValidation") },
-            invalidFeedback: t("dateValidationDesc"),
-            isLoading: nicAgentLoading,
-            control, // ← wire up the RHF control
-            value: watch("workerAgentDateOfBirthHijri"),
-            disabled: allowedIds?.length === 0 || nicAgentLoading, // Only disabled while NIC is loading
+            type: "custom",
+            component: (
+              <div className="flex flex-col gap-2">
+                <HijriDatePickerInput
+                  control={control}
+                  name="workerAgentDateOfBirthHijri"
+                  label={t("nicDetails.dobHijri")}
+                  rules={{ required: true }}
+                  onChangeHandler={(date, onChange) => {
+                    if (!date || Array.isArray(date)) {
+                      setValue('gregorianDate', '');
+                      return;
+                    }
+                    const gregorianStr = date.convert(gregorian, gregorianLocaleEn).format("YYYY/MM/DD");
+                    const gregorianStorage = gregorianStr.replace(/\//g, '');
+                    setValue('gregorianDate', gregorianStorage);
+
+                    // Trigger refetch when date changes
+                    if (shouldFetchNic) refetchNICAgent();
+                  }}
+                  notRequired={false}
+                />
+                <GregorianDateDisplayInput
+                  control={control}
+                  name="gregorianDate"
+                  label={t("nicDetails.dobGrog")}
+                  notRequired={false}
+                />
+              </div>
+            ),
           },
           {
             type: representativeNICResponse?.NICDetails?.PlaintiffName
@@ -1756,6 +1313,29 @@ export const useFormLayout = ({
       });
     }
 
+    // --- NEW: UnprofessionalLetterAttachments section ---
+    if (unprofessionalLetterAttachments && unprofessionalLetterAttachments.length > 0) {
+      sections.push({
+        title: t("unprofessionalLetterAttachments.title", "Unprofessional Letter Attachments"),
+        className: "attachment-section",
+        gridCols: 1,
+        children: unprofessionalLetterAttachments.map((file, idx) => ({
+          type: "custom" as const,
+          component: (
+            <FileAttachment
+              key={file.FileKey || idx}
+              fileName={file.FileName || t("unprofessionalLetterAttachments.unnamed", "Unnamed File")}
+              onView={() => {
+                // TODO: Implement file preview logic if needed
+                window.open(`/api/file/download?key=${encodeURIComponent(file.FileKey)}`);
+              }}
+              className="w-full"
+            />
+          ),
+        })),
+      });
+    }
+
     return sections;
   };
 
@@ -1775,7 +1355,6 @@ export const useFormLayout = ({
           options: ClaimantStatusRadioOptions,
           value: claimantStatus,
           onChange: (value: string) => {
-            // console.log("Radio button changed to:", value);
             setValue("claimantStatus", value);
           },
           validation: { required: "Region is required" },
@@ -1974,17 +1553,18 @@ export const useFormLayout = ({
 
     // Handle NIC data
     if (principalNICResponse?.NICDetails) {
-      console.log('nicDetailObj in payload:', principalNICResponse.NICDetails);
       setFormValuesFromData(principalNICResponse.NICDetails);
     }
 
-    // Handle case details data
     const caseDetails = getCookie("caseDetails");
     if (caseDetails) {
       setFormValuesFromData(caseDetails);
+      // NEW: Set UnprofessionalLetterAttachments for display
+      if (caseDetails.UnprofessionalLetterAttachments) {
+        setUnprofessionalLetterAttachments(caseDetails.UnprofessionalLetterAttachments);
+      }
     }
 
-    // Trigger validation for all fields
     trigger([
       "userName",
       "plaintiffRegion",
@@ -1996,11 +1576,11 @@ export const useFormLayout = ({
     ]);
   }, [principalNICResponse, setValue, trigger, getCookie, clearErrors]);
 
+  // --- NEW: State for UnprofessionalLetterAttachments ---
+  // const [unprofessionalLetterAttachments, setUnprofessionalLetterAttachments] = useState<any[]>([]); // Moved to top
+
   useEffect(() => {
-    // Only clear form data if we're switching to representative mode and the NIC data is invalid
-    // Don't clear on every mount or when switching back to principal
     if (claimantStatus === "representative" && !shouldFetchNic) {
-      // Only clear if we don't have valid NIC data
       const currentFormData = watch();
       if (!currentFormData.userName && !currentFormData.plaintiffRegion) {
         [

@@ -12,7 +12,6 @@ export const useNavigationLoading = () => {
     if (navigation.state === "loading") {
       dispatch(startLoading());
     } else {
-      // Add a small delay to ensure smooth transition
       const timer = setTimeout(() => {
         dispatch(stopLoading());
       }, 100);
@@ -20,7 +19,6 @@ export const useNavigationLoading = () => {
     }
   }, [navigation.state, dispatch]);
 
-  // Reset loading state when location changes
   useEffect(() => {
     dispatch(stopLoading());
   }, [location.pathname, dispatch]);

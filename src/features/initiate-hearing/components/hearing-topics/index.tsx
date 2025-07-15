@@ -169,7 +169,7 @@ function HearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
   const defendantStatus = getCookie("defendantStatus");
   const mainCategory2 = getCookie("mainCategory")?.value;
   const subCategory2 = getCookie("subCategory")?.value;
-  const userID = getCookie("userClaims").UserID;
+  const userID = getCookie("userClaims")?.UserID;
   const fileNumber = getCookie("userClaims")?.File_Number;
 
   const [triggerCaseDetailsQuery, { data: caseDetailsData }] =
@@ -179,7 +179,6 @@ function HearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
   const { handleResponse, createError } = useApiErrorHandler();
 
   useEffect(() => {
-    console.log("Case details effect triggered:", { caseId, userType, userID, fileNumber, currentLanguage });
     if (caseId) {
       const userConfigs: any = {
         Worker: {
@@ -210,17 +209,12 @@ function HearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
         SourceSystem: "E-Services",
       };
       
-      console.log("Triggering case details query with params:", queryParams);
       triggerCaseDetailsQuery(queryParams);
-    } else {
-      console.log("No caseId available, skipping case details query");
     }
   }, [caseId, userType, userID, fileNumber, mainCategory2, subCategory2, currentLanguage, triggerCaseDetailsQuery]);
 
   useEffect(() => {
-    console.log("Case details data received:", caseDetailsData);
     if (caseDetailsData?.CaseDetails) {
-      console.log("Case details found, processing topics...");
       if (caseTopics.length === 0) {
         const formattedTopics = caseDetailsData.CaseDetails.CaseTopics.map(
           (topic: any) => ({
@@ -359,7 +353,6 @@ function HearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
   }, [caseDetailsData, caseTopics.length]);
 
   const onSubmit = async (data: TopicFormValues) => {
-    console.log("[onSubmit] Form submitted with data:", data);
     await handleNext();
   };
 
@@ -395,7 +388,7 @@ function HearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
     watch("subCategory")?.value
   );
 
-  console.log("subCategory?.value", watch("subCategory")?.value);
+
   const { data: travelingWayData } = lookup.travelingWayCategory(
     watch("subCategory")?.value
   );
@@ -431,7 +424,6 @@ function HearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
       base.Number700 = caseDetailsData.CaseDetails.Defendant_Number700;
       base.DefendantType = caseDetailsData.CaseDetails.DefendantType;
     }
-    console.log("subTopicsLookupParams:", base);
     return base;
   }, [mainCategory?.value, currentLanguage, caseDetailsData?.CaseDetails]);
 
@@ -477,8 +469,6 @@ function HearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
   const [isProcessingError, setIsProcessingError] = useState(false);
 
   const handleTopicSelect = (topic: any, index: number) => {
-    console.log("topicvvvvvvv", topic);
-
     reset();
 
     setEditTopic(topic);
@@ -517,11 +507,8 @@ function HearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
   };
 
   const handleSend = () => {
-    console.log("handleSend called");
     const result = saveTopic();
-    console.log("saveTopic result:", result);
     if (result === 1) {
-      console.log("Topic saved successfully, resetting form and closing modal");
       reset();
       setDate({ hijri: null, gregorian: null, dateObject: null });
       setShowLegalSection(false);
@@ -529,25 +516,18 @@ function HearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
       setEditTopic(null);
       setEditTopicIndex(null);
       close();
-    } else {
-      console.log("Topic save failed, result:", result);
     }
   };
 
   const handleAddTopic = async () => {
-    console.log("handleAddTopic called");
     const result = saveTopic();
-    console.log("saveTopic result:", result);
     if (result === 1) {
-      console.log("Topic added successfully, resetting form to first step");
       reset();
       setDate({ hijri: null, gregorian: null, dateObject: null });
       setShowLegalSection(false);
       setShowTopicData(false);
       setEditTopic(null);
       setEditTopicIndex(null);
-    } else {
-      console.log("Topic add failed, result:", result);
     }
   };
 
@@ -555,7 +535,6 @@ function HearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
     if (!editTopic) return;
 
     const updatedValues = getValues();
-    console.log("Updated Values:", updatedValues);
 
     const mainCategoryValue =
       updatedValues.mainCategory?.value ||
@@ -684,7 +663,6 @@ function HearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
       ToDateGregorian: formatDateForStorage(updatedValues.to_date_gregorian),
     };
 
-    console.log("Updated Topic:", updatedTopic);
 
     setCaseTopics((prev) =>
       prev.map((topic, idx) => (idx === editTopicIndex ? updatedTopic : topic))
@@ -798,31 +776,17 @@ function HearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
   const handleNext = async () => {
     const latestFormValues = getValues();
     setFormData(latestFormValues);
-    console.log(
-      "dkasjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjss"
-    );
+
     try {
       setLastAction("Next");
-      console.log(
-        "[handleNext] Triggered. caseTopics:",
-        caseTopics,
-        "subCategory:",
-        watch("subCategory"),
-        "caseId:",
-        caseId
-      );
-
       const payload = getPayloadBySubTopicID(
         caseTopics,
         watch("subCategory"),
         "Next",
         caseId
       );
-      console.log("[handleNext] Payload for saveHearingTopics:", payload);
 
       const response = await saveHearingTopics(payload).unwrap();
-
-      console.log("[handleNext] API response:", response);
 
       updateParams(
         currentStep === 0 && currentTab < [0, 1, 2].length - 1
@@ -835,7 +799,6 @@ function HearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
       setLastSaved(false);
     } catch (error) {
       setLastAction(undefined);
-      console.error("[handleNext] Error calling saveHearingTopics:", error);
     }
   };
 
@@ -852,8 +815,6 @@ function HearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
 
   const saveTopic = (): number => {
     const newTopic = getValues();
-
-    console.log(newTopic);
 
     if (
       !newTopic.mainCategory?.value ||
@@ -881,7 +842,7 @@ function HearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
     //   return 0;
     // }
 
-    console.log("Saving new topic:", newTopic);
+
 
     const formatDateForStorage = (date: string) => {
       if (!date) return "";
@@ -1093,33 +1054,7 @@ function HearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
     setAttachments,
   } = useAttachments();
 
-  useEffect(() => {
-    console.log("this is from index", {
-      attachments,
-      attachmentFiles,
-      previewFile,
-      showAttachmentModal,
-      handleAttachmentSave,
-      handleRemoveAttachment,
-      handleViewAttachment,
-      openAttachmentModal,
-      closeAttachmentModal,
-      closePreview,
-      setAttachments,
-    });
-  }, [
-    attachments,
-    attachmentFiles,
-    previewFile,
-    showAttachmentModal,
-    handleAttachmentSave,
-    handleRemoveAttachment,
-    handleViewAttachment,
-    openAttachmentModal,
-    closeAttachmentModal,
-    closePreview,
-    setAttachments,
-  ]);
+
 
   useEffect(() => {
     if (mainCategory) {

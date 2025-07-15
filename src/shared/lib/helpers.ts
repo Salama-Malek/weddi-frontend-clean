@@ -1,7 +1,6 @@
 import { useMemo } from "react";
 import { DateObject } from "react-multi-date-picker";
  
-// Map Arabic-Indic digits to ASCII
 const ARABIC_INDIC_DIGITS: Record<string, string> = {
   "٠": "0","١": "1","٢": "2","٣": "3","٤": "4",
   "٥": "5","٦": "6","٧": "7","٨": "8","٩": "9"
@@ -10,23 +9,18 @@ function toAsciiDigits(input: string): string {
   return input.replace(/[٠-٩]/g, d => ARABIC_INDIC_DIGITS[d] || d);
 }
  
-// CLDR full names and Safari abbreviations for Hijri months
 const HIJRI_MONTHS: Record<string, string> = {
-  // Full CLDR names:
   "محرم": "01", "صفر": "02", "ربيع الأول": "03", "ربيع الآخر": "04",
   "جمادى الأولى": "05", "جمادى الآخرة": "06", "رجب": "07", "شعبان": "08",
   "رمضان": "09", "شوال": "10", "ذو القعدة": "11", "ذو الحجة": "12",
-  // Safari numeric abbreviations:
   "جما١": "05", "جما٢": "06"
 };
  
 function normalizeHijriString(str: string): string {
   let s = str;
-  // Replace month names/abbrev
   for (const [name, num] of Object.entries(HIJRI_MONTHS)) {
     s = s.replace(new RegExp(name, 'g'), num);
   }
-  // Convert digits and strip non-digits
   s = toAsciiDigits(s).replace(/[^0-9]/g, '');
   if (!/^\d{8}$/.test(s)) {
     throw new Error(`Cannot normalize Hijri "${str}" → "${s}"`);
@@ -34,26 +28,19 @@ function normalizeHijriString(str: string): string {
   return s;
 }
  
-/**
- * Convert any input (ASCII DD/MM/YYYY or Arabic-Indic/names) into
- * Hijri YYYYMMDD (or DD/MM/YYYY if friendlyFormat=true).
- */
 export function toHijri_YYYYMMDD(
   dateString: string,
   friendlyFormat: boolean = false
 ): string {
   try {
     const raw = toAsciiDigits(dateString.trim());
-    // Quick path: already Hijri
     if (/^14\d{6}$/.test(raw)) {
       const Y = raw.slice(0,4), M = raw.slice(4,6), D = raw.slice(6);
       return friendlyFormat ? `${D}/${M}/${Y}` : `${Y}${M}${D}`;
     }
-    // Parse Gregorian
     const [d, m, y] = raw.split(/[\/\-\s]/).map(Number);
     if ([d,m,y].some(isNaN)) throw new Error('Invalid Gregorian input');
     const dt = new Date(Date.UTC(y, m-1, d));
-    // ASCII Intl pass
     const parts = new Intl.DateTimeFormat('en-u-ca-islamic', {
       year: 'numeric', month: '2-digit', day: '2-digit', numberingSystem: 'latn', timeZone: 'UTC'
     }).formatToParts(dt);
@@ -63,7 +50,6 @@ export function toHijri_YYYYMMDD(
     if (yp && mp && dp) {
       return friendlyFormat ? `${dp}/${mp}/${yp}` : `${yp}${mp}${dp}`;
     }
-    // Safari fallback
     const arabic = new Intl.DateTimeFormat('ar-u-ca-islamic', {
       year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC'
     }).format(dt);
@@ -118,26 +104,17 @@ export function useLoadingStates<T extends Record<string,boolean>>(states:T):T {
   return useMemo(() => states, Object.values(states));
 }
  
-/**
- * Converts a compact Hijri date string (YYYYMMDD) to formatted date (MM/DD/YYYY)
- */
 export function formatHijriDate(compact:string):string {
   if (!compact||compact.length!==8) return compact;
   const y=compact.slice(0,4), m=compact.slice(4,6), d=compact.slice(6);
   return `${y}/${m}/${d}`;
 }
  
-/**
- * Format a date string to yyyymmdd format by removing any separators
- */
 export function formatDateToYYYYMMDD(dateString: string | undefined): string | undefined {
   if (!dateString) return undefined;
   return dateString.replace(/[\/\-]/g, '');
 }
  
-/**
- * Format a date string from yyyymmdd format to a display format with separators
- */
 export function formatDateFromYYYYMMDD(dateString: string | undefined, separator: string = '/'): string | undefined {
   if (!dateString || dateString.length !== 8) return undefined;
   return `${dateString.slice(0, 4)}${separator}${dateString.slice(4, 6)}${separator}${dateString.slice(6)}`;
@@ -158,3 +135,7 @@ export const formatDateString = (raw: string | undefined | null): string => {
   const day = raw.slice(6, 8);
   return `${year}/${month}/${day}`;
 };
+
+export function toWesternDigits(str: string): string {
+  return typeof str === 'string' ? str.replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d).toString()) : str;
+}
