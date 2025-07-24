@@ -1,4 +1,4 @@
-import React, { lazy, Suspense } from "react";
+import React, { lazy, Suspense, useEffect } from "react";
 import {
   createBrowserRouter,
   RouterProvider,
@@ -13,6 +13,8 @@ import MainLayout from "./shared/layouts/MainLayout";
 import StepperSkeleton from "./shared/components/loader/StepperSkeleton";
 import { TokenExpirationProvider } from "./providers/TokenExpirationProvider";
 import { ToastContainer } from "react-toastify";
+import Logout from "./features/login/LogOut";
+import { useTranslation } from "react-i18next";
 
 const LoginLazy = lazy(() => import("./features/login/Index"));
 const CaseCreation = lazy(() => import("./shared/modules/case-creation"));
@@ -93,6 +95,13 @@ const routesConfig: RouteObject[] = [
         <LoginLazy />
       </LazyLoader>
     ),
+    errorElement: <MainErrorFallback />
+  },
+  {
+    path: "/logout",
+    element: (
+      <Logout />
+    ),
     errorElement: <MainErrorFallback />,
   },
 ];
@@ -101,13 +110,21 @@ const router = createBrowserRouter(routesConfig, {
   basename: '/portal'
 });
 
-const App = () => (
-  <TokenExpirationProvider>
-    <OfflineLayout>
-      <RouterProvider router={router} />
-      <ToastContainer />
-    </OfflineLayout>
-  </TokenExpirationProvider>
-);
+const App = () => {
+  const { t, i18n } = useTranslation('meta');
+
+  useEffect(() => {
+    document.title = t('title');
+  }, [i18n.language, t]);
+
+  return (
+    <TokenExpirationProvider>
+      <OfflineLayout>
+        <RouterProvider router={router} />
+        <ToastContainer />
+      </OfflineLayout>
+    </TokenExpirationProvider>
+  )
+};
 
 export default App;

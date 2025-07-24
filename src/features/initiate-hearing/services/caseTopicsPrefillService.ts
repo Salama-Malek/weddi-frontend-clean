@@ -98,6 +98,16 @@ export interface CaseTopicData {
   PenalityTypeLabel?: string;
   RequiredDegreeInsurance?: string;
   requiredDegreeOfInsurance?: string;
+  doesBylawsIncludeAddingAccommodations?: boolean;
+  IsBylawsIncludeAddingAccommodiation?: string;
+  doesContractIncludeAddingAccommodations?: boolean;
+  IsContractIncludeAddingAccommodiation?: string;
+  housingSpecificationInByLaws?: string;
+  HousingSpecificationsInBylaws?: string;
+  housingSpecificationsInContract?: string;
+  HousingSpecificationsInContract?: string;
+  actualHousingSpecifications?: string;
+  HousingSpecifications?: string;
 }
 
 export class CaseTopicsPrefillService {
@@ -136,9 +146,13 @@ export class CaseTopicsPrefillService {
         // Injury date topic
         if (topic.pyTempText) {
           dateFields.injury_date_hijri = formatHijriDate(topic.pyTempText);
+        } else if (topic.Date_New) {
+          dateFields.injury_date_hijri = formatHijriDate(topic.Date_New);
         }
         if (topic.InjuryDate_New) {
           dateFields.injury_date_gregorian = formatDateString(topic.InjuryDate_New);
+        } else if (topic.Date_New) {
+          dateFields.injury_date_gregorian = formatDateString(topic.Date_New);
         }
         break;
 
@@ -239,6 +253,28 @@ export class CaseTopicsPrefillService {
       currentPosition: topic.CurrentPosition || topic.currentPosition || "",
       loanAmount: topic.LoanAmount || topic.loanAmount || "",
       amountRatio: topic.AmountRatio || topic.amountRatio || "",
+      
+      // HIR-1 (accommodation) fields
+      doesBylawsIncludeAddingAccommodations:
+        topic.doesBylawsIncludeAddingAccommodations !== undefined
+          ? topic.doesBylawsIncludeAddingAccommodations
+          : ["Yes", true].includes(topic.IsBylawsIncludeAddingAccommodiation ?? ""),
+      doesContractIncludeAddingAccommodations:
+        topic.doesContractIncludeAddingAccommodations !== undefined
+          ? topic.doesContractIncludeAddingAccommodations
+          : ["Yes", true].includes(topic.IsContractIncludeAddingAccommodiation ?? ""),
+      housingSpecificationInByLaws:
+        topic.housingSpecificationInByLaws !== undefined
+          ? topic.housingSpecificationInByLaws
+          : topic.HousingSpecificationsInBylaws || "",
+      housingSpecificationsInContract:
+        topic.housingSpecificationsInContract !== undefined
+          ? topic.housingSpecificationsInContract
+          : topic.HousingSpecificationsInContract || "",
+      actualHousingSpecifications:
+        topic.actualHousingSpecifications !== undefined
+          ? topic.actualHousingSpecifications
+          : topic.HousingSpecifications || "",
       
       // Select fields
       typeOfRequest: (topic.RequestType || topic.RequestType_Code || topic.TypeOfRequest) ? {

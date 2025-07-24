@@ -1,4 +1,8 @@
-export type Option = { value: string; label: string } | string;
+export interface Option {
+  value: string;
+  label: string;
+}
+
 export interface FileAttachment {
   classification?: string;
   classificationLabel?: string; // shown to user
@@ -200,6 +204,8 @@ export interface FormData {
   hijriDate: string;
   gregorianDate: string;
   phoneNumber: string;
+  // add new phonenumber for the establishment as defendent 
+  establishment_phoneNumber: string;
   agentPhoneNumber?: string;
   interPhoneNumber?: null | string;
   claimantStatus: string;
@@ -217,7 +223,11 @@ export interface FormData {
   attachment?: FileAttachment;
   typeOfWage: Option | null;
   contractType: Option | null;
+  // add new region and city for workdetails
+  jobLocation?: Option | null;
+  jobLocationCity?: Option | null;
   laborOffice?: Option | null;
+
   nationality: Option | null;
   workerAgentIdNumber?: string;
   workerAgentDateOfBirthHijri?: string;
@@ -280,6 +290,54 @@ export interface FormData {
   request_date_gregorian?: string;
   externalAgencyNumber?: string;
   certifiedAgency?: string;
+  // Principal-prefixed fields for principal claimant
+  principal_userName?: string;
+  principal_region?: Option | null;
+  principal_city?: Option | null;
+  principal_occupation?: Option | null;
+  principal_gender?: Option | null;
+  principal_nationality?: Option | null;
+  principal_hijriDate?: string;
+  principal_gregorianDate?: string;
+  principal_applicant?: string;
+  principal_phoneNumber?: string;
+  // Local agency-prefixed fields for local agency representative
+  localAgent_userName?: string;
+  localAgent_region?: Option | null;
+  localAgent_city?: Option | null;
+  localAgent_occupation?: Option | null;
+  localAgent_gender?: Option | null;
+  localAgent_nationality?: Option | null;
+  localAgent_gregorianDate?: string;
+  localAgent_phoneNumber?: string;
+  // External agency-prefixed fields for external agency representative
+  externalAgent_userName?: string;
+  externalAgent_region?: Option | null;
+  externalAgent_city?: Option | null;
+  externalAgent_occupation?: Option | null;
+  externalAgent_gender?: Option | null;
+  externalAgent_nationality?: Option | null;
+  externalAgent_gregorianDate?: string;
+  externalAgent_phoneNumber?: string;
+  externalAgent_agentPhoneNumber?: string;
+  // Local agency agent and plaintiff fields
+  localAgent_agentName?: string;
+  localAgent_agencyNumber?: string;
+  localAgent_agencyStatus?: string;
+  localAgent_agencySource?: string;
+  localAgent_currentPlaceOfWork?: string;
+  localAgent_residencyAddress?: string;
+  localAgent_workerAgentIdNumber?: string;
+  localAgent_workerAgentDateOfBirthHijri?: string;
+  // External agency agent and plaintiff fields
+  externalAgent_agentName?: string;
+  externalAgent_agencyNumber?: string;
+  externalAgent_agencyStatus?: string;
+  externalAgent_agencySource?: string;
+  externalAgent_currentPlaceOfWork?: string;
+  externalAgent_residencyAddress?: string;
+  externalAgent_workerAgentIdNumber?: string;
+  externalAgent_workerAgentDateOfBirthHijri?: string;
 }
 
 export type UseFormLayoutParams = {
@@ -321,6 +379,10 @@ export type UseFormLayoutParams = {
   isSubCategoryLoading?: boolean;
   control: any;
   trigger?: (fields: string[]) => void;
+  lockAccommodationSource?: boolean;
+  errors?: any;
+  payIncreaseTypeData?: any;
+  PayIncreaseTypeOptions?: Option[];
 };
 
 interface EstablishmentDetails {

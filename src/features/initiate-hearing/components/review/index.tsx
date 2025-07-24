@@ -835,7 +835,7 @@ const ReviewDetails = ({
 
   const reviewSectionEmbasyAsAgent: ReviewSection[] = [
     {
-      title: t("agentInformation"),
+      title: t("AgentInformation"),
       data: {
         type: "readonly",
         fields: [

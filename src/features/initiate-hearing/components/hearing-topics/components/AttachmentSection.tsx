@@ -9,7 +9,7 @@ import { useTranslation } from "react-i18next";
 interface Props {
   attachments: FileAttachmentType[];
   onAddClick: () => void;
-  onRemove: (index: number) => void;
+  onRemove: (attachment: FileAttachmentType, index: number) => void;
   onView?: (attachment: FileAttachmentType) => void;
 }
 
@@ -47,7 +47,7 @@ const AttachmentSection: React.FC<Props> = ({ attachments, onAddClick, onRemove,
               <Suspense fallback={<TableLoader />} key={`${att.fileName}-${idx}`}>
                 <FileAttachment
                   fileName={`${att.fileName || t("attachment")} - ${att.file?.name || t("unnamed_file")}`}
-                  onRemove={() => onRemove(idx)}
+                  onRemove={() => onRemove(att, idx)}
                   onView={onView ? () => { console.log('AttachmentSection onView:', att); onView(att); } : undefined}
                 />
               </Suspense>

@@ -71,7 +71,7 @@ export const useFormLayout = ({
   const { data: regionData, isFetching: isRegionLoading } = useGetRegionLookupDataQuery({
     AcceptedLanguage: i18n.language.toUpperCase(),
     context: "worker",
-    });
+  });
 
   // Create region options for dropdowns
   const RegionOptions = React.useMemo(() => {
@@ -188,7 +188,7 @@ export const useFormLayout = ({
   type FormElementType = any; // fallback for type
   function addNoSpacesValidationToTextInputs(fields: FormElementType[], t: any): FormElementType[] {
     return fields.map(field => {
-      if (field && field.type === 'input' && field.inputType === 'text') {
+      if (field && field.type === 'input' && (field.inputType === 'text' || field.inputType === 'textarea')) {
         return {
           ...field,
           validation: {
@@ -522,7 +522,7 @@ export const useFormLayout = ({
             onChange: (value) => setValue("managerialDecisionNumber", value),
             validation: { required: tHearingTopics("managerialDecisionNumber") },
             notRequired: false,
-            },
+          },
         ]);
 
       default:
@@ -534,25 +534,25 @@ export const useFormLayout = ({
     gridCols: 2,
     ...(getFormBySubCategory().filter(Boolean).length > 0
       ? {
-          title: tHearingTopics("topics_data"),
-          children: [
-            ...(getFormBySubCategory().filter(Boolean) as FormElement[]),
-            ...getCommonElements(isValid), // Only show when there's content
-          ],
-        }
+        title: tHearingTopics("topics_data"),
+        children: [
+          ...(getFormBySubCategory().filter(Boolean) as FormElement[]),
+          ...getCommonElements(isValid), // Only show when there's content
+        ],
+      }
       : {
-          children: [
-            {
-              type: "custom",
-              component: (
-                <></>
-                // <div className="p-4 bg-green-50 text-green-700 rounded-md">
-                //   {tHearingTopics("no_content_found")}
-                // </div>
-              ),
-            },
-          ],
-        }),
+        children: [
+          {
+            type: "custom",
+            component: (
+              <></>
+              // <div className="p-4 bg-green-50 text-green-700 rounded-md">
+              //   {tHearingTopics("no_content_found")}
+              // </div>
+            ),
+          },
+        ],
+      }),
   };
 
   const layout: SectionLayout[] = [];

@@ -5,6 +5,9 @@
     "manage_hearings": "إدارة الدعاوى",
     "hearing_number": "رقم الدعوى"
   },
+  "meta": {
+    "title": "تسوية الخلافات- العمالة المهنية"
+  },
   "common": {
     "incomplete_case": {
       "title": "تأكيد",
@@ -108,7 +111,10 @@
       "hijriDOB": "تاريخ الميلاد (هجري)",
       "gregorianDOB": "تاريخ الميلاد (ميلادي)",
       "contactInfo": "بيانات التواصل",
-      "phoneCode": "رمز الدولة"
+      "phoneCode": "رمز الدولة",
+      "agentPhoneNumber": "رقم جوال الوكيل",
+      "phonePlaceholder": "05xxxxxxxx",
+      "agencyNumberPlaceholder": "أدخل رقم الوكالة"
     },
     "embassyUser": {
       "idNumber": "رقم السفارة",
@@ -315,16 +321,23 @@
     "residenceAddressValidation": "الرجاء إدخال عنوان الإقامة.",
     "nameValidation": "الرجاء إدخال اسم صحيح.",
     "dateValidation": "الرجاء إدخال تاريخ صحيح.",
-    "spacesOnlyNotAllowed": "لا يسمح بالمسافات فقط",
-    "fieldRequired": "هذا الحقل مطلوب."
+    "spacesOnlyNotAllowed": "لا يسمح بالمسافات فقط"
   },
   "hearingtopics": {
+    "interPhoneNumberValidation": "الرجاء إدخال رقم هاتف دولي بصيغة صحيحة (بدون رمز الدولة).",
+
+    "codeValidation": "الرجاء إدخال رمز صالح.",
+    "countryCodeSelection": "الرجاء اختيار رمز الدولة أولاً",
+    "phoneNumberValidation": "الرجاء إدخال رقم هاتف صحيح.",
+    "fieldRequired": "هذا الحقل مطلوب.",
+    "main_category_required": "حقل الفئة الرئيسية مطلوب",
+    "sub_category_required": "حقل الفئة الفرعية مطلوب",
     "verifyOtp": "التحقق",
     "no.": "رقم",
     "amount": "المبلغ",
     "compensationAmount": "مبلغ التعويض",
-    "injuryDateGregorian": "تاريخ الإصابة (هجري)",
-    "injuryDateHijri": "تاريخ الإصابة (ميلادي)",
+    "injuryDateGregorian": "تاريخ الإصابة (ميلادي)",
+    "injuryDateHijri": "تاريخ الإصابة (هجري)",
     "injuryType": "نوع الإصابة",
     "theAmountRequired": "المبلغ المطلوب",
     "totalAmount": "المبلغ الإجمالي",
@@ -829,6 +842,7 @@
     "searchButton": "بحث"
   },
   "reviewdetails": {
+    "plaintiffDetails": "بيانات المدعي",
     "acknowledge_desc": "أقر وأوافق على الشروط والأحكام.",
     "p1": "أقر أنا / [الاسم] بأنني قرأت ما نصّت عليه المادة (4) من قرار مجلس الوزراء رقم (94) بتاريخ [03/08/1447]، والذي ينص على ما يلي:",
     "p2": "إذا قدّم شخص دعوى خاصة وثبت للمحكمة أن دعواه كاذبة، فللقاضي أن ينظر في توقيع عقوبة تأديبية، ويحق للمدّعى عليه المطالبة بالتعويض عن أي أضرار لحقت به نتيجة لهذه الدعوى.",
@@ -1087,5 +1101,11 @@
   "unprofessionalLetterAttachments": {
     "title": "مرفقات الخطاب غير المهني",
     "unnamed": "ملف بدون اسم"
-  }
+  },
+  "validation": {
+    "main_category_required": "حقل الفئة الرئيسية مطلوب",
+    "sub_category_required": "حقل الفئة الفرعية مطلوب"
+  },
+  "finalSubmit": "إرسال نهائي",
+  "attachments.remove_success": "تم حذف المرفق بنجاح"
 }

@@ -59,7 +59,12 @@ export const useFormLayout = (
   //#region hassan
   const userClaims: TokenClaims = getCookie("userClaims");
   const userType = getCookie("userType");
-  const [wrorkedEstablishmetUsers, setWrorkedEstablishmetUsers] = useState<Array<{ label: string; value: string }>>([]);
+  const [wrorkedEstablishmetUsers, setWrorkedEstablishmetUsers] = useState<Array<{ label: string; value: string }>>([
+    {
+      label: t("others"),
+      value: "Others",
+    },
+  ]);
 
   const [
     establishmentDetailsByFileNumber,
@@ -93,7 +98,7 @@ export const useFormLayout = (
 
   useEffect(() => {
     if (
-      getEstablismentWorkingData &&
+      getEstablismentWorkingData && getEstablismentWorkingData?.EstablishmentData &&
       getEstablismentWorkingData?.EstablishmentData?.length !== 0
     ) {
       setWrorkedEstablishmetUsers(
@@ -110,14 +115,23 @@ export const useFormLayout = (
         })
       );
     } else {
-      setWrorkedEstablishmetUsers([
-        {
-          label: t("others"),
-          value: "Others",
-        },
-      ]);
+      setWrorkedEstablishmetUsers([{
+        label: t("others"),
+        value: "Others",
+      }]
+      );
     }
+    setValue("defendantDetails", "Others")
+
   }, [getEstablismentWorkingData]);
+
+
+
+  useEffect(() => {
+    if (defendantDetails === undefined)
+      setValue("defendantDetails", "Others")
+  }, [defendantDetails])
+
 
   // to get establishment data from field input
   const [
@@ -638,7 +652,7 @@ export const useFormLayout = (
                 {
                   maxLength: 10,
                   type: "input",
-                  name: "phoneNumber",
+                  name: "establishment_phoneNumber",
                   label: t("phoneNumber"),
                   inputType: "text",
                   placeholder: "05xxxxxxxx",

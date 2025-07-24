@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
+import { useRemoveAttachmentMutation } from "../api/apis";
 
 interface FileAttachment {
   file: File | null;
   fileType: string;
   fileName: string;
+  attachmentKey?: string
 }
 
 interface AttachmentFile {
@@ -23,6 +25,7 @@ export function useAttachments(params: UseAttachmentsParams = {}) {
   const [attachmentFiles, setAttachmentFiles] = useState<AttachmentFile[]>([]);
   const [showAttachmentModal, setShowAttachmentModal] = useState(false);
   const [previewFile, setPreviewFile] = useState<any>(null);
+  const [removeAttachment] = useRemoveAttachmentMutation();
 
   // Initialize with existing files if provided
   useEffect(() => {
@@ -75,14 +78,26 @@ export function useAttachments(params: UseAttachmentsParams = {}) {
     });
   };
 
-  const handleRemoveAttachment = (index: number) => {
+  const handleRemoveAttachment = async (index: number) => {
+    const attachmentToRemove = attachments[index];  
+      // If the attachment has a FileKey, call the API to remove it
+    if (attachmentToRemove && (attachmentToRemove.FileKey || attachmentToRemove.fileKey)) {
+      try {
+        await removeAttachment({
+          AttachmentKey: attachmentToRemove.FileKey || attachmentToRemove.fileKey,
+        });
+      } catch (error) {
+        // Optionally handle error (toast, etc.)
+      }
+    }
     setAttachments((prev) => prev.filter((_, i) => i !== index));
     setAttachmentFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleViewAttachment = (attachment: any) => {
     console.log('[useAttachments] handleViewAttachment called with:', attachment);
-    const key = attachment.FileKey || attachment.fileKey;
+    const key = attachment.FileKey || attachment.fileKey || attachment.attachmentKey;
+
     if (key && params.triggerFileDetails) {
       console.log('[useAttachments] Calling triggerFileDetails API for FileKey:', key);
       params.triggerFileDetails({

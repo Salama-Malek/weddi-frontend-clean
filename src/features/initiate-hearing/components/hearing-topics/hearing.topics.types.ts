@@ -21,4 +21,5 @@ export type Topic = {
     managerial_decision_date_hijri?: string;
     managerial_decision_date_gregorian?: string;
     managerialDecisionNumber?: string;
+    commissionType?: { value: string; label: string } | null;
   };

@@ -6,7 +6,8 @@ import TableLoader from "@/shared/components/loader/TableLoader";
 import { useTranslation } from "react-i18next";
 import { FileAttachment } from "@/shared/components/form/form.types";
 import FormActionButtons from "@/shared/components/ui/footer-buttons";
-import FilePreviewModal from "./FilePreviewModal"; 
+import FilePreviewModal from "./FilePreviewModal";
+import { useRemoveAttachmentMutation } from "../hearing-topics/api/apis";
 
 const Modal = lazy(() => import("@/shared/components/modal/Modal"));
 const FileAttachmentUI = lazy(
@@ -27,6 +28,7 @@ const AddAttachment = ({ onFileSelect }: AddAttachmentProps) => {
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [pendingFile, setPendingFile] = useState<File[]>([]);
   const [previewFile, setPreviewFile] = useState<File | null>(null);
+  const [removeAttachment] = useRemoveAttachmentMutation();
 
   const handleToggle = () => {
     if (uploadedFiles.length <= 0) {
@@ -76,7 +78,25 @@ const AddAttachment = ({ onFileSelect }: AddAttachmentProps) => {
     }
   };
 
-  const handleRemove = () => {
+  // Type guard to check if file is a backend attachment
+  function hasAttachmentKey(obj: any): obj is { FileKey?: string; attachmentKey?: string } {
+    return (
+      obj && (typeof obj.FileKey === 'string' || typeof obj.attachmentKey === 'string')
+    );
+  }
+
+  const handleRemove = async () => {
+    const file = uploadedFiles[0];
+    // Only call the API if the file is a backend attachment
+    if (hasAttachmentKey(file)) {
+      try {
+        await removeAttachment({
+          AttachmentKey: file.FileKey || file.attachmentKey,
+        });
+      } catch (error) {
+        // Optionally handle error (toast, etc.)
+      }
+    }
     const emptyFileData: FileAttachment = {
       classification: "",
       file: null,

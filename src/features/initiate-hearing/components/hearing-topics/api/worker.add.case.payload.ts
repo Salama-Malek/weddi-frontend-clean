@@ -18,10 +18,11 @@ export function getPayloadBySubTopicID(
 
     const basePayload = {
       MainTopicID: topic?.mainCategory,
-      SubTopicID: topic?.subCategory,
+      SubTopicID: typeof topic?.subCategory === 'object' ? topic?.subCategory?.value : topic?.subCategory,
     };
 
-    switch (topic?.subCategory) {
+    const subCategoryCode = typeof topic?.subCategory === 'object' ? topic?.subCategory?.value : topic?.subCategory;
+    switch (subCategoryCode) {
       case "WR-1": //done
         const WR1Payload = {
           ...basePayload,
@@ -94,7 +95,7 @@ export function getPayloadBySubTopicID(
       case "CMR-3":
         const CMR3Payload = {
           ...basePayload,
-          Amount: topic?.amount,
+          Amount: topic?.compensationAmount, // Always use compensationAmount for CMR-3
           pyTempText: formatDateToYYYYMMDD(topic?.injury_date_hijri),
           InjuryDate_New: formatDateToYYYYMMDD(topic?.injury_date_gregorian),
           TypeOfWorkInjury: topic?.injuryType,
@@ -115,12 +116,12 @@ export function getPayloadBySubTopicID(
       case "CMR-5":
         const CMR5Payload = {
           ...basePayload,
-          LeaveType: topic?.kindOfHoliday?.value,
-          TotalAmountRequired: topic?.totalAmount,
-          WorkingHoursCount: topic?.workingHours,
-          AdditionalDetails: topic?.additionalDetails,
+          LeaveType: topic?.kindOfHoliday?.label || topic?.LeaveType || "",
+          LeaveType_Code: topic?.kindOfHoliday?.value || topic?.LeaveType_Code || "",
+          TotalAmountRequired: topic?.totalAmount || topic?.TotalAmountRequired,
+          WorkingHoursCount: topic?.workingHours || topic?.WorkingHoursCount,
+          AdditionalDetails: topic?.additionalDetails || topic?.AdditionalDetails,
         };
-
         payload.CaseTopics.push(CMR5Payload);
         break;
 
@@ -180,7 +181,6 @@ export function getPayloadBySubTopicID(
           ManDecsDate: formatDateToYYYYMMDD(topic?.managerial_decision_date_gregorian),
           ManagerialDecisionNumber: topic?.managerialDecisionNumber,
         };
-
         payload.CaseTopics.push(EDO1Payload);
         break;
       case "EDO-2": //done
@@ -192,8 +192,17 @@ export function getPayloadBySubTopicID(
           ManDecsDate: formatDateToYYYYMMDD(topic?.managerial_decision_date_gregorian),
           ManagerialDecisionNumber: topic?.managerialDecisionNumber,
         };
-
         payload.CaseTopics.push(EDO2Payload);
+        break;
+      case "EDO-3"://done
+        const EDO3Payload = {
+          ...basePayload,
+          AmountOfReduction: topic?.amountOfReduction,
+          pyTempDate: formatDateToYYYYMMDD(topic?.managerial_decision_date_hijri),
+          ManagerialDecisionDate_New: formatDateToYYYYMMDD(topic?.managerial_decision_date_gregorian),
+          ManagerialDecisionNumber: topic?.managerialDecisionNumber,
+        };
+        payload.CaseTopics.push(EDO3Payload);
         break;
       case "EDO-4"://done
         const EDO4Payload = {
@@ -204,20 +213,7 @@ export function getPayloadBySubTopicID(
           ManDecsDate: formatDateToYYYYMMDD(topic?.managerial_decision_date_gregorian),
           ManagerialDecisionNumber: topic?.managerialDecisionNumber,
         };
-
         payload.CaseTopics.push(EDO4Payload);
-        break;
-
-      case "EDO-3"://done
-        const EDO3Payload = {
-          ...basePayload,
-          AmountOfReduction: topic?.amountOfReduction,
-          pyTempDate: formatDateToYYYYMMDD(topic?.managerial_decision_date_hijri),
-          ManagerialDecisionDate_New: formatDateToYYYYMMDD(topic?.managerial_decision_date_gregorian),
-          ManagerialDecisionNumber: topic?.managerialDecisionNumber,
-        };
-
-        payload.CaseTopics.push(EDO3Payload);
         break;
 
       case "HIR-1": {
@@ -258,8 +254,9 @@ export function getPayloadBySubTopicID(
         const JAR3Payload = {
           ...basePayload,
           PromotionMechanism:
-            topic?.doesTheInternalRegulationIncludePromotionMechanism,
-          AdditionalUpgrade: topic?.doesContractIncludeAdditionalUpgrade,
+            topic?.doesTheInternalRegulationIncludePromotionMechanism === true ? "Yes" : "No",
+          AdditionalUpgrade:
+            topic?.doesContractIncludeAdditionalUpgrade === true ? "Yes" : "No",
         };
 
         payload.CaseTopics.push(JAR3Payload);

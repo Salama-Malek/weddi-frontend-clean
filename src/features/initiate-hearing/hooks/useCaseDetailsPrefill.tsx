@@ -46,35 +46,72 @@ const useCaseDetailsPrefill = (setValue: (field: string, value: any) => void, tr
         setValue("showOnlyRepresentative", true);
       }
 
-      // Pre-fill core fields
-      setValue("idNumber", details.PlaintiffId || "");
-      setValue("hijriDate", details.PlaintiffHijiriDOB || "");
-      setValue("userName", details.PlaintiffName || "");
-      setValue("phoneNumber", details.Plaintiff_PhoneNumber || "");
-      setValue("gregorianDate", details.Plaintiff_ApplicantBirthDate || "");
-      setValue("firstLanguage", details.Plaintiff_FirstLanguage || "");
+      // Pre-fill core fields only if value exists and is not null or empty
+      if (details.PlaintiffId !== undefined && details.PlaintiffId !== null && details.PlaintiffId !== "") {
+        setValue("idNumber", details.PlaintiffId);
+      }
+      if (details.PlaintiffHijiriDOB !== undefined && details.PlaintiffHijiriDOB !== null && details.PlaintiffHijiriDOB !== "") {
+        setValue("hijriDate", details.PlaintiffHijiriDOB);
+      }
+      if (details.PlaintiffName !== undefined && details.PlaintiffName !== null && details.PlaintiffName !== "") {
+        setValue("userName", details.PlaintiffName);
+      }
+      if (details.Plaintiff_PhoneNumber !== undefined && details.Plaintiff_PhoneNumber !== null && details.Plaintiff_PhoneNumber !== "") {
+        setValue("phoneNumber", details.Plaintiff_PhoneNumber);
+      }
+      if (details.Plaintiff_ApplicantBirthDate !== undefined && details.Plaintiff_ApplicantBirthDate !== null && details.Plaintiff_ApplicantBirthDate !== "") {
+        setValue("gregorianDate", details.Plaintiff_ApplicantBirthDate);
+      }
+      if (details.Plaintiff_FirstLanguage !== undefined && details.Plaintiff_FirstLanguage !== null && details.Plaintiff_FirstLanguage !== "") {
+        setValue("firstLanguage", details.Plaintiff_FirstLanguage);
+      }
 
-      // Map select fields with value/label pairs
-      setValue("plaintiffRegion", {
-        value: details.Plaintiff_Region_Code || "",
-        label: details.Plaintiff_Region || "",
-      });
-      setValue("plaintiffCity", {
-        value: details.Plaintiff_City_Code || "",
-        label: details.Plaintiff_City || "",
-      });
-      setValue("occupation", {
-        value: details.Plaintiff_Occupation_Code || "",
-        label: details.Plaintiff_Occupation || "",
-      });
-      setValue("gender", {
-        value: details.Plaintiff_Gender_Code || "",
-        label: details.Plaintiff_Gender || "",
-      });
-      setValue("nationality", {
-        value: details.Plaintiff_Nationality_Code || "",
-        label: details.Plaintiff_Nationality || "",
-      });
+      // Map select fields with value/label pairs only if value exists and is not null or empty
+      if (
+        (details.Plaintiff_Region_Code !== undefined && details.Plaintiff_Region_Code !== null && details.Plaintiff_Region_Code !== "") ||
+        (details.Plaintiff_Region !== undefined && details.Plaintiff_Region !== null && details.Plaintiff_Region !== "")
+      ) {
+        setValue("plaintiffRegion", {
+          value: details.Plaintiff_Region_Code || "",
+          label: details.Plaintiff_Region || "",
+        });
+      }
+      if (
+        (details.Plaintiff_City_Code !== undefined && details.Plaintiff_City_Code !== null && details.Plaintiff_City_Code !== "") ||
+        (details.Plaintiff_City !== undefined && details.Plaintiff_City !== null && details.Plaintiff_City !== "")
+      ) {
+        setValue("plaintiffCity", {
+          value: details.Plaintiff_City_Code || "",
+          label: details.Plaintiff_City || "",
+        });
+      }
+      if (
+        (details.Plaintiff_Occupation_Code !== undefined && details.Plaintiff_Occupation_Code !== null && details.Plaintiff_Occupation_Code !== "") ||
+        (details.Plaintiff_Occupation !== undefined && details.Plaintiff_Occupation !== null && details.Plaintiff_Occupation !== "")
+      ) {
+        setValue("occupation", {
+          value: details.Plaintiff_Occupation_Code || "",
+          label: details.Plaintiff_Occupation || "",
+        });
+      }
+      if (
+        (details.Plaintiff_Gender_Code !== undefined && details.Plaintiff_Gender_Code !== null && details.Plaintiff_Gender_Code !== "") ||
+        (details.Plaintiff_Gender !== undefined && details.Plaintiff_Gender !== null && details.Plaintiff_Gender !== "")
+      ) {
+        setValue("gender", {
+          value: details.Plaintiff_Gender_Code || "",
+          label: details.Plaintiff_Gender || "",
+        });
+      }
+      if (
+        (details.Plaintiff_Nationality_Code !== undefined && details.Plaintiff_Nationality_Code !== null && details.Plaintiff_Nationality_Code !== "") ||
+        (details.Plaintiff_Nationality !== undefined && details.Plaintiff_Nationality !== null && details.Plaintiff_Nationality !== "")
+      ) {
+        setValue("nationality", {
+          value: details.Plaintiff_Nationality_Code || "",
+          label: details.Plaintiff_Nationality || "",
+        });
+      }
 
       // Map agent-specific fields if applicable
       if (details.PlaintiffType === "Agent") {
@@ -88,29 +125,7 @@ const useCaseDetailsPrefill = (setValue: (field: string, value: any) => void, tr
         setValue("Agent_CurrentPlaceOfWork", details.Agent_CurrentPlaceOfWork || "");
       }
 
-      // Map work-related fields
-      setValue("contractNumber", details.Plaintiff_ContractNumber || "");
-      setValue("contractDateGregorian", details.Plaintiff_ContractStartDate ? formatDateString(details.Plaintiff_ContractStartDate) : "");
-      setValue("contractDateHijri", details.Plaintiff_ContractStartDateHijri ? formatHijriDate(details.Plaintiff_ContractStartDateHijri) : "");
-      setValue("contractExpiryDateGregorian", details.Plaintiff_ContractEndDate ? formatDateString(details.Plaintiff_ContractEndDate) : "");
-      setValue("contractExpiryDateHijri", details.Plaintiff_ContractEndDateHijri ? formatHijriDate(details.Plaintiff_ContractEndDateHijri) : "");
-      setValue("contractType", {
-        value: details.Plaintiff_ContractType_Code || "",
-        label: details.Plaintiff_ContractType || "",
-      });
-      setValue("salary", details.Plaintiff_Salary || "");
-      setValue("salaryType", {
-        value: details.Plaintiff_SalaryType_Code || "",
-        label: details.Plaintiff_SalaryType || "",
-      });
-      setValue("dateOfFirstWorkingDayGregorian", details.Plaintiff_JobStartDate ? formatDateString(details.Plaintiff_JobStartDate) : "");
-      setValue("dateofFirstworkingdayHijri", details.Plaintiff_JobStartDateHijri ? formatHijriDate(details.Plaintiff_JobStartDateHijri) : "");
-      setValue("dateofLastworkingdayGregorian", details.Plaintiff_JobEndDate ? formatDateString(details.Plaintiff_JobEndDate) : "");
-      setValue("dateoflastworkingdayHijri", details.Plaintiff_JobEndDateHijri ? formatHijriDate(details.Plaintiff_JobEndDateHijri) : "");
-      setValue("stillWorking", details.Plaintiff_StillWorking || "");
 
-      // store the plantif Id From The GetCaseDetails
-      setCookie("p_id", details.PlaintiffId);
       // Trigger validation after setting all values
       if (trigger) {
         trigger();

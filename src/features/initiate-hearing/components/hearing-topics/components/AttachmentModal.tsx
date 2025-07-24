@@ -78,7 +78,7 @@ const AttachmentModal: React.FC<AttachmentModalProps> = ({
     );
   }, [WorkerAttachmentCategories]);
 
-  console.log('Attachment Category Options:', WorkerAttachmentCategoriesOptions);
+  // console.log('Attachment Category Options:', WorkerAttachmentCategoriesOptions);
 
   const validateFile = (file: File): boolean => {
     if (file.size > MAX_FILE_SIZE) {
@@ -158,6 +158,7 @@ const AttachmentModal: React.FC<AttachmentModalProps> = ({
           fileType: selectedFile.type,
           fileName: selectedFile.name,
           base64,
+          attachmentKey: res?.AttachmentKey
         }
       ]);
       setClassification(null);
@@ -190,7 +191,7 @@ const AttachmentModal: React.FC<AttachmentModalProps> = ({
         </div>
       )}
       <Modal header={t('attachments.title')} close={onClose} modalWidth={600} preventOutsideClick={isUploading}>
-        <div className={`space-y-6 w-full ${isUploading ? 'pointer-events-none opacity-50' : ''}`}>  
+        <div className={`space-y-6 w-full ${isUploading ? 'pointer-events-none opacity-50' : ''}`}>
           <div className="text-sm text-gray-500 mb-4">
             {t('attachments.allowed_files')}
           </div>

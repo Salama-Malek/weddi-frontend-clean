@@ -48,7 +48,7 @@ export const getStep1FormFields = ({
         }
       },
       onClear: onClearMainCategory,
-      validation: { required: "Main category is required" }
+      // validation: { required: t('main_category_required') }
     },
     {
       isLoading: isSubCategoryLoading,
@@ -59,12 +59,13 @@ export const getStep1FormFields = ({
       value: subCategory,
       onChange: (option: Option | null) => {
         setValue("subCategory", option);
+        setValue("acknowledged", false);
         if (option) {
           handleAdd();
         }
       },
       onClear: onClearSubCategory,
-      validation: { required: "Sub category is required" }
+      // validation: { required: t('sub_category_required') }
     },
     // {
     //   disabled: !(mainCategory && subCategory),

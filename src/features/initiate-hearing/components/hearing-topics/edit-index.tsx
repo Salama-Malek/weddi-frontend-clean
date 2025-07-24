@@ -7,7 +7,7 @@ import {
   useState,
   useRef,
 } from "react";
-import { useForm, useWatch } from "react-hook-form";
+import { useForm, useWatch, useFormContext } from "react-hook-form";
 import Button from "@/shared/components/button";
 import TableLoader from "@/shared/components/loader/TableLoader";
 import { CustomPagination } from "@/shared/components/pagination/CustomPagination";
@@ -53,7 +53,9 @@ import gregorianLocale from "react-date-object/locales/gregorian_en";
 import arabicCalendar from "react-date-object/calendars/arabic";
 import arabicLocale from "react-date-object/locales/arabic_ar";
 import { useApiErrorHandler } from "@/shared/hooks/useApiErrorHandler";
-import FeaturedIcon from '@/assets/Featured icon.svg';
+import FeaturedIcon from "@/assets/Featured icon.svg";
+import { useRemoveAttachmentMutation } from "./api/apis";
+import { isOtherCommission } from "./utils/isOtherCommission";
 
 const Modal = lazy(() => import("@/shared/components/modal/Modal"));
 const ReusableTable = lazy(() =>
@@ -66,7 +68,48 @@ const DynamicForm = lazy(() =>
     default: m.DynamicForm,
   }))
 );
+
 const HearingCta = lazy(() => import("./components/HearingCta"));
+
+
+function resolveOption(
+  list: { ElementKey: string; ElementValue: string }[] | undefined,
+  code?: string,
+  fallbackLabel?: string
+) {
+  if (!code) return null;
+  const hit = list?.find((i) => String(i.ElementKey) === String(code));
+  return { value: code, label: hit ? hit.ElementValue : (fallbackLabel ?? code) };
+}
+
+// const makeOption = (
+//   list: { ElementKey: string; ElementValue: string }[] | undefined,
+//   code?: string,
+//   fallbackLabel?: string
+// ): Option | null => {
+//   if (!code) return null;
+//   const hit = list?.find(i => String(i.ElementKey) === String(code));
+//   return { value: code, label: hit ? hit.ElementValue : (fallbackLabel ?? code) };
+// };
+
+export const ensureOption = (
+  opts: { ElementKey: string; ElementValue: string }[] | Option[] | undefined,
+  code?: any,
+  fallbackLabel?: string
+): Option | null => {
+  if (!code) return null;
+  const val = String(code);
+  const hit =
+    (opts as any[])?.find((o) =>
+      "ElementKey" in o ? String(o.ElementKey) === val : String(o.value) === val
+    ) ?? null;
+
+  if (!hit) return { value: val, label: fallbackLabel ?? val };
+  return "ElementKey" in hit
+    ? { value: hit.ElementKey, label: hit.ElementValue }
+    : hit;
+};
+
 
 interface AttachmentFile {
   FileType: string;
@@ -89,7 +132,13 @@ export const useHearingTopics = () => {
   };
 };
 
-function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
+function EditHearingTopicsDetails({
+  showFooter,
+  onSaveApi,
+}: {
+  showFooter: boolean;
+  onSaveApi?: (payload: any) => Promise<any>;
+}) {
   const methods = useForm<any>();
   const {
     register,
@@ -109,6 +158,7 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
       isSubmitSuccessful,
       submitCount,
     },
+    unregister,
   } = methods;
 
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -141,7 +191,7 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
 
   const { handleResponse } = useApiErrorHandler();
 
-  const onSubmit = (data: TopicFormValues) => {};
+  const onSubmit = (data: TopicFormValues) => { };
 
   const mainCategory = watch("mainCategory") ?? null;
   const subCategory: any = watch("subCategory") ?? null;
@@ -159,6 +209,8 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
 
   // Define isEditing before any usage
   const isEditing = Boolean(editTopic);
+  const isHIR1 = editTopic?.subCategory?.value === "HIR-1";
+  const lockAccommodationSource = isEditing && isHIR1;
 
   useEffect(() => {
     // Don't interfere with prefilling when editing
@@ -168,7 +220,7 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
       goToLegalStep();
     }
   }, [subCategory?.value, mainCategory?.value, isEditing]);
-  
+
   const [triggerCaseDetailsQuery, { data: caseDetailsData }] =
     useLazyGetCaseDetailsQuery();
   // Lookups
@@ -199,11 +251,58 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
   const { data: typesOfPenaltiesData } = lookup.typesOfPenalties(
     subCategory?.value
   );
+  const { data: payIncreaseTypeData } = lookup.payIncreaseType(
+    subCategory?.value
+  );
+
+  const PayIncreaseTypeOptions = useMemo<Option[]>(
+    () =>
+      payIncreaseTypeData?.DataElements?.map((item: any) => ({
+        value: item.ElementKey,
+        label: item.ElementValue,
+      })) || [],
+    [payIncreaseTypeData]
+  );
+  // helper (put it near your other utils)
+  const toOption = (list: any[] | undefined, code?: string) => {
+    if (!code) return null;
+    const hit = list?.find((i) => String(i.ElementKey) === String(code));
+    return hit
+      ? { value: String(hit.ElementKey), label: hit.ElementValue }
+      : { value: String(code), label: String(code) }; // temp fallback
+  };
+
+  // inside EditHearingTopicsDetails component
+  useEffect(() => {
+    // 1) get the current code (from editTopic or the form)
+    const code =
+      getValues("accordingToAgreement")?.value ||
+      editTopic?.AccordingToAgreement_Code ||
+      editTopic?.AccordingToAgreement ||
+      editTopic?.accordingToAgreement?.value;
+
+    if (!code) return;
+
+    // 2) only run when lookup is ready
+    const list = accordingToAgreementLookupData?.DataElements;
+    if (!list) return;
+
+    // 3) if the label is already correct, skip
+    const curr = getValues("accordingToAgreement");
+    if (curr?.label && curr.label !== curr.value) return;
+
+    // 4) update the field with the resolved label
+    setValue("accordingToAgreement", toOption(list, code), {
+      shouldDirty: false,
+      shouldValidate: false,
+    });
+  }, [accordingToAgreementLookupData?.DataElements, editTopic, getValues, setValue]);
+
 
   const { data: regionData, isFetching: isRegionLoading } =
     useGetRegionLookupDataQuery({
       AcceptedLanguage: currentLanguage,
-      context: "default", // This uses RegionName module
+      context: "worker", // Always use WorkerRegion
     });
 
   const subTopicsLookupParams = useMemo(() => {
@@ -223,33 +322,33 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
   }, [mainCategory?.value, currentLanguage, caseDetailsData?.CaseDetails]);
 
   const { data: subCategoryData, isFetching: isSubCategoryLoading } =
-    useSubTopicsSubLookupQuery(
-      subTopicsLookupParams,
-      {
-        skip: !mainCategory?.value || !caseDetailsData?.CaseDetails,
-      }
-    );
+    useSubTopicsSubLookupQuery(subTopicsLookupParams, {
+      skip: !mainCategory?.value || !caseDetailsData?.CaseDetails,
+    });
 
-  const [triggerFileDetails, { data: fileBase64 }] = useLazyGetFileDetailsQuery();
+  const [triggerFileDetails, { data: fileBase64 }] =
+    useLazyGetFileDetailsQuery();
   const {
     attachments,
     attachmentFiles,
     previewFile,
     showAttachmentModal,
     handleAttachmentSave,
-    handleRemoveAttachment,
     handleViewAttachment,
     openAttachmentModal,
     closeAttachmentModal,
     closePreview,
     setAttachments,
+    setAttachmentFiles,
   } = useAttachments({ triggerFileDetails, fileBase64 });
   const [topicData, setTopicData] = useState<any>(null);
   const [legalSection, setLegalSection] = useState<any>(null);
   const [fileKey, setFileKey] = useState("");
   const [fileName, setFileName] = useState("");
   const [previewFileModule, setPreviewFile] = useState(false);
-  const [localPreviewBase64, setLocalPreviewBase64] = useState<string | null>(null);
+  const [localPreviewBase64, setLocalPreviewBase64] = useState<string | null>(
+    null
+  );
   const [attachmentsModule, setAttachmentsModule] =
     useState<AttachmentFile[]>();
 
@@ -322,131 +421,524 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
 
   useEffect(() => {
     if ((caseDetailsData as any)?.CaseDetails && !topicsLoadedRef.current) {
-      const formattedTopics = (caseDetailsData as any).CaseDetails.CaseTopics.map(
-        (topic: any) => ({
-          ...topic,
-          // Main/sub category for form
-          mainCategory: { value: topic.MainTopicID, label: topic.CaseTopicName },
-          subCategory: { value: topic.SubTopicID, label: topic.SubTopicName },
+      const formattedTopics = (
+        caseDetailsData as any
+      ).CaseDetails.CaseTopics.map((topic: any) => ({
+        ...topic,
+        // Main/sub category for form
+        mainCategory: { value: topic.MainTopicID, label: topic.CaseTopicName },
+        subCategory: { value: topic.SubTopicID, label: topic.SubTopicName },
 
-          // Dates
-          date_hijri: topic.Date_New || "",
-          from_date_hijri: topic.FromDateHijri || "",
-          to_date_hijri: topic.ToDateHijri || "",
-          managerial_decision_date_hijri: topic.ManDecsDate || "",
-          // managerialDecisionNumber: topic.ManagerialDecisionNumber || "",
-          date_gregorian: topic.DateGregorian || "",
-          from_date_gregorian: topic.FromDateGregorian || "",
-          to_date_gregorian: topic.ToDateGregorian || "",
-          injury_date_hijri: topic.InjuryDateHijri || "",
-          injury_date_gregorian: topic.InjuryDateGregorian || "",
-          request_date_hijri: topic.RequestDateHijri || "",
-          request_date_gregorian: topic.RequestDateGregorian || "",
+        // Dates
+        date_hijri: topic.Date_New || "",
+        from_date_hijri: topic.FromDateHijri || "",
+        to_date_hijri: topic.ToDateHijri || "",
+        managerial_decision_date_hijri: topic.ManDecsDate || "",
+        // managerialDecisionNumber: topic.ManagerialDecisionNumber || "",
+        date_gregorian: topic.DateGregorian || "",
+        from_date_gregorian: topic.FromDateGregorian || "",
+        to_date_gregorian: topic.ToDateGregorian || "",
+        injury_date_hijri:
+          topic.SubTopicID === "CMR-3"
+            ? topic.pyTempText || ""
+            : topic.injury_date_hijri || "",
+        injury_date_gregorian:
+          topic.SubTopicID === "CMR-3"
+            ? topic.InjuryDate_New || ""
+            : topic.injury_date_gregorian || "",
+        request_date_hijri: topic.RequestDateHijri || "",
+        request_date_gregorian: topic.RequestDateGregorian || "",
 
-          // Job fields
+        // Job fields
+        fromJob: topic.FromJob || "",
+        toJob: topic.ToJob || "",
+        requiredJobTitle: topic.RequiredJobTitle || "",
+        currentJobTitle: topic.CurrentJobTitle || "",
+        theWantedJob: topic.TheWantedJob || "",
+
+        // Amounts and numbers
+        amount: topic.Amount || "",
+        wagesAmount: topic.WagesAmount || "",
+        bonusAmount: topic.BonusAmount || "",
+        payDue: topic.PayDue || "",
+        durationOfLeaveDue: topic.DurationOfLeaveDue || "",
+        compensationAmount: topic.CompensationAmount || "",
+        injuryType: topic.InjuryType || "",
+        otherCommission: topic.OtherCommission || "",
+        amountOfCompensation: topic.AmountOfCompensation || "",
+        damagedValue: topic.DamagedValue || "",
+        requiredDegreeOfInsurance: topic.RequiredDegreeOfInsurance || "",
+        currentInsuranceLevel: topic.CurrentInsuranceLevel || "",
+        theReason: topic.TheReason || "",
+        currentPosition: topic.CurrentPosition || "",
+        typeOfCustody: topic.TypeOfCustody || "",
+        amountsPaidFor: topic.AmountsPaidFor || "",
+        gregorianDate: topic.GregorianDate || "",
+        decisionNumber: topic.DecisionNumber || "",
+        regionCode: topic.RegionCode || "",
+        cityCode: topic.CityCode || "",
+        occupationCode: topic.OccupationCode || "",
+        genderCode: topic.GenderCode || "",
+        nationalityCode: topic.NationalityCode || "",
+        prisonerId: topic.PrisonerId || "",
+        rewardType: topic.RewardType || "",
+        consideration: topic.Consideration || "",
+        // travelingWay: topic.TravelingWay || "",
+        loanAmount: topic.LoanAmount || "",
+        managerialDecisionNumber: topic.ManagerialDecisionNumber || "",
+
+        // Dropdowns
+        forAllowance: topic.ForAllowance
+          ? { value: topic.ForAllowance, label: topic.ForAllowance }
+          : null,
+
+        accordingToAgreement: topic.AccordingToAgreement
+          ? {
+            value: topic.AccordingToAgreement,
+            label: topic.AccordingToAgreement,
+          }
+          : null,
+        travelingWay: topic.TravelingWay
+          ? { value: topic.TravelingWay, label: topic.TravelingWay }
+          : null,
+        typeOfRequest:
+          topic.RequestType || topic.RequestType_Code
+            ? {
+              value: topic.RequestType_Code || topic.RequestType,
+              label: topic.RequestType || topic.RequestType_Code,
+            }
+            : null,
+        kindOfHoliday: topic.KindOfHoliday
+          ? { value: topic.KindOfHoliday, label: topic.KindOfHoliday }
+          : null,
+        fromLocation:
+          topic.FromLocation || topic.FromLocation_Code
+            ? {
+              value: topic.FromLocation_Code || topic.FromLocation,
+              label: topic.FromLocation || topic.FromLocation_Code,
+            }
+            : null,
+        toLocation:
+          topic.ToLocation || topic.ToLocation_Code
+            ? {
+              value: topic.ToLocation_Code || topic.ToLocation,
+              label: topic.ToLocation || topic.ToLocation_Code,
+            }
+            : null,
+        typesOfPenalties:
+          topic.PenalityType ||
+            topic.PenalityType_Code ||
+            topic.TypesOfPenalties
+            ? {
+              value:
+                topic.PenalityType_Code ||
+                topic.PenalityType ||
+                topic.TypesOfPenalties,
+              label:
+                topic.PenalityTypeLabel ||
+                topic.TypesOfPenaltiesLabel ||
+                topic.PenalityType ||
+                topic.TypesOfPenalties,
+            }
+            : null,
+
+        // Booleans
+        doesBylawsIncludeAddingAccommodations:
+          topic.IsBylawsIncludeAddingAccommodiation === "Yes" ||
+          topic.doesBylawsIncludeAddingAccommodations === true,
+        doesContractIncludeAddingAccommodations:
+          topic.IsContractIncludeAddingAccommodiation === "Yes" ||
+          topic.doesContractIncludeAddingAccommodations === true,
+
+        // Housing
+        housingSpecificationInByLaws:
+          topic.HousingSpecificationsInBylaws ||
+          topic.housingSpecificationInByLaws ||
+          "",
+        housingSpecificationsInContract:
+          topic.HousingSpecificationsInContract ||
+          topic.housingSpecificationsInContract ||
+          "",
+        actualHousingSpecifications:
+          topic.HousingSpecifications ||
+          topic.actualHousingSpecifications ||
+          "",
+
+        // Any other fields you want to add...
+        // Add correct mapping for CMR-5 leave fields
+        ...(topic.SubTopicID === "CMR-5"
+          ? {
+            kindOfHoliday: (() => {
+              if (topic.LeaveType_Code) {
+                return {
+                  value: topic.LeaveType_Code,
+                  label: topic.LeaveType,
+                };
+              }
+              if (
+                topic.kindOfHoliday &&
+                typeof topic.kindOfHoliday === "object"
+              ) {
+                return topic.kindOfHoliday;
+              }
+              if (
+                typeof topic.kindOfHoliday === "string" &&
+                leaveTypeData?.DataElements
+              ) {
+                const found = leaveTypeData.DataElements.find(
+                  (item: any) => item.ElementKey === topic.kindOfHoliday
+                );
+                return found
+                  ? { value: found.ElementKey, label: found.ElementValue }
+                  : {
+                    value: topic.kindOfHoliday,
+                    label: topic.kindOfHoliday,
+                  };
+              }
+              return null;
+            })(),
+            totalAmount: topic.TotalAmountRequired || "",
+            workingHours: topic.WorkingHoursCount || "",
+            additionalDetails: topic.AdditionalDetails || "",
+          }
+          : {}),
+
+        // Add correct mapping for JAR-3 promotion mechanism fields
+        ...(topic.SubTopicID === "JAR-3"
+          ? {
+            doesTheInternalRegulationIncludePromotionMechanism:
+              topic.PromotionMechanism === "Yes",
+            doesContractIncludeAdditionalUpgrade:
+              topic.AdditionalUpgrade === "Yes",
+          }
+          : {}),
+
+        // Add correct mapping for BPSR-1 date fields
+        ...(topic.SubTopicID === "BPSR-1"
+          ? {
+            from_date_hijri: topic.pyTempDate || "",
+            from_date_gregorian: topic.FromDate_New || "",
+            to_date_hijri: topic.Date_New || "",
+            to_date_gregorian: topic.ToDate_New || "",
+          }
+          : {}),
+        // Add correct mapping for RFR-1 date fields
+        ...(topic.SubTopicID === "RFR-1"
+          ? {
+            amount: topic.amount || "",
+            consideration: topic.consideration || "",
+            date_hijri: topic.date_hijri || "",
+            date_gregorian: topic.date_gregorian || "",
+          }
+          : {}),
+        // --- EDO-3 Amount Of Reduction mapping ---
+        ...(topic.SubTopicID === "EDO-3"
+          ? {
+            amountOfReduction: topic.AmountOfReduction || "",
+            managerial_decision_date_hijri: topic.pyTempDate || "",
+            managerial_decision_date_gregorian:
+              topic.ManagerialDecisionDate_New || "",
+            managerialDecisionNumber: topic.ManagerialDecisionNumber || "",
+          }
+          : {}),
+        // ──────────────── EDO SUBTOPICS MAPPING ────────────────
+        // EDO-1: Cancellation of the location transfer decision
+        ...(topic.SubTopicID === "EDO-1" && {
+          fromLocation: topic.FromLocation_Code
+            ? { value: topic.FromLocation_Code, label: topic.FromLocation }
+            : null,
+          toLocation: topic.ToLocation_Code
+            ? { value: topic.ToLocation_Code, label: topic.ToLocation }
+            : null,
+          managerial_decision_date_hijri: topic.Date_New || "",
+          managerial_decision_date_gregorian: topic.ManDecsDate || "",
+          managerialDecisionNumber: topic.ManagerialDecisionNumber || "",
+        }),
+        // EDO-2: Cancellation of the job transfer decision
+        ...(topic.SubTopicID === "EDO-2" && {
           fromJob: topic.FromJob || "",
           toJob: topic.ToJob || "",
-          requiredJobTitle: topic.RequiredJobTitle || "",
-          currentJobTitle: topic.CurrentJobTitle || "",
-          theWantedJob: topic.TheWantedJob || "",
-
-          // Amounts and numbers
-          amount: topic.Amount || "",
-          wagesAmount: topic.WagesAmount || "",
-          bonusAmount: topic.BonusAmount || "",
-          payDue: topic.PayDue || "",
-          durationOfLeaveDue: topic.DurationOfLeaveDue || "",
-          compensationAmount: topic.CompensationAmount || "",
-          injuryType: topic.InjuryType || "",
-          otherCommission: topic.OtherCommission || "",
-          amountOfCompensation: topic.AmountOfCompensation || "",
-          damagedValue: topic.DamagedValue || "",
-          requiredDegreeOfInsurance: topic.RequiredDegreeOfInsurance || "",
-          currentInsuranceLevel: topic.CurrentInsuranceLevel || "",
-          theReason: topic.TheReason || "",
-          currentPosition: topic.CurrentPosition || "",
-          typeOfCustody: topic.TypeOfCustody || "",
-          amountsPaidFor: topic.AmountsPaidFor || "",
-          gregorianDate: topic.GregorianDate || "",
-          decisionNumber: topic.DecisionNumber || "",
-          regionCode: topic.RegionCode || "",
-          cityCode: topic.CityCode || "",
-          occupationCode: topic.OccupationCode || "",
-          genderCode: topic.GenderCode || "",
-          nationalityCode: topic.NationalityCode || "",
-          prisonerId: topic.PrisonerId || "",
-          rewardType: topic.RewardType || "",
-          consideration: topic.Consideration || "",
-          // travelingWay: topic.TravelingWay || "",
-          loanAmount: topic.LoanAmount || "",
+          managerial_decision_date_hijri: topic.Date_New || "",
+          managerial_decision_date_gregorian: topic.ManDecsDate || "",
           managerialDecisionNumber: topic.ManagerialDecisionNumber || "",
+        }),
+        // EDO-3: Cancellation of the wage reduction decision
+        ...(topic.SubTopicID === "EDO-3" && {
+          amountOfReduction: topic.AmountOfReduction || "",
+          managerial_decision_date_hijri: topic.pyTempDate || "",
+          managerial_decision_date_gregorian:
+            topic.ManagerialDecisionDate_New || "",
+          managerialDecisionNumber: topic.ManagerialDecisionNumber || "",
+        }),
+        // EDO-4: Cancellation of disciplinary penalty decision
+        ...(topic.SubTopicID === "EDO-4" && {
+          typesOfPenalties: topic.PenalityType_Code
+            ? { value: topic.PenalityType_Code, label: topic.PenalityType }
+            : null,
+          managerial_decision_date_hijri: topic.Date_New || "",
+          managerial_decision_date_gregorian: topic.ManDecsDate || "",
+          managerialDecisionNumber: topic.ManagerialDecisionNumber || "",
+        }),
+        // ──────────────── END EDO SUBTOPICS MAPPING ────────────────
 
-          // Dropdowns
-          forAllowance: topic.ForAllowance
-            ? { value: topic.ForAllowance, label: topic.ForAllowance }
-            : null,
-          commissionType: topic.CommissionType
-            ? { value: topic.CommissionType, label: topic.CommissionType }
-            : null,
-          accordingToAgreement: topic.AccordingToAgreement
-            ? { value: topic.AccordingToAgreement, label: topic.AccordingToAgreement }
-            : null,
-          travelingWay: topic.TravelingWay
-            ? { value: topic.TravelingWay, label: topic.TravelingWay }
-            : null,
-          typeOfRequest: topic.RequestType || topic.RequestType_Code
-            ? {
-                value: topic.RequestType_Code || topic.RequestType,
-                label: topic.RequestType || topic.RequestType_Code,
-              }
-            : null,
-          kindOfHoliday: topic.KindOfHoliday
-            ? { value: topic.KindOfHoliday, label: topic.KindOfHoliday }
-            : null,
-          fromLocation: topic.FromLocation || topic.FromLocation_Code
-            ? {
-                value: topic.FromLocation_Code || topic.FromLocation,
-                label: topic.FromLocation || topic.FromLocation_Code,
-              }
-            : null,
-          toLocation: topic.ToLocation || topic.ToLocation_Code
-            ? {
-                value: topic.ToLocation_Code || topic.ToLocation,
-                label: topic.ToLocation || topic.ToLocation_Code,
-              }
-            : null,
-          typesOfPenalties: topic.PenalityType || topic.PenalityType_Code || topic.TypesOfPenalties
-            ? {
-                value: topic.PenalityType_Code || topic.PenalityType || topic.TypesOfPenalties,
-                label: topic.PenalityTypeLabel || topic.TypesOfPenaltiesLabel || topic.PenalityType || topic.TypesOfPenalties,
-              }
-            : null,
+        // ──────────────── WR SUBTOPICS MAPPING ────────────────
 
-          // Booleans
-          doesBylawsIncludeAddingAccommodations:
-            topic.IsBylawsIncludeAddingAccommodiation === "Yes" ||
-            topic.doesBylawsIncludeAddingAccommodations === true,
-          doesContractIncludeAddingAccommodations:
-            topic.IsContractIncludeAddingAccommodiation === "Yes" ||
-            topic.doesContractIncludeAddingAccommodations === true,
+        // Add correct mapping for WR-1 date fields
+        ...(topic.SubTopicID === "WR-1"
+          ? {
+            from_date_hijri: topic.pyTempDate || topic.from_date_hijri || "",
+            from_date_gregorian:
+              topic.FromDate_New || topic.from_date_gregorian || "",
+            to_date_hijri: topic.Date_New || topic.to_date_hijri || "",
+            to_date_gregorian:
+              topic.ToDate_New || topic.to_date_gregorian || "",
+          }
+          : {}),
+        // Add correct mapping for forAllowance dropdown (WR-1 only)
+        ...(topic.SubTopicID === "WR-1"
+          ? {
+            forAllowance: topic.ForAllowance_Code
+              ? { value: topic.ForAllowance_Code, label: topic.ForAllowance }
+              : null,
+            otherAllowance: topic.OtherAllowance || "",
+          }
+          : {}),
 
-          // Housing
-          housingSpecificationInByLaws:
-            topic.HousingSpecificationsInBylaws ||
-            topic.housingSpecificationInByLaws ||
-            "",
-          housingSpecificationsInContract:
-            topic.HousingSpecificationsInContract ||
-            topic.housingSpecificationsInContract ||
-            "",
-          actualHousingSpecifications:
-            topic.HousingSpecifications ||
-            topic.actualHousingSpecifications ||
-            "",
+        // Add correct mapping for WR-2 fields
+        ...(topic.SubTopicID === "WR-2"
+          ? {
+            amount: topic.OverdueWagesAmount || "",
+            from_date_hijri: topic.pyTempDate || "",
+            from_date_gregorian: topic.FromDate_New || "",
+            to_date_hijri: topic.Date_New || "",
+            to_date_gregorian: topic.ToDate_New || "",
+          }
+          : {}),
+        // ──────────────── END WR SUBTOPICS MAPPING ────────────────
 
-          // Any other fields you want to add...
-        })
-      );
+        // ──────────────── HIR SUBTOPICS MAPPING ────────────────
+        ...(topic.SubTopicID === "HIR-1"
+          ? {
+            doesBylawsIncludeAddingAccommodations:
+              topic.IsBylawsIncludeAddingAccommodiation === "Yes" ||
+              topic.doesBylawsIncludeAddingAccommodations === true,
+            doesContractIncludeAddingAccommodations:
+              topic.IsContractIncludeAddingAccommodiation === "Yes" ||
+              topic.doesContractIncludeAddingAccommodations === true,
+            housingSpecificationInByLaws:
+              topic.HousingSpecificationsInBylaws ||
+              topic.housingSpecificationInByLaws ||
+              "",
+            housingSpecificationsInContract:
+              topic.HousingSpecificationsInContract ||
+              topic.housingSpecificationsInContract ||
+              "",
+            actualHousingSpecifications:
+              topic.HousingSpecifications ||
+              topic.actualHousingSpecifications ||
+              "",
+          }
+          : {}),
+        // ──────────────── END HIR SUBTOPICS MAPPING ────────────────
+
+        // ──────────────── MIR SUBTOPICS MAPPING ────────────────
+        ...(topic.SubTopicID === "MIR-1"
+          ? {
+            requestType: topic.RequestType_Code
+              ? { value: topic.RequestType_Code, label: topic.RequestType }
+              : null,
+            requiredDegreeOfInsurance: topic.RequiredDegreeInsurance || "",
+            theReason: topic.Reason || "",
+            currentInsuranceLevel: topic.CurrentInsuranceLevel || "",
+          }
+          : {}),
+        // ──────────────── END MIR SUBTOPICS MAPPING ────────────────
+
+        // ──────────────── TTR SUBTOPICS MAPPING ────────────────
+        ...(topic.SubTopicID === "TTR-1"
+          ? {
+            travelingWay: topic.TravelingWay_Code
+              ? { value: topic.TravelingWay_Code, label: topic.TravelingWay }
+              : null,
+          }
+          : {}),
+        // ──────────────── END TTR SUBTOPICS MAPPING ────────────────
+
+        // ──────────────── CMR SUBTOPICS MAPPING ────────────────
+        // CMR-1: Treatment refunds
+        ...(topic.SubTopicID === "CMR-1" && {
+          amountsPaidFor:
+            topic.AmountsPaidFor_Code && topic.AmountsPaidFor
+              ? {
+                value: topic.AmountsPaidFor_Code,
+                label: topic.AmountsPaidFor,
+              }
+              : topic.AmountsPaidFor_Code
+                ? {
+                  value: topic.AmountsPaidFor_Code,
+                  label: topic.AmountsPaidFor_Code,
+                }
+                : null,
+          theAmountRequired: topic.AmountRequired
+            ? String(topic.AmountRequired)
+            : "",
+        }),
+        // CMR-3: Request compensation for work injury
+        ...(topic.SubTopicID === "CMR-3" && {
+          compensationAmount: topic.Amount ? String(topic.Amount) : "",
+          injury_date_hijri: topic.pyTempText || "",
+          injury_date_gregorian: topic.InjuryDate_New || "",
+          injuryType: topic.TypeOfWorkInjury || "",
+        }),
+        // CMR-4: Request compensation for the duration of the notice
+        ...(topic.SubTopicID === "CMR-4" && {
+          amount: topic.Amount ? String(topic.Amount) : "",
+        }),
+        // CMR-5: Pay for work during vacation
+        ...(topic.SubTopicID === "CMR-5" && {
+          kindOfHoliday:
+            topic.LeaveType_Code && topic.LeaveType
+              ? { value: topic.LeaveType_Code, label: topic.LeaveType }
+              : topic.LeaveType_Code
+                ? { value: topic.LeaveType_Code, label: topic.LeaveType_Code }
+                : null,
+          totalAmount: topic.TotalAmountRequired
+            ? String(topic.TotalAmountRequired)
+            : "",
+          workingHours: topic.WorkingHoursCount
+            ? String(topic.WorkingHoursCount)
+            : "",
+          additionalDetails: topic.AdditionalDetails || "",
+        }),
+
+        // CMR-6: The Wage Difference/increase
+        ...(topic.SubTopicID === "CMR-6" && {
+          from_date_hijri: topic.pyTempDate || "",
+          from_date_gregorian: topic.FromDate_New || "",
+          to_date_hijri: topic.Date_New || "",
+          to_date_gregorian: topic.ToDate_New || "",
+          newPayAmount: topic.NewPayAmount ? String(topic.NewPayAmount) : "",
+          payIncreaseType: topic.PayIncreaseType_Code
+            ? { value: topic.PayIncreaseType_Code, label: topic.PayIncreaseType }
+            : null,
+          wageDifference: topic.WageDifference ? String(topic.WageDifference) : "",
+        }),
+        // CMR-7: Request for overtime pay
+        ...(topic.SubTopicID === "CMR-7" && {
+          pyTempDate: topic.pyTempDate || "",
+          toDate_gregorian: topic.ToDate_New || "",
+          date_hijri: topic.Date_New || "",
+          fromDate_gregorian: topic.FromDate_New || "",
+          durationOfLeaveDue: topic.DurationOfLeaveDue
+            ? String(topic.DurationOfLeaveDue)
+            : "",
+          payDue: topic.PayDue ? String(topic.PayDue) : "",
+        }),
+        // CMR-8: Pay stop time
+        ...(topic.SubTopicID === "CMR-8" && {
+          pyTempDate: topic.pyTempDate || "",
+          toDate_gregorian: topic.ToDate_New || "",
+          date_hijri: topic.Date_New || "",
+          fromDate_gregorian: topic.FromDate_New || "",
+          wagesAmount: topic.WagesAmount ? String(topic.WagesAmount) : "",
+        }),
+        // ──────────────── END CMR SUBTOPICS MAPPING ────────────────
+
+        // ──────────────── BR SUBTOPICS MAPPING ────────────────
+        // BR-1: Bonus Request
+        ...(topic.SubTopicID === "BR-1" && (() => {
+          const code = topic.AccordingToAgreement_Code || topic.AccordingToAgreement;
+          return {
+            accordingToAgreement: resolveOption(
+              accordingToAgreementLookupData?.DataElements,
+              code,
+              topic.AccordingToAgreement
+            ),
+            bonusAmount: topic.Premium ?? topic.BonusAmount ?? "",
+            date_hijri: topic.pyTempDate || "",
+            date_gregorian: topic.Date_New || "",
+          };
+        })()),
+        // ──────────────── END BR SUBTOPICS MAPPING ────────────────
+
+
+
+        // ──────────────── END BR SUBTOPICS MAPPING ────────────────
+
+        // ──────────────── BPSR SUBTOPICS MAPPING (FIXED) ────────────────
+        ...(topic.SubTopicID === "BPSR-1" && {
+          commissionType: ensureOption(
+            commissionTypeLookupData?.DataElements,
+            topic.CommissionType_Code ?? topic.CommissionType
+          ),
+          accordingToAgreement: ensureOption(
+            accordingToAgreementLookupData?.DataElements,
+            topic.AccordingToAgreement_Code ?? topic.AccordingToAgreement
+          ),
+          amount: String(topic.Amount ?? topic.amount ?? ""),
+          amountRatio: String(topic.AmountRatio ?? topic.amountRatio ?? ""),
+          from_date_hijri: topic.pyTempDate ?? topic.FromDateHijri ?? topic.from_date_hijri ?? "",
+          from_date_gregorian: topic.FromDate_New ?? topic.FromDateGregorian ?? topic.from_date_gregorian ?? "",
+          to_date_hijri: topic.Date_New ?? topic.ToDateHijri ?? topic.to_date_hijri ?? "",
+          to_date_gregorian: topic.ToDate_New ?? topic.ToDateGregorian ?? topic.to_date_gregorian ?? "",
+          otherCommission: String(topic.OtherCommission ?? topic.otherCommission ?? ""),
+        }),
+        // ──────────────── END BPSR SUBTOPICS MAPPING (FIXED) ────────────────
+
+
+        // ──────────────── DR SUBTOPICS MAPPING ────────────────
+        // DR-1: Documents Requests
+        ...(topic.SubTopicID === "DR-1" && {
+          documentType: topic.documentType || null,
+          documentReason: topic.documentReason || "",
+        }),
+        // ──────────────── END DR SUBTOPICS MAPPING ────────────────
+
+        // ──────────────── RR SUBTOPICS MAPPING ────────────────
+        // RR-1: Reward Request
+        ...(topic.SubTopicID === "RR-1" && {
+          amount: topic.amount || "",
+          rewardType: topic.rewardType || "",
+        }),
+        // ──────────────── END RR SUBTOPICS MAPPING ────────────────
+
+        // ──────────────── JAR SUBTOPICS MAPPING ────────────────
+        // JAR-2: Job Application Request (currentJobTitle, requiredJobTitle)
+        ...(topic.SubTopicID === "JAR-2" && {
+          currentJobTitle: topic.CurrentJobTitle || topic.currentJobTitle || "",
+          requiredJobTitle:
+            topic.RequiredJobTitle || topic.requiredJobTitle || "",
+        }),
+        // JAR-3: Promotion Mechanism
+        ...(topic.SubTopicID === "JAR-3" && {
+          doesTheInternalRegulationIncludePromotionMechanism:
+            topic.doesTheInternalRegulationIncludePromotionMechanism || false,
+          doesContractIncludeAdditionalUpgrade:
+            topic.doesContractIncludeAdditionalUpgrade || false,
+        }),
+        // JAR-4: Job Application Request (currentPosition, theWantedJob)
+        ...(topic.SubTopicID === "JAR-4" && {
+          currentPosition: topic.CurrentPosition || topic.currentPosition || "",
+          theWantedJob: topic.TheWantedJob || topic.theWantedJob || "",
+        }),
+        // ──────────────── END JAR SUBTOPICS MAPPING ────────────────
+        // ──────────────── LRESR SUBTOPICS MAPPING ────────────────
+        // LRESR-1: End of Service Reward
+        ...(topic.SubTopicID === "LRESR-1" && {
+          amount: topic.amount || "",
+        }),
+        // LRESR-2: End of Service Reward (amount, consideration)
+        ...(topic.SubTopicID === "LRESR-2" && {
+          amount: topic.amount || "",
+          consideration: topic.consideration || "",
+        }),
+        // LRESR-3: End of Service Reward (amount, rewardType)
+        ...(topic.SubTopicID === "LRESR-3" && {
+          amount: topic.amount || "",
+          rewardType: topic.rewardType || "",
+        }),
+        // ──────────────── END LRESR SUBTOPICS MAPPING ────────────────
+      }));
       setCaseTopics(formattedTopics);
       topicsLoadedRef.current = true;
 
@@ -497,9 +989,185 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
   }, [caseTopics, pagination.pageIndex, pagination.pageSize]);
 
   const handleTopicSelect = (topic: any, index: number) => {
-
     // Reset form first to clear any previous data
     reset();
+
+    // --- Normalize mainCategory and subCategory to always be objects ---
+    if (typeof topic.mainCategory === "string") {
+      setValue("mainCategory", {
+        value: topic.mainCategory,
+        label: topic.mainCategory,
+      });
+    } else {
+      setValue("mainCategory", topic.mainCategory);
+    }
+    if (typeof topic.subCategory === "string") {
+      setValue("subCategory", {
+        value: topic.subCategory,
+        label: topic.subCategory,
+      });
+    } else {
+      setValue("subCategory", topic.subCategory);
+    }
+    // --- END normalization ---
+
+
+    if (topic.SubTopicID === "CMR-6") {
+      setValue("from_date_hijri", topic.from_date_hijri || topic.pyTempDate || "");
+      setValue("from_date_gregorian", topic.from_date_gregorian || topic.FromDate_New || "");
+      setValue("to_date_hijri", topic.to_date_hijri || topic.Date_New || "");
+      setValue("to_date_gregorian", topic.to_date_gregorian || topic.ToDate_New || "");
+      setValue("newPayAmount", topic.newPayAmount || topic.NewPayAmount || "");
+      setValue("payIncreaseType", topic.payIncreaseType || (topic.PayIncreaseType_Code ? { value: topic.PayIncreaseType_Code, label: topic.PayIncreaseType } : null));
+      setValue("wageDifference", topic.wageDifference || topic.WageDifference || "");
+    }
+
+
+
+    // --- HIR-1 accommodation radio auto-select logic ---
+    if (topic.doesBylawsIncludeAddingAccommodations) {
+      setValue("accommodationSource", "bylaws");
+    } else if (topic.doesContractIncludeAddingAccommodations) {
+      setValue("accommodationSource", "contract");
+    } else {
+      setValue("accommodationSource", "");
+    }
+    // --- END HIR-1 logic ---
+
+    // RFR-1: Set date fields from topic when editing from UI
+    if (topic.subCategory?.value === "RFR-1" || topic.SubTopicID === "RFR-1") {
+      reset({
+        ...topic,
+        date_hijri: topic.date_hijri || "",
+        date_gregorian: topic.date_gregorian || "",
+      });
+    }
+
+// --- BPSR-1 prefilling ---
+if (topic.SubTopicID === "BPSR-1" || topic.subCategory?.value === "BPSR-1") {
+  const commissionCode =
+    topic.CommissionType_Code ??
+    topic.commissionType?.value ??
+    topic.CommissionType;
+
+  setValue(
+    "commissionType",
+    ensureOption(
+      commissionTypeLookupData?.DataElements,
+      commissionCode,
+      topic.CommissionTypeLabel || topic.CommissionType
+    ),
+    { shouldDirty: false, shouldValidate: false }
+  );
+
+  const agrCode =
+    topic.AccordingToAgreement_Code ??
+    topic.accordingToAgreement?.value ??
+    topic.AccordingToAgreement;
+
+  setValue(
+    "accordingToAgreement",
+    ensureOption(
+      accordingToAgreementLookupData?.DataElements,
+      agrCode,
+      topic.AccordingToAgreement
+    ),
+    { shouldDirty: false, shouldValidate: false }
+  );
+
+  setValue("amount", String(topic.Amount ?? topic.amount ?? ""), { shouldDirty: false });
+  setValue("amountRatio", String(topic.AmountRatio ?? topic.amountRatio ?? ""), { shouldDirty: false });
+  setValue("from_date_hijri", topic.pyTempDate ?? topic.FromDateHijri ?? topic.from_date_hijri ?? "", { shouldDirty: false });
+  setValue("from_date_gregorian", topic.FromDate_New ?? topic.FromDateGregorian ?? topic.from_date_gregorian ?? "", { shouldDirty: false });
+  setValue("to_date_hijri", topic.Date_New ?? topic.ToDateHijri ?? topic.to_date_hijri ?? "", { shouldDirty: false });
+  setValue("to_date_gregorian", topic.ToDate_New ?? topic.ToDateGregorian ?? topic.to_date_gregorian ?? "", { shouldDirty: false });
+  setValue("otherCommission", String(topic.OtherCommission ?? topic.otherCommission ?? ""), { shouldDirty: false });
+}
+
+
+    // forAllowance
+    let forAllowanceLabel = topic.forAllowance?.label || topic.ForAllowance;
+    let forAllowanceValue = topic.forAllowance?.value || topic.ForAllowance;
+    let forAllowanceOption = {
+      value: forAllowanceValue,
+      label: forAllowanceLabel,
+    };
+    if (forAllowanceValue && forAllowanceLabel) {
+      setValue("forAllowance", forAllowanceOption);
+    } else {
+      setValue("forAllowance", null);
+    }
+
+    // travelingWay
+    console.log("--- Debugging travelingWay ---");
+    console.log("Topic object:", JSON.stringify(topic, null, 2));
+    console.log("travelingWayData:", travelingWayData);
+    let travelingWayLabel = topic.travelingWay?.label || topic.TravelingWay;
+    let travelingWayValue = topic.travelingWay?.value || topic.TravelingWay;
+    console.log("Initial travelingWayValue:", travelingWayValue);
+    console.log("Initial travelingWayLabel:", travelingWayLabel);
+
+    // Fix: Use travelingWayData.DataElements to get the label if available
+    if (travelingWayData?.DataElements && travelingWayValue) {
+      console.log(
+        "travelingWayData.DataElements is available. Searching for value:",
+        travelingWayValue
+      );
+      const found = travelingWayData.DataElements.find(
+        (item: any) => item.ElementKey === travelingWayValue
+      );
+      if (found) {
+        console.log("Found matching element:", found);
+        travelingWayLabel = found.ElementValue;
+      } else {
+        console.log(
+          "No matching element found in travelingWayData.DataElements."
+        );
+      }
+    } else {
+      console.log(
+        "travelingWayData or its DataElements are not available, or travelingWayValue is missing."
+      );
+    }
+    let travelingWayOption = {
+      value: travelingWayValue,
+      label: travelingWayLabel,
+    };
+    console.log("Final travelingWayOption to be set:", travelingWayOption);
+    if (travelingWayValue && travelingWayLabel) {
+      setValue("travelingWay", travelingWayOption);
+    } else {
+      setValue("travelingWay", null);
+    }
+    console.log("--- End Debugging travelingWay ---");
+
+    // typeOfRequest
+    let typeOfRequestLabel = topic.typeOfRequest?.label || topic.TypeOfRequest;
+    let typeOfRequestValue = topic.typeOfRequest?.value || topic.TypeOfRequest;
+    let typeOfRequestOption = {
+      value: typeOfRequestValue,
+      label: typeOfRequestLabel,
+    };
+    if (typeOfRequestValue && typeOfRequestLabel) {
+      setValue("typeOfRequest", typeOfRequestOption);
+    } else {
+      setValue("typeOfRequest", null);
+    }
+
+    // typesOfPenalties
+    let typesOfPenaltiesLabel =
+      topic.typesOfPenalties?.label || topic.TypesOfPenalties;
+    let typesOfPenaltiesValue =
+      topic.typesOfPenalties?.value || topic.TypesOfPenalties;
+    let typesOfPenaltiesOption = {
+      value: typesOfPenaltiesValue,
+      label: typesOfPenaltiesLabel,
+    };
+    if (typesOfPenaltiesValue && typesOfPenaltiesLabel) {
+      setValue("typesOfPenalties", typesOfPenaltiesOption);
+    } else {
+      setValue("typesOfPenalties", null);
+    }
 
     // Set the edit topic with the original topic data (not extracted form fields)
     // The prefilling hook will handle the extraction and setting of form values
@@ -564,6 +1232,7 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
     if (!editTopic) return;
 
     const updatedValues = getValues();
+
     const mainCategoryValue =
       updatedValues.mainCategory?.value ||
       editTopic.MainTopicID ||
@@ -581,27 +1250,19 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
       editTopic.SubTopicName ||
       editTopic.subCategory?.label;
 
-    // Format dates for storage (remove slashes)
-    const formatDateForStorage = (date: string) => {
-      if (!date) return "";
-      return date.replace(/\//g, "");
-    };
+    const formatDateForStorage = (date: string) =>
+      date ? date.replace(/\//g, "") : "";
 
-    const updatedTopic = {
+    const updatedTopic: any = {
       ...updatedValues,
       MainTopicID: mainCategoryValue,
       SubTopicID: subCategoryValue,
       MainSectionHeader: mainCategoryLabel,
       SubTopicName: subCategoryLabel,
       CaseTopicName: mainCategoryLabel,
-      subCategory: {
-        value: subCategoryValue,
-        label: subCategoryLabel,
-      },
-      mainCategory: {
-        value: mainCategoryValue,
-        label: mainCategoryLabel,
-      },
+      subCategory: { value: subCategoryValue, label: subCategoryLabel },
+      mainCategory: { value: mainCategoryValue, label: mainCategoryLabel },
+
       acknowledged: updatedValues.acknowledged || editTopic.acknowledged,
       amount: updatedValues.amount || editTopic.amount,
       payDue: updatedValues.payDue || editTopic.payDue,
@@ -664,7 +1325,17 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
       consideration: updatedValues.consideration || editTopic.consideration,
       AdditionalDetails:
         updatedValues.additionalDetails || editTopic.AdditionalDetails,
-      // Format dates for storage
+      ToDateHijri: formatDateForStorage(updatedValues.to_date_hijri),
+      ToDateGregorian: formatDateForStorage(updatedValues.to_date_gregorian),
+      newPayAmount: updatedValues.newPayAmount || editTopic.newPayAmount,
+      payIncreaseType:
+        updatedValues.payIncreaseType || editTopic.payIncreaseType,
+      wageDifference: updatedValues.wageDifference || editTopic.wageDifference,
+      from_date_gregorian:
+        updatedValues.from_date_gregorian || editTopic.from_date_gregorian,
+      to_date_gregorian:
+        updatedValues.to_date_gregorian || editTopic.to_date_gregorian,
+
       ManagerialDecisionDateHijri: formatDateForStorage(
         updatedValues.managerial_decision_date_hijri
       ),
@@ -675,7 +1346,7 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
         updatedValues.managerialDecisionNumber ||
         editTopic.ManagerialDecisionNumber ||
         "",
-      // Additional date fields
+
       InjuryDateHijri: formatDateForStorage(updatedValues.injury_date_hijri),
       InjuryDateGregorian: formatDateForStorage(
         updatedValues.injury_date_gregorian
@@ -690,21 +1361,49 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
       FromDateGregorian: formatDateForStorage(
         updatedValues.from_date_gregorian
       ),
-      ToDateHijri: formatDateForStorage(updatedValues.to_date_hijri),
-      ToDateGregorian: formatDateForStorage(updatedValues.to_date_gregorian),
     };
 
+    // ==================== BPSR-1 FIX ====================
+    if (subCategoryValue === "BPSR-1") {
+      updatedTopic.CommissionType =
+        updatedValues.commissionType?.value ??
+        editTopic.CommissionType ??
+        "";
+      updatedTopic.AccordingToAgreement =
+        updatedValues.accordingToAgreement?.value ??
+        editTopic.AccordingToAgreement ??
+        "";
+      updatedTopic.Amount = updatedValues.amount ?? editTopic.amount ?? "";
+      updatedTopic.AmountRatio =
+        updatedValues.amountRatio ?? editTopic.amountRatio ?? "";
+      updatedTopic.pyTempDate =
+        updatedValues.from_date_hijri ?? editTopic.pyTempDate ?? "";
+      updatedTopic.FromDate_New =
+        updatedValues.from_date_gregorian ??
+        editTopic.FromDate_New ??
+        "";
+      updatedTopic.Date_New =
+        updatedValues.to_date_hijri ?? editTopic.Date_New ?? "";
+      updatedTopic.ToDate_New =
+        updatedValues.to_date_gregorian ??
+        editTopic.ToDate_New ??
+        "";
+      updatedTopic.OtherCommission = isOtherCommission(
+        updatedValues.commissionType
+      )
+        ? updatedValues.otherCommission ??
+        editTopic.otherCommission ??
+        ""
+        : "";
+    }
+    // ====================================================
 
     setCaseTopics((prev) =>
       prev.map((topic, idx) => (idx === editTopicIndex ? updatedTopic : topic))
     );
 
-    // إضافة رسالة نجاح
-    toast.success(
-      t("topic_updated_successfully") || "Topic updated successfully"
-    );
+    toast.success(t("topic_updated_successfully") || "Topic updated successfully");
 
-    // Reset and close
     reset();
     setDate({ hijri: null, gregorian: null, dateObject: null });
     setShowLegalSection(false);
@@ -713,6 +1412,7 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
     setEditTopicIndex(null);
     close();
   };
+
 
   const handleCancel = () => {
     reset();
@@ -743,7 +1443,10 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
         "Save",
         caseId
       );
-      const response = await updateHearingTopics(payload).unwrap();
+      // Use the injected API if provided, otherwise fallback
+      const response = onSaveApi
+        ? await onSaveApi(payload)
+        : await updateHearingTopics(payload).unwrap();
       if (
         response?.SuccessCode === "200" &&
         (!response?.ErrorCodeList || response?.ErrorCodeList?.length === 0)
@@ -803,7 +1506,6 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
   const saveTopic = (): number => {
     const newTopic = getValues();
 
-
     // التحقق من القيم الفارغة
     for (const [key, value] of Object.entries(newTopic)) {
       if (
@@ -852,13 +1554,11 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
       Date_New: newTopic.date_hijri,
       ManDecsDate: newTopic.manDecsDate,
       // Only send string codes for FromLocation and ToLocation
-      FromLocation: newTopic?.fromLocation?.value || "",
-      ToLocation: newTopic?.toLocation?.value || "",
-      // Save From Job and To Job fields
+      FromLocation:
+        newTopic?.fromLocation?.value || newTopic?.fromLocation || "",
+      ToLocation: newTopic?.toLocation?.value || newTopic?.toLocation || "",
       fromJob: newTopic.fromJob || "",
       toJob: newTopic.toJob || "",
-      // Remove fromLocation/toLocation object fields from payload
-      // AcknowledgedTerms: newTopic.acknowledged,
       Amount: newTopic.amount,
       PayDue: newTopic.payDue,
       DurationOfLeaveDue: newTopic.durationOfLeaveDue,
@@ -866,7 +1566,10 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
       CompensationAmount: newTopic.compensationAmount,
       InjuryType: newTopic.injuryType,
       BonusAmount: newTopic.bonusAmount,
-      AccordingToAgreement: newTopic?.accordingToAgreement?.value,
+      AccordingToAgreement:
+        newTopic?.accordingToAgreement?.value ||
+        newTopic?.accordingToAgreement ||
+        "",
       OtherCommission: newTopic.otherCommission,
       AmountOfCompensation: newTopic.amountOfCompensation,
       DamagedValue: newTopic.damagedValue,
@@ -887,24 +1590,67 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
       GenderCode: newTopic.DefendantsEstablishmentGender,
       NationalityCode: newTopic.DefendantsEstablishmentNationality,
       PrisonerId: newTopic.DefendantsEstablishmentPrisonerId,
-      ForAllowance: newTopic?.forAllowance?.value,
+      ForAllowance:
+        newTopic?.forAllowance?.value || newTopic?.forAllowance || "",
       RewardType: newTopic.rewardType,
       Consideration: newTopic.consideration,
-      TravelingWay: newTopic.travelingWay,
-      PenalityType: newTopic.typesOfPenalties?.value || "",
+      TravelingWay:
+        newTopic?.travelingWay?.value || newTopic?.travelingWay || "",
+      PenalityType:
+        newTopic.typesOfPenalties?.value || newTopic.typesOfPenalties || "",
       LoanAmount: newTopic.loanAmount,
       ManagerialDecisionNumber: newTopic.managerialDecisionNumber,
-      // Format dates for storage
       ManagerialDecisionDateHijri: formatDateForStorage(
         newTopic.managerial_decision_date_hijri
       ),
       ManagerialDecisionDateGregorian: formatDateForStorage(
         newTopic.managerial_decision_date_gregorian
       ),
-      TypesOfPenalties: newTopic.typesOfPenalties?.value || "",
+      TypesOfPenalties:
+        newTopic.typesOfPenalties?.value || newTopic.typesOfPenalties || "",
       TypesOfPenaltiesLabel: newTopic.typesOfPenalties?.label || "",
+      // --- Normalize kindOfHoliday for CMR-5 ---
       kindOfHoliday:
-        newTopic.kindOfHoliday?.value || editTopic?.kindOfHoliday?.label,
+        newTopic.subCategory?.value === "CMR-5"
+          ? newTopic.kindOfHoliday && typeof newTopic.kindOfHoliday === "object"
+            ? newTopic.kindOfHoliday
+            : newTopic.kindOfHoliday
+              ? {
+                value: newTopic.kindOfHoliday,
+                label:
+                  (leaveTypeData?.DataElements || []).find(
+                    (item: any) => item.ElementKey === newTopic.kindOfHoliday
+                  )?.ElementValue || newTopic.kindOfHoliday,
+              }
+              : null
+          : newTopic.kindOfHoliday && typeof newTopic.kindOfHoliday === "object"
+            ? newTopic.kindOfHoliday
+            : newTopic.kindOfHoliday
+              ? { value: newTopic.kindOfHoliday, label: newTopic.kindOfHoliday }
+              : null,
+      kindOfHolidayLabel:
+        newTopic.subCategory?.value === "CMR-5"
+          ? typeof newTopic.kindOfHoliday === "object"
+            ? newTopic.kindOfHoliday.label
+            : (leaveTypeData?.DataElements || []).find(
+              (item: any) => item.ElementKey === newTopic.kindOfHoliday
+            )?.ElementValue ||
+            newTopic.kindOfHoliday ||
+            ""
+          : undefined,
+      totalAmount:
+        newTopic.subCategory?.value === "CMR-5"
+          ? newTopic.totalAmount || ""
+          : undefined,
+      workingHours:
+        newTopic.subCategory?.value === "CMR-5"
+          ? newTopic.workingHours || ""
+          : undefined,
+      additionalDetails:
+        newTopic.subCategory?.value === "CMR-5"
+          ? newTopic.additionalDetails || ""
+          : undefined,
+      // --- END CMR-5 special handling ---
       // Additional date fields
       InjuryDateHijri: formatDateForStorage(newTopic.injury_date_hijri),
       InjuryDateGregorian: formatDateForStorage(newTopic.injury_date_gregorian),
@@ -918,8 +1664,256 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
       FromDateGregorian: formatDateForStorage(newTopic.from_date_gregorian),
       ToDateHijri: formatDateForStorage(newTopic.to_date_hijri),
       ToDateGregorian: formatDateForStorage(newTopic.to_date_gregorian),
-    };
+      // --- EDO-3 Amount Of Reduction save ---
+      amountOfReduction:
+        newTopic.subCategory?.value === "EDO-3"
+          ? newTopic.amountOfReduction || ""
+          : undefined,
+      // ──────────────── EDO SUBTOPICS MAPPING ────────────────
+      // EDO-1: Cancellation of the location transfer decision
+      ...(newTopic.SubTopicID === "EDO-1" && {
+        fromLocation: newTopic.FromLocation_Code
+          ? { value: newTopic.FromLocation_Code, label: newTopic.FromLocation }
+          : null,
+        toLocation: newTopic.ToLocation_Code
+          ? { value: newTopic.ToLocation_Code, label: newTopic.ToLocation }
+          : null,
+        managerial_decision_date_hijri: newTopic.Date_New || "",
+        managerial_decision_date_gregorian: newTopic.ManDecsDate || "",
+        managerialDecisionNumber: newTopic.ManagerialDecisionNumber || "",
+      }),
+      // EDO-2: Cancellation of the job transfer decision
+      ...(newTopic.SubTopicID === "EDO-2" && {
+        fromJob: newTopic.FromJob || "",
+        toJob: newTopic.ToJob || "",
+        managerial_decision_date_hijri: newTopic.Date_New || "",
+        managerial_decision_date_gregorian: newTopic.ManDecsDate || "",
+        managerialDecisionNumber: newTopic.ManagerialDecisionNumber || "",
+      }),
+      // EDO-3: Cancellation of the wage reduction decision
+      ...(newTopic.SubTopicID === "EDO-3" && {
+        amountOfReduction: newTopic.AmountOfReduction || "",
+        managerial_decision_date_hijri: newTopic.pyTempDate || "",
+        managerial_decision_date_gregorian:
+          newTopic.ManagerialDecisionDate_New || "",
+        managerialDecisionNumber: newTopic.ManagerialDecisionNumber || "",
+      }),
+      // EDO-4: Cancellation of disciplinary penalty decision
+      ...(newTopic.SubTopicID === "EDO-4" && {
+        typesOfPenalties: newTopic.PenalityType_Code
+          ? { value: newTopic.PenalityType_Code, label: newTopic.PenalityType }
+          : null,
+        managerial_decision_date_hijri: newTopic.Date_New || "",
+        managerial_decision_date_gregorian: newTopic.ManDecsDate || "",
+        managerialDecisionNumber: newTopic.ManagerialDecisionNumber || "",
+      }),
+      // ──────────────── END EDO SUBTOPICS MAPPING ────────────────
+      // Add correct mapping for WR-2 fields
+      ...(newTopic.SubTopicID === "WR-2"
+        ? {
+          amount: newTopic.OverdueWagesAmount || "",
+          from_date_hijri: newTopic.pyTempDate || "",
+          from_date_gregorian: newTopic.FromDate_New || "",
+          to_date_hijri: newTopic.Date_New || "",
+          to_date_gregorian: newTopic.ToDate_New || "",
+        }
+        : {}),
+      // ──────────────── MIR SUBTOPICS MAPPING ────────────────
+      ...(newTopic.SubTopicID === "MIR-1"
+        ? {
+          requestType: newTopic.RequestType_Code
+            ? {
+              value: newTopic.RequestType_Code,
+              label: newTopic.RequestType,
+            }
+            : null,
+          requiredDegreeOfInsurance: newTopic.RequiredDegreeInsurance || "",
+          theReason: newTopic.Reason || "",
+          currentInsuranceLevel: newTopic.CurrentInsuranceLevel || "",
+        }
+        : {}),
+      // ──────────────── END MIR SUBTOPICS MAPPING ────────────────
 
+      // ──────────────── TTR SUBTOPICS MAPPING ────────────────
+      ...(newTopic.SubTopicID === "TTR-1"
+        ? {
+          travelingWay: newTopic.TravelingWay_Code
+            ? {
+              value: newTopic.TravelingWay_Code,
+              label: newTopic.TravelingWay,
+            }
+            : null,
+        }
+        : {}),
+      // ──────────────── END TTR SUBTOPICS MAPPING ────────────────
+
+      // ──────────────── CMR SUBTOPICS MAPPING ────────────────
+      // CMR-1: Treatment refunds
+      ...(newTopic.SubTopicID === "CMR-1" && {
+        amountsPaidFor:
+          newTopic.amountsPaidFor && typeof newTopic.amountsPaidFor === "object"
+            ? newTopic.amountsPaidFor
+            : null,
+        theAmountRequired:
+          newTopic.theAmountRequired !== undefined &&
+            newTopic.theAmountRequired !== null
+            ? String(newTopic.theAmountRequired)
+            : "",
+      }),
+      // CMR-3: Request compensation for work injury
+      ...(newTopic.SubTopicID === "CMR-3" && {
+        compensationAmount:
+          newTopic.compensationAmount !== undefined &&
+            newTopic.compensationAmount !== null
+            ? String(newTopic.compensationAmount)
+            : "",
+        injury_date_hijri: newTopic.injury_date_hijri ?? "",
+        injury_date_gregorian: newTopic.injury_date_gregorian ?? "",
+        injuryType: newTopic.injuryType ?? "",
+      }),
+      // CMR-4: Request compensation for the duration of the notice
+      ...(newTopic.SubTopicID === "CMR-4" && {
+        amount:
+          newTopic.amount !== undefined && newTopic.amount !== null
+            ? String(newTopic.amount)
+            : "",
+      }),
+      // CMR-5: Pay for work during vacation
+      ...(newTopic.SubTopicID === "CMR-5" && {
+        kindOfHoliday:
+          newTopic.kindOfHoliday && typeof newTopic.kindOfHoliday === "object"
+            ? newTopic.kindOfHoliday
+            : null,
+        totalAmount:
+          newTopic.totalAmount !== undefined && newTopic.totalAmount !== null
+            ? String(newTopic.totalAmount)
+            : "",
+        workingHours:
+          newTopic.workingHours !== undefined && newTopic.workingHours !== null
+            ? String(newTopic.workingHours)
+            : "",
+        additionalDetails: newTopic.additionalDetails ?? "",
+      }),
+      // CMR-6: The Wage Difference/increase
+      ...(newTopic.SubTopicID === "CMR-6" && {
+        from_date_hijri: newTopic.from_date_hijri ?? "",
+        from_date_gregorian: newTopic.from_date_gregorian ?? "",
+        to_date_hijri: newTopic.to_date_hijri ?? "",
+        to_date_gregorian: newTopic.to_date_gregorian ?? "",
+        newPayAmount: newTopic.newPayAmount != null ? String(newTopic.newPayAmount) : "",
+        payIncreaseType: (newTopic.payIncreaseType && typeof newTopic.payIncreaseType === "object") ? newTopic.payIncreaseType : null,
+        wageDifference: newTopic.wageDifference != null ? String(newTopic.wageDifference) : "",
+      }),
+
+      // CMR-7: Request for overtime pay
+      ...(newTopic.SubTopicID === "CMR-7" && {
+        pyTempDate: newTopic.pyTempDate ?? "",
+        toDate_gregorian: newTopic.toDate_gregorian ?? "",
+        date_hijri: newTopic.date_hijri ?? "",
+        fromDate_gregorian: newTopic.fromDate_gregorian ?? "",
+        durationOfLeaveDue:
+          newTopic.durationOfLeaveDue !== undefined &&
+            newTopic.durationOfLeaveDue !== null
+            ? String(newTopic.durationOfLeaveDue)
+            : "",
+        payDue:
+          newTopic.payDue !== undefined && newTopic.payDue !== null
+            ? String(newTopic.payDue)
+            : "",
+      }),
+      // CMR-8: Pay stop time
+      ...(newTopic.SubTopicID === "CMR-8" && {
+        pyTempDate: newTopic.pyTempDate ?? "",
+        toDate_gregorian: newTopic.toDate_gregorian ?? "",
+        date_hijri: newTopic.date_hijri ?? "",
+        fromDate_gregorian: newTopic.fromDate_gregorian ?? "",
+        wagesAmount:
+          newTopic.wagesAmount !== undefined && newTopic.wagesAmount !== null
+            ? String(newTopic.wagesAmount)
+            : "",
+      }),
+      // ──────────────── END CMR SUBTOPICS MAPPING ────────────────
+
+      // ──────────────── BR SUBTOPICS MAPPING ────────────────
+      // BR-1: Bonus Request
+      ...(newTopic.SubTopicID === "BR-1" && {
+        AccordingToAgreement: newTopic.accordingToAgreement?.value ?? "",
+        BonusAmount: newTopic.bonusAmount ?? "",
+        date_hijri: newTopic.date_hijri ?? "",
+        date_gregorian: newTopic.date_gregorian ?? "",
+      }),
+      // ──────────────── END BR SUBTOPICS MAPPING ────────────────
+
+      // ──────────────── BPSR SUBTOPICS MAPPING ────────────────
+      // BPSR-1: Bonus and Profit Share Request
+      ...(newTopic.SubTopicID === "BPSR-1" && {
+        CommissionType: newTopic.commissionType?.value ?? "",
+        AccordingToAgreement: newTopic.accordingToAgreement?.value ?? "",
+        Amount: newTopic.amount ?? "",
+        AmountRatio: newTopic.amountRatio ?? "",
+        pyTempDate: newTopic.from_date_hijri ?? "",
+        FromDate_New: newTopic.from_date_gregorian ?? "",
+        Date_New: newTopic.to_date_hijri ?? "",
+        ToDate_New: newTopic.to_date_gregorian ?? "",
+        OtherCommission: isOtherCommission(newTopic.commissionType)
+          ? newTopic.otherCommission ?? ""
+          : "",
+      }),
+
+      // ──────────────── END BPSR SUBTOPICS MAPPING ────────────────
+
+      // ──────────────── DR SUBTOPICS MAPPING ────────────────
+      // DR-1: Documents Requests
+      ...(newTopic.SubTopicID === "DR-1" && {
+        documentType: newTopic.documentType ?? null,
+        documentReason: newTopic.documentReason ?? "",
+      }),
+      // ──────────────── END DR SUBTOPICS MAPPING ────────────────
+
+      // ──────────────── RR SUBTOPICS MAPPING ────────────────
+      // RR-1: Reward Request
+      ...(newTopic.SubTopicID === "RR-1" && {
+        amount: newTopic.amount ?? "",
+        rewardType: newTopic.rewardType ?? "",
+      }),
+      // ──────────────── END RR SUBTOPICS MAPPING ────────────────
+
+      // ──────────────── JAR SUBTOPICS MAPPING ────────────────
+      // JAR-2: Job Application Request (currentJobTitle, requiredJobTitle)
+      ...(newTopic.SubTopicID === "JAR-2" && {
+        currentJobTitle: newTopic.currentJobTitle ?? "",
+        requiredJobTitle: newTopic.requiredJobTitle ?? "",
+      }),
+      // JAR-3: Promotion Mechanism
+      ...(newTopic.SubTopicID === "JAR-3" && {
+        doesTheInternalRegulationIncludePromotionMechanism:
+          newTopic.doesTheInternalRegulationIncludePromotionMechanism ?? false,
+        doesContractIncludeAdditionalUpgrade:
+          newTopic.doesContractIncludeAdditionalUpgrade ?? false,
+      }),
+      // JAR-4: Job Application Request (currentPosition, theWantedJob)
+      ...(newTopic.SubTopicID === "JAR-4" && {
+        currentPosition: newTopic.currentPosition ?? "",
+        theWantedJob: newTopic.theWantedJob ?? "",
+      }),
+      // ──────────────── END JAR SUBTOPICS MAPPING ────────────────
+      // ──────────────── LRESR SUBTOPICS MAPPING ────────────────
+      // LRESR-1: End of Service Reward
+      ...(newTopic.SubTopicID === "LRESR-1" && {
+        amount: newTopic.amount ?? "",
+      }),
+      // LRESR-2: End of Service Reward (amount, consideration)
+      ...(newTopic.SubTopicID === "LRESR-2" && {
+        amount: newTopic.amount ?? "",
+        consideration: newTopic.consideration ?? "",
+      }),
+      // LRESR-3: End of Service Reward (amount, rewardType)
+      ...(newTopic.SubTopicID === "LRESR-3" && {
+        amount: newTopic.amount ?? "",
+        rewardType: newTopic.rewardType ?? "",
+      }),
+      // ──────────────── END LRESR SUBTOPICS MAPPING ────────────────
+    };
 
     // تحديث حالة caseTopics
     setCaseTopics((prev) => {
@@ -962,61 +1956,145 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
   // Handle date context and section visibility when editing
   useEffect(() => {
     if (isEditing && editTopic && isOpen) {
-      // Set date context if available - only if it's different from current
-      if (editTopic.date_hijri) {
-        setDate({
-          hijri: editTopic.date_hijri,
-          gregorian: editTopic.gregorianDate,
-          dateObject: null,
-        });
-      }
-      
-      // Always set both Hijri and Gregorian fields for from/to dates
-      setValue("from_date_hijri", editTopic.from_date_hijri);
-      setValue(
-        "from_date_gregorian",
-        editTopic.from_date_gregorian ||
+      // RFR-1 specific date mapping
+      if (
+        editTopic.subCategory?.value === "RFR-1" ||
+        editTopic.SubTopicID === "RFR-1"
+      ) {
+        setValue("date_hijri", editTopic.pyTempDate || "");
+        setValue("date_gregorian", editTopic.Date_New || "");
+      } else {
+        // Existing logic for other topics
+        if (editTopic.date_hijri) {
+          setDate({
+            hijri: editTopic.date_hijri,
+            gregorian: editTopic.gregorianDate,
+            dateObject: null,
+          });
+        }
+        setValue("from_date_hijri", editTopic.from_date_hijri);
+        setValue(
+          "from_date_gregorian",
+          editTopic.from_date_gregorian ||
           hijriToGregorian(editTopic.from_date_hijri)
-      );
-      setValue("to_date_hijri", editTopic.to_date_hijri);
-      setValue(
-        "to_date_gregorian",
-        editTopic.to_date_gregorian || hijriToGregorian(editTopic.to_date_hijri)
-      );
-      
+        );
+        setValue("to_date_hijri", editTopic.to_date_hijri);
+        setValue(
+          "to_date_gregorian",
+          editTopic.to_date_gregorian ||
+          hijriToGregorian(editTopic.to_date_hijri)
+        );
+        setValue("injury_date_hijri", editTopic.injury_date_hijri);
+        setValue(
+          "injury_date_gregorian",
+          editTopic.injury_date_gregorian ||
+          hijriToGregorian(editTopic.injury_date_hijri)
+        );
+      }
+      // Prefill CMR-5 fields
+      if (editTopic.subCategory?.value === "CMR-5") {
+        setValue("kindOfHoliday", editTopic.kindOfHoliday ?? null);
+        setValue("totalAmount", editTopic.totalAmount ?? "");
+        setValue("workingHours", editTopic.workingHours ?? "");
+        setValue("additionalDetails", editTopic.additionalDetails ?? "");
+      }
+      if (editTopic.SubTopicID === "CMR-6") {
+        setValue("from_date_hijri", editTopic.from_date_hijri ?? editTopic.pyTempDate ?? "");
+        setValue("from_date_gregorian", editTopic.from_date_gregorian ?? editTopic.FromDate_New ?? "");
+        setValue("to_date_hijri", editTopic.to_date_hijri ?? editTopic.Date_New ?? "");
+        setValue("to_date_gregorian", editTopic.to_date_gregorian ?? editTopic.ToDate_New ?? "");
+        setValue("newPayAmount", editTopic.newPayAmount ?? editTopic.NewPayAmount ?? "");
+        setValue("payIncreaseType", editTopic.payIncreaseType ?? null);
+        setValue("wageDifference", editTopic.wageDifference ?? editTopic.WageDifference ?? "");
+      }
+
+
+      // Prefill EDO-2 fields
+      if (editTopic.subCategory?.value === "EDO-2") {
+        setValue("fromJob", editTopic.fromJob ?? "");
+        setValue("toJob", editTopic.toJob ?? "");
+        setValue(
+          "managerial_decision_date_hijri",
+          editTopic.managerial_decision_date_hijri ?? ""
+        );
+        setValue(
+          "managerial_decision_date_gregorian",
+          editTopic.managerial_decision_date_gregorian ?? ""
+        );
+        setValue(
+          "managerialDecisionNumber",
+          editTopic.managerialDecisionNumber ?? ""
+        );
+      }
+      // Prefill EDO-3 fields
+      if (editTopic.subCategory?.value === "EDO-3") {
+        setValue("amountOfReduction", editTopic.amountOfReduction ?? "");
+        setValue(
+          "managerial_decision_date_hijri",
+          editTopic.managerial_decision_date_hijri ?? ""
+        );
+        setValue(
+          "managerial_decision_date_gregorian",
+          editTopic.managerial_decision_date_gregorian ?? ""
+        );
+        setValue(
+          "managerialDecisionNumber",
+          editTopic.managerialDecisionNumber ?? ""
+        );
+      }
+      // Prefill EDO-4 fields
+      if (editTopic.subCategory?.value === "EDO-4") {
+        setValue("typesOfPenalties", editTopic.typesOfPenalties ?? null);
+        setValue(
+          "managerial_decision_date_hijri",
+          editTopic.managerial_decision_date_hijri ?? ""
+        );
+        setValue(
+          "managerial_decision_date_gregorian",
+          editTopic.managerial_decision_date_gregorian ?? ""
+        );
+        setValue(
+          "managerialDecisionNumber",
+          editTopic.managerialDecisionNumber ?? ""
+        );
+      }
+      // ──────────────── END EDO SUBTOPICS PREFILL ────────────────
       // Set From Location and To Location fields (always use code for lookup)
-      const fromLocationCode = editTopic.fromLocation?.value || editTopic.FromLocation_Code || editTopic.fromLocation;
+      const fromLocationCode =
+        editTopic.fromLocation?.value ||
+        editTopic.FromLocation_Code ||
+        editTopic.fromLocation;
       if (fromLocationCode && regionData?.DataElements) {
         const fromLocationOption = regionData.DataElements.find(
           (item: any) => String(item.ElementKey) === String(fromLocationCode)
         );
         setValue("fromLocation", {
           value: String(fromLocationCode),
-          label: fromLocationOption ? fromLocationOption.ElementValue : String(fromLocationCode),
+          label: fromLocationOption
+            ? fromLocationOption.ElementValue
+            : String(fromLocationCode),
         });
       }
-      const toLocationCode = editTopic.toLocation?.value || editTopic.ToLocation_Code || editTopic.toLocation;
+      const toLocationCode =
+        editTopic.toLocation?.value ||
+        editTopic.ToLocation_Code ||
+        editTopic.toLocation;
       if (toLocationCode && regionData?.DataElements) {
         const toLocationOption = regionData.DataElements.find(
           (item: any) => String(item.ElementKey) === String(toLocationCode)
         );
         setValue("toLocation", {
           value: String(toLocationCode),
-          label: toLocationOption ? toLocationOption.ElementValue : String(toLocationCode),
+          label: toLocationOption
+            ? toLocationOption.ElementValue
+            : String(toLocationCode),
         });
       }
-
       // Show appropriate sections
       setShowLegalSection(true);
       setShowTopicData(true);
     }
-  }, [
-    isEditing,
-    editTopic,
-    isOpen,
-    setShowLegalSection,
-    setShowTopicData,
-  ]);
+  }, [isEditing, editTopic, isOpen, setShowLegalSection, setShowTopicData]);
 
   const handleClearMainCategory = useCallback(() => {
     setValue("mainCategory", null);
@@ -1137,7 +2215,7 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
   //       clearTimeout(timeoutRef.current);
   //     }
   //     setLastErrorSubCategory(null);
-      
+
   //     // The validation effect will run again for the new subcategory
   //     // because we cleared the error and the subcategory changed
   //   }
@@ -1148,90 +2226,98 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
   const formLayout =
     userType === "Worker" || userType === "Embassy User"
       ? useFormLayoutWorker({
-          t,
-          MainTopicID: mainCategory,
-          SubTopicID: subCategory,
-          FromLocation: fromLocation,
-          ToLocation: toLocation,
-          AcknowledgementTerms: acknowledged,
-          showLegalSection,
-          showTopicData,
-          setValue,
-          regulatoryText,
-          handleAdd: goToLegalStep,
-          handleAcknowledgeChange: (val: boolean) => {
-            setValue("acknowledged", val);
-            if (val) setShowTopicData(true);
-          },
-          handleAddTopic,
-          handleSend,
-          decisionNumber: decisionNumber || "",
-          isEditing,
-          mainCategoryData,
-          subCategoryData,
-          watch,
-          forAllowanceData,
-          typeOfRequestLookupData,
-          commissionTypeLookupData,
-          accordingToAgreementLookupData,
-          typesOfPenaltiesData,
-          matchedSubCategory,
-          subTopicsLoading: isSubCategoryLoading,
-          amountPaidData,
-          leaveTypeData,
-          travelingWayData,
-          editTopic,
-          caseTopics,
-          setShowLegalSection,
-          setShowTopicData,
-          isValid,
-          isMainCategoryLoading: isFetching || isLoading,
-          isSubCategoryLoading,
-          control,
-          trigger
-        })
+        t,
+        MainTopicID: mainCategory,
+        SubTopicID: subCategory,
+        FromLocation: fromLocation,
+        ToLocation: toLocation,
+        AcknowledgementTerms: acknowledged,
+        showLegalSection,
+        showTopicData,
+        setValue,
+        regulatoryText,
+        handleAdd: goToLegalStep,
+        handleAcknowledgeChange: (val: boolean) => {
+          setValue("acknowledged", val);
+          if (val) setShowTopicData(true);
+        },
+        handleAddTopic,
+        handleSend,
+        decisionNumber: decisionNumber || "",
+        isEditing,
+        mainCategoryData,
+        subCategoryData,
+        watch,
+        forAllowanceData,
+        typeOfRequestLookupData,
+        commissionTypeLookupData,
+        accordingToAgreementLookupData,
+        typesOfPenaltiesData,
+        matchedSubCategory,
+        subTopicsLoading: isSubCategoryLoading,
+        amountPaidData,
+        leaveTypeData,
+        travelingWayData,
+        editTopic,
+        caseTopics,
+        setShowLegalSection,
+        setShowTopicData,
+        isValid,
+        isMainCategoryLoading: isFetching || isLoading,
+        isSubCategoryLoading,
+        control,
+        trigger,
+        lockAccommodationSource,
+        errors,
+        payIncreaseTypeData,
+        PayIncreaseTypeOptions,
+      })
       : useFormLayoutEstablishment({
-          t,
-          MainTopicID: mainCategory,
-          SubTopicID: subCategory,
-          FromLocation: fromLocation,
-          ToLocation: toLocation,
-          AcknowledgementTerms: acknowledged,
-          showLegalSection,
-          showTopicData,
-          setValue,
-          regulatoryText,
-          handleAdd: goToLegalStep,
-          handleAcknowledgeChange: (val: boolean) => {
-            setValue("acknowledged", val);
-            if (val) setShowTopicData(true);
-          },
-          handleAddTopic,
-          handleSend,
-          decisionNumber: decisionNumber || "",
-          isEditing,
-          mainCategoryData,
-          subCategoryData,
-          watch,
-          forAllowanceData,
-          typeOfRequestLookupData,
-          commissionTypeLookupData,
-          accordingToAgreementLookupData,
-          typesOfPenaltiesData,
-          matchedSubCategory,
-          subTopicsLoading: isSubCategoryLoading,
-          amountPaidData,
-          leaveTypeData,
-          travelingWayData,
-          editTopic,
-          caseTopics,
-          setShowLegalSection,
-          setShowTopicData,
-          isValid,
-          isMainCategoryLoading: isFetching || isLoading,
-          isSubCategoryLoading,
-          control,
-        });
+        t,
+        MainTopicID: mainCategory,
+        SubTopicID: subCategory,
+        FromLocation: fromLocation,
+        ToLocation: toLocation,
+        AcknowledgementTerms: acknowledged,
+        showLegalSection,
+        showTopicData,
+        setValue,
+        regulatoryText,
+        handleAdd: goToLegalStep,
+        handleAcknowledgeChange: (val: boolean) => {
+          setValue("acknowledged", val);
+          if (val) setShowTopicData(true);
+        },
+        handleAddTopic,
+        handleSend,
+        decisionNumber: decisionNumber || "",
+        isEditing,
+        mainCategoryData,
+        subCategoryData,
+        watch,
+        forAllowanceData,
+        typeOfRequestLookupData,
+        commissionTypeLookupData,
+        accordingToAgreementLookupData,
+        typesOfPenaltiesData,
+        matchedSubCategory,
+        subTopicsLoading: isSubCategoryLoading,
+        amountPaidData,
+        leaveTypeData,
+        travelingWayData,
+        editTopic,
+        caseTopics,
+        setShowLegalSection,
+        setShowTopicData,
+        isValid,
+        isMainCategoryLoading: isFetching || isLoading,
+        isSubCategoryLoading,
+        lockAccommodationSource,
+        errors,
+        payIncreaseTypeData,
+        PayIncreaseTypeOptions,
+        control,
+      });
 
   // Fix the FormData type issue
   interface FormData {
@@ -1268,8 +2354,7 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
     // Implementation will be added when the API is available
   }, []);
 
-  const fetchLegalSection = useCallback(async () => {
-  }, []);
+  const fetchLegalSection = useCallback(async () => { }, []);
 
   useEffect(() => {
     if (showTopicData && topicData) {
@@ -1325,33 +2410,664 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
 
   useEffect(() => {
     if (isEditing && editTopic && regionData?.DataElements) {
-      if (editTopic.fromLocation) {
+      let fromLocationCode =
+        editTopic.fromLocation?.value ??
+        editTopic.FromLocation_Code ??
+        editTopic.fromLocation;
+      if (fromLocationCode && regionData?.DataElements) {
+        // Try both string and number comparison
         const fromLocationOption = regionData.DataElements.find(
-          (item: any) => item.ElementKey === editTopic.fromLocation?.value || item.ElementKey === editTopic.fromLocation
+          (item: any) =>
+            String(item.ElementKey) === String(fromLocationCode) ||
+            Number(item.ElementKey) === Number(fromLocationCode)
         );
-        if (fromLocationOption) {
-          setValue("fromLocation", {
-            value: fromLocationOption.ElementKey,
-            label: fromLocationOption.ElementValue,
-          });
-        }
+        setValue("fromLocation", {
+          value: String(fromLocationCode),
+          label: fromLocationOption
+            ? fromLocationOption.ElementValue
+            : String(fromLocationCode),
+        });
       }
 
-      if (editTopic.toLocation) {
+      let toLocationCode =
+        editTopic.toLocation?.value ??
+        editTopic.ToLocation_Code ??
+        editTopic.toLocation;
+      if (toLocationCode && regionData?.DataElements) {
         const toLocationOption = regionData.DataElements.find(
-          (item: any) => item.ElementKey === editTopic.toLocation?.value || item.ElementKey === editTopic.toLocation
+          (item: any) =>
+            String(item.ElementKey) === String(toLocationCode) ||
+            Number(item.ElementKey) === Number(toLocationCode)
         );
-        if (toLocationOption) {
-          setValue("toLocation", {
-            value: toLocationOption.ElementKey,
-            label: toLocationOption.ElementValue,
-          });
-        }
+        setValue("toLocation", {
+          value: String(toLocationCode),
+          label: toLocationOption
+            ? toLocationOption.ElementValue
+            : String(toLocationCode),
+        });
       }
     }
-  }, [isEditing, editTopic, regionData]);
+  }, [isEditing, editTopic, regionData, setValue]);
 
-  const { t: tCommon } = useTranslation('common');
+  useEffect(() => {
+    if (isEditing && editTopic && (isOpen || true)) {
+      // ──────────────── CMR SUBTOPICS PREFILL ────────────────
+      // CMR-1: Treatment refunds
+      if (
+        editTopic.subCategory?.value === "CMR-1" ||
+        editTopic.SubTopicID === "CMR-1"
+      ) {
+        setValue("amountsPaidFor", editTopic.amountsPaidFor ?? null, {
+          shouldValidate: true,
+          shouldDirty: true,
+        });
+        setValue("theAmountRequired", editTopic.theAmountRequired ?? "", {
+          shouldValidate: true,
+          shouldDirty: true,
+        });
+        trigger(["amountsPaidFor", "theAmountRequired"]);
+      }
+      // CMR-3: Request compensation for work injury
+      if (
+        editTopic.subCategory?.value === "CMR-3" ||
+        editTopic.SubTopicID === "CMR-3"
+      ) {
+        setValue("compensationAmount", editTopic.compensationAmount ?? "", {
+          shouldValidate: true,
+          shouldDirty: true,
+        });
+        setValue("injury_date_hijri", editTopic.injury_date_hijri ?? "", {
+          shouldValidate: true,
+          shouldDirty: true,
+        });
+        setValue(
+          "injury_date_gregorian",
+          editTopic.injury_date_gregorian ?? "",
+          { shouldValidate: true, shouldDirty: true }
+        );
+        setValue("injuryType", editTopic.injuryType ?? "", {
+          shouldValidate: true,
+          shouldDirty: true,
+        });
+        trigger([
+          "compensationAmount",
+          "injury_date_hijri",
+          "injury_date_gregorian",
+          "injuryType",
+        ]);
+      }
+      // CMR-4: Request compensation for the duration of the notice
+      if (
+        editTopic.subCategory?.value === "CMR-4" ||
+        editTopic.SubTopicID === "CMR-4"
+      ) {
+        setValue("amount", editTopic.amount ?? "", {
+          shouldValidate: true,
+          shouldDirty: true,
+        });
+        trigger("amount");
+      }
+      // CMR-5: Pay for work during vacation
+      if (
+        editTopic.subCategory?.value === "CMR-5" ||
+        editTopic.SubTopicID === "CMR-5"
+      ) {
+        setValue("kindOfHoliday", editTopic.kindOfHoliday ?? null, {
+          shouldValidate: true,
+          shouldDirty: true,
+        });
+        setValue("totalAmount", editTopic.totalAmount ?? "", {
+          shouldValidate: true,
+          shouldDirty: true,
+        });
+        setValue("workingHours", editTopic.workingHours ?? "", {
+          shouldValidate: true,
+          shouldDirty: true,
+        });
+        setValue("additionalDetails", editTopic.additionalDetails ?? "", {
+          shouldValidate: true,
+          shouldDirty: true,
+        });
+        trigger([
+          "kindOfHoliday",
+          "totalAmount",
+          "workingHours",
+          "additionalDetails",
+        ]);
+      }
+
+      // CMR-6: The Wage Difference/increase
+      if (
+        editTopic.subCategory?.value === "CMR-6" ||
+        editTopic.SubTopicID === "CMR-6"
+      ) {
+        setValue("from_date_hijri", editTopic.from_date_hijri ?? editTopic.pyTempDate ?? "", { shouldValidate: true, shouldDirty: true });
+        setValue("from_date_gregorian", editTopic.from_date_gregorian ?? editTopic.FromDate_New ?? "", { shouldValidate: true, shouldDirty: true });
+        setValue("to_date_hijri", editTopic.to_date_hijri ?? editTopic.Date_New ?? "", { shouldValidate: true, shouldDirty: true });
+        setValue("to_date_gregorian", editTopic.to_date_gregorian ?? editTopic.ToDate_New ?? "", { shouldValidate: true, shouldDirty: true });
+        setValue("newPayAmount", editTopic.newPayAmount ?? editTopic.NewPayAmount ?? "", { shouldValidate: true, shouldDirty: true });
+        setValue("payIncreaseType", editTopic.payIncreaseType ?? null, { shouldValidate: true, shouldDirty: true });
+        setValue("wageDifference", editTopic.wageDifference ?? editTopic.WageDifference ?? "", { shouldValidate: true, shouldDirty: true });
+
+        trigger([
+          "from_date_hijri",
+          "from_date_gregorian",
+          "to_date_hijri",
+          "to_date_gregorian",
+          "newPayAmount",
+          "payIncreaseType",
+          "wageDifference",
+        ]);
+      }
+
+      // CMR-7: Request for overtime pay
+      if (
+        editTopic.subCategory?.value === "CMR-7" ||
+        editTopic.SubTopicID === "CMR-7"
+      ) {
+        setValue("pyTempDate", editTopic.pyTempDate ?? "", {
+          shouldValidate: true,
+          shouldDirty: true,
+        });
+        setValue("toDate_gregorian", editTopic.toDate_gregorian ?? "", {
+          shouldValidate: true,
+          shouldDirty: true,
+        });
+        setValue("date_hijri", editTopic.date_hijri ?? "", {
+          shouldValidate: true,
+          shouldDirty: true,
+        });
+        setValue("fromDate_gregorian", editTopic.fromDate_gregorian ?? "", {
+          shouldValidate: true,
+          shouldDirty: true,
+        });
+        setValue("durationOfLeaveDue", editTopic.durationOfLeaveDue ?? "", {
+          shouldValidate: true,
+          shouldDirty: true,
+        });
+        setValue("payDue", editTopic.payDue ?? "", {
+          shouldValidate: true,
+          shouldDirty: true,
+        });
+        trigger([
+          "pyTempDate",
+          "toDate_gregorian",
+          "date_hijri",
+          "fromDate_gregorian",
+          "durationOfLeaveDue",
+          "payDue",
+        ]);
+      }
+      // CMR-8: Pay stop time
+      if (
+        editTopic.subCategory?.value === "CMR-8" ||
+        editTopic.SubTopicID === "CMR-8"
+      ) {
+        setValue("pyTempDate", editTopic.pyTempDate ?? "", {
+          shouldValidate: true,
+          shouldDirty: true,
+        });
+        setValue("toDate_gregorian", editTopic.toDate_gregorian ?? "", {
+          shouldValidate: true,
+          shouldDirty: true,
+        });
+        setValue("date_hijri", editTopic.date_hijri ?? "", {
+          shouldValidate: true,
+          shouldDirty: true,
+        });
+        setValue("fromDate_gregorian", editTopic.fromDate_gregorian ?? "", {
+          shouldValidate: true,
+          shouldDirty: true,
+        });
+        setValue("wagesAmount", editTopic.wagesAmount ?? "", {
+          shouldValidate: true,
+          shouldDirty: true,
+        });
+        trigger([
+          "pyTempDate",
+          "toDate_gregorian",
+          "date_hijri",
+          "fromDate_gregorian",
+          "wagesAmount",
+        ]);
+      }
+      // ──────────────── END CMR SUBTOPICS PREFILL ────────────────
+
+      // ──────────────── LCUT SUBTOPICS PREFILL ────────────────
+      // LCUT-1, LCUTE-1: Lawsuit for compensation for unlawful termination
+      if (
+        editTopic.subCategory?.value === "LCUT-1" ||
+        editTopic.SubTopicID === "LCUT-1"
+      ) {
+        setValue("amountOfCompensation", editTopic.amountOfCompensation ?? "", {
+          shouldValidate: true,
+          shouldDirty: true,
+        });
+        trigger("amountOfCompensation");
+      }
+      if (
+        editTopic.subCategory?.value === "LCUTE-1" ||
+        editTopic.SubTopicID === "LCUTE-1"
+      ) {
+        setValue("amountOfCompensation", editTopic.amountOfCompensation ?? "", {
+          shouldValidate: true,
+          shouldDirty: true,
+        });
+        trigger("amountOfCompensation");
+      }
+      // ──────────────── END LCUT SUBTOPICS PREFILL ────────────────
+
+      // ──────────────── HIR SUBTOPICS PREFILL ────────────────
+      // HIR-1: Housing Insurance Request
+      if (
+        editTopic.subCategory?.value === "HIR-1" ||
+        editTopic.SubTopicID === "HIR-1"
+      ) {
+        setValue(
+          "doesBylawsIncludeAddingAccommodations",
+          editTopic.doesBylawsIncludeAddingAccommodations ?? false,
+          { shouldValidate: true, shouldDirty: true }
+        );
+        setValue(
+          "doesContractIncludeAddingAccommodations",
+          editTopic.doesContractIncludeAddingAccommodations ?? false,
+          { shouldValidate: true, shouldDirty: true }
+        );
+        setValue(
+          "housingSpecificationInByLaws",
+          editTopic.housingSpecificationInByLaws ?? "",
+          { shouldValidate: true, shouldDirty: true }
+        );
+        setValue(
+          "housingSpecificationsInContract",
+          editTopic.housingSpecificationsInContract ?? "",
+          { shouldValidate: true, shouldDirty: true }
+        );
+        setValue(
+          "actualHousingSpecifications",
+          editTopic.actualHousingSpecifications ?? "",
+          { shouldValidate: true, shouldDirty: true }
+        );
+        trigger([
+          "doesBylawsIncludeAddingAccommodations",
+          "doesContractIncludeAddingAccommodations",
+          "housingSpecificationInByLaws",
+          "housingSpecificationsInContract",
+          "actualHousingSpecifications",
+        ]);
+      }
+      // ──────────────── END HIR SUBTOPICS PREFILL ────────────────
+
+      // ──────────────── BR SUBTOPICS PREFILL ────────────────
+      // BR-1: Bonus Request
+      if (editTopic.subCategory?.value === "BR-1" || editTopic.SubTopicID === "BR-1") {
+        const code =
+          editTopic.AccordingToAgreement_Code ||
+          editTopic.AccordingToAgreement ||
+          editTopic.accordingToAgreement?.value;
+
+        setValue(
+          "accordingToAgreement",
+          resolveOption(
+            accordingToAgreementLookupData?.DataElements,
+            code,
+            editTopic.AccordingToAgreement
+          ),
+          { shouldValidate: true, shouldDirty: true }
+        );
+
+        setValue("bonusAmount", editTopic.bonusAmount ?? editTopic.Premium ?? "", { shouldValidate: true, shouldDirty: true });
+        setValue("date_hijri", editTopic.date_hijri ?? editTopic.pyTempDate ?? "", { shouldValidate: true, shouldDirty: true });
+        setValue("date_gregorian", editTopic.date_gregorian ?? editTopic.Date_New ?? "", { shouldValidate: true, shouldDirty: true });
+
+        trigger(["accordingToAgreement", "bonusAmount", "date_hijri", "date_gregorian"]);
+      }
+
+
+      // ──────────────── END BR SUBTOPICS PREFILL ────────────────
+
+      // ──────────────── BPSR SUBTOPICS PREFILL ────────────────
+      // BPSR-1: Bonus and Profit Share Request (FIXED)
+      if (
+        editTopic.subCategory?.value === "BPSR-1" ||
+        editTopic.SubTopicID === "BPSR-1"
+      ) {
+        const commissionCode =
+          editTopic.CommissionType_Code ??
+          editTopic.commissionType?.value ??
+          editTopic.CommissionType;
+
+        setValue(
+          "commissionType",
+          ensureOption(commissionTypeLookupData?.DataElements, commissionCode),
+          { shouldValidate: true, shouldDirty: true }
+        );
+
+        const agrCode =
+          editTopic.AccordingToAgreement_Code ??
+          editTopic.accordingToAgreement?.value ??
+          editTopic.AccordingToAgreement;
+
+        setValue(
+          "accordingToAgreement",
+          ensureOption(accordingToAgreementLookupData?.DataElements, agrCode),
+          { shouldValidate: true, shouldDirty: true }
+        );
+
+        setValue("amount", String(editTopic.Amount ?? editTopic.amount ?? ""), {
+          shouldValidate: true,
+          shouldDirty: true,
+        });
+        setValue("amountRatio", String(editTopic.AmountRatio ?? editTopic.amountRatio ?? ""), {
+          shouldValidate: true,
+          shouldDirty: true,
+        });
+        setValue(
+          "from_date_hijri",
+          editTopic.pyTempDate ?? editTopic.FromDateHijri ?? editTopic.from_date_hijri ?? "",
+          { shouldValidate: true, shouldDirty: true }
+        );
+        setValue(
+          "from_date_gregorian",
+          editTopic.FromDate_New ?? editTopic.FromDateGregorian ?? editTopic.from_date_gregorian ?? "",
+          { shouldValidate: true, shouldDirty: true }
+        );
+        setValue(
+          "to_date_hijri",
+          editTopic.Date_New ?? editTopic.ToDateHijri ?? editTopic.to_date_hijri ?? "",
+          { shouldValidate: true, shouldDirty: true }
+        );
+        setValue(
+          "to_date_gregorian",
+          editTopic.ToDate_New ?? editTopic.ToDateGregorian ?? editTopic.to_date_gregorian ?? "",
+          { shouldValidate: true, shouldDirty: true }
+        );
+        setValue("otherCommission", String(editTopic.OtherCommission ?? editTopic.otherCommission ?? ""), {
+          shouldValidate: true,
+          shouldDirty: true,
+        });
+
+        trigger([
+          "commissionType",
+          "accordingToAgreement",
+          "amount",
+          "amountRatio",
+          "from_date_hijri",
+          "from_date_gregorian",
+          "to_date_hijri",
+          "to_date_gregorian",
+          "otherCommission",
+        ]);
+      }
+
+      // ──────────────── END BPSR SUBTOPICS PREFILL ────────────────
+
+      // ──────────────── DR SUBTOPICS PREFILL ────────────────
+      // DR-1: Documents Requests
+      if (
+        editTopic.subCategory?.value === "DR-1" ||
+        editTopic.SubTopicID === "DR-1"
+      ) {
+        setValue("documentType", editTopic.documentType ?? null, {
+          shouldValidate: true,
+          shouldDirty: true,
+        });
+        setValue("documentReason", editTopic.documentReason ?? "", {
+          shouldValidate: true,
+          shouldDirty: true,
+        });
+        trigger(["documentType", "documentReason"]);
+      }
+      // ──────────────── END DR SUBTOPICS PREFILL ────────────────
+
+      // ──────────────── RR SUBTOPICS PREFILL ────────────────
+      // RR-1: Reward Request
+      if (
+        editTopic.subCategory?.value === "RR-1" ||
+        editTopic.SubTopicID === "RR-1"
+      ) {
+        setValue("amount", editTopic.amount ?? "", {
+          shouldValidate: true,
+          shouldDirty: true,
+        });
+        setValue("rewardType", editTopic.rewardType ?? "", {
+          shouldValidate: true,
+          shouldDirty: true,
+        });
+        trigger(["amount", "rewardType"]);
+      }
+      // ──────────────── END RR SUBTOPICS PREFILL ────────────────
+
+      // ──────────────── JAR SUBTOPICS PREFILL ────────────────
+      // JAR-2: Job Application Request (currentJobTitle, requiredJobTitle)
+      if (
+        editTopic.subCategory?.value === "JAR-2" ||
+        editTopic.SubTopicID === "JAR-2"
+      ) {
+        setValue("currentJobTitle", editTopic.currentJobTitle ?? "", {
+          shouldValidate: true,
+          shouldDirty: true,
+        });
+        setValue("requiredJobTitle", editTopic.requiredJobTitle ?? "", {
+          shouldValidate: true,
+          shouldDirty: true,
+        });
+        trigger(["currentJobTitle", "requiredJobTitle"]);
+      }
+      // JAR-3: Promotion Mechanism
+      if (
+        editTopic.subCategory?.value === "JAR-3" ||
+        editTopic.SubTopicID === "JAR-3"
+      ) {
+        setValue(
+          "doesTheInternalRegulationIncludePromotionMechanism",
+          editTopic.doesTheInternalRegulationIncludePromotionMechanism ?? false,
+          { shouldValidate: true, shouldDirty: true }
+        );
+        setValue(
+          "doesContractIncludeAdditionalUpgrade",
+          editTopic.doesContractIncludeAdditionalUpgrade ?? false,
+          { shouldValidate: true, shouldDirty: true }
+        );
+        trigger([
+          "doesTheInternalRegulationIncludePromotionMechanism",
+          "doesContractIncludeAdditionalUpgrade",
+        ]);
+      }
+      // JAR-4: Job Application Request (currentPosition, theWantedJob)
+      if (
+        editTopic.subCategory?.value === "JAR-4" ||
+        editTopic.SubTopicID === "JAR-4"
+      ) {
+        setValue("currentPosition", editTopic.currentPosition ?? "", {
+          shouldValidate: true,
+          shouldDirty: true,
+        });
+        setValue("theWantedJob", editTopic.theWantedJob ?? "", {
+          shouldValidate: true,
+          shouldDirty: true,
+        });
+        trigger(["currentPosition", "theWantedJob"]);
+      }
+      // ──────────────── END JAR SUBTOPICS PREFILL ────────────────
+
+      // ──────────────── RFR SUBTOPICS PREFILL ────────────────
+      // RFR-1: Lawsuit for refund request
+      if (
+        editTopic.subCategory?.value === "RFR-1" ||
+        editTopic.SubTopicID === "RFR-1"
+      ) {
+        setValue("amount", editTopic.amount ?? "", {
+          shouldValidate: true,
+          shouldDirty: true,
+        });
+        setValue("consideration", editTopic.consideration ?? "", {
+          shouldValidate: true,
+          shouldDirty: true,
+        });
+        setValue("date_hijri", editTopic.date_hijri ?? "", {
+          shouldValidate: true,
+          shouldDirty: true,
+        });
+        setValue("date_gregorian", editTopic.date_gregorian ?? "", {
+          shouldValidate: true,
+          shouldDirty: true,
+        });
+        trigger(["amount", "consideration", "date_hijri", "date_gregorian"]);
+      }
+      // ... existing code ...
+    }
+  }, [isEditing, editTopic, setValue, trigger, isOpen]);
+
+  const { t: tCommon } = useTranslation("common");
+
+  const [removeAttachment] = useRemoveAttachmentMutation();
+
+  // Custom handler for AttachmentSection
+  const handleRemoveAttachment = async (attachment: any, index: number) => {
+    console.log("handleRemoveAttachment called", { attachment, index });
+    const key =
+      attachment.FileKey ||
+      attachment.fileKey ||
+      attachment.attachmentKey ||
+      "";
+    try {
+      const response = await removeAttachment({ AttachmentKey: key }).unwrap();
+      if (
+        response?.ServiceStatus === "Success" ||
+        response?.SuccessCode === "200"
+      ) {
+        setAttachments((prev: any[]) => prev.filter((_, i) => i !== index));
+        setAttachmentFiles((prev: any[]) => prev.filter((_, i) => i !== index));
+        console.log(
+          "Current language:",
+          i18n.language,
+          "Localized string:",
+          t("attachments.remove_success")
+        );
+        toast.success(t("attachments.remove_success"));
+      } else {
+        console.log(
+          "Current language:",
+          i18n.language,
+          "Localized string:",
+          t("attachments.remove_failed")
+        );
+        toast.error(t("attachments.remove_failed"));
+      }
+    } catch (error) {
+      console.log(
+        "Current language:",
+        i18n.language,
+        "Localized string:",
+        t("attachments.remove_failed")
+      );
+      toast.error(t("attachments.remove_failed"));
+    }
+  };
+
+  // --- Ensure validation for CMR-1 autocomplete in edit mode ---
+  useEffect(() => {
+    if (
+      isEditing &&
+      editTopic &&
+      (editTopic.subCategory?.value === "CMR-1" ||
+        editTopic.SubTopicID === "CMR-1")
+    ) {
+      setValue("amountsPaidFor", editTopic.amountsPaidFor ?? null, {
+        shouldValidate: true,
+        shouldDirty: true,
+      });
+      setValue("theAmountRequired", editTopic.theAmountRequired ?? "", {
+        shouldValidate: true,
+        shouldDirty: true,
+      });
+      trigger(["amountsPaidFor", "theAmountRequired"]);
+    }
+  }, [isEditing, editTopic, setValue, trigger]);
+
+  // --- MIR-1 dynamic required fields fix (robust, watches form value) ---
+  const typeOfRequestValueMIR = watch("typeOfRequest")?.value;
+  useEffect(() => {
+    // Only for MIR-1
+    if (
+      (subCategory?.value === "MIR-1" || editTopic?.SubTopicID === "MIR-1") &&
+      typeOfRequestValueMIR !== undefined
+    ) {
+      // If the selected type REQUIRES the extra fields, trigger validation for them
+      if (
+        typeOfRequestValueMIR === "REQT1" ||
+        typeOfRequestValueMIR === "REQT2" ||
+        typeOfRequestValueMIR === "REQT3"
+      ) {
+        trigger([
+          "requiredDegreeOfInsurance",
+          "theReason",
+          "currentInsuranceLevel",
+        ]);
+      } else {
+        // If the selected type does NOT require the extra fields, clear/unregister them and trigger validation
+        setValue("requiredDegreeOfInsurance", "");
+        setValue("theReason", "");
+        setValue("currentInsuranceLevel", "");
+        if (unregister) {
+          unregister("requiredDegreeOfInsurance");
+          unregister("theReason");
+          unregister("currentInsuranceLevel");
+        }
+        trigger([
+          "requiredDegreeOfInsurance",
+          "theReason",
+          "currentInsuranceLevel",
+        ]);
+      }
+    }
+  }, [
+    typeOfRequestValueMIR,
+    subCategory?.value,
+    editTopic?.SubTopicID,
+    setValue,
+    unregister,
+    trigger,
+  ]);
+
+  // --- BPSR-1 dynamic required fields ---
+  const commissionTypeOpt = watch("commissionType");
+  useEffect(() => {
+    if (
+      (subCategory?.value === "BPSR-1" || editTopic?.SubTopicID === "BPSR-1") &&
+      commissionTypeOpt !== undefined
+    ) {
+      if (isOtherCommission(commissionTypeOpt)) {
+        trigger("otherCommission");
+      } else {
+        setValue("otherCommission", "");
+        unregister?.("otherCommission");
+        trigger("otherCommission");
+      }
+    }
+  }, [commissionTypeOpt, subCategory?.value, editTopic?.SubTopicID, setValue, unregister, trigger]);
+
+
+  // Add after handleTopicSelect and related hooks
+  useEffect(() => {
+    if (
+      isEditing &&
+      editTopic &&
+      travelingWayData?.DataElements &&
+      editTopic.TravelingWay
+    ) {
+      const found = travelingWayData.DataElements.find(
+        (item: any) => item.ElementKey === editTopic.TravelingWay
+      );
+      if (found) {
+        setValue("travelingWay", {
+          value: found.ElementKey,
+          label: found.ElementValue,
+        });
+      }
+    }
+  }, [isEditing, editTopic, travelingWayData, setValue]);
 
   return (
     <Suspense fallback={<TableLoader />}>
@@ -1404,7 +3120,7 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
                   <ReusableTable
                     data={getPaginatedTopics}
                     columns={columns}
-                    page={pagination.pageIndex + 1} 
+                    page={pagination.pageIndex + 1}
                     totalPages={Math.ceil(
                       caseTopics.length / pagination.pageSize
                     )}
@@ -1515,10 +3231,20 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
                       {t("cancel") || "Cancel"}
                     </Button>
                     <Button
-                      variant={isValid ? "primary" : "disabled"}
-                      typeVariant={isValid ? "brand" : "freeze"}
+                      variant={isValid && acknowledged ? "primary" : "disabled"}
+                      typeVariant={isValid && acknowledged ? "brand" : "freeze"}
                       size="sm"
                       onClick={() => {
+                        // Debug: log all form values and errors on Add Topic and Send click
+                        if (typeof window !== "undefined") {
+                          // eslint-disable-next-line no-console
+                          console.log(
+                            "DEBUG Add/Send Topic: form values",
+                            getValues()
+                          );
+                          // eslint-disable-next-line no-console
+                          console.log("DEBUG Add/Send Topic: errors", errors);
+                        }
                         if (isEditing) {
                           handleUpdate();
                         } else if (isStep3) {
@@ -1528,15 +3254,17 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
                         }
                       }}
                       className="text-sm font-medium"
-                      disabled={!isValid}
+                      disabled={!isValid || !acknowledged}
                     >
-                      {isEditing
-                        ? t("update") || "Update"
-                        : isStep3
-                        ? t("send") || "Send"
-                        : isStep2 && acknowledged
-                        ? t("Next") || "Next"
-                        : t("Next") || "Next"}
+                      {currentStep === steps.length - 1
+                        ? t("finalSubmit") || "Final Submit"
+                        : isEditing
+                          ? t("update") || "Update"
+                          : isStep3
+                            ? t("send") || "Send"
+                            : isStep2 && acknowledged
+                              ? t("Next") || "Next"
+                              : t("Next") || "Next"}
                     </Button>
                   </div>
                 </RHFFormProvider>
@@ -1566,7 +3294,9 @@ function EditHearingTopicsDetails({ showFooter }: { showFooter: boolean }) {
                 <Button
                   variant="primary"
                   onClick={() => {
-                    setCaseTopics((prev) => prev.filter((_, i) => i !== delTopic?.index));
+                    setCaseTopics((prev) =>
+                      prev.filter((_, i) => i !== delTopic?.index)
+                    );
                     setShowDeleteConfirm(false);
                     setDelTopic(null);
                   }}

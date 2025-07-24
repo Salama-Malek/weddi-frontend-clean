@@ -5,6 +5,9 @@
     "manage_hearings": "Manage Cases",
     "hearing_number": "Case Number"
   },
+  "meta": {
+    "title": "Amicable settlement system"
+  },
   "common": {
     "incomplete_case": {
       "title": "Confirmation",
@@ -94,7 +97,10 @@
       "personalInfo_region": "Region",
       "personalInfo_city": "City",
       "personalInfo_phoneNumber": "Phone Number",
-      "personalInfo_email": "Email Address"
+      "personalInfo_email": "Email Address",
+      "agentPhoneNumber": "Agent Phone Number",
+      "phonePlaceholder": "05xxxxxxxx",
+      "agencyNumberPlaceholder": "Enter agency number"
     },
     "embassyUser": {
       "idNumber": "Embassy ID Number",
@@ -291,14 +297,19 @@
     "residenceAddressValidation": "Please enter residence address.",
     "nameValidation": "Please enter a valid name.",
     "dateValidation": "Please enter a valid date.",
-    "spacesOnlyNotAllowed": "Spaces only are not allowed",
-    "fieldRequired": "This field is required."
+    "spacesOnlyNotAllowed": "Spaces only are not allowed"
   },
   "hearingtopics": {
+    "interPhoneNumberValidation": "Please enter a valid international phone number format (without country code).",
+    "codeValidation": "Please enter a valid code.",
+    "phoneNumberValidation": "Please enter a valid phone number.",
+    "fieldRequired": "This field is required.",
+    "main_category_required": "Main category is required",
+    "sub_category_required": "Sub category is required",
     "amount": "Amount",
     "compensationAmount": "Compensation Amount",
-    "injuryDateGregorian": "Injury Date (Hijri)",
-    "injuryDateHijri": "Injury Date (Gregorian)",
+    "injuryDateHijri": "Injury Date (Hijri)",
+    "injuryDateGregorian": "Injury Date (Gregorian)",
     "injuryType": "Injury Type",
     "theAmountRequired": "The amount required",
     "totalAmount": "Total Amount",
@@ -454,6 +465,7 @@
     "select_sub_category": "Select SubCategory",
     "select_main_category": "Select Main Category"
   },
+  "countryCodeSelection": "Please select country code first",
   "manageHearingDetails": {
     "ApplicantType": "ApplicantType",
     "ApplicantType_Code": "Applicant Type",
@@ -808,6 +820,7 @@
     }
   },
   "reviewdetails": {
+    "plaintiffDetails": "plaintiff Details",
     "acknowledge_desc": "I acknowledge and agree to the terms and conditions",
     "ack_required": "You must acknowledge the terms and conditions to proceed",
     "p1": "I, [Name], acknowledge that I have read Article (4) of Cabinet Resolution No. (94) dated [03/08/1447], which states the following:",
@@ -1051,7 +1064,8 @@
         "process_failed": "Failed to process files. Please try again.",
         "upload_failed": "Failed to upload attachments. Please try again."
       },
-      "upload_success": "Attachment uploaded successfully"
+      "upload_success": "Attachment uploaded successfully",
+      "remove_success": "Attachment removed successfully."
     },
     "homePageWarning": "Switch account from home page",
     "homePageWarningDesc": "You are currently using the legal representative account. To change the account, change the account in the home page"
@@ -1068,5 +1082,10 @@
   "unprofessionalLetterAttachments": {
     "title": "Unprofessional Letter Attachments",
     "unnamed": "Unnamed File"
-  }
+  },
+  "validation": {
+    "main_category_required": "Main category is required",
+    "sub_category_required": "Sub category is required"
+  },
+  "finalSubmit": "Final Submit"
 }

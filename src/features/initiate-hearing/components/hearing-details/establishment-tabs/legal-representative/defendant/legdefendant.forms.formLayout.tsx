@@ -152,21 +152,38 @@ export const useLegelDefendantFormLayout = ({
 
     if (caseDetailsData?.CaseDetails) {
       const details = caseDetailsData.CaseDetails;
-      // Set values from case details using exact field names from API response
-      setValue("DefendantsEstablishmentPrisonerName", details.DefendantName);
-      setValue("DefendantsEstablishmentRegion", details.Defendant_Region_Code);
-      setValue("DefendantsEstablishmentCity", details.Defendant_City_Code);
-      setValue("DefendantsEstablishOccupation", details.Defendant_Occupation_Code);
-      setValue("DefendantsEstablishmentGender", details.Defendant_Gender_Code);
-      setValue("DefendantsEstablishmentNationality", details.Defendant_Nationality_Code);
-      setValue("DefendantsEstablishmentPrisonerId", details.DefendantId);
-      setValue("mobileNumber", details.Defendant_PhoneNumber);
+
+      // Set values from case details only if value exists and is not null or empty string
+      if (details.DefendantName !== undefined && details.DefendantName !== null && details.DefendantName !== "") {
+        setValue("DefendantsEstablishmentPrisonerName", details.DefendantName);
+      }
+      if (details.Defendant_Region_Code !== undefined && details.Defendant_Region_Code !== null && details.Defendant_Region_Code !== "") {
+        setValue("DefendantsEstablishmentRegion", details.Defendant_Region_Code);
+      }
+      if (details.Defendant_City_Code !== undefined && details.Defendant_City_Code !== null && details.Defendant_City_Code !== "") {
+        setValue("DefendantsEstablishmentCity", details.Defendant_City_Code);
+      }
+      if (details.Defendant_Occupation_Code !== undefined && details.Defendant_Occupation_Code !== null && details.Defendant_Occupation_Code !== "") {
+        setValue("DefendantsEstablishOccupation", details.Defendant_Occupation_Code);
+      }
+      if (details.Defendant_Gender_Code !== undefined && details.Defendant_Gender_Code !== null && details.Defendant_Gender_Code !== "") {
+        setValue("DefendantsEstablishmentGender", details.Defendant_Gender_Code);
+      }
+      if (details.Defendant_Nationality_Code !== undefined && details.Defendant_Nationality_Code !== null && details.Defendant_Nationality_Code !== "") {
+        setValue("DefendantsEstablishmentNationality", details.Defendant_Nationality_Code);
+      }
+      if (details.DefendantId !== undefined && details.DefendantId !== null && details.DefendantId !== "") {
+        setValue("DefendantsEstablishmentPrisonerId", details.DefendantId);
+      }
+      if (details.Defendant_PhoneNumber !== undefined && details.Defendant_PhoneNumber !== null && details.Defendant_PhoneNumber !== "") {
+        setValue("mobileNumber", details.Defendant_PhoneNumber);
+      }
 
       // Handle date fields
-      if (details.DefendantHijiriDOB) {
+      if (details.DefendantHijiriDOB !== undefined && details.DefendantHijiriDOB !== null && details.DefendantHijiriDOB !== "") {
         setValue("def_date_hijri", details.DefendantHijiriDOB);
       }
-      if (details.Defendant_ApplicantBirthDate) {
+      if (details.Defendant_ApplicantBirthDate !== undefined && details.Defendant_ApplicantBirthDate !== null && details.Defendant_ApplicantBirthDate !== "") {
         // Convert YYYYMMDD to YYYY-MM-DD format if needed
         const birthDate = details.Defendant_ApplicantBirthDate;
         const formattedDate = `${birthDate.substring(0, 4)}-${birthDate.substring(4, 6)}-${birthDate.substring(6, 8)}`;
@@ -174,32 +191,57 @@ export const useLegelDefendantFormLayout = ({
       }
 
       // Set national ID if available
-      if (details.DefendantId) {
+      if (details.DefendantId !== undefined && details.DefendantId !== null && details.DefendantId !== "") {
         setValue("nationalIdNumber", details.DefendantId);
         setCookie("nationalIdNumber", details.DefendantId);
       }
 
-      // Set dropdown values with proper labels
-      setValue("region", {
-        value: details.Defendant_Region_Code || "",
-        label: details.Defendant_Region || ""
-      });
-      setValue("city", {
-        value: details.Defendant_City_Code || "",
-        label: details.Defendant_City || ""
-      });
-      setValue("occupation", {
-        value: details.Defendant_Occupation_Code || "",
-        label: details.Defendant_Occupation || ""
-      });
-      setValue("gender", {
-        value: details.Defendant_Gender_Code || "",
-        label: details.Defendant_Gender || ""
-      });
-      setValue("nationality", {
-        value: details.Defendant_Nationality_Code || "",
-        label: details.Defendant_Nationality || ""
-      });
+      // Set dropdown values with proper labels, only if value or label exists and is not null or empty string
+      if (
+        (details.Defendant_Region_Code !== undefined && details.Defendant_Region_Code !== null && details.Defendant_Region_Code !== "") ||
+        (details.Defendant_Region !== undefined && details.Defendant_Region !== null && details.Defendant_Region !== "")
+      ) {
+        setValue("region", {
+          value: details.Defendant_Region_Code || "",
+          label: details.Defendant_Region || ""
+        });
+      }
+      if (
+        (details.Defendant_City_Code !== undefined && details.Defendant_City_Code !== null && details.Defendant_City_Code !== "") ||
+        (details.Defendant_City !== undefined && details.Defendant_City !== null && details.Defendant_City !== "")
+      ) {
+        setValue("city", {
+          value: details.Defendant_City_Code || "",
+          label: details.Defendant_City || ""
+        });
+      }
+      if (
+        (details.Defendant_Occupation_Code !== undefined && details.Defendant_Occupation_Code !== null && details.Defendant_Occupation_Code !== "") ||
+        (details.Defendant_Occupation !== undefined && details.Defendant_Occupation !== null && details.Defendant_Occupation !== "")
+      ) {
+        setValue("occupation", {
+          value: details.Defendant_Occupation_Code || "",
+          label: details.Defendant_Occupation || ""
+        });
+      }
+      if (
+        (details.Defendant_Gender_Code !== undefined && details.Defendant_Gender_Code !== null && details.Defendant_Gender_Code !== "") ||
+        (details.Defendant_Gender !== undefined && details.Defendant_Gender !== null && details.Defendant_Gender !== "")
+      ) {
+        setValue("gender", {
+          value: details.Defendant_Gender_Code || "",
+          label: details.Defendant_Gender || ""
+        });
+      }
+      if (
+        (details.Defendant_Nationality_Code !== undefined && details.Defendant_Nationality_Code !== null && details.Defendant_Nationality_Code !== "") ||
+        (details.Defendant_Nationality !== undefined && details.Defendant_Nationality !== null && details.Defendant_Nationality !== "")
+      ) {
+        setValue("nationality", {
+          value: details.Defendant_Nationality_Code || "",
+          label: details.Defendant_Nationality || ""
+        });
+      }
       setIsFormInitialized(true);
     }
 
@@ -208,20 +250,31 @@ export const useLegelDefendantFormLayout = ({
 
   useEffect(() => {
     if (nicData?.NICDetails) {
-
-      setValue("DefendantsEstablishmentPrisonerName", nicData?.NICDetails?.PlaintiffName);
-      setValue("DefendantsEstablishmentRegion", nicData?.NICDetails?.Region_Code);
-      setValue("DefendantsEstablishmentCity", nicData?.NICDetails?.City_Code);
-      setValue("DefendantsEstablishOccupation", nicData?.NICDetails?.Occupation_Code);
-      setValue("DefendantsEstablishmentGender", nicData?.NICDetails?.Gender_Code);
-      setValue("DefendantsEstablishmentNationality", nicData?.NICDetails?.Nationality_Code);
       setValue("DefendantsEstablishmentPrisonerId", watchNationalId);
-
-      setValue("region", { value: nicData?.NICDetails?.Region_Code || "", label: nicData?.NICDetails?.Region || "" });
-      setValue("city", { value: nicData?.NICDetails?.City_Code || "", label: nicData?.NICDetails?.City || "" });
-      setValue("occupation", { value: nicData?.NICDetails?.Occupation_Code || "", label: nicData?.NICDetails?.Occupation || "" });
-      setValue("gender", { value: nicData?.NICDetails?.Gender_Code || "", label: nicData?.NICDetails?.Gender || "" });
-      setValue("nationality", { value: nicData?.NICDetails?.Nationality_Code || "", label: nicData?.NICDetails?.Nationality || "" });
+      
+      if (nicData?.NICDetails?.PlaintiffName !== undefined && nicData?.NICDetails?.PlaintiffName !== "") {
+        setValue("DefendantsEstablishmentPrisonerName", nicData?.NICDetails?.PlaintiffName);
+      }
+      if (nicData?.NICDetails?.Region_Code !== undefined && nicData?.NICDetails?.Region_Code !== "") {
+        setValue("DefendantsEstablishmentRegion", nicData?.NICDetails?.Region_Code);
+        setValue("region", { value: nicData?.NICDetails?.Region_Code, label: nicData?.NICDetails?.Region || "" });
+      }
+      if (nicData?.NICDetails?.City_Code !== undefined && nicData?.NICDetails?.City_Code !== "") {
+        setValue("DefendantsEstablishmentCity", nicData?.NICDetails?.City_Code);
+        setValue("city", { value: nicData?.NICDetails?.City_Code, label: nicData?.NICDetails?.City || "" });
+      }
+      if (nicData?.NICDetails?.Occupation_Code !== undefined && nicData?.NICDetails?.Occupation_Code !== "") {
+        setValue("DefendantsEstablishOccupation", nicData?.NICDetails?.Occupation_Code);
+        setValue("occupation", { value: nicData?.NICDetails?.Occupation_Code, label: nicData?.NICDetails?.Occupation || "" });
+      }
+      if (nicData?.NICDetails?.Gender_Code !== undefined && nicData?.NICDetails?.Gender_Code !== "") {
+        setValue("DefendantsEstablishmentGender", nicData?.NICDetails?.Gender_Code);
+        setValue("gender", { value: nicData?.NICDetails?.Gender_Code, label: nicData?.NICDetails?.Gender || "" });
+      }
+      if (nicData?.NICDetails?.Nationality_Code !== undefined && nicData?.NICDetails?.Nationality_Code !== "") {
+        setValue("DefendantsEstablishmentNationality", nicData?.NICDetails?.Nationality_Code);
+        setValue("nationality", { value: nicData?.NICDetails?.Nationality_Code, label: nicData?.NICDetails?.Nationality || "" });
+      }
       setIsFormInitialized(true);
 
     }

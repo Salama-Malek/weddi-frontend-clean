@@ -20,14 +20,28 @@ export const getHearingTopicsColumns = ({
     cell: ({ row }) => row.index + 1,
   },
   {
-    id: "CaseTopicName",
+    id: "mainCategory",
     header: t("mainCategory"),
-    accessorKey: "CaseTopicName",
+    accessorKey: "mainCategory",
+    cell: ({ row }) => {
+      const value: any = row.original.mainCategory;
+      if (typeof value === "object" && value !== null) {
+        return value.label || value.value || "";
+      }
+      return value || "";
+    },
   },
   {
-    id: "SubTopicName",
+    id: "subCategory",
     header: t("subCategory"),
-    accessorKey: "SubTopicName",
+    accessorKey: "subCategory",
+    cell: ({ row }) => {
+      const value: any = row.original.subCategory;
+      if (typeof value === "object" && value !== null) {
+        return value.label || value.value || "";
+      }
+      return value || "";
+    },
   },
   {
     id: "actions",

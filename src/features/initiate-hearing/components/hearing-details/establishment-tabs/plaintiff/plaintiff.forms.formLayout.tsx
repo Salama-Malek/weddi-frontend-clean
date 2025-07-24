@@ -54,130 +54,103 @@ export const useEstablishmentPlaintiffFormLayout = ({
   }, [cityData]);
 
   useEffect(() => {
-    setValue("PlaintiffsEstablishmentName", establishmentDetails?.EstablishmentName, {
+    setValue("establishment_name", establishmentDetails?.EstablishmentName, {
       shouldValidate: establishmentDetails?.EstablishmentName,
-    }),
-      setValue("PlaintiffsFileNumber", establishmentDetails?.FileNumber, {
-        shouldValidate: establishmentDetails?.FileNumber,
-      }),
-      setValue("PlaintiffsCRNumber", establishmentDetails?.CRNumber, {
-        shouldValidate: establishmentDetails?.CRNumber,
-      }),
-      setValue("plaintiffRegion", establishmentDetails?.Region_Code, {
-        shouldValidate: establishmentDetails?.Region_Code,
-      }),
-      setValue("PlaintiffsCity", establishmentDetails?.City_Code, {
-        shouldValidate: establishmentDetails?.City_Code,
-      }),
-      setValue("PlaintiffsEstablishmentID", establishmentDetails?.EstablishmentID, {
-        shouldValidate: establishmentDetails?.EstablishmentID,
-      })
-      setValue("Plaintiff_PhoneNumber", establishmentDetails?.ContactNumber, {
-        shouldValidate: establishmentDetails?.ContactNumber,
-      })
-      //hassan code 700
-      setValue("PlaintiffsNumber700", establishmentDetails?.Number700, {
-        shouldValidate: establishmentDetails?.Number700,
-      })
-      //hassan code 700
-      setValue("claimantStatus", "establishment", {
-        shouldValidate: true,
-      })
-    setValue("region", { value: establishmentDetails?.Region_Code || "", label: establishmentDetails?.Region || "" });
-    setValue("city", { value: establishmentDetails?.City_Code || "", label: establishmentDetails?.City || "" });
-
-    // Ensure city lookup is triggered by also setting plaintiffRegion and plaintiffCity
-    setValue("plaintiffRegion", { value: establishmentDetails?.Region_Code || "", label: establishmentDetails?.Region || "" });
-    setValue("plaintiffCity", { value: establishmentDetails?.City_Code || "", label: establishmentDetails?.City || "" });
-
-  }, [establishmentDetails2])
+    });
+    setValue("establishment_fileNumber", establishmentDetails?.FileNumber, {
+      shouldValidate: establishmentDetails?.FileNumber,
+    });
+    setValue("establishment_crNumber", establishmentDetails?.CRNumber, {
+      shouldValidate: establishmentDetails?.CRNumber,
+    });
+    setValue("establishment_id", establishmentDetails?.EstablishmentID, {
+      shouldValidate: establishmentDetails?.EstablishmentID,
+    });
+    setValue("establishment_phoneNumber", establishmentDetails?.ContactNumber, {
+      shouldValidate: establishmentDetails?.ContactNumber,
+    });
+    setValue("establishment_number700", establishmentDetails?.Number700, {
+      shouldValidate: establishmentDetails?.Number700,
+    });
+    setValue("establishment_region", { value: establishmentDetails?.Region_Code || "", label: establishmentDetails?.Region || "" });
+    setValue("establishment_city", { value: establishmentDetails?.City_Code || "", label: establishmentDetails?.City || "" });
+    setValue("claimantStatus", "establishment", {
+      shouldValidate: true,
+    });
+  }, [establishmentDetails2, setValue]);
 
   const { t } = useTranslation("hearingdetails");
-  const EstablishmentSectionFrom: any = [];
-  EstablishmentSectionFrom.push({
-    title: t("tab1_title"),
-    children: [
-      {
-        type: "readonly",
-        label: t("establishment_tab1.establishmentName"),
-        value: establishmentDetails?.EstablishmentName,
-        isLoading: apiLoadingStates?.estab,
-        name: "PlaintiffsEstablishmentName"
-      },
-      {
-        type: "readonly",
-        label: t("establishment_tab1.fileNumber"),
-        value: establishmentDetails?.FileNumber,
-        isLoading: apiLoadingStates?.estab,
-        name: "PlaintiffsFileNumber"
-      },
-      {
-        type: "readonly",
-        label: t("establishment_tab1.commercialRegistrationNumber"),
-        value: establishmentDetails?.CRNumber,
-        isLoading: apiLoadingStates?.estab,
-        name: "PlaintiffsCRNumber"
-      },
-      //hassan code 700
-      {
-        type: "readonly",
-        label: t("establishment_tab1.number700"),
-        value: establishmentDetails?.Number700,
-        isLoading: apiLoadingStates?.estab,
-        name: "PlaintiffsNumber700"
-      },
-      //hassan code 700
-      {
-        type: !establishmentDetails?.Region ? "autocomplete" : "readonly",
-        name: "plaintiffRegion",
-        ...(establishmentDetails?.Region && {
-          isLoading: apiLoadingStates?.estab,
-        }),
-        title: "",
-        isLoading: apiLoadingStates?.estab,
 
-        label: t("establishment_tab1.region"),
-        value: establishmentDetails?.Region || "", // Fallback empty string
-        ...(!establishmentDetails?.Region && {
-          options: RegionOptions || [],
-        }), // Fallback empty array
-        ...(!establishmentDetails?.Region && {
-          validation: { required: t("regionValidation") },
-        }),
-      },
-      {
-        type: !establishmentDetails?.City ? "autocomplete" : "readonly",
-        name: "PlaintiffsCity",
-        ...(establishmentDetails?.City && {
+  const establishmentSections: SectionLayout[] = [
+    {
+      title: t("tab1_title"),
+      gridCols: 3,
+      className: "establishment-section",
+      children: [
+        {
+          type: "readonly",
+          label: t("establishment_tab1.establishmentName"),
+          value: establishmentDetails?.EstablishmentName,
           isLoading: apiLoadingStates?.estab,
-        }),
-        isLoading: apiLoadingStates?.estab,
-        title: "",
-        label: t("establishment_tab1.city"),
-        value: establishmentDetails?.City || "", // Fallback empty string
-        ...(!establishmentDetails?.City && { options: CityOptions || [] }), // Fallback empty array
-        ...(!establishmentDetails?.City && {
-          validation: { required: t("cityValidation") },
-        }),
-      },
-      {
-        type: !establishmentDetails?.ContactNumber ? "input" : "readonly",
-        name: "Plaintiff_PhoneNumber",
-        label: t("establishment_tab2.mobileNumber"),
-        isLoading: apiLoadingStates?.estab,
-        inputType: "text",
-        placeholder: "05xxxxxxxx",
-        value: establishmentDetails?.ContactNumber || "",
-        validation: {
-          required: t("phoneNumberValidation"),
-          pattern: {
-            value: /^05\d{8}$/,
-            message: t("phoneValidationMessage"),
-          },
         },
-      },
-    ],
-  });
+        {
+          type: "readonly",
+          label: t("establishment_tab1.fileNumber"),
+          value: establishmentDetails?.FileNumber,
+          isLoading: apiLoadingStates?.estab,
+        },
+        {
+          type: "readonly",
+          label: t("establishment_tab1.commercialRegistrationNumber"),
+          value: establishmentDetails?.CRNumber,
+          isLoading: apiLoadingStates?.estab,
+        },
+        {
+          type: "readonly",
+          label: t("establishment_tab1.number700"),
+          value: establishmentDetails?.Number700,
+          isLoading: apiLoadingStates?.estab,
+        },
+        {
+          type: !establishmentDetails?.Region ? "autocomplete" : "readonly",
+          name: "establishment_region",
+          isLoading: apiLoadingStates?.estab,
+          label: t("establishment_tab1.region"),
+          value: establishmentDetails?.Region,
+          options: RegionOptions || [],
+          validation: { required: t("regionValidation") },
+          onChange: () => {},
+        },
+        {
+          type: !establishmentDetails?.City ? "autocomplete" : "readonly",
+          name: "establishment_city",
+          isLoading: apiLoadingStates?.estab,
+          label: t("establishment_tab1.city"),
+          value: establishmentDetails?.City,
+          options: CityOptions || [],
+          validation: { required: t("cityValidation") },
+          onChange: () => {},
+        },
+        {
+          type: !establishmentDetails?.ContactNumber ? "input" : "readonly",
+          name: "establishment_phoneNumber",
+          label: t("establishment_tab2.mobileNumber"),
+          isLoading: apiLoadingStates?.estab,
+          inputType: "text",
+          placeholder: "05xxxxxxxx",
+          value: establishmentDetails?.ContactNumber,
+          validation: {
+            required: t("phoneNumberValidation"),
+            pattern: {
+              value: /^05\d{8}$/,
+              message: t("phoneValidationMessage"),
+            },
+          },
+          onChange: () => {},
+        },
+      ],
+    },
+  ];
 
-  return [...EstablishmentSectionFrom].filter(Boolean) as SectionLayout[];
+  return establishmentSections.filter(Boolean);
 };

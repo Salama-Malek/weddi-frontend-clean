@@ -1,0 +1,61 @@
+{
+    "DataElements": [
+        // {
+        //     "ElementKey": "EDO",
+        //     "ElementValue": "Establishment Decisions Objections"
+        // },
+        // {
+        //     "ElementKey": "LCUT",
+        //     "ElementValue": "Lawsuit for compensation for unlawful termination"
+        // },
+        // {
+        //     "ElementKey": "WR",
+        //     "ElementValue": "Wage Request"
+        // },
+        // {
+        //     "ElementKey": "HIR",
+        //     "ElementValue": "Housing Insurance Request"
+        // },
+        // {
+        //     "ElementKey": "MIR",
+        //     "ElementValue": "Medical Insurance Request"
+        // },
+        // {
+        //     "ElementKey": "TTR",
+        //     "ElementValue": "Travel Tickets Request"
+        // },
+        // {
+        //     "ElementKey": "CMR",
+        //     "ElementValue": "Compensation Request"
+        // },
+        // {
+        //     "ElementKey": "BR",
+        //     "ElementValue": "Bonus Request"
+        // },
+        // {
+        //     "ElementKey": "BPSR",
+        //     "ElementValue": "Bonusand Profit Share Request"
+        // },
+        {
+            "ElementKey": "DR",
+            "ElementValue": "Documents Requests" // show add button ************
+        },
+        {
+            "ElementKey": "RR",
+            "ElementValue": "Reward Request"
+        },
+        {
+            "ElementKey": "JAR",
+            "ElementValue": "Job Application Request"
+        },
+        {
+            "ElementKey": "RFR",
+            "ElementValue": "Lawsuit for refund request"
+        },
+        {
+            "ElementKey": "LRESR",
+            "ElementValue": "Lawsuit of Requesting For The End Of Service Reward"
+        }
+    ],
+    "SourceSystem": "E-Services"
+}

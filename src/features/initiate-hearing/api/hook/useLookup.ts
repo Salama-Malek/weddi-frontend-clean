@@ -191,5 +191,17 @@ export const useLookup = () => {
       SourceSystem: "E-Services",
       AcceptedLanguage: currentLanguage
     }),
+    payIncreaseType: (subCategoryValue: string | undefined) => useGenericLookupQuery(
+      {
+        LookupType: "DataElements",
+        ModuleKey: "PIT",
+        ModuleName: "PayIncreaseType",
+        SourceSystem: "E-Services",
+        AcceptedLanguage: currentLanguage
+      },
+      {
+        skip: !subCategoryValue || !["CMR-6"].includes(subCategoryValue)
+      }
+    )
   };
-};
+}

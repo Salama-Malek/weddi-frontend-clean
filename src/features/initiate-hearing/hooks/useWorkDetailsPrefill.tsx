@@ -211,12 +211,12 @@ const useWorkDetailsPrefill = (setValue: (field: string, value: any) => void, tr
         gregorian: caseDetails?.Plaintiff_ContractEndDate
       },
       jobStart: {
-        hijri: caseDetails?.Plaintiff_JobStartDate,
-        gregorian: caseDetails?.Plaintiff_JobStartDateHijri
+        hijri: caseDetails?.Plaintiff_JobStartDateHijri,
+        gregorian: caseDetails?.Plaintiff_JobStartDate
       },
       jobEnd: {
-        hijri: caseDetails?.Plaintiff_JobEndDate,
-        gregorian: caseDetails?.Plaintiff_JobEndDateHijri
+        hijri: caseDetails?.Plaintiff_JobEndDateHijri,
+        gregorian: caseDetails?.Plaintiff_JobEndDate
       },
     }
     const defendentWorkDetails = {
@@ -251,16 +251,16 @@ const useWorkDetailsPrefill = (setValue: (field: string, value: any) => void, tr
         gregorian: caseDetails?.Defendant_ContractStartDate
       },
       contractEnd: {
-        hijri: caseDetails?.Defendant_ContractEndDate,
-        gregorian: caseDetails?.Defendant_ContractEndDateHijri
+        hijri: caseDetails?.Defendant_ContractEndDateHijri,
+        gregorian: caseDetails?.Defendant_ContractEndDate
       },
       jobStart: {
-        hijri: caseDetails?.Defendant_JobStartDate,
-        gregorian: caseDetails?.Defendant_JobStartDateHijri
+        hijri: caseDetails?.Defendant_JobStartDateHijri,
+        gregorian: caseDetails?.Defendant_JobStartDate
       },
       jobEnd: {
-        hijri: caseDetails?.Defendant_JobEndDate,
-        gregorian: caseDetails?.Defendant_JobEndDateHijri
+        hijri: caseDetails?.Defendant_JobEndDateHijri,
+        gregorian: caseDetails?.Defendant_JobEndDate
       },
     }
     if (plaintiff_type_code?.toLowerCase() === "worker") {

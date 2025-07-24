@@ -30,10 +30,14 @@ import { DateOfBirthField } from "@/shared/components/calanders";
 import { useAPIFormsData } from "@/providers/FormContext";
 import OTPFormLayout from "./OTP.froms.formlayout";
 import { boolean } from "ts-pattern/dist/patterns";
-import { formatDateString, formatDateToYYYYMMDD, toWesternDigits } from "@/shared/lib/helpers";
+import {
+  formatDateString,
+  formatDateToYYYYMMDD,
+  toWesternDigits,
+} from "@/shared/lib/helpers";
 import { toast } from "react-toastify";
-import { DigitOnlyInput } from '@/shared/components/form/InputField';
-import { FieldWrapper } from '@/shared/components/form/FieldWrapper';
+import { DigitOnlyInput } from "@/shared/components/form/InputField";
+import { FieldWrapper } from "@/shared/components/form/FieldWrapper";
 import { HijriDatePickerInput } from "@/shared/components/calanders/HijriDatePickerInput";
 import { GregorianDateDisplayInput } from "@/shared/components/calanders/GregorianDateDisplayInput";
 import { useFormContext } from "react-hook-form";
@@ -43,6 +47,7 @@ import FileAttachment from "@/shared/components/ui/file-attachment/FileAttachmen
 
 interface AgentInfo {
   Agent?: {
+    ErrorDescription?: string;
     MandateNumber?: string;
     AgentName?: string;
     MandateStatus?: string;
@@ -51,6 +56,12 @@ interface AgentInfo {
       IdentityNumber: string;
     }>;
   };
+  PartyList?: Array<{
+    FullName: string;
+    ID: string;
+    Gender: string;
+    IsValid: string;
+  }>;
 }
 
 export interface DataElement {
@@ -91,11 +102,13 @@ interface FormLayoutProps {
   principalNICResponse?: NICDetailsResponse;
   principalNICRefetch: () => void;
   representativeNICResponse?: NICDetailsResponse;
+  localAgentNICResponse?: any;
+  externalAgentNICResponse?: any;
   register: any;
   errors: any;
   trigger: any;
   isValid: boolean;
-  allowedIds?: string[]
+  allowedIds?: string[];
 }
 
 export const useFormLayout = ({
@@ -122,14 +135,21 @@ export const useFormLayout = ({
   principalNICResponse,
   principalNICRefetch,
   representativeNICResponse,
-  register, 
-  errors, 
-  trigger, 
-  isValid, 
-  allowedIds
+  localAgentNICResponse,
+  externalAgentNICResponse,
+  register,
+  errors,
+  trigger,
+  isValid,
+  allowedIds,
 }: FormLayoutProps): SectionLayout[] => {
+  const safeAllowedIds = allowedIds || [];
   // --- NEW: State for UnprofessionalLetterAttachments ---
-  const [unprofessionalLetterAttachments, setUnprofessionalLetterAttachments] = useState<any[]>([]);
+  const [unprofessionalLetterAttachments, setUnprofessionalLetterAttachments] =
+    useState<any[]>([]);
+
+  // Add this ref to track if the user has picked a date
+  const userPickedDateRef = React.useRef(false);
 
   const currentClaimantStatus = useWatch({ name: "claimantStatus", control });
 
@@ -199,13 +219,25 @@ export const useFormLayout = ({
     register("Agent_ResidencyAddress");
     register("Agent_CurrentPlaceOfWork");
     register("agentType");
+    // principal-prefixed fields
+    register("principal_userName");
+    register("principal_region");
+    register("principal_city");
+    register("principal_occupation");
+    register("principal_gender");
+    register("principal_nationality");
+    register("principal_hijriDate");
+    register("principal_gregorianDate");
+    register("principal_applicant");
+    register("principal_phoneNumber");
   }, [register]);
 
   const userClaims = getCookie("userClaims") as TokenClaims;
   const idNumber = userClaims?.UserID || "";
   const dobirth = userClaims?.UserDOB || "";
   const userType = getCookie("userType");
-  const { ClaimantStatusRadioOptions, CodeOptions, IsDomesticRadioOptions } = useFormOptions();
+  const { ClaimantStatusRadioOptions, CodeOptions, IsDomesticRadioOptions } =
+    useFormOptions();
   const { plaintiffTypeOptions, AgentTypeOptions } = useLegalRepFormOptions();
   const { clearFormData } = useAPIFormsData();
 
@@ -221,9 +253,62 @@ export const useFormLayout = ({
   const claimType = watch("claimantStatus");
   const applicant = watch("applicant");
 
+  const agentType = watch("agentType");
+  // Update agencyNumber to use the correct field for local agency
+  const agencyNumber = agentType === "local_agency"
+    ? watch("localAgent_agencyNumber") || ""
+    : agentType === "external_agency"
+      ? watch("externalAgent_agencyNumber") || ""
+      : watch("agencyNumber") || "";
+
+  const hasValidAgency = useMemo(() => {
+    if (agentType === "local_agency") {
+      return Boolean(
+        agencyNumber && agentInfoData?.Agent?.ErrorDescription === "Success"
+      );
+    }
+    if (agentType === "external_agency") {
+      return Boolean(
+        agencyNumber && agentInfoData?.Agent?.ErrorDescription === "Success"
+      );
+    }
+    return false;
+  }, [agentType, agencyNumber, agentInfoData?.Agent?.ErrorDescription]);
+
+  // Check if mandate number is empty
+  const hasMandateNumber = useMemo(() => {
+    if (agentType === "local_agency") {
+      return Boolean(agencyNumber && String(agencyNumber).length > 0);
+    } else if (agentType === "external_agency") {
+      const externalAgencyNumber = watch("externalAgencyNumber");
+      return Boolean(externalAgencyNumber && String(externalAgencyNumber).length > 0);
+    }
+    return false;
+  }, [agentType, agencyNumber, watch]);
+
+  // Check if plaintiff ID is under the agency (for local agency only)
+  const isPlaintiffIdUnderAgency = useMemo(() => {
+    try {
+      if (agentType !== "local_agency" || !workerAgentIdNumber || !agentInfoData?.PartyList) {
+        return true; // For external agency or no ID, assume valid
+      }
+      if (!Array.isArray(agentInfoData.PartyList)) {
+        return true; // If PartyList is not an array, assume valid
+      }
+      return agentInfoData.PartyList.some(party => party?.ID === workerAgentIdNumber);
+    } catch (error) {
+      console.error('Error checking if plaintiff ID is under agency:', error);
+      return true; // On error, assume valid to prevent blocking
+    }
+  }, [agentType, workerAgentIdNumber, agentInfoData?.PartyList]);
+
   const shouldFetchNic =
     claimantStatus === "representative" &&
-    workerAgentIdNumber?.length === 10 &&
+    agentType === "local_agency" &&
+    hasValidAgency &&
+    hasMandateNumber &&
+    isPlaintiffIdUnderAgency &&
+    workerAgentIdNumber.length === 10 &&
     formattedWorkerAgentHijriDob?.length === 8;
 
   const nicAgent = representativeNICResponse;
@@ -334,12 +419,19 @@ export const useFormLayout = ({
         );
       }
 
-      setValue("hijriDate", d.DateOfBirthHijri || "", {
-        shouldValidate: d.DateOfBirthHijri !== "",
-      });
-      setValue("gregorianDate", d.DateOfBirthGregorian || "", {
-        shouldValidate: d.DateOfBirthGregorian !== "",
-      });
+      // Only set hijriDate/gregorianDate if user hasn't picked a date
+      if (!userPickedDateRef.current) {
+        if (watch("hijriDate") !== (d.DateOfBirthHijri || "")) {
+          setValue("hijriDate", d.DateOfBirthHijri || "", {
+            shouldValidate: d.DateOfBirthHijri !== "",
+          });
+        }
+        if (watch("gregorianDate") !== (d.DateOfBirthGregorian || "")) {
+          setValue("gregorianDate", d.DateOfBirthGregorian || "", {
+            shouldValidate: d.DateOfBirthGregorian !== "",
+          });
+        }
+      }
       setValue("applicant", d.Applicant || "", {
         shouldValidate: d.Applicant !== "",
       });
@@ -350,7 +442,15 @@ export const useFormLayout = ({
         });
       }
     }
-  }, [shouldFetchNic, nicAgent, nicAgentError, nicAgentLoading, setValue, setError, t]);
+  }, [
+    shouldFetchNic,
+    nicAgent,
+    nicAgentError,
+    nicAgentLoading,
+    setValue,
+    setError,
+    t,
+  ]);
 
   const plaintiffStatus = watch("plaintiffStatus");
   const isPhone = watch("isPhone");
@@ -365,32 +465,31 @@ export const useFormLayout = ({
 
   const selectedMainCategory = getCookie("mainCategory");
   const selectedSubCategory = getCookie("subCategory");
-  const agentType = watch("agentType");
 
   const govRepDetail = userTypeLegalRepData?.GovRepDetails?.find(
     (item: any) => item.GOVTID === selectedMainCategory?.value
   );
 
-
   const [attachment, setAttachment] = useState<FormData["attachment"] | null>(
     null
   );
 
+  const watchedClaimantStatus = useWatch({ name: "claimantStatus", control });
+  const watchedHijriDate = useWatch({ name: "hijriDate", control });
+  const watchedGregorianDate = useWatch({ name: "gregorianDate", control });
+
+  // Refactor principalNICResponse effect
   useEffect(() => {
-    if (
-      watch("claimantStatus") === "principal" &&
-      principalNICResponse?.NICDetails
-    ) {
+    if (principalNICResponse?.NICDetails && watchedClaimantStatus === "principal") {
       const nic = principalNICResponse.NICDetails;
       if (nic.PlaintiffName) {
-        setValue("userName", nic.PlaintiffName || "", {
+        setValue("principal_userName", nic.PlaintiffName || "", {
           shouldValidate: nic.PlaintiffName !== "",
         });
       }
-
       if (nic.Region_Code) {
         setValue(
-          "plaintiffRegion",
+          "principal_region",
           {
             value: nic.Region_Code || "",
             label: nic.Region || "",
@@ -400,20 +499,18 @@ export const useFormLayout = ({
           }
         );
       }
-
       if (nic.City_Code) {
         setValue(
-          "plaintiffCity",
+          "principal_city",
           { value: nic.City_Code || "", label: nic.City || "" },
           {
             shouldValidate: nic.City_Code !== "",
           }
         );
       }
-
       if (nic.Occupation_Code) {
         setValue(
-          "occupation",
+          "principal_occupation",
           {
             value: nic.Occupation_Code || "",
             label: nic.Occupation || "",
@@ -423,10 +520,9 @@ export const useFormLayout = ({
           }
         );
       }
-
       if (nic.Gender_Code) {
         setValue(
-          "gender",
+          "principal_gender",
           {
             value: nic.Gender_Code || "",
             label: nic.Gender || "",
@@ -436,10 +532,9 @@ export const useFormLayout = ({
           }
         );
       }
-
       if (nic.Nationality_Code) {
         setValue(
-          "nationality",
+          "principal_nationality",
           {
             value: nic.Nationality_Code || "",
             label: nic.Nationality || "",
@@ -449,42 +544,34 @@ export const useFormLayout = ({
           }
         );
       }
-
-      if (nic.DateOfBirthHijri) {
-        setValue("hijriDate", nic.DateOfBirthHijri || "", {
+      // Only set if user hasn't picked a date
+      if (!userPickedDateRef.current) {
+        setValue("principal_hijriDate", nic.DateOfBirthHijri || "", {
           shouldValidate: nic.DateOfBirthHijri !== "",
         });
-      }
-
-      if (nic?.DateOfBirthGregorian) {
-        setValue("gregorianDate", nic?.DateOfBirthGregorian || "", {
-          shouldValidate: nic?.DateOfBirthGregorian !== "",
+        setValue("principal_gregorianDate", nic.DateOfBirthGregorian || "", {
+          shouldValidate: nic.DateOfBirthGregorian !== "",
         });
       }
-
-      setValue("applicant", nic.Applicant || "");
-
+      setValue("principal_applicant", nic.Applicant || "");
       if (nic.PhoneNumber) {
-        setValue("phoneNumber", nic.PhoneNumber.toString(), {
+        setValue("principal_phoneNumber", nic.PhoneNumber.toString(), {
           shouldValidate: nic.PhoneNumber !== "",
         });
       }
     }
-  }, [principalNICResponse, setValue, watch, claimantStatus]);
+    // eslint-disable-next-line
+  }, [principalNICResponse]);
 
+  // Refactor representativeNICResponse effect
   useEffect(() => {
-    const currentClaimantStatus = watch("claimantStatus");
-    if (currentClaimantStatus !== "representative") return;
-
-    if (representativeNICResponse?.NICDetails) {
+    if (representativeNICResponse?.NICDetails && watchedClaimantStatus === "representative") {
       const nic = representativeNICResponse.NICDetails;
-
       if (nic.PlaintiffName) {
         setValue("userName", nic.PlaintiffName || "", {
           shouldValidate: nic.PlaintiffName !== "",
         });
       }
-
       if (nic.Region_Code) {
         setValue(
           "plaintiffRegion",
@@ -497,7 +584,6 @@ export const useFormLayout = ({
           }
         );
       }
-
       if (nic.City_Code) {
         setValue(
           "plaintiffCity",
@@ -510,7 +596,6 @@ export const useFormLayout = ({
           }
         );
       }
-
       if (nic.Occupation_Code) {
         setValue(
           "occupation",
@@ -523,7 +608,6 @@ export const useFormLayout = ({
           }
         );
       }
-
       if (nic.Gender_Code) {
         setValue(
           "gender",
@@ -536,7 +620,6 @@ export const useFormLayout = ({
           }
         );
       }
-
       if (nic.Nationality_Code) {
         setValue(
           "nationality",
@@ -549,15 +632,16 @@ export const useFormLayout = ({
           }
         );
       }
-
-      setValue("hijriDate", nic.DateOfBirthHijri || "", {
-        shouldValidate: nic.DateOfBirthHijri !== "",
-      });
-      setValue("gregorianDate", nic.DateOfBirthGregorian || "", {
-        shouldValidate: nic.DateOfBirthGregorian !== "",
-      });
+      // Only set if user hasn't picked a date
+      if (!userPickedDateRef.current) {
+        setValue("hijriDate", nic.DateOfBirthHijri || "", {
+          shouldValidate: nic.DateOfBirthHijri !== "",
+        });
+        setValue("gregorianDate", nic.DateOfBirthGregorian || "", {
+          shouldValidate: nic.DateOfBirthGregorian !== "",
+        });
+      }
       setValue("applicant", nic.Applicant || "");
-
       if (nic.PhoneNumber) {
         setValue("phoneNumber", nic.PhoneNumber.toString(), {
           shouldValidate: nic.PhoneNumber !== "",
@@ -577,7 +661,36 @@ export const useFormLayout = ({
       setValue("gender", null);
       setValue("nationality", null);
     }
-  }, [representativeNICResponse, setValue]);
+    // eslint-disable-next-line
+  }, [representativeNICResponse]);
+
+  // Refactor NIC auto-fill for local agency
+  useEffect(() => {
+    if (representativeNICResponse?.NICDetails && claimantStatus === "representative" && agentType === "local_agency") {
+      const d = representativeNICResponse.NICDetails;
+      setValue("localAgent_userName", d.PlaintiffName || "");
+      setValue("localAgent_region", d.Region_Code ? { value: d.Region_Code, label: d.Region || "" } : null);
+      setValue("localAgent_city", d.City_Code ? { value: d.City_Code, label: d.City || "" } : null);
+      setValue("localAgent_occupation", d.Occupation_Code ? { value: d.Occupation_Code, label: d.Occupation || "" } : null);
+      setValue("localAgent_gender", d.Gender_Code ? { value: d.Gender_Code, label: d.Gender || "" } : null);
+      setValue("localAgent_nationality", d.Nationality_Code ? { value: d.Nationality_Code, label: d.Nationality || "" } : null);
+      setValue("localAgent_phoneNumber", d.PhoneNumber ? d.PhoneNumber.toString() : "");
+    }
+  }, [representativeNICResponse, claimantStatus, agentType, setValue]);
+
+  // Refactor NIC auto-fill for external agency
+  useEffect(() => {
+    if (representativeNICResponse?.NICDetails && claimantStatus === "representative" && agentType === "external_agency") {
+      const d = representativeNICResponse.NICDetails;
+      setValue("externalAgent_userName", d.PlaintiffName || "");
+      setValue("externalAgent_region", d.Region_Code ? { value: d.Region_Code, label: d.Region ?? "" } : null);
+      setValue("externalAgent_city", d.City_Code ? { value: d.City_Code, label: d.City ?? "" } : null);
+      setValue("externalAgent_occupation", d.Occupation_Code ? { value: d.Occupation_Code, label: d.Occupation ?? "" } : null);
+      setValue("externalAgent_gender", d.Gender_Code ? { value: d.Gender_Code, label: d.Gender ?? "" } : null);
+      setValue("externalAgent_nationality", d.Nationality_Code ? { value: d.Nationality_Code, label: d.Nationality ?? "" } : null);
+      setValue("externalAgent_phoneNumber", d.PhoneNumber ? d.PhoneNumber.toString() : "");
+    }
+  }, [representativeNICResponse, claimantStatus, agentType, setValue]);
 
   const RegionOptions = useMemo(
     () =>
@@ -690,27 +803,26 @@ export const useFormLayout = ({
     setValue("attachment.fileType", fileData.fileType || "");
   };
 
-
   const baseSections =
     userType === "legal_representative"
       ? [
-        {
-          isHidden: true,
-          title: LegalRep("claimantStatus"),
-          isRadio: true,
-          children: [
-            {
-              type: "radio",
-              name: "plaintiffStatus",
-              label: LegalRep("claimantStatus"),
-              options: plaintiffTypeOptions,
-              value: "",
-              onChange: (value: string) => setValue("plaintiffStatus", value),
-              validation: { required: "Region is required" },
-            },
-          ],
-        },
-      ]
+          {
+            isHidden: true,
+            title: LegalRep("claimantStatus"),
+            isRadio: true,
+            children: [
+              {
+                type: "radio",
+                name: "plaintiffStatus",
+                label: LegalRep("claimantStatus"),
+                options: plaintiffTypeOptions,
+                value: "",
+                onChange: (value: string) => setValue("plaintiffStatus", value),
+                validation: { required: "Region is required" },
+              },
+            ],
+          },
+        ]
       : [];
 
   const getWorkerSections = () => {
@@ -776,27 +888,20 @@ export const useFormLayout = ({
 
           // Name field - readonly if from NIC, input if not
           {
-            type: pd?.PlaintiffName ? "readonly" : "input",
-            name: "userName",
+            type: principalNICResponse?.NICDetails?.PlaintiffName ? "readonly" : "input",
+            name: "principal_userName",
             label: t("nicDetails.name"),
-            value: pd?.PlaintiffName || "",
+            value: principalNICResponse?.NICDetails?.PlaintiffName || watch("principal_userName"),
             isLoading: nicAgentLoading,
-            ...(!pd?.PlaintiffName && {
-              validation: {
-                required: true,
-                message: t("nameValidation"),
-                validate: (value: string) =>
-                  !!value?.trim() || t("nameValidation"),
-              },
-            }),
+            validation: { required: t("nameValidation") },
           },
 
           // Region field - readonly if from NIC, autocomplete if not
           {
             type: pd?.Region ? "readonly" : "autocomplete",
-            name: "plaintiffRegion",
+            name: "principal_region",
             label: t("nicDetails.region"),
-            value: pd?.Region ? pd.Region : watch("plaintiffRegion"),
+            value: pd?.Region ? pd.Region : watch("principal_region"),
             options: RegionOptions,
             isLoading: nicAgentLoading,
             ...(!pd?.Region && {
@@ -815,9 +920,9 @@ export const useFormLayout = ({
           // City field - readonly if from NIC, autocomplete if not
           {
             type: pd?.City ? "readonly" : "autocomplete",
-            name: "plaintiffCity",
+            name: "principal_city",
             label: t("nicDetails.city"),
-            value: pd?.City ? pd.City : watch("plaintiffCity"),
+            value: pd?.City ? pd.City : watch("principal_city"),
             options: CityOptions,
             isLoading: nicAgentLoading,
             ...(!pd?.City && {
@@ -837,7 +942,7 @@ export const useFormLayout = ({
           {
             type: "readonly" as const,
             label: t("nicDetails.dobHijri"),
-            value: formatDateString(pd?.DateOfBirthHijri) || "",
+            value: formatDateString(pd?.DateOfBirthHijri) || watch("principal_hijriDate"),
             isLoading: nicAgentLoading,
           },
 
@@ -845,16 +950,16 @@ export const useFormLayout = ({
           {
             type: "readonly" as const,
             label: t("nicDetails.dobGrog"),
-            value: formatDateString(pd?.DateOfBirthGregorian) || "",
+            value: formatDateString(pd?.DateOfBirthGregorian) || watch("principal_gregorianDate"),
             isLoading: nicAgentLoading,
           },
 
           // Phone Number field - readonly if from NIC, input if not
           {
             type: pd?.PhoneNumber ? "readonly" : "input",
-            name: "phoneNumber",
+            name: "principal_phoneNumber",
             label: t("nicDetails.phoneNumber"),
-            value: pd?.PhoneNumber || "",
+            value: pd?.PhoneNumber || watch("principal_phoneNumber"),
             isLoading: nicAgentLoading,
             ...(!pd?.PhoneNumber && {
               validation: {
@@ -875,9 +980,9 @@ export const useFormLayout = ({
           // Occupation field - readonly if from NIC, autocomplete if not
           {
             type: pd?.Occupation ? "readonly" : "autocomplete",
-            name: "occupation",
+            name: "principal_occupation",
             label: t("nicDetails.occupation"),
-            value: pd?.Occupation ? pd.Occupation : watch("occupation"),
+            value: pd?.Occupation ? pd.Occupation : watch("principal_occupation"),
             options: OccupationOptions,
             isLoading: nicAgentLoading,
             ...(!pd?.Occupation && {
@@ -896,9 +1001,9 @@ export const useFormLayout = ({
           // Gender field - readonly if from NIC, autocomplete if not
           {
             type: pd?.Gender ? "readonly" : "autocomplete",
-            name: "gender",
+            name: "principal_gender",
             label: t("nicDetails.gender"),
-            value: pd?.Gender ? pd.Gender : watch("gender"),
+            value: pd?.Gender ? pd.Gender : watch("principal_gender"),
             options: GenderOptions,
             isLoading: nicAgentLoading,
             ...(!pd?.Gender && {
@@ -917,9 +1022,9 @@ export const useFormLayout = ({
           // Nationality field - readonly if from NIC, autocomplete if not
           {
             type: pd?.Nationality ? "readonly" : "autocomplete",
-            name: "nationality",
+            name: "principal_nationality",
             label: t("nicDetails.nationality"),
-            value: pd?.Nationality ? pd.Nationality : watch("nationality"),
+            value: pd?.Nationality ? pd.Nationality : watch("principal_nationality"),
             options: NationalityOptions,
             isLoading: nicAgentLoading,
             ...(!pd?.Nationality && {
@@ -985,167 +1090,317 @@ export const useFormLayout = ({
 
       // 2) Agent Data - only show if agentType is selected
       if (agentType) {
-        sections.push({
-          title: t("nicDetails.agentData"),
-          className: "agent-data-section",
-          gridCols: 3,
-          children: [
-            // Agent's own ID (readonly)
-            {
-              type: "readonly" as const,
-              label: t("nicDetails.idNumber"),
-              value: idNumber,
-            },
-
-            // Agent Name: readonly for local_agency, input otherwise
-            {
-              type: agentType === "local_agency" ? "readonly" : "input",
-              name: "agentName",
-              label: t("nicDetails.agentName"),
-              value:
-                agentType === "local_agency"
-                  ? agentInfoData.Agent?.AgentName || ""
-                  : watch("agentName"),
-              onChange: (v: string) => setValue("agentName", v),
-              validation: { required: t("agentNameValidation") },
-              isLoading: agentType === "local_agency" && apiLoadingStates.agent,
-            },
-
-            agentType === "local_agency"
-              ? {
+        // Local Agency Agent Section
+        if (agentType === "local_agency") {
+          // Agent Section (local)
+          sections.push({
+            title: t("nicDetails.agentData"),
+            className: "agent-data-section",
+            gridCols: 3,
+            children: [
+              { type: "readonly" as const, label: t("nicDetails.idNumber"), value: idNumber },
+              { type: "readonly" as const, name: "localAgent_agentName", label: t("nicDetails.agentName"), value: agentInfoData?.Agent?.AgentName || "", isLoading: apiLoadingStates.agent },
+              { type: "custom", component: (
+                <FieldWrapper label={t("nicDetails.agencyNumber")} labelFor="localAgent_agencyNumber" invalidFeedback={errors.localAgent_agencyNumber?.message}>
+                  <DigitOnlyInput id="localAgent_agencyNumber" name="localAgent_agencyNumber" placeholder="10xxxxxxxx" value={String(watch("localAgent_agencyNumber") || "")} onChange={e => setValue("localAgent_agencyNumber", typeof e === "string" ? e : e.target.value)} onBlur={() => { const v = watch("localAgent_agencyNumber") + ""; if (v && v.length >= 1 && v.length <= 10) { onAgencyNumberChange(v); }}} maxLength={10} required />
+                </FieldWrapper>
+              ) },
+              { type: "readonly" as const, name: "localAgent_agencyStatus", label: t("nicDetails.agencyStatus"), value: agentInfoData?.Agent?.MandateStatus || "", isLoading: apiLoadingStates.agent },
+              { type: "readonly" as const, name: "localAgent_agencySource", label: t("nicDetails.agencySource"), value: agentInfoData?.Agent?.MandateSource || "", isLoading: apiLoadingStates.agent },
+              { type: "input" as const, name: "localAgent_currentPlaceOfWork", inputType: "text", label: t("nicDetails.currentWorkingPlace"), value: watch("localAgent_currentPlaceOfWork"), onChange: (v: string) => setValue("localAgent_currentPlaceOfWork", v), validation: { required: t("workplaceValidation") } },
+              { type: "input" as const, name: "localAgent_residencyAddress", inputType: "text", label: t("nicDetails.residenceAddress"), value: watch("localAgent_residencyAddress"), onChange: (v: string) => setValue("localAgent_residencyAddress", v), validation: { required: t("residenceAddressValidation") } },
+            ],
+          });
+          // Plaintiff Section (local)
+          sections.push({
+            title: t("nicDetails.plaintiffData"),
+            className: "plaintiff-data-section",
+            gridCols: 3,
+            disabled: !hasValidAgency,
+            children: [
+              {
+                type: "custom",
+                component: (() => {
+                  const idValue = watch("localAgent_workerAgentIdNumber") || "";
+                  const idIsValid = idValue.length === 10;
+                  return (
+                    <FieldWrapper
+                      label={t("nicDetails.idNumber")}
+                      labelFor="localAgent_workerAgentIdNumber"
+                      invalidFeedback={errors.localAgent_workerAgentIdNumber?.message}
+                    >
+                      <DigitOnlyInput
+                        id="localAgent_workerAgentIdNumber"
+                        name="localAgent_workerAgentIdNumber"
+                        placeholder="10xxxxxxxx"
+                        value={idValue}
+                        onChange={e => {
+                          const newId = typeof e === "string" ? e : e.target.value;
+                          setValue("localAgent_workerAgentIdNumber", newId);
+                          let shouldClear = false;
+                          if (newId.length === 10 && !safeAllowedIds.includes(newId)) {
+                            shouldClear = true;
+                            toast.error(t("error.idNotUnderAgency"));
+                          } else if (newId.length !== 10) {
+                            shouldClear = true;
+                          }
+                          if (shouldClear) {
+                            setValue("localAgent_workerAgentDateOfBirthHijri", "");
+                            setValue("localAgent_gregorianDate", "");
+                            setValue("localAgent_userName", "");
+                            setValue("localAgent_phoneNumber", "");
+                            setValue("localAgent_region", null);
+                            setValue("localAgent_city", null);
+                            setValue("localAgent_occupation", null);
+                            setValue("localAgent_gender", null);
+                            setValue("localAgent_nationality", null);
+                            clearErrors("localAgent_workerAgentIdNumber");
+                          }
+                        }}
+                        maxLength={10}
+                        disabled={!hasValidAgency}
+                      />
+                    </FieldWrapper>
+                  );
+                })(),
+              },
+              {
                 type: "custom",
                 component: (
-                  <FieldWrapper
-                    label={t("nicDetails.agencyNumber")}
-                    labelFor="agencyNumber"
-                    invalidFeedback={errors.agencyNumber?.message}
-                  >
-                    <DigitOnlyInput
-                      id="agencyNumber"
-                      name="agencyNumber"
-                      placeholder="10xxxxxxxx"
-                      value={String(watch("agencyNumber") || "")}
-                      onChange={(e) => {
-                        const v = typeof e === "string" ? e : e.target.value;
-                        setValue("agencyNumber", v);
-                      }}
-                      onBlur={() => {
-
-                        const v = watch("agencyNumber") + "";
-                        if (v && v.length >= 1 && v.length <= 10) {
-                          onAgencyNumberChange(v);
-                        }
-                      }}
-                      maxLength={10}
-                    />
-                  </FieldWrapper>
-                ),
-              }
-              : {
-                type: "custom",
-                component: (
-                  <FieldWrapper
-                    label={t("nicDetails.agencyNumber")}
-                    labelFor="externalAgencyNumber"
-                    invalidFeedback={errors.externalAgencyNumber?.message}
-                  >
-                    <DigitOnlyInput
-                      id="externalAgencyNumber"
-                      name="externalAgencyNumber"
-                      placeholder="10xxxxxxxx"
-                      value={String(watch("externalAgencyNumber") || "")}
-                      onChange={(e) => {
-                        const v = typeof e === "string" ? e : e.target.value;
-                        setValue("externalAgencyNumber", v);
-                      }}
-                      maxLength={10}
-                    />
-                  </FieldWrapper>
+                  <div className="flex flex-col gap-2">
+                    {(!hasValidAgency || (watch("localAgent_workerAgentIdNumber") || "").length !== 10 || !safeAllowedIds.includes(watch("localAgent_workerAgentIdNumber") || ""))
+                      ? (
+                        <div style={{ pointerEvents: 'none', opacity: 0.5 }}>
+                          <HijriDatePickerInput
+                            control={control}
+                            name="localAgent_workerAgentDateOfBirthHijri"
+                            label={t("nicDetails.dobHijri")}
+                            rules={{ required: true }}
+                            onChangeHandler={(date, onChange) => {
+                              userPickedDateRef.current = true;
+                              if (!date || Array.isArray(date)) {
+                                setValue("localAgent_gregorianDate", "");
+                                return;
+                              }
+                              const gregorianStr = date.convert(gregorian, gregorianLocaleEn).format("YYYY/MM/DD");
+                              const gregorianStorage = gregorianStr.replace(/\//g, "");
+                              if (watch("localAgent_gregorianDate") !== gregorianStorage) {
+                                setValue("localAgent_gregorianDate", gregorianStorage);
+                              }
+                              // Never call NIC if not allowed
+                            }}
+                            notRequired={false}
+                          />
+                        </div>
+                      )
+                      : (
+                        <HijriDatePickerInput
+                          control={control}
+                          name="localAgent_workerAgentDateOfBirthHijri"
+                          label={t("nicDetails.dobHijri")}
+                          rules={{ required: true }}
+                          onChangeHandler={(date, onChange) => {
+                            userPickedDateRef.current = true;
+                            if (!date || Array.isArray(date)) {
+                              setValue("localAgent_gregorianDate", "");
+                              return;
+                            }
+                            const gregorianStr = date.convert(gregorian, gregorianLocaleEn).format("YYYY/MM/DD");
+                            const gregorianStorage = gregorianStr.replace(/\//g, "");
+                            if (watch("localAgent_gregorianDate") !== gregorianStorage) {
+                              setValue("localAgent_gregorianDate", gregorianStorage);
+                            }
+                            // Only call NIC if allowed
+                            if (
+                              hasValidAgency &&
+                              (watch("localAgent_workerAgentIdNumber") || "").length === 10 &&
+                              safeAllowedIds.includes(watch("localAgent_workerAgentIdNumber") || "")
+                            ) {
+                              if (shouldFetchNic) refetchNICAgent();
+                            }
+                          }}
+                          notRequired={false}
+                        />
+                      )}
+                    <GregorianDateDisplayInput control={control} name="localAgent_gregorianDate" label={t("nicDetails.dobGrog")} notRequired={false} />
+                  </div>
                 ),
               },
+              {
+                type: localAgentNICResponse?.NICDetails?.PlaintiffName ? "readonly" : "input",
+                name: "localAgent_userName",
+                label: t("nicDetails.name"),
+                value: localAgentNICResponse?.NICDetails?.PlaintiffName || watch("localAgent_userName"),
+                ...(localAgentNICResponse?.NICDetails?.PlaintiffName ? {} : { onChange: (v: string) => setValue("localAgent_userName", v) }),
+                validation: { required: t("nameValidation") },
+                disabled: !(
+                  hasValidAgency &&
+                  (watch("localAgent_workerAgentIdNumber") || "").length === 10 &&
+                  safeAllowedIds.includes(watch("localAgent_workerAgentIdNumber") || "") &&
+                  !!watch("localAgent_workerAgentDateOfBirthHijri")
+                ),
+              },
+              {
+                type: "input",
+                name: "localAgent_phoneNumber",
+                label: t("nicDetails.phoneNumber"),
+                inputType: "text",
+                placeholder: "05xxxxxxxx",
+                value: watch("localAgent_phoneNumber"),
+                onChange: (v: string) => setValue("localAgent_phoneNumber", v),
+                validation: { required: t("phoneNumberValidation"), pattern: { value: /^05\d{8}$/, message: t("phoneValidationMessage") } },
+                disabled: !(
+                  hasValidAgency &&
+                  (watch("localAgent_workerAgentIdNumber") || "").length === 10 &&
+                  safeAllowedIds.includes(watch("localAgent_workerAgentIdNumber") || "") &&
+                  !!watch("localAgent_workerAgentDateOfBirthHijri")
+                ),
+              },
+              {
+                type: localAgentNICResponse?.NICDetails?.Region ? "readonly" : "autocomplete",
+                name: "localAgent_region",
+                isLoading: false,
+                label: t("nicDetails.region"),
+                value: localAgentNICResponse?.NICDetails?.Region || watch("localAgent_region"),
+                ...(localAgentNICResponse?.NICDetails?.Region ? {} : { options: RegionOptions || [], validation: { required: t("regionValidation") } }),
+                disabled: !(
+                  hasValidAgency &&
+                  (watch("localAgent_workerAgentIdNumber") || "").length === 10 &&
+                  safeAllowedIds.includes(watch("localAgent_workerAgentIdNumber") || "") &&
+                  !!watch("localAgent_workerAgentDateOfBirthHijri")
+                ),
+              },
+              {
+                type: localAgentNICResponse?.NICDetails?.City ? "readonly" : "autocomplete",
+                name: "localAgent_city",
+                isLoading: false,
+                label: t("nicDetails.city"),
+                value: localAgentNICResponse?.NICDetails?.City || watch("localAgent_city"),
+                ...(localAgentNICResponse?.NICDetails?.City ? {} : { options: CityOptions || [], validation: { required: t("cityValidation") } }),
+                disabled: !(
+                  hasValidAgency &&
+                  (watch("localAgent_workerAgentIdNumber") || "").length === 10 &&
+                  safeAllowedIds.includes(watch("localAgent_workerAgentIdNumber") || "") &&
+                  !!watch("localAgent_workerAgentDateOfBirthHijri")
+                ),
+              },
+              {
+                isLoading: nicAgentLoading,
+                type: localAgentNICResponse?.NICDetails?.Occupation ? "readonly" : "autocomplete",
+                name: "localAgent_occupation",
+                label: t("nicDetails.occupation"),
+                value: localAgentNICResponse?.NICDetails?.Occupation || watch("localAgent_occupation"),
+                ...(localAgentNICResponse?.NICDetails?.Occupation ? {} : { options: OccupationOptions || [], validation: { required: t("occupationValidation") } }),
+                disabled: !(
+                  hasValidAgency &&
+                  (watch("localAgent_workerAgentIdNumber") || "").length === 10 &&
+                  safeAllowedIds.includes(watch("localAgent_workerAgentIdNumber") || "") &&
+                  !!watch("localAgent_workerAgentDateOfBirthHijri")
+                ),
+              },
+              {
+                isLoading: nicAgentLoading,
+                type: localAgentNICResponse?.NICDetails?.Gender ? "readonly" : "autocomplete",
+                name: "localAgent_gender",
+                label: t("nicDetails.gender"),
+                value: localAgentNICResponse?.NICDetails?.Gender && agentType === "local_agency" ? localAgentNICResponse.NICDetails.Gender : watch("localAgent_gender"),
+                ...(localAgentNICResponse?.NICDetails?.Gender ? {} : { options: GenderOptions || [], validation: { required: t("genderValidation") } }),
+                disabled: !(
+                  hasValidAgency &&
+                  (watch("localAgent_workerAgentIdNumber") || "").length === 10 &&
+                  safeAllowedIds.includes(watch("localAgent_workerAgentIdNumber") || "") &&
+                  !!watch("localAgent_workerAgentDateOfBirthHijri")
+                ),
+              },
+              {
+                isLoading: nicAgentLoading,
+                type: localAgentNICResponse?.NICDetails?.Nationality ? "readonly" : "autocomplete",
+                name: "localAgent_nationality",
+                label: t("nicDetails.nationality"),
+                value: localAgentNICResponse?.NICDetails?.Nationality && agentType === "local_agency" ? localAgentNICResponse.NICDetails.Nationality : watch("localAgent_nationality"),
+                ...(localAgentNICResponse?.NICDetails?.Nationality ? {} : { options: NationalityOptions || [], validation: { required: t("nationalityValidation") } }),
+                disabled: !(
+                  hasValidAgency &&
+                  (watch("localAgent_workerAgentIdNumber") || "").length === 10 &&
+                  safeAllowedIds.includes(watch("localAgent_workerAgentIdNumber") || "") &&
+                  !!watch("localAgent_workerAgentDateOfBirthHijri")
+                ),
+              },
+            ],
+          });
+        }
 
-            // Agency Status
-            {
-              type: agentType === "local_agency" ? "readonly" : "input",
-              name: "agencyStatus",
-              label: t("nicDetails.agencyStatus"),
-              value:
-                agentType === "local_agency"
-                  ? agentInfoData.Agent?.MandateStatus || ""
-                  : watch("agencyStatus"),
-              onChange: (v: string) => setValue("agencyStatus", v),
-              validation: { required: t("agencyStatusValidation") },
-              isLoading: agentType === "local_agency" && apiLoadingStates.agent,
-            },
-
-            // Agency Source
-            {
-              type: agentType === "local_agency" ? "readonly" : "input",
-              name: "agencySource",
-              label: t("nicDetails.agencySource"),
-              value:
-                agentType === "local_agency"
-                  ? agentInfoData.Agent?.MandateSource || ""
-                  : watch("agencySource"),
-              onChange: (v: string) => setValue("agencySource", v),
-              validation: { required: t("agencySourceValidation") },
-              isLoading: agentType === "local_agency" && apiLoadingStates.agent,
-            },
-
-            // Current Place of Work
-            {
-              type: "input" as const,
-              name: "Agent_CurrentPlaceOfWork",
-              inputType: "text",
-              label: t("nicDetails.currentWorkingPlace"),
-              value: watch("Agent_CurrentPlaceOfWork"),
-              onChange: (v: string) => setValue("Agent_CurrentPlaceOfWork", v),
-              validation: { required: t("workplaceValidation") },
-            },
-
-            // Residency Address
-            {
-              type: "input" as const,
-              name: "Agent_ResidencyAddress",
-              inputType: "text",
-              label: t("nicDetails.residenceAddress"),
-              value: watch("Agent_ResidencyAddress"),
-              onChange: (v: string) => setValue("Agent_ResidencyAddress", v),
-              validation: { required: t("residenceAddressValidation") },
-            },
-
-            // External-agency only: Mobile number field
-            ...(agentType === "external_agency"
-              ? [
-                {
-                  type: "input" as const,
-                  name: "agentPhoneNumber",
-                  label: t("nicDetails.phoneNumber"),
-                  inputType: "text",
-                  placeholder: "05xxxxxxxx",
-                  value: watch("agentPhoneNumber"),
-                  onChange: (v: string) => setValue("agentPhoneNumber", v),
-                  validation: {
-                    required: t("phoneNumberValidation"),
-                    pattern: {
-                      value: /^05\d{8}$/,
-                      message: t("phoneValidationMessage"),
-                    },
-                  },
-                },
-              ]
-              : []),
-          ],
-        });
+        // External Agency Agent Section
+        if (agentType === "external_agency") {
+          // Agent Section (external)
+          sections.push({
+            title: t("nicDetails.agentData"),
+            className: "agent-data-section",
+            gridCols: 3,
+            children: [
+              { type: "readonly" as const, label: t("nicDetails.idNumber"), value: idNumber },
+              { type: "input" as const, name: "externalAgent_agentName", label: t("nicDetails.agentName"), value: watch("externalAgent_agentName"), onChange: (v: string) => setValue("externalAgent_agentName", v), validation: { required: t("agentNameValidation") } },
+              { type: "custom", component: (
+                <FieldWrapper label={t("nicDetails.agencyNumber")} labelFor="externalAgent_agencyNumber" invalidFeedback={errors.externalAgent_agencyNumber?.message}>
+                  <DigitOnlyInput id="externalAgent_agencyNumber" name="externalAgent_agencyNumber" placeholder={t("nicDetails.agencyNumberPlaceholder")} value={String(watch("externalAgent_agencyNumber") || "")} onChange={e => setValue("externalAgent_agencyNumber", typeof e === "string" ? e : e.target.value)} maxLength={10} required />
+                </FieldWrapper>
+              ), validation: { required: t("agencyNumberValidation") } },
+              { type: "input" as const, name: "externalAgent_agencyStatus", label: t("nicDetails.agencyStatus"), value: watch("externalAgent_agencyStatus"), onChange: (v: string) => setValue("externalAgent_agencyStatus", v), validation: { required: t("agencyStatusValidation") } },
+              { type: "input" as const, name: "externalAgent_agencySource", label: t("nicDetails.agencySource"), value: watch("externalAgent_agencySource"), onChange: (v: string) => setValue("externalAgent_agencySource", v), validation: { required: t("agencySourceValidation") } },
+              { type: "input" as const, name: "externalAgent_currentPlaceOfWork", inputType: "text", label: t("nicDetails.currentWorkingPlace"), value: watch("externalAgent_currentPlaceOfWork"), onChange: (v: string) => setValue("externalAgent_currentPlaceOfWork", v), validation: { required: t("workplaceValidation") } },
+              { type: "input" as const, name: "externalAgent_residencyAddress", inputType: "text", label: t("nicDetails.residenceAddress"), value: watch("externalAgent_residencyAddress"), onChange: (v: string) => setValue("externalAgent_residencyAddress", v), validation: { required: t("residenceAddressValidation") } },
+              { type: "input" as const, name: "externalAgent_agentPhoneNumber", label: t("nicDetails.agentPhoneNumber"), inputType: "text", placeholder: t("nicDetails.phonePlaceholder"), value: watch("externalAgent_agentPhoneNumber"), onChange: (v: string) => setValue("externalAgent_agentPhoneNumber", v), validation: { required: t("phoneNumberValidation"), pattern: { value: /^05\d{8}$/, message: t("phoneValidationMessage") } } },
+            ],
+          });
+          // Plaintiff Section (external)
+          sections.push({
+            title: t("nicDetails.plaintiffData"),
+            className: "plaintiff-data-section",
+            gridCols: 3,
+            children: [
+              { type: "custom", component: (
+                <FieldWrapper label={t("nicDetails.idNumber")} labelFor="externalAgent_workerAgentIdNumber" invalidFeedback={errors.externalAgent_workerAgentIdNumber?.message}>
+                  <DigitOnlyInput id="externalAgent_workerAgentIdNumber" name="externalAgent_workerAgentIdNumber" placeholder="10xxxxxxxx" value={String(watch("externalAgent_workerAgentIdNumber") || "")} onChange={e => setValue("externalAgent_workerAgentIdNumber", typeof e === "string" ? e : e.target.value)} maxLength={10} required />
+                </FieldWrapper>
+              ) },
+              { type: "custom", component: (
+                <div className="flex flex-col gap-2">
+                  <HijriDatePickerInput control={control} name="externalAgent_workerAgentDateOfBirthHijri" label={t("nicDetails.dobHijri")} rules={{ required: true }} onChangeHandler={(date, onChange) => { userPickedDateRef.current = true; if (!date || Array.isArray(date)) { setValue("externalAgent_gregorianDate", ""); return; } const gregorianStr = date.convert(gregorian, gregorianLocaleEn).format("YYYY/MM/DD"); const gregorianStorage = gregorianStr.replace(/\//g, ""); if (watch("externalAgent_gregorianDate") !== gregorianStorage) { setValue("externalAgent_gregorianDate", gregorianStorage); } }} notRequired={false} />
+                  <GregorianDateDisplayInput control={control} name="externalAgent_gregorianDate" label={t("nicDetails.dobGrog")} notRequired={false} />
+                </div>
+              ) },
+              { type: externalAgentNICResponse?.NICDetails?.PlaintiffName ? "readonly" : "input",
+                name: "externalAgent_userName",
+                label: t("nicDetails.name"),
+                value: externalAgentNICResponse?.NICDetails?.PlaintiffName || watch("externalAgent_userName"),
+                ...(externalAgentNICResponse?.NICDetails?.PlaintiffName ? {} : { onChange: (v: string) => setValue("externalAgent_userName", v) }),
+                validation: { required: t("nameValidation") },
+              },
+              { type: "input", name: "externalAgent_phoneNumber", label: t("nicDetails.phoneNumber"), inputType: "text", placeholder: t("nicDetails.phonePlaceholder"), value: watch("externalAgent_phoneNumber"), onChange: (v: string) => setValue("externalAgent_phoneNumber", v), validation: { required: t("phoneNumberValidation"), pattern: { value: /^05\d{8}$/, message: t("phoneValidationMessage") } } },
+              { type: externalAgentNICResponse?.NICDetails?.Region ? "readonly" : "autocomplete", name: "externalAgent_region", isLoading: false, label: t("nicDetails.region"), value: externalAgentNICResponse?.NICDetails?.Region || watch("externalAgent_region"), ...(externalAgentNICResponse?.NICDetails?.Region ? {} : { options: RegionOptions || [], validation: { required: t("regionValidation") } }) },
+              { type: externalAgentNICResponse?.NICDetails?.City ? "readonly" : "autocomplete", name: "externalAgent_city", isLoading: false, label: t("nicDetails.city"), value: externalAgentNICResponse?.NICDetails?.City || watch("externalAgent_city"), ...(externalAgentNICResponse?.NICDetails?.City ? {} : { options: CityOptions || [], validation: { required: t("cityValidation") } }) },
+              { isLoading: nicAgentLoading, type: externalAgentNICResponse?.NICDetails?.Occupation ? "readonly" : "autocomplete", name: "externalAgent_occupation", label: t("nicDetails.occupation"), value: externalAgentNICResponse?.NICDetails?.Occupation || watch("externalAgent_occupation"), ...(externalAgentNICResponse?.NICDetails?.Occupation ? {} : { options: OccupationOptions || [], validation: { required: t("occupationValidation") } }) },
+              { isLoading: nicAgentLoading, type: externalAgentNICResponse?.NICDetails?.Gender ? "readonly" : "autocomplete", name: "externalAgent_gender", label: t("nicDetails.gender"), value: externalAgentNICResponse?.NICDetails?.Gender && agentType === "external_agency" ? externalAgentNICResponse.NICDetails.Gender : watch("externalAgent_gender"), ...(externalAgentNICResponse?.NICDetails?.Gender ? {} : { options: GenderOptions || [], validation: { required: t("genderValidation") } }) },
+              { isLoading: nicAgentLoading, type: externalAgentNICResponse?.NICDetails?.Nationality ? "readonly" : "autocomplete", name: "externalAgent_nationality", label: t("nicDetails.nationality"), value: externalAgentNICResponse?.NICDetails?.Nationality && agentType === "external_agency" ? externalAgentNICResponse.NICDetails.Nationality : watch("externalAgent_nationality"), ...(externalAgentNICResponse?.NICDetails?.Nationality ? {} : { options: NationalityOptions || [], validation: { required: t("nationalityValidation") } }) },
+            ],
+          });
+        }
       }
     }
 
     // --- NEW: Plaintiff's Data section (modeled after legdefendant.forms.formLayout.tsx) ---
-    if (claimantStatus === "representative" && agentType) {
+    if (
+      claimantStatus === "representative" &&
+      agentType &&
+      agentType !== "local_agency" &&
+      agentType !== "external_agency"
+    ) {
       sections.push({
         title: t("nicDetails.plaintiffData"),
         className: "plaintiff-data-section",
         gridCols: 3,
+        disabled: agentType === "local_agency" && !hasValidAgency, // Only disable for local agency when not valid
+
         children: [
           {
             type: "custom",
@@ -1165,9 +1420,13 @@ export const useFormLayout = ({
                     setValue("workerAgentIdNumber", v);
                   }}
                   onBlur={() => {
-                    if (shouldFetchNic) refetchNICAgent();
+                    // only attempt NIC lookup if agency is validated
+                    if (hasValidAgency && shouldFetchNic) {
+                      refetchNICAgent();
+                    }
                   }}
                   maxLength={10}
+                  disabled={agentType === "local_agency" && (!hasMandateNumber || !hasValidAgency)}
                 />
               </FieldWrapper>
             ),
@@ -1182,14 +1441,19 @@ export const useFormLayout = ({
                   label={t("nicDetails.dobHijri")}
                   rules={{ required: true }}
                   onChangeHandler={(date, onChange) => {
+                    userPickedDateRef.current = true;
                     if (!date || Array.isArray(date)) {
-                      setValue('gregorianDate', '');
+                      setValue("localAgent_gregorianDate", "");
                       return;
                     }
-                    const gregorianStr = date.convert(gregorian, gregorianLocaleEn).format("YYYY/MM/DD");
-                    const gregorianStorage = gregorianStr.replace(/\//g, '');
-                    setValue('gregorianDate', gregorianStorage);
-
+                    const gregorianStr = date
+                      .convert(gregorian, gregorianLocaleEn)
+                      .format("YYYY/MM/DD");
+                    const gregorianStorage = gregorianStr.replace(/\//g, "");
+                    // Only update if value is different
+                    if (watch("localAgent_gregorianDate") !== gregorianStorage) {
+                      setValue("localAgent_gregorianDate", gregorianStorage);
+                    }
                     // Trigger refetch when date changes
                     if (shouldFetchNic) refetchNICAgent();
                   }}
@@ -1197,7 +1461,7 @@ export const useFormLayout = ({
                 />
                 <GregorianDateDisplayInput
                   control={control}
-                  name="gregorianDate"
+                  name="localAgent_gregorianDate"
                   label={t("nicDetails.dobGrog")}
                   notRequired={false}
                 />
@@ -1220,7 +1484,7 @@ export const useFormLayout = ({
             ...(!representativeNICResponse?.NICDetails?.PlaintiffName && {
               validation: { required: t("nameValidation") },
             }),
-            disabled: disableNicFields,
+            disabled: agentType === "local_agency" && (!hasMandateNumber || !hasValidAgency),
           },
           {
             type: "input",
@@ -1237,97 +1501,127 @@ export const useFormLayout = ({
                 message: t("phoneValidationMessage"),
               },
             },
-            disabled: disableNicFields,
+            disabled: agentType === "local_agency" && (!hasMandateNumber || !hasValidAgency),
           },
           {
-            type: representativeNICResponse?.NICDetails?.Region ? "readonly" : "autocomplete",
+            type: representativeNICResponse?.NICDetails?.Region
+              ? "readonly"
+              : "autocomplete",
             name: "plaintiffRegion",
             isLoading: false,
             label: t("nicDetails.region"),
-            value: representativeNICResponse?.NICDetails?.Region || watch("plaintiffRegion"),
+            value:
+              representativeNICResponse?.NICDetails?.Region ||
+              watch("plaintiffRegion"),
             ...(representativeNICResponse?.NICDetails?.Region
               ? {}
               : {
-                options: RegionOptions || [],
-                validation: { required: t("regionValidation") },
-              }),
-            disabled: disableNicFields,
+                  options: RegionOptions || [],
+                  validation: { required: t("regionValidation") },
+                }),
+            disabled: agentType === "local_agency" && (!hasMandateNumber || !hasValidAgency),
           },
           {
-            type: representativeNICResponse?.NICDetails?.City ? "readonly" : "autocomplete",
+            type: representativeNICResponse?.NICDetails?.City
+              ? "readonly"
+              : "autocomplete",
             name: "plaintiffCity",
             isLoading: false,
             label: t("nicDetails.city"),
-            value: representativeNICResponse?.NICDetails?.City || watch("plaintiffCity"),
+            value:
+              representativeNICResponse?.NICDetails?.City ||
+              watch("plaintiffCity"),
             ...(representativeNICResponse?.NICDetails?.City
               ? {}
               : {
-                options: CityOptions || [],
-                validation: { required: t("cityValidation") },
-              }),
-            disabled: disableNicFields,
+                  options: CityOptions || [],
+                  validation: { required: t("cityValidation") },
+                }),
+            disabled: agentType === "local_agency" && (!hasMandateNumber || !hasValidAgency),
           },
           {
             isLoading: nicAgentLoading,
-            type: representativeNICResponse?.NICDetails?.Occupation ? "readonly" : "autocomplete",
+            type: representativeNICResponse?.NICDetails?.Occupation
+              ? "readonly"
+              : "autocomplete",
             name: "occupation",
             label: t("nicDetails.occupation"),
-            value: representativeNICResponse?.NICDetails?.Occupation || watch("occupation"),
+            value:
+              representativeNICResponse?.NICDetails?.Occupation ||
+              watch("occupation"),
             ...(representativeNICResponse?.NICDetails?.Occupation
               ? {}
               : {
-                options: OccupationOptions || [],
-                validation: { required: t("occupationValidation") },
-              }),
-            disabled: disableNicFields,
+                  options: OccupationOptions || [],
+                  validation: { required: t("occupationValidation") },
+                }),
+            disabled: agentType === "local_agency" && (!hasMandateNumber || !hasValidAgency),
           },
           {
             isLoading: nicAgentLoading,
-            type: representativeNICResponse?.NICDetails?.Gender ? "readonly" : "autocomplete",
+            type: representativeNICResponse?.NICDetails?.Gender
+              ? "readonly"
+              : "autocomplete",
             name: "gender",
             label: t("nicDetails.gender"),
-            value: representativeNICResponse?.NICDetails?.Gender || watch("gender"),
+            value:
+              representativeNICResponse?.NICDetails?.Gender || watch("gender"),
             ...(representativeNICResponse?.NICDetails?.Gender
               ? {}
               : {
-                options: GenderOptions || [],
-                validation: { required: t("genderValidation") },
-              }),
-            disabled: disableNicFields,
+                  options: GenderOptions || [],
+                  validation: { required: t("genderValidation") },
+                }),
+            disabled: agentType === "local_agency" && (!hasMandateNumber || !hasValidAgency),
           },
           {
             isLoading: nicAgentLoading,
-            type: representativeNICResponse?.NICDetails?.Nationality ? "readonly" : "autocomplete",
+            type: representativeNICResponse?.NICDetails?.Nationality
+              ? "readonly"
+              : "autocomplete",
             name: "nationality",
             label: t("nicDetails.nationality"),
-            value: representativeNICResponse?.NICDetails?.Nationality || watch("nationality"),
+            value:
+              representativeNICResponse?.NICDetails?.Nationality ||
+              watch("nationality"),
             ...(representativeNICResponse?.NICDetails?.Nationality
               ? {}
               : {
-                options: NationalityOptions || [],
-                validation: { required: t("nationalityValidation") },
-              }),
-            disabled: disableNicFields,
+                  options: NationalityOptions || [],
+                  validation: { required: t("nationalityValidation") },
+                }),
+            disabled: agentType === "local_agency" && (!hasMandateNumber || !hasValidAgency),
           },
         ],
       });
     }
 
     // --- NEW: UnprofessionalLetterAttachments section ---
-    if (unprofessionalLetterAttachments && unprofessionalLetterAttachments.length > 0) {
+    if (
+      unprofessionalLetterAttachments &&
+      unprofessionalLetterAttachments.length > 0
+    ) {
       sections.push({
-        title: t("unprofessionalLetterAttachments.title", "Unprofessional Letter Attachments"),
+        title: t(
+          "unprofessionalLetterAttachments.title",
+          "Unprofessional Letter Attachments"
+        ),
         className: "attachment-section",
         gridCols: 1,
-        children: unprofessionalLetterAttachments.map((file, idx) => ({
+        children: unprofessionalLetterAttachments.map((file: any, idx: number) => ({
           type: "custom" as const,
           component: (
             <FileAttachment
               key={file.FileKey || idx}
-              fileName={file.FileName || t("unprofessionalLetterAttachments.unnamed", "Unnamed File")}
+              fileName={
+                file.FileName ||
+                t("unprofessionalLetterAttachments.unnamed", "Unnamed File")
+              }
               onView={() => {
                 // TODO: Implement file preview logic if needed
-                window.open(`/api/file/download?key=${encodeURIComponent(file.FileKey)}`);
+                window.open(
+                  `/api/file/download?key=${encodeURIComponent(file.FileKey)}`
+                );
               }}
               className="w-full"
             />
@@ -1561,7 +1855,9 @@ export const useFormLayout = ({
       setFormValuesFromData(caseDetails);
       // NEW: Set UnprofessionalLetterAttachments for display
       if (caseDetails.UnprofessionalLetterAttachments) {
-        setUnprofessionalLetterAttachments(caseDetails.UnprofessionalLetterAttachments);
+        setUnprofessionalLetterAttachments(
+          caseDetails.UnprofessionalLetterAttachments
+        );
       }
     }
 
@@ -1579,10 +1875,33 @@ export const useFormLayout = ({
   // --- NEW: State for UnprofessionalLetterAttachments ---
   // const [unprofessionalLetterAttachments, setUnprofessionalLetterAttachments] = useState<any[]>([]); // Moved to top
 
+  // Clear plaintiff details when mandate number is empty
+  useEffect(() => {
+    if (claimantStatus === "representative" && !hasMandateNumber) {
+      [
+        "userName",
+        "plaintiffRegion",
+        "plaintiffCity",
+        "occupation",
+        "gender",
+        "nationality",
+        "hijriDate",
+        "gregorianDate",
+        "applicant",
+        "phoneNumber",
+        "workerAgentIdNumber",
+        "workerAgentDateOfBirthHijri",
+      ].forEach((f) => setValue(f as any, ""));
+    }
+  }, [hasMandateNumber, setValue, claimantStatus]);
+
+  // Clear plaintiff details when shouldFetchNic becomes false
+  const watchedUserName = useWatch({ name: "userName", control });
+  const watchedPlaintiffRegion = useWatch({ name: "plaintiffRegion", control });
+
   useEffect(() => {
     if (claimantStatus === "representative" && !shouldFetchNic) {
-      const currentFormData = watch();
-      if (!currentFormData.userName && !currentFormData.plaintiffRegion) {
+      if (!watchedUserName && !watchedPlaintiffRegion) {
         [
           "userName",
           "plaintiffRegion",
@@ -1597,7 +1916,40 @@ export const useFormLayout = ({
         ].forEach((f) => setValue(f as any, ""));
       }
     }
-  }, [shouldFetchNic, setValue, claimantStatus, watch]);
+  }, [shouldFetchNic, setValue, claimantStatus, watchedUserName, watchedPlaintiffRegion]);
+
+  // Handle ID number changes and revalidate
+  useEffect(() => {
+    if (claimantStatus === "representative" && agentType === "local_agency" && workerAgentIdNumber && workerAgentIdNumber.length === 10) {
+      // Always validate the current ID
+      if (!isPlaintiffIdUnderAgency) {
+        [
+          "userName",
+          "plaintiffRegion",
+          "plaintiffCity",
+          "occupation",
+          "gender",
+          "nationality",
+          "hijriDate",
+          "gregorianDate",
+          "applicant",
+          "phoneNumber",
+        ].forEach((f) => setValue(f as any, ""));
+        // Always set error for invalid ID (remove any existing error first)
+        clearErrors("workerAgentIdNumber");
+        setError("workerAgentIdNumber", {
+          type: "validate",
+          message: t("error.idNotUnderAgency"),
+        });
+      } else {
+        // Clear error if ID is valid
+        clearErrors("workerAgentIdNumber");
+      }
+    } else if (claimantStatus === "representative" && agentType === "local_agency" && workerAgentIdNumber && workerAgentIdNumber.length !== 10) {
+      // Clear error if ID is not 10 digits yet
+      clearErrors("workerAgentIdNumber");
+    }
+  }, [workerAgentIdNumber, isPlaintiffIdUnderAgency, claimantStatus, agentType]);
 
   return formLayout;
 };

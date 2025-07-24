@@ -206,7 +206,7 @@ const OTPFormLayout = ({
               validation: {
                 required: t("interPhoneNumberValidation"),
                 validate: (value: string) => {
-                  if (!phoneCode) return "Please select country code first";
+                  if (!phoneCode) return t("countryCodeSelection");
                   const pattern = getPhoneConfig(phoneCode).pattern;
                   return pattern.test(value) || t("phoneNumberValidation");
                 },

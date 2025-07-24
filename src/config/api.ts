@@ -15,10 +15,10 @@ const handleApiResponseLegacy = (result: any, args: string | FetchArgs) => {
     return;
   }
 
-  // Don't toast for GetAttorneyDetails errors, they are handled by component-level logic
-  if (url?.includes('GetAttorneyDetails')) {
-    return;
-  }
+  // // Don't toast for GetAttorneyDetails errors, they are handled by component-level logic
+  // if (url?.includes('GetAttorneyDetails')) {
+  //   return;
+  // }
 
   // Use the new centralized error handler
   if (result?.data) {
@@ -101,7 +101,7 @@ const transformRequest = (args: FetchArgs): FetchArgs => {
   const userTypeOrdinary = cookie.load('userType');
   const mainCategory = cookie.load("mainCategory")?.value;
   const subCategory = cookie.load("subCategory")?.value;
-  const userID = cookie.load("userClaims").UserID;
+  const userID = cookie.load("userClaims")?.UserID;
   const fileNumber = cookie.load("userClaims")?.File_Number;
 
   // Skip incomplete case request if userClaims is not available

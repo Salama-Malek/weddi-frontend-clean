@@ -7,7 +7,8 @@ export const getMIR1FormFields = ({
   TypeOfRequestLookUpOptions,
   isEditing,
   watch,
-  editTopic
+  editTopic,
+  trigger
 }: any): FormElement[] => {
   const requiredDegreeOfInsurance=watch("requiredDegreeOfInsurance")
   const currentInsuranceLevel=watch("currentInsuranceLevel")
@@ -26,7 +27,18 @@ export const getMIR1FormFields = ({
       label: t("typeOfRequest"),
       options: TypeOfRequestLookUpOptions,
       value: typeOfRequest,
-      onChange: (option: Option | null) => setValue("typeOfRequest", option),
+      onChange: (option: Option | null) => {
+        setValue("typeOfRequest", option);
+        // Uncomment to test: Trigger validation for dependent fields when typeOfRequest changes
+        if (option && typeof option === 'object' && 'value' in option) {
+          if (option.value === "REQT1" || option.value === "REQT2" || option.value === "REQT3") {
+            if (typeof trigger === 'function') trigger(["requiredDegreeOfInsurance"]);
+          }
+          if (option.value === "REQT3") {
+            if (typeof trigger === 'function') trigger(["theReason", "currentInsuranceLevel"]);
+          }
+        }
+      },
       validation: { required: "Type of request is required" },
       notRequired: false,
     },
@@ -50,7 +62,7 @@ export const getMIR1FormFields = ({
         inputType: "textarea" as const,
         value:  isEditing ? editTopic?.Reason || editTopic?.theReason : theReason,
         onChange: (value: string) => setValue("theReason", value),
-        notRequired: false,
+        // notRequired: false,
         validation: { required: "Reason is required" },
       },
       {
@@ -60,7 +72,7 @@ export const getMIR1FormFields = ({
         inputType: "number" as const,
         value: isEditing ? editTopic?.CurrentInsuranceLevel || editTopic?.currentInsuranceLevel : currentInsuranceLevel,
         onChange: (value: string) => setValue("currentInsuranceLevel", value),
-        notRequired: false,
+        // notRequired: false,
         validation: { required: "Current insurance level is required" },
       },
       {

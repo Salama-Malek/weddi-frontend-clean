@@ -68,78 +68,131 @@ export const claimantDetailsPayload = (
     CaseID: caseId,
   };
 
-
-
-
   // Set DomesticWorker based on NIC details
   payload.DomesticWorker = nicDetailObj?.Applicant_Code === "DW1" ? "true" : "false";
 
-  // Always use NIC details if available, otherwise fall back to form data
-  payload.PlaintiffName = nicDetailObj?.PlaintiffName || formData?.userName || userClaims?.UserName;
-  payload.PlaintiffHijiriDOB = toWesternDigits(formData?.hijriDate || nicDetailObj?.DateOfBirthHijri || userClaims?.UserDOB || "");
-  payload.Plaintiff_ApplicantBirthDate = toWesternDigits((formData?.gregorianDate || nicDetailObj?.DateOfBirthGregorian) ?? "");
-  payload.Plaintiff_PhoneNumber = formData?.phoneNumber || "";
-
-  // For dropdown fields, use the value property if it exists
-  payload.Plaintiff_Region = formData?.plaintiffRegion?.value
-    || nicDetailObj?.Region_Code
-    || formData?.region?.value
-    || formData?.plaintiffRegion
-    || formData?.region
-    || "";
-  payload.Plaintiff_City = formData?.plaintiffCity?.value
-    || nicDetailObj?.City_Code
-    || formData?.city?.value
-    || formData?.plaintiffCity
-    || formData?.city
-    || "";
-  payload.JobPracticing = formData?.occupation?.value
-    || nicDetailObj?.Occupation_Code
-    || formData?.occupation
-    || "";
-  payload.Gender = formData?.gender?.value
-    || nicDetailObj?.Gender_Code
-    || formData?.gender
-    || "";
-  payload.Worker_Nationality = formData?.nationality?.value
-    || nicDetailObj?.Nationality_Code
-    || formData?.nationality
-    || "";
-  // payload.Plaintiff_JobLocation = nicDetailObj?.Region_Code
-  //   || formData?.region?.value
-  //   || formData?.region
-  //   || "";
-  // payload.Plaintiff_ClosestLaborOffice = formData?.laborOffice?.value || formData?.laborOffice;
-
-  // Ensure city is not null
-  if (!payload.Plaintiff_City) {
-    payload.Plaintiff_City = nicDetailObj?.City_Code || formData?.city?.value || "";
-  }
-
+  // Determine claimant type
   const claimantStatus = formData?.claimantStatus;
+  const agentType = formData?.agentType;
   const isAgent = claimantStatus === "representative";
 
-  payload.ApplicantType = "Worker";
-  payload.PlaintiffType = isAgent ? "Agent" : "Self(Worker)";
+  // Principal
+  if (claimantStatus === "principal") {
+    payload.PlaintiffName = formData?.principal_userName || nicDetailObj?.PlaintiffName || userClaims?.UserName;
+    payload.PlaintiffHijiriDOB = toWesternDigits(formData?.principal_hijriDate || nicDetailObj?.DateOfBirthHijri || userClaims?.UserDOB || "");
+    payload.Plaintiff_ApplicantBirthDate = toWesternDigits((formData?.principal_gregorianDate || nicDetailObj?.DateOfBirthGregorian) ?? "");
+    payload.Plaintiff_PhoneNumber = formData?.principal_phoneNumber || "";
+    payload.Plaintiff_Region = formData?.principal_region?.value
+      || formData?.principal_region
+      || nicDetailObj?.Region_Code
+      || "";
+    payload.Plaintiff_City = formData?.principal_city?.value
+      || formData?.principal_city
+      || nicDetailObj?.City_Code
+      || "";
+    payload.JobPracticing = formData?.principal_occupation?.value
+      || formData?.principal_occupation
+      || nicDetailObj?.Occupation_Code
+      || "";
+    payload.Gender = formData?.principal_gender?.value
+      || formData?.principal_gender
+      || nicDetailObj?.Gender_Code
+      || "";
+    payload.Worker_Nationality = formData?.principal_nationality?.value
+      || formData?.principal_nationality
+      || nicDetailObj?.Nationality_Code
+      || "";
+    payload.PlaintiffId = userClaims?.UserID;
+    payload.PlaintiffType = "Self(Worker)";
+    payload.ApplicantType = "Worker";
+  }
 
+  // Representative
   if (isAgent) {
-    payload = {
-      ...payload,
-      ...AgentClaimantPayload(
-        buttonName,
-        formData,
-        caseId,
-        userClaims,
-        language,
-        userType,
-        nicDetailObj,
-        attorneyData)
+    console.log("Fooooorm data", formData);
+    
+    if (agentType === "local_agency") {
+      payload.PlaintiffName = formData?.localAgent_userName || nicDetailObj?.PlaintiffName || "";
+      payload.PlaintiffHijiriDOB = toWesternDigits(formData?.localAgent_workerAgentDateOfBirthHijri || nicDetailObj?.DateOfBirthHijri || "");
+      payload.Plaintiff_ApplicantBirthDate = toWesternDigits((formData?.localAgent_gregorianDate || nicDetailObj?.DateOfBirthGregorian) ?? "");
+      payload.Plaintiff_PhoneNumber = formData?.localAgent_phoneNumber || "";
+      payload.Plaintiff_Region = formData?.localAgent_region?.value
+        || formData?.localAgent_region
+        || nicDetailObj?.Region_Code
+        || "";
+      payload.Plaintiff_City = formData?.localAgent_city?.value
+        || formData?.localAgent_city
+        || nicDetailObj?.City_Code
+        || "";
+      payload.JobPracticing = formData?.localAgent_occupation?.value
+        || formData?.localAgent_occupation
+        || nicDetailObj?.Occupation_Code
+        || "";
+      payload.Gender = formData?.localAgent_gender?.value
+        || formData?.localAgent_gender
+        || nicDetailObj?.Gender_Code
+        || "";
+      payload.Worker_Nationality = formData?.localAgent_nationality?.value
+        || formData?.localAgent_nationality
+        || nicDetailObj?.Nationality_Code
+        || "";
+      payload.PlaintiffId = formData?.localAgent_workerAgentIdNumber || "";
+      payload.PlaintiffType = "Agent";
+      payload.ApplicantType = "Worker";
+      // Agent fields
+      payload.Agent_AgentID = userClaims?.UserID;
+      payload.CertifiedBy = "CB1";
+      payload.Agent_Name = formData?.agentName || "";
+      payload.Agent_MandateNumber = formData?.localAgent_agencyNumber || "";
+      payload.Agent_MandateStatus = formData?.agencyStatus || "";
+      payload.Agent_MandateSource = formData?.agencySource || "";
+      payload.Agent_ResidencyAddress = formData?.localAgent_residencyAddress || "";
+      payload.Agent_CurrentPlaceOfWork = formData?.localAgent_currentPlaceOfWork || "";
+      payload.Agent_PhoneNumber = formData?.localAgent_phoneNumber || "";
+    } else if (agentType === "external_agency") {
+      payload.PlaintiffName = formData?.externalAgent_userName || nicDetailObj?.PlaintiffName || "";
+      payload.PlaintiffHijiriDOB = toWesternDigits(formData?.externalAgent_workerAgentDateOfBirthHijri || nicDetailObj?.DateOfBirthHijri || "");
+      payload.Plaintiff_ApplicantBirthDate = toWesternDigits((formData?.externalAgent_gregorianDate || nicDetailObj?.DateOfBirthGregorian) ?? "");
+      payload.Plaintiff_PhoneNumber = formData?.externalAgent_phoneNumber || "";
+      payload.Plaintiff_Region = formData?.externalAgent_region?.value
+        || formData?.externalAgent_region
+        || nicDetailObj?.Region_Code
+        || "";
+      payload.Plaintiff_City = formData?.externalAgent_city?.value
+        || formData?.externalAgent_city
+        || nicDetailObj?.City_Code
+        || "";
+      payload.JobPracticing = formData?.externalAgent_occupation?.value
+        || formData?.externalAgent_occupation
+        || nicDetailObj?.Occupation_Code
+        || "";
+      payload.Gender = formData?.externalAgent_gender?.value
+        || formData?.externalAgent_gender
+        || nicDetailObj?.Gender_Code
+        || "";
+      payload.Worker_Nationality = formData?.externalAgent_nationality?.value
+        || formData?.externalAgent_nationality
+        || nicDetailObj?.Nationality_Code
+        || "";
+      payload.PlaintiffId = formData?.externalAgent_workerAgentIdNumber || "";
+      payload.PlaintiffType = "Agent";
+      payload.ApplicantType = "Worker";
+      // Agent fields
+      payload.Agent_AgentID = userClaims?.UserID;
+      payload.CertifiedBy = "CB2";
+      payload.Agent_Name = formData?.externalAgent_agentName || "";
+      payload.Agent_MandateNumber = formData?.externalAgent_agencyNumber || "";
+      payload.Agent_MandateStatus = formData?.externalAgent_agencyStatus || "";
+      payload.Agent_MandateSource = formData?.externalAgent_agencySource || "";
+      payload.Agent_ResidencyAddress = formData?.externalAgent_residencyAddress || "";
+      payload.Agent_CurrentPlaceOfWork = formData?.externalAgent_currentPlaceOfWork || "";
+      payload.Agent_PhoneNumber = formData?.externalAgent_agentPhoneNumber || "";
     }
   }
 
   // Add attachment for domestic worker (principal, DW1)
   const isDomesticWorker =
-    !isAgent && (payload.DomesticWorker === true || payload.DomesticWorker === 'true');
+    claimantStatus === "principal" && payload.DomesticWorker === 'true';
   if (
     isDomesticWorker &&
     formData?.attachment &&
@@ -155,7 +208,6 @@ export const claimantDetailsPayload = (
       },
     ];
   }
-
 
   switch (userType?.toLowerCase()) {
     case "legal representative":
@@ -179,42 +231,22 @@ export const claimantDetailsPayload = (
 
     case "establishment":
 
-console.log();
+      console.log();
 
       return {
         ...getBasePayload(userClaims, language, userType),
         ApplicantType: "Establishment",
         PlaintiffType: "",
-        EstId: extractValue(
-          formData?.PlaintiffsEstablishmentID
-        ),
-        Plaintiff_CRNumber: extractValue(
-          formData?.PlaintiffsCRNumber
-        ),
-        PlaintiffEstFileNumber: extractValue(
-          formData?.PlaintiffsFileNumber
-        ),
-        EstablishmentFullName: extractValue(
-          formData?.PlaintiffsEstablishmentName
-        ),
+        EstId: formData?.establishment_id,
+        Plaintiff_CRNumber: formData?.establishment_crNumber,
+        PlaintiffEstFileNumber: formData?.establishment_fileNumber,
+        EstablishmentFullName: formData?.establishment_name,
         Activity: formData?.Activity || "",
-        EstablishmentName: extractValue(
-          formData?.PlaintiffsEstablishmentName
-        ),
-        Plaintiff_PhoneNumber:
-          extractValue(formData?.Plaintiff_PhoneNumber) ||
-          extractValue(formData?.phoneNumber),
-        Plaintiff_Region: extractValue(
-          formData?.plaintiffRegion
-        ),
-        Plaintiff_City: extractValue(
-          formData?.PlaintiffsCity?.value
-        ),
-        //hassan code 700
-        Plaintiff_Number700: extractValue(
-          formData?.PlaintiffsNumber700
-        ),
-        //hassan code 700
+        EstablishmentName: formData?.establishment_name,
+        Plaintiff_PhoneNumber: formData?.establishment_phoneNumber,
+        Plaintiff_Region: formData?.establishment_region?.value,
+        Plaintiff_City: formData?.establishment_city?.value,
+        Plaintiff_Number700: formData?.establishment_number700,
         EstablishmentType: "Establishment",
         CaseID: caseId,
       };
@@ -351,6 +383,7 @@ export const defendantDetailsPayload = (
   language: string = "EN"
 ): CasePayload => {
   const lowUserType = userType?.toLowerCase();
+  console.log("this is from deff payload ");
 
   switch (lowUserType) {
     case "legal representative":
@@ -416,8 +449,12 @@ export const defendantDetailsPayload = (
       };
 
     default:
+      console.log("this is from deff payload if switch is deffuelt", formData);
+
       // Government
       if (formData?.defendantStatus === "Government") {
+        console.log("this is from deff payload if defendnt is governments ");
+
         return {
           ...getBasePayload(userClaims, language, userType),
           Flow_ButtonName: buttonName,
@@ -433,7 +470,7 @@ export const defendantDetailsPayload = (
         };
       }
       // Establishment Others
-      if (formData.defendantDetails === "Others") {
+      if (formData?.defendantDetails === "Others" && formData?.defendantStatus === "Establishment") {
         const payload = {
           ...getBasePayload(userClaims, language, userType),
           Flow_ButtonName: buttonName,
@@ -450,11 +487,13 @@ export const defendantDetailsPayload = (
             formData?.Defendant_Establishment_data_NON_SELECTED
               ?.CRNumber,
           Defendant_Number700: formData?.Defendant_Establishment_data_NON_SELECTED?.Number700,
-          Defendant_PhoneNumber: formData?.phoneNumber,
+          Defendant_PhoneNumber: formData?.establishment_phoneNumber,
           Defendant_Region: formData?.defendantRegion?.value || formData?.region?.value || "",
           Defendant_City: formData?.defendantCity?.value || formData?.city?.value,
-          Defendant_MobileNumber: formData?.phoneNumber,
+          Defendant_MobileNumber: formData?.establishment_phoneNumber,
         };
+        console.log("this is from deff payload if details is others ", payload);
+
         return payload;
       }
       const payload = {
@@ -486,9 +525,10 @@ export const defendantDetailsPayload = (
         Defendant_City:
           formData?.Defendant_Establishment_data
             ?.City_Code || formData?.defendantCity?.value || formData?.city?.value || "1",
-        Defendant_PhoneNumber: formData?.phoneNumber,
-        Defendant_MobileNumber: formData?.phoneNumber,
+        Defendant_PhoneNumber: formData?.establishment_phoneNumber,
+        Defendant_MobileNumber: formData?.establishment_phoneNumber,
       };
+      console.log("this is from deff payload if details is selected ", payload);
       return payload;
   }
 };
@@ -529,10 +569,10 @@ export const workDetailsPayload = (
         Defendant_ContractEndDate: toWesternDigits(extractValue(formatDateToYYYYMMDD(formData?.contractExpiryDateGregorian) || "")),
         Defendant_ContractEndDateHijjari: toWesternDigits(extractValue(formatDateToYYYYMMDD(formData?.contractExpiryDateHijri) || "")),
         Defendant_JobLocation: extractValue(
-          formData?.region?.value
+          formData?.jobLocation?.value
         ),
         DefendantJobCity: extractValue(
-          formData?.city?.value
+          formData?.jobLocationCity?.value
         ),
         Defendant_JobStartDate: toWesternDigits(formatDateToYYYYMMDD(formData?.dateOfFirstWorkingDayGregorian) || ""),
         Defendant_JobStartDateHijjari: toWesternDigits(formatDateToYYYYMMDD(formData?.dateofFirstworkingdayHijri) || ""),
@@ -570,10 +610,10 @@ export const workDetailsPayload = (
         Defendant_ClosestLaborOffice:
           formData?.laborOffice?.value,
         Defendant_JobLocation: extractValue(
-          formData?.region?.value
+          formData?.jobLocation?.value
         ),
         DefendantJobCity: extractValue(
-          formData?.city?.value
+          formData?.jobLocationCity?.value
         ),
         Defendant_StillWorking: formData?.isStillEmployed
           ? "SW1"
@@ -600,14 +640,14 @@ export const workDetailsPayload = (
         Plaintiff_StillWorking: formData?.isStillEmployed
           ? "SW1"
           : "SW2",
-        Plaintiff_JobLocation: formData?.region?.value,
-        PlaintiffJobCity: formData?.city?.value,
+        Plaintiff_JobLocation: formData?.jobLocation?.value,
+        PlaintiffJobCity: formData?.jobLocationCity?.value,
         Plaintiff_ClosestLaborOffice:
           formData?.laborOffice?.value,
         Plaintiff_JobStartDate: toWesternDigits(formatDateToYYYYMMDD(formData?.dateOfFirstWorkingDayGregorian) || ""),
-        Plaintiff_JobStartDateHijjari: toWesternDigits(formatDateToYYYYMMDD(formData?.dateofFirstworkingdayHijri) || ""),
+       // Plaintiff_JobStartDateHijjari: toWesternDigits(formatDateToYYYYMMDD(formData?.dateofFirstworkingdayHijri) || ""),
         Plaintiff_JobEndDate: toWesternDigits(formatDateToYYYYMMDD(formData?.dateOfLastWorkingDayGregorian) || ""),
-        Plaintiff_JobEndDateHijjari: toWesternDigits(formatDateToYYYYMMDD(formData?.dateoflastworkingdayHijri) || ""),
+       // Plaintiff_JobEndDateHijjari: toWesternDigits(formatDateToYYYYMMDD(formData?.dateoflastworkingdayHijri) || ""),
       };
   }
 };

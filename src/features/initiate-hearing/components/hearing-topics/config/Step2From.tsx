@@ -93,6 +93,7 @@ export const getStep2FormFields = ({
       onChange: handleAcknowledgeChange,
       colSpan: 2,
       className: "mb-7",
+      disabled: acknowledged && showTopicData,
     },
   ].filter(Boolean);
 };

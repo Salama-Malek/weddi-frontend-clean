@@ -21,7 +21,14 @@ export const hearingTopicsApi = api.injectEndpoints({
         }
       }),
     }),
+    removeAttachment: builder.mutation({
+      query: (data) => ({
+        url: "/WeddiServices/V1/RemoveAttachment",
+        method: "POST",
+        body: data,
+      }),
+    }),
   }),
 });
 
-export const { useUploadAttachmentsMutation,useWorkerAttachmentCategoriesQuery } = hearingTopicsApi;
+export const { useUploadAttachmentsMutation, useWorkerAttachmentCategoriesQuery, useRemoveAttachmentMutation } = hearingTopicsApi;

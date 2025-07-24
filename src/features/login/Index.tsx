@@ -112,6 +112,17 @@ const LoginForm: React.FC = () => {
       }
     },
     {
+      lable: "worker",
+      data: {
+        File_Number: "",
+        UserID: "1003489059",
+        UserName: "Worker User",
+        UserDOB: "25/10/1965",
+        AcceptedLanguage: LanguageArray[1].value,
+        UserType: userTypes[1].value,
+      }
+    },
+    {
       lable: "Worker Agent User",
       data: {
         File_Number: "",
@@ -126,19 +137,30 @@ const LoginForm: React.FC = () => {
       lable: "Worker Agent User 222",
       data: {
         File_Number: "",
-        UserDOB: "13/09/1984",
-        UserID: "1028308656",
+        UserDOB: "26/10/1965",
+        UserID: "1003489059",
         UserName: "Agent User",
         AcceptedLanguage: LanguageArray[1].value,
         UserType: userTypes[1].value,
       }
     },
+    // {
+    //   lable: "Worker Agent User 222",
+    //   data: {
+    //     File_Number: "",
+    //     UserDOB: "13/09/1984",
+    //     UserID: "1028308656",
+    //     UserName: "Agent User",
+    //     AcceptedLanguage: LanguageArray[1].value,
+    //     UserType: userTypes[1].value,
+    //   }
+    // },
     {
       lable: "Esablishment User",
       data: {
-        File_Number: "11-1437115",
-        UserDOB: "07/11/1985",
-        UserID: "1100055753",
+        File_Number: "8-71322",
+        UserDOB: "01/01/1980",
+        UserID: "1124878024",
         UserName: "Est User",
         AcceptedLanguage: LanguageArray[1].value,
         UserType: userTypes[0].value,

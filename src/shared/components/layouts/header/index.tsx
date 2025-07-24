@@ -16,9 +16,9 @@ import { lazy } from "react";
 import Modal from "@/shared/components/modal/Modal";
 import { useUser } from "@/shared/context/userTypeContext";
 import { toast } from "react-toastify";
- 
+
 const LoginAccountSelect = lazy(() => import("@/features/login/components/LoginAccountSelect"));
- 
+
 const Header = () => {
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
@@ -41,12 +41,12 @@ const Header = () => {
     selected: selectedUser,
     isMenueCahngeFlag
   } = useUser();
- 
+
   useEffect(() => {
     const id = setInterval(() => setCurrentDateTime(new Date()), 60_000);
     return () => clearInterval(id);
   }, []);
- 
+
   const formatTime = (date: Date) => {
     let hours = date.getHours();
     const minutes = String(date.getMinutes()).padStart(2, "0");
@@ -54,17 +54,17 @@ const Header = () => {
     hours = hours % 12 || 12;
     return `${hours}:${minutes} ${ampm}`;
   };
- 
+
   const formatDate = (date: Date) => {
     const day = String(date.getDate()).padStart(2, "0");
     const month = String(date.getMonth() + 1).padStart(2, "0");
     const year = date.getFullYear();
     return `${day}/${month}/${year} - ` + toHijri_YYYYMMDD(`${month}/${day}/${year}`, true);
   };
- 
+
   const formattedTime = formatTime(currentDateTime);
   const formattedDate = formatDate(currentDateTime);
- 
+
   useEffect(() => {
     const savedLanguage = localStorage.getItem("language") || "en";
     if (savedLanguage !== currentLanguage) {
@@ -72,12 +72,12 @@ const Header = () => {
       document.documentElement.dir = savedLanguage === "ar" ? "rtl" : "ltr";
     }
   }, []);
- 
+
   const [triggerSave, { data: notificationData, isFetching }] =
     useLazySaveUINotificationQuery({
       skipPollingIfUnfocused: true,
     });
- 
+
   useEffect(() => {
     if (userTypeState) {
       const payload = {
@@ -89,27 +89,30 @@ const Header = () => {
       triggerSave(payload);
     }
   }, [userTypeState, selectedUser, isMenueCahngeFlag]);
- 
- 
- const handleLogout = () => {
-    // Clear case-related data first
-    localStorage.removeItem("step");
-    localStorage.removeItem("tab");
-    removeCookie("caseId");
-    removeCookie("incompleteCaseMessage");
-    removeCookie("incompleteCaseNumber");
-    removeCookie("incompleteCase");
 
-    const redirectUrl = (process.env.VITE_LOGIN_SWITCH === "true" 
-      ? process.env.VITE_REDIRECT_URL_LOCAL
-      : process.env.VITE_REDIRECT_URL) as string;
-    
-    window.location.href = redirectUrl;
-    setTimeout(() => {
-      removeAll();
-    }, 100);
+
+  const handleLogout = () => {
+    navigate("/logout");
+    // Clear case-related data first
+    // localStorage.removeItem("step");
+    // localStorage.removeItem("tab");
+    // removeCookie("caseId");
+    // removeCookie("incompleteCaseMessage");
+    // removeCookie("incompleteCaseNumber");
+    // removeCookie("incompleteCase");
+    // removeAll();
+    // console.log("log out ");
+
+    // const redirectUrl = (process.env.VITE_LOGIN_SWITCH === "true" 
+    //   ? process.env.VITE_REDIRECT_URL_LOCAL
+    //   : process.env.VITE_REDIRECT_URL) as string;
+
+    // window.location.href = redirectUrl;
+    // setTimeout(() => {
+    //   removeAll();
+    // }, 100);
   };
- 
+
   const handleSwitchAccount = () => {
     if (pathname === "/") {
       setOpenModule(true);
@@ -120,7 +123,7 @@ const Header = () => {
     }
     // setShowAccountPopup(true);
   };
- 
+
   const handleCloseSwitchAccountModalWarning = () => {
     setOpenSwitchAccountModalWarning(false);
   }
@@ -137,14 +140,14 @@ const Header = () => {
       window.location.reload();
     }
   };
- 
+
   const handleClosePopup = () => {
     //setShowAccountPopup(false);
     setSelected(null);
     setOpenModule(false);
- 
+
   };
- 
+
   const settingsItems = isLegalRepstate
     ? [
       {
@@ -165,7 +168,7 @@ const Header = () => {
         onClick: handleLogout,
       }
     ];
- 
+
   const notificationItems =
     notificationData?.UINotificationList?.length > 0
       ? notificationData?.UINotificationList?.map(
@@ -180,14 +183,14 @@ const Header = () => {
           onClick: () => { },
         },
       ];
- 
+
   const changeLanguage = (lng: string) => {
     i18n.changeLanguage(lng).then(() => {
       localStorage.setItem("language", lng);
       document.documentElement.dir = lng === "ar" ? "rtl" : "ltr";
     });
   };
- 
+
   useEffect(() => {
     if (isNotificationClicked) {
       triggerSave({
@@ -198,8 +201,8 @@ const Header = () => {
       });
     }
   }, [isNotificationClicked]);
- 
- 
+
+
   return (
     <>
       <header className="header-shadow bg-light-alpha-white h-auto lg:h-20 py-3 " >
@@ -226,9 +229,9 @@ const Header = () => {
                 </span>
               </time>
             </span>
- 
- 
- 
+
+
+
             <Suspense fallback={<TableLoader />}>
               <div className="relative ml-4" onClick={() => {
                 if (isNotificationClicked) {
@@ -252,13 +255,13 @@ const Header = () => {
                       {notificationData?.UINotificationList?.length > 0 && (
                         <span className="absolute top-0 lg:right-[26px] md:right-[26px] right-[0] w-2.5 h-2.5 bg-info-960 rounded-full"></span>
                       )}
- 
+
                     </div>
                   }
                 />
               </div>
             </Suspense>
- 
+
           </div>
           <div className="ms-5 col-span-3 md:col-span-6 lg:order-3 order-2 flex justify-end items-center 700">
             <MyDropdown
@@ -281,7 +284,7 @@ const Header = () => {
           </div>
         </div >
       </header >
- 
+
       {openModule && (
         <Modal
           close={handleClosePopup}
@@ -303,7 +306,7 @@ const Header = () => {
           </div>
         </Modal>
       )}
- 
+
       {openSwitchAccountModalWarning && (
         <Modal
           close={handleCloseSwitchAccountModalWarning}
@@ -321,9 +324,9 @@ const Header = () => {
           </div>
         </Modal>
       )}
- 
+
     </>
   );
 };
- 
+
 export default Header;

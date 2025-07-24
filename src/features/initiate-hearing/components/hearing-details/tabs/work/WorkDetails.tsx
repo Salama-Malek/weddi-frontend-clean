@@ -38,25 +38,17 @@ const WorkDetails = ({
   isVerifiedInput = true,
 }: WorkDetailsProps) => {
 
-  const { i18n } = useTranslation();
-  const currentLanguage = i18n.language.toUpperCase();
-  const [getCookie] = useCookieState({ caseId: "" });
-  const userType = getCookie("userType") || "";
-  const legalRepType = getCookie("legalRepType");
-  const defendantStatus = getCookie("defendantStatus") || "";
-  const selectedWorkerCity = watch("city");
-
   const { forceValidateForm, handleRemoveValidation } = useAPIFormsData();
 
   // this is prefill, 
   // it's roll to get data from case details and pull it in the feilds 
-  // so the loading is for trigger the api related to the extractEstData 
+  // the loading is for trigger the api related to the extractEstData 
   // the workedata have the work data for the palinteff or the defendnet 
   const {
     isFeatched: caseDetailsLoading,
     workData
   } = useWorkDetailsPrefill(setValue as any);
- useEffect(() => {
+  useEffect(() => {
     [
       "typeOfWage",
       "salary",
@@ -71,8 +63,8 @@ const WorkDetails = ({
       "dateOfFirstWorkingDayGregorian",
       "dateoflastworkingdayHijri",
       "dateOfLastWorkingDayGregorian",
-      "region",
-      "city",
+      "jobLocation",
+      "jobLocationCity",
       "laborOffice",
 
     ].forEach((e: any) => setValue(e, null));
@@ -85,61 +77,6 @@ const WorkDetails = ({
   //   setValue("region", null);
   //   setValue("city", null);
   // }, []);
-
-
-
-
-
-
-  // 1. Setup the lazy hook
-  // const [
-  //   triggerContractType,
-  // ] = useLazyGetContractTypeLookupQuery();
-
-  // 2. Fire it once our cookies are decoded
-  // useEffect(() => {
-  //   if (userType || legalRepType || defendantStatus) {
-  //     triggerContractType({
-  //       userType,
-  //       legalRepType,
-  //       defendantStatus,
-  //       AcceptedLanguage: currentLanguage,
-  //     });
-  //   }
-  // }, [
-  //   userType,
-  //   legalRepType,
-  //   defendantStatus,
-  //   currentLanguage,
-  //   triggerContractType,
-  // ]);
-
-  // const { data: laborOfficeData, isFetching: isLaborLoading } =
-  //   useGetLaborOfficeLookupDataQuery(
-  //     {
-  //       AcceptedLanguage: currentLanguage, // Pass current language
-  //       SourceSystem: "E-Services",
-  //       selectedWorkerCity: typeof selectedWorkerCity === 'object' ? selectedWorkerCity?.value : selectedWorkerCity || "",
-  //     },
-  //     { skip: !(typeof selectedWorkerCity === 'object' ? selectedWorkerCity?.value : selectedWorkerCity) }
-  //   );
-
-  // useEffect(() => {
-  //   if (laborOfficeData && laborOfficeData?.DataElements && laborOfficeData?.DataElements?.length !== 0
-  //   ) {
-  //     setValue("laborOffice", {
-  //       value: laborOfficeData?.DataElements?.[0]?.ElementKey || "",
-  //       label:
-  //         laborOfficeData?.DataElements?.[0]?.ElementValue || ""
-  //     });
-
-  //   }
-  // }, [laborOfficeData])
-
-
-
-
-
 
   const getFormLayout = () => {
     return legRepVsWorkerUseFormLayout(

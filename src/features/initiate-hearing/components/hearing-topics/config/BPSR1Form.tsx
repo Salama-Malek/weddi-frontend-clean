@@ -1,12 +1,8 @@
-import { FormElement } from "@/shared/components/form/form.types";
-import {HijriDatePickerInput} from "@/shared/components/calanders/HijriDatePickerInput";
-import{ GregorianDateDisplayInput} from "@/shared/components/calanders/GregorianDateDisplayInput";
-
-interface Option {
-  value: string;
-  label: string;
-}
-
+import { FormElement, Option } from "@/shared/components/form/form.types";
+import { HijriDatePickerInput } from "@/shared/components/calanders/HijriDatePickerInput";
+import { GregorianDateDisplayInput } from "@/shared/components/calanders/GregorianDateDisplayInput";
+import { ensureOption } from "../edit-index";
+import { isOtherCommission } from "../utils/isOtherCommission"; 
 interface BPSR1FormProps {
   t: (key: string) => string;
   commissionType: Option | null;
@@ -14,8 +10,8 @@ interface BPSR1FormProps {
   setValue: (field: string, value: unknown) => void;
   CommissionTypeLookUpOptions: Option[];
   AccordingToAgreementLookupLookUpOptions: Option[];
-  isEditing?: any;
-  watch?: any;
+  isEditing?: boolean;
+  watch: ReturnType<any>;
   editTopic?: any;
   control: any;
   handleHijriDateChange: (
@@ -32,7 +28,7 @@ export const getBPSR1FormFields = ({
   setValue,
   CommissionTypeLookUpOptions,
   AccordingToAgreementLookupLookUpOptions,
-  isEditing,
+  isEditing = false,
   watch,
   editTopic,
   control,
@@ -40,14 +36,18 @@ export const getBPSR1FormFields = ({
 }: BPSR1FormProps): FormElement[] => {
   const amount = watch("amount");
   const amountRatio = watch("amountRatio");
-  const accordingToTheAgreement = watch("accordingToTheAgreement");
   const otherCommission = watch("otherCommission");
 
-  // In edit mode, determine the commission type from editTopic if commissionType is not set
-  const effectiveCommissionType = commissionType || (isEditing && editTopic?.CommissionType ? {
-    value: editTopic.CommissionType,
-    label: editTopic.CommissionType
-  } : null);
+  // Ensure we have a commissionType option in edit mode
+  let effectiveCommissionType = commissionType;
+  if (!effectiveCommissionType && isEditing && editTopic?.CommissionType) {
+    effectiveCommissionType = ensureOption(
+      CommissionTypeLookUpOptions,
+      editTopic.CommissionType
+    );
+  }
+
+  const needsOther = isOtherCommission(effectiveCommissionType);
 
   return [
     {
@@ -55,20 +55,18 @@ export const getBPSR1FormFields = ({
       name: "amount",
       label: t("amount"),
       inputType: "number",
-      value: isEditing ? editTopic?.Amount || editTopic?.amount : amount,
-      validation: { required: "Amount is required" },
-      notRequired: false,
-      onChange: (value) => setValue("amount", value),
+      value: isEditing ? editTopic?.Amount ?? editTopic?.amount : amount,
+      validation: { required: t("fieldRequired") },
+      onChange: (v: string) => setValue("amount", v),
     },
     {
       type: "input",
       name: "amountRatio",
       label: t("amountRatio"),
       inputType: "number",
-      value: isEditing ? editTopic?.AmountRatio || editTopic?.amountRatio : amountRatio,
-      validation: { required: "Amount ratio is required" },
-      notRequired: false,
-      onChange: (value) => setValue("amountRatio", value),
+      value: isEditing ? editTopic?.AmountRatio ?? editTopic?.amountRatio : amountRatio,
+      validation: { required: t("fieldRequired") },
+      onChange: (v: string) => setValue("amountRatio", v),
     },
     {
       type: "custom",
@@ -78,7 +76,7 @@ export const getBPSR1FormFields = ({
             control={control}
             name="from_date_hijri"
             label={t("fromDateHijri")}
-            rules={{required: true}}
+            rules={{ required: true }}
             onChangeHandler={(date, onChange) =>
               handleHijriDateChange(date, onChange, "from_date_gregorian")
             }
@@ -99,7 +97,7 @@ export const getBPSR1FormFields = ({
             control={control}
             name="to_date_hijri"
             label={t("toDateHijri")}
-            rules={{required: true}}
+            rules={{ required: true }}
             onChangeHandler={(date, onChange) =>
               handleHijriDateChange(date, onChange, "to_date_gregorian")
             }
@@ -117,22 +115,22 @@ export const getBPSR1FormFields = ({
       name: "commissionType",
       label: t("commissionType"),
       options: CommissionTypeLookUpOptions,
-      value: editTopic ? editTopic?.commissionType : commissionType?.value,
-      onChange: (option: Option | null) => setValue("commissionType", option),
-      validation: { required: "Commission type is required" },
-      notRequired: false,
+      value: effectiveCommissionType,
+      onChange: (opt: Option | null) => setValue("commissionType", opt),
+      validation: { required: t("fieldRequired") },
     },
-    ...((effectiveCommissionType?.label === "Other Commissions" || (isEditing && editTopic?.CommissionType === "Other Commissions"))
+    ...(needsOther
       ? [
           {
             type: "input",
             name: "otherCommission",
             label: t("otherCommission"),
-            inputType: "number",
-            value: isEditing ? editTopic?.OtherCommission || editTopic?.otherCommission : otherCommission,
-            onChange: (value: string) => setValue("otherCommission", value),
-            validation: { required: "Other commission is required" },
-            notRequired: ((effectiveCommissionType?.label === "Other Commissions" || (isEditing && editTopic?.CommissionType === "Other Commissions")) ? false : true),
+            inputType: "text",
+            value: isEditing
+              ? editTopic?.OtherCommission ?? editTopic?.otherCommission ?? ""
+              : otherCommission,
+            onChange: (v: string) => setValue("otherCommission", v),
+            validation: { required: t("fieldRequired") },
           } as const,
         ]
       : []),
@@ -141,10 +139,14 @@ export const getBPSR1FormFields = ({
       name: "accordingToAgreement",
       label: t("accordingToTheAgreement"),
       options: AccordingToAgreementLookupLookUpOptions,
-      value: editTopic ? editTopic?.accordingToTheAgreement : accordingToTheAgreement?.value,
-      onChange: (option: Option | null) => setValue("accordingToAgreement", option),
-      validation: { required: "According to the agreement is required" },
-      notRequired: false,
+      value: isEditing
+        ? ensureOption(
+            AccordingToAgreementLookupLookUpOptions,
+            editTopic?.accordingToAgreement?.value ?? editTopic?.AccordingToAgreement
+          )
+        : accordingToAgreement,
+      onChange: (opt: Option | null) => setValue("accordingToAgreement", opt),
+      validation: { required: t("fieldRequired") },
     },
   ];
 };
