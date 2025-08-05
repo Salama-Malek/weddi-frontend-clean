@@ -1,5 +1,5 @@
 import React from "react";
-import { Section } from "@/shared/layouts/Section";
+import { Section } from "@shared/layouts/Section";
 import { RadioGroup } from "./RadioGroup";
 import { InputField } from "./InputField";
 import { NumberOnlyInput } from "./NumberOnlyInput";

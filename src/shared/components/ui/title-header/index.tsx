@@ -1,4 +1,4 @@
-import { classes } from "@/shared/lib/clsx";
+import { classes } from "@shared/lib/clsx";
 import React from "react";
 
 interface HeadingProps {

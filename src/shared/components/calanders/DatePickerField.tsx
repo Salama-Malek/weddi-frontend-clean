@@ -5,9 +5,9 @@ import arabic from "react-date-object/calendars/arabic";
 import gregorian from "react-date-object/calendars/gregorian";
 import arabic_locale from "react-date-object/locales/arabic_en";
 import gregorian_locale_en from "react-date-object/locales/gregorian_en";
-import { FieldWrapper } from "@/shared/components/form";
+import { FieldWrapper } from "@shared/components/form";
 import { Calculator01Icon } from "hugeicons-react";
-import { FormData } from "@/shared/components/form/form.types";
+import { FormData } from "@shared/components/form/form.types";
 import { useTranslation } from "react-i18next";
 
 interface DatePickerFieldProps {

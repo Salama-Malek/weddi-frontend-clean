@@ -1,5 +1,5 @@
-import { useCookieState } from '@/features/initiate-hearing/hooks/useCookieState';
-import { useLanguageDirection } from '@/i18n/LanguageDirectionProvider';
+import { useCookieState } from '@features/cases/initiate-hearing/hooks/useCookieState';
+import { useLanguageDirection } from '@app/i18n/LanguageDirectionProvider';
 import { AuctionIcon } from 'hugeicons-react'
 import React from 'react';
 import { useTranslation } from 'react-i18next';

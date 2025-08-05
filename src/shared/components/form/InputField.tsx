@@ -1,8 +1,8 @@
 import { forwardRef, useId, useState, useEffect } from "react";
 import { FieldWrapper } from "./FieldWrapper";
-import { useDebouncedCallback } from "@/shared/hooks/use-debounced-callback";
+import { useDebouncedCallback } from "@shared/hooks/use-debounced-callback";
 import { Controller } from "react-hook-form";
-import { classes } from "@/shared/lib/clsx";
+import { classes } from "@shared/lib/clsx";
 import { useTranslation } from "react-i18next";
 
 type InputOrTextareaProps = React.InputHTMLAttributes<HTMLInputElement> &

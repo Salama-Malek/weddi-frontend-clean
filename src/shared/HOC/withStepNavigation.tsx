@@ -1,18 +1,18 @@
 import React, { useState, useEffect } from "react";
 import { SubmitHandler, useWatch } from "react-hook-form";
-import StepNavigation from "@/shared/modules/case-creation/components/StepNavigation";
-import useCasesLogic from "@/features/initiate-hearing/hooks/useCasesLogic";
-import { FormData } from "@/shared/components/form/form.types";
-import { useAPIFormsData } from "@/providers/FormContext";
-import { useSubmitFinalReviewMutation } from "@/features/initiate-hearing/api/create-case/apis";
-import { useCookieState } from "@/features/initiate-hearing/hooks/useCookieState";
+import StepNavigation from "@shared/modules/case-creation/components/StepNavigation";
+import useCasesLogic from "@features/cases/initiate-hearing/hooks/useCasesLogic";
+import { FormData } from "@shared/components/form/form.types";
+import { useAPIFormsData } from "@app/providers/FormContext";
+import { useSubmitFinalReviewMutation } from "@features/cases/initiate-hearing/api/create-case/apis";
+import { useCookieState } from "@features/cases/initiate-hearing/hooks/useCookieState";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
-import Loader from "@/shared/components/loader";
-import Modal from "@/shared/components/modal/Modal";
-import Button from "@/shared/components/button";
+import Loader from "@shared/components/loader";
+import Modal from "@shared/components/modal/Modal";
+import Button from "@shared/components/button";
 import { useNavigate } from "react-router-dom";
-import { useApiErrorHandler } from "@/shared/hooks/useApiErrorHandler";
+import { useApiErrorHandler } from "@shared/hooks/useApiErrorHandler";
 
 export interface WithStepNavigationProps {
   register: any;

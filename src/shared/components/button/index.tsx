@@ -1,4 +1,4 @@
-import { classes } from "@/shared/lib/clsx";
+import { classes } from "@shared/lib/clsx";
 import { Tick02Icon } from "hugeicons-react";
 import React from "react";
 import TableLoader from "../loader/TableLoader";

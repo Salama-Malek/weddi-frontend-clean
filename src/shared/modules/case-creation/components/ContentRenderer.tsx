@@ -1,31 +1,31 @@
-import GenericSkeleton from "@/shared/components/loader/GenericSkeleton";
-import TableLoader from "@/shared/components/loader/TableLoader";
+import GenericSkeleton from "@shared/components/loader/GenericSkeleton";
+import TableLoader from "@shared/components/loader/TableLoader";
 import React, { lazy, Suspense, useEffect, useState } from "react";
 
 const ClaimantDetails = lazy(
   () =>
     import(
-      "@/features/initiate-hearing/components/hearing-details/tabs/claimant/ClaimantDetails"
+      "@features/cases/initiate-hearing/components/hearing-details/tabs/claimant/ClaimantDetails"
     )
 );
 const DefendantDetails = lazy(
   () =>
     import(
-      "@/features/initiate-hearing/components/hearing-details/tabs/defendant/DefendantDetails"
+      "@features/cases/initiate-hearing/components/hearing-details/tabs/defendant/DefendantDetails"
     )
 );
 const WorkDetails = lazy(
   () =>
     import(
-      "@/features/initiate-hearing/components/hearing-details/tabs/work/WorkDetails"
+      "@features/cases/initiate-hearing/components/hearing-details/tabs/work/WorkDetails"
     )
 );
 const AddHearing = lazy(
   () =>
-    import("@/features/initiate-hearing/components/hearing-topics/AddHearing")
+    import("@features/cases/initiate-hearing/components/hearing-topics/AddHearing")
 );
 const ReviewDetails = lazy(
-  () => import("@/features/initiate-hearing/components/review")
+  () => import("@features/cases/initiate-hearing/components/review")
 );
 
 interface ContentRendererProps {

@@ -1,7 +1,7 @@
 import { forwardRef, useId } from "react";
 import { FieldWrapper } from "./FieldWrapper";
 import { Tick02Icon } from "hugeicons-react";
-import { classes } from "@/shared/lib/clsx";
+import { classes } from "@shared/lib/clsx";
 import { Controller, useFormContext } from "react-hook-form";
 
 export type CheckboxFieldProps = {

@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import MyDropdown from "@/providers";
+import MyDropdown from "@app/providers";
 import { languageOptions } from "./HearingContent";
 export const HelpCenterHeader: React.FC = () => {
   const { t } = useTranslation();

@@ -1,14 +1,14 @@
 import React, { Suspense, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Section } from "@/shared/layouts/Section";
-import TableLoader from "@/shared/components/loader/TableLoader";
-import FileAttachment from "@/shared/components/ui/file-attachment/FileAttachment";
-import Modal from "@/shared/components/modal/Modal";
-import { useLazyGetFileDetailsQuery } from "@/features/initiate-hearing/api/create-case/apis";
+import { Section } from "@shared/layouts/Section";
+import TableLoader from "@shared/components/loader/TableLoader";
+import FileAttachment from "@shared/components/ui/file-attachment/FileAttachment";
+import Modal from "@shared/components/modal/Modal";
+import { useLazyGetFileDetailsQuery } from "@features/cases/initiate-hearing/api/create-case/apis";
 import { ColumnDef, Row } from "@tanstack/react-table";
 
 const ReusableTable = React.lazy(() =>
-  import("@/shared/components/table/ReusableTable").then((m) => ({
+  import("@shared/components/table/ReusableTable").then((m) => ({
     default: m.ReusableTable,
   }))
 );

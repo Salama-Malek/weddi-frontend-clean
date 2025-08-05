@@ -1,8 +1,8 @@
-import Button from "@/shared/components/button";
+import Button from "@shared/components/button";
 import { News01Icon, Pdf01Icon } from "hugeicons-react";
 import React, { useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import MyDropdown from "@/providers";
+import MyDropdown from "@app/providers";
 import { HelpCenterHeader } from "./HelpCenterHeader";
 
 interface HelpCenterProps {

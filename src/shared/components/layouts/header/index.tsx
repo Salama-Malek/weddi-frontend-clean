@@ -3,21 +3,21 @@ import logo from "@/assets/logo.svg";
 import logoar from "@/assets/logoar.svg";
 import { Notification02Icon } from "hugeicons-react";
 import { PiLineVerticalThin } from "react-icons/pi";
-import Button from "@/shared/components/button";
+import Button from "@shared/components/button";
 import { GoChevronDown } from "react-icons/go";
 import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate } from "react-router-dom";
-import { useLazySaveUINotificationQuery } from "@/features/dashboard/api/api";
-import { useCookieState } from "@/features/initiate-hearing/hooks/useCookieState";
+import { useLazySaveUINotificationQuery } from "@features/dashboard/api/api";
+import { useCookieState } from "@features/cases/initiate-hearing/hooks/useCookieState";
 import TableLoader from "../../loader/TableLoader";
-import { toHijri_YYYYMMDD } from "@/shared/lib/helpers";
-import MyDropdown from "@/providers";
+import { toHijri_YYYYMMDD } from "@shared/lib/helpers";
+import MyDropdown from "@app/providers";
 import { lazy } from "react";
-import Modal from "@/shared/components/modal/Modal";
-import { useUser } from "@/shared/context/userTypeContext";
+import Modal from "@shared/components/modal/Modal";
+import { useUser } from "@shared/context/userTypeContext";
 import { toast } from "react-toastify";
 
-const LoginAccountSelect = lazy(() => import("@/features/login/components/LoginAccountSelect"));
+const LoginAccountSelect = lazy(() => import("@features/auth/components/LoginAccountSelect"));
 
 const Header = () => {
   const navigate = useNavigate();

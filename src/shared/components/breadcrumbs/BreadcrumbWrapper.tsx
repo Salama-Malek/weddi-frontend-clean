@@ -1,6 +1,6 @@
 import { lazy, Suspense } from "react";
 import { BreadcrumbItemType } from "./Breadcrumbs";
-const Breadcrumbs = lazy(() => import("@/shared/components/breadcrumbs/Breadcrumbs"));
+const Breadcrumbs = lazy(() => import("@shared/components/breadcrumbs/Breadcrumbs"));
 import BreadcrumbsLoader from "../loader/BreadcrumbsLoader";
 import { HiMiniChevronRight } from "react-icons/hi2";
 
