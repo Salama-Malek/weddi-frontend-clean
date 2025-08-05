@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
-import { toast } from 'react-toastify';
+import useToast from '@shared/hooks/useToast';
 import cookie from "react-cookies";
 
 interface TokenExpirationContextType {
@@ -12,6 +12,7 @@ const TokenExpirationContext = createContext<TokenExpirationContextType | null>(
 export const TokenExpirationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [isTokenExpired, setIsTokenExpired] = useState(false);
     const [timeUntilExpiration, setTimeUntilExpiration] = useState(0);
+    const { error, warning } = useToast();
 
 
     useEffect(() => {
@@ -31,7 +32,7 @@ export const TokenExpirationProvider: React.FC<{ children: React.ReactNode }> = 
 
                 if (timeLeft < 1) {
                     setIsTokenExpired(true);
-                    toast.error('Your session has expired. Please log in again.');
+                    error('Your session has expired. Please log in again.');
                     cookie.remove("token");
 
                     if (process.env.VITE_LOGIN_SWITCH === "true") {
@@ -43,7 +44,7 @@ export const TokenExpirationProvider: React.FC<{ children: React.ReactNode }> = 
 
 
                 } else if (timeLeft <= (300000)) {
-                    toast.warning(`Your session will expire in ${Math.floor(timeLeft / 60000)} minutes.`);
+                    warning(`Your session will expire in ${Math.floor(timeLeft / 60000)} minutes.`);
                 }
             } catch (error) {
             }
