@@ -9,6 +9,9 @@ import Loader from "@shared/components/loader";
 import { MainErrorFallback } from "@shared/components/errors/ErrorFallback";
 import { OfflineLayout } from "@shared/layouts/OfflineLayout";
 
+import ErrorBoundary from "@shared/components/ErrorBoundary";
+import LoadingOverlay from "@shared/components/LoadingOverlay";
+
 import MainLayout from "@shared/layouts/MainLayout";
 import StepperSkeleton from "@shared/components/loader/StepperSkeleton";
 import { TokenExpirationProvider } from "@app/providers/TokenExpirationProvider";
@@ -120,7 +123,10 @@ const App = () => {
   return (
     <TokenExpirationProvider>
       <OfflineLayout>
-        <RouterProvider router={router} />
+        <ErrorBoundary>
+          <RouterProvider router={router} />
+        </ErrorBoundary>
+        <LoadingOverlay router={router} />
         <ToastContainer />
       </OfflineLayout>
     </TokenExpirationProvider>

@@ -12,7 +12,7 @@ import { AuctionIcon, LegalDocument02Icon } from "hugeicons-react";
 import { lazy, Suspense, useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
+import useToast from "@shared/hooks/useToast";
 import HelpCenterSkeleton from "@shared/components/loader/HelpCenterSkeleton";
 import HearingCardSkeleton from "@shared/components/loader/HearingCardSkeleton";
 import CaseRecordsSkeleton from "@shared/components/loader/CaseRecordsSkeleton";
@@ -72,6 +72,7 @@ const HearingContent = ({
   const [isCheckingIncomplete, setIsCheckingIncomplete] = useState(false);
   const { selected: selectedUser } = useUser();
   const [isUserClaimsReady, setIsUserClaimsReady] = useState(false);
+  const { error } = useToast();
   const mainCategory = getCookie("mainCategory")?.value;
   const subCategory = getCookie("subCategory")?.value;
   const hasSeenModal = getCookie("hasSeenLegalRepModal");
@@ -209,7 +210,7 @@ const HearingContent = ({
   const handleRedirect = (isHearing?: string, isHearingManage?: string) => {
     if (isHearing === "hearing") {
       if (!isUserClaimsReady) {
-        toast.error(t("error.userClaimsNotAvailable"));
+        error(t("error.userClaimsNotAvailable"));
         return;
       }
       setIsCheckingIncomplete(true);
@@ -221,14 +222,14 @@ const HearingContent = ({
       if (userType === "Legal representative") {
         // If user hasn't selected their role yet, show error
         if (!selectedUserType) {
-          toast.error(t("error.pleaseSelectUserType"));
+          error(t("error.pleaseSelectUserType"));
           setIsCheckingIncomplete(false);
           return;
         }
         
         // If user selected Legal representative but hasn't selected main/sub categories, show error
         if (selectedUserType === "Legal representative" && (!mainCategory || !subCategory)) {
-          toast.error(t("error.pleaseSelectCategories"));
+          error(t("error.pleaseSelectCategories"));
           setIsCheckingIncomplete(false);
           return;
         }
