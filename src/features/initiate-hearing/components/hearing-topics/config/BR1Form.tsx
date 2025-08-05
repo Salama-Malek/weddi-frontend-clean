@@ -32,36 +32,36 @@ export const getBR1FormFields = ({
   control,
   handleHijriDateChange,
 }: BR1FormProps): FormElement[] => {
-  const bonusAmount = watch("bonusAmount");
+  const bonusAmount = watch("BR1_bonusAmount");
 
   const accordingVal = isEditing
     ? ensureOption(
-        AccordingToAgreementLookupLookUpOptions,
-        editTopic?.accordingToAgreement?.value ?? editTopic?.AccordingToAgreement
-      )
+      AccordingToAgreementLookupLookUpOptions,
+      editTopic?.BR1_accordingToAgreement?.value ?? editTopic?.accordingToAgreement?.value ?? editTopic?.AccordingToAgreement
+    )
     : accordingToAgreement;
 
   const bonusVal = isEditing
-    ? editTopic?.bonusAmount ?? editTopic?.Premium ?? ""
+    ? editTopic?.BR1_bonusAmount ?? editTopic?.bonusAmount ?? editTopic?.Premium ?? ""
     : bonusAmount ?? "";
 
   return [
     {
       type: "autocomplete",
-      name: "accordingToAgreement",
+      name: "BR1_accordingToAgreement",
       label: t("accordingToTheAgreement"),
       options: AccordingToAgreementLookupLookUpOptions,
       value: accordingVal,
-      onChange: (opt: Option | null) => setValue("accordingToAgreement", opt),
+      onChange: (opt: Option | null) => setValue("BR1_accordingToAgreement", opt),
       validation: { required: t("fieldRequired") },
     },
     {
       type: "input",
-      name: "bonusAmount",
+      name: "BR1_bonusAmount",
       label: t("bonusAmount"),
       inputType: "number",
       value: bonusVal,
-      onChange: (v: string) => setValue("bonusAmount", v),
+      onChange: (v: string) => setValue("BR1_bonusAmount", v),
       validation: { required: t("fieldRequired") },
     },
     {
@@ -69,17 +69,17 @@ export const getBR1FormFields = ({
       component: (
         <div className="flex flex-col gap-2">
           <HijriDatePickerInput
-            control={control}
-            name="date_hijri"
+            control={control as any}
+            name="BR1_dateHijri"
             label={t("dateHijri")}
             rules={{ required: t("fieldRequired") }}
             onChangeHandler={(date, onChange) =>
-              handleHijriDateChange(date, onChange, "date_gregorian")
+              handleHijriDateChange(date, onChange, "BR1_dateGregorian")
             }
           />
           <GregorianDateDisplayInput
-            control={control}
-            name="date_gregorian"
+            control={control as any}
+            name="BR1_dateGregorian"
             label={t("gregorianDate")}
           />
         </div>

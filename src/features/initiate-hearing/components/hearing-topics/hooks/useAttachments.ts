@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useRemoveAttachmentMutation } from "../api/apis";
+import { processAttachmentKey } from "@/shared/lib/helpers";
 
 interface FileAttachment {
   file: File | null;
@@ -100,6 +101,9 @@ export function useAttachments(params: UseAttachmentsParams = {}) {
 
     if (key && params.triggerFileDetails) {
       console.log('[useAttachments] Calling triggerFileDetails API for FileKey:', key);
+      console.log('[useAttachments] Original AttachmentKey:', key);
+      console.log('[useAttachments] Processed AttachmentKey:', processAttachmentKey(key));
+      
       params.triggerFileDetails({
         AttachmentKey: key,
         AcceptedLanguage: (attachment.AcceptedLanguage || 'EN').toUpperCase(),

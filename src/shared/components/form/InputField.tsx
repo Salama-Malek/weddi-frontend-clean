@@ -26,6 +26,7 @@ export type InputFieldProps = InputOrTextareaProps & {
   control?: any;
   rules?: any;
   defaultValue?: string;
+  preventEnterSubmit?: boolean; // New prop to control Enter key behavior
 };
 
 export const InputField = forwardRef<HTMLInputElement | HTMLTextAreaElement, InputFieldProps>(
@@ -47,6 +48,7 @@ export const InputField = forwardRef<HTMLInputElement | HTMLTextAreaElement, Inp
       name,
       rules,
       defaultValue = "",
+      preventEnterSubmit = true, // Default to preventing Enter submission
       ...inputProps
     },
     ref
@@ -88,10 +90,25 @@ export const InputField = forwardRef<HTMLInputElement | HTMLTextAreaElement, Inp
       setInputValue(e.target.value);
       onChange?.(e);
     };
+    
     const handleBlur = () => {
       onBlur?.();
     };
 
+    // Handle keyboard events to prevent unwanted form submissions
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      // Prevent Enter key from submitting forms unless explicitly allowed
+      if (preventEnterSubmit && e.key === "Enter") {
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
+
+      // Call the original onKeyDown if provided
+      if (inputProps.onKeyDown) {
+        inputProps.onKeyDown(e as React.KeyboardEvent<HTMLInputElement>);
+      }
+    };
 
     const debouncedOnChange = useDebouncedCallback(
       (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -123,6 +140,7 @@ export const InputField = forwardRef<HTMLInputElement | HTMLTextAreaElement, Inp
             rows={rows}
             value={valueToUse}
             onChange={inputOnChange}
+            onKeyDown={handleKeyDown}
           />
         );
       }
@@ -136,6 +154,7 @@ export const InputField = forwardRef<HTMLInputElement | HTMLTextAreaElement, Inp
             value={valueToUse}
             onChange={handleSearchChange}
             onBlur={handleBlur}
+            onKeyDown={handleKeyDown}
           />
         );
       }
@@ -150,6 +169,7 @@ export const InputField = forwardRef<HTMLInputElement | HTMLTextAreaElement, Inp
           value={valueToUse}
           onChange={inputOnChange}
           onBlur={handleBlur}
+          onKeyDown={handleKeyDown}
         />
       );
     };

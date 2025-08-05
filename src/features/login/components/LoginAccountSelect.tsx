@@ -52,6 +52,7 @@ const CaseRecordsModal = ({
     subCategory: null,
   });
   const hasSeenLegalRepModal = getCookie("hasSeenLegalRepModal");
+  const userClaims = getCookie("userClaims");
 
   const [selectedMainCategory, setSelectedMainCategory] = useState<any | null>(
     getCookie("mainCategory")
@@ -118,6 +119,19 @@ const CaseRecordsModal = ({
 
     setCookie("userType", localSelected);
     setCookie("selectedUserType", localSelected);
+
+    // Preserve original user type if not already set
+    const originalUserType = getCookie("originalUserType");
+    const storedUserTypeData = getCookie("storeAllUserTypeData");
+    
+    // Check if user has legal representative capabilities from API response
+    const hasLegalRepCapability = storedUserTypeData?.UserTypeList?.some(
+      (userType: any) => userType.UserType === "Legal representative"
+    );
+    
+    if (!originalUserType && hasLegalRepCapability) {
+      setCookie("originalUserType", "Legal representative");
+    }
 
     // Set the selected user type
     if (localSelected === "Legal representative") {

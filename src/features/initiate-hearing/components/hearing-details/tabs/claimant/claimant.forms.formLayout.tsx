@@ -311,7 +311,10 @@ export const useFormLayout = ({
     workerAgentIdNumber.length === 10 &&
     formattedWorkerAgentHijriDob?.length === 8;
 
-  const nicAgent = representativeNICResponse;
+  // Select the appropriate NIC response based on agent type
+  const nicAgent = agentType === "local_agency" ? localAgentNICResponse : 
+                   agentType === "external_agency" ? externalAgentNICResponse : 
+                   representativeNICResponse;
   const nicAgentLoading = false;
   const nicAgentError = false;
   const refetchNICAgent = () => {};
@@ -666,8 +669,8 @@ export const useFormLayout = ({
 
   // Refactor NIC auto-fill for local agency
   useEffect(() => {
-    if (representativeNICResponse?.NICDetails && claimantStatus === "representative" && agentType === "local_agency") {
-      const d = representativeNICResponse.NICDetails;
+    if (localAgentNICResponse?.NICDetails && claimantStatus === "representative" && agentType === "local_agency") {
+      const d = localAgentNICResponse.NICDetails;
       setValue("localAgent_userName", d.PlaintiffName || "");
       setValue("localAgent_region", d.Region_Code ? { value: d.Region_Code, label: d.Region || "" } : null);
       setValue("localAgent_city", d.City_Code ? { value: d.City_Code, label: d.City || "" } : null);
@@ -676,7 +679,7 @@ export const useFormLayout = ({
       setValue("localAgent_nationality", d.Nationality_Code ? { value: d.Nationality_Code, label: d.Nationality || "" } : null);
       setValue("localAgent_phoneNumber", d.PhoneNumber ? d.PhoneNumber.toString() : "");
     }
-  }, [representativeNICResponse, claimantStatus, agentType, setValue]);
+  }, [localAgentNICResponse, claimantStatus, agentType, setValue]);
 
   // Refactor NIC auto-fill for external agency
   useEffect(() => {
@@ -913,6 +916,10 @@ export const useFormLayout = ({
                   }
                   return true;
                 },
+              },
+              onChange: (value: any) => {
+                setValue("principal_region", value);
+                setValue("principal_city", null);
               },
             }),
           },
@@ -1190,6 +1197,7 @@ export const useFormLayout = ({
                               // Never call NIC if not allowed
                             }}
                             notRequired={false}
+                            isDateOfBirth={true}
                           />
                         </div>
                       )
@@ -1220,6 +1228,7 @@ export const useFormLayout = ({
                             }
                           }}
                           notRequired={false}
+                          isDateOfBirth={true}
                         />
                       )}
                     <GregorianDateDisplayInput control={control} name="localAgent_gregorianDate" label={t("nicDetails.dobGrog")} notRequired={false} />
@@ -1262,7 +1271,14 @@ export const useFormLayout = ({
                 isLoading: false,
                 label: t("nicDetails.region"),
                 value: localAgentNICResponse?.NICDetails?.Region || watch("localAgent_region"),
-                ...(localAgentNICResponse?.NICDetails?.Region ? {} : { options: RegionOptions || [], validation: { required: t("regionValidation") } }),
+                ...(localAgentNICResponse?.NICDetails?.Region ? {} : { 
+                  options: RegionOptions || [], 
+                  validation: { required: t("regionValidation") },
+                  onChange: (value: any) => {
+                    setValue("localAgent_region", value);
+                    setValue("localAgent_city", null);
+                  },
+                }),
                 disabled: !(
                   hasValidAgency &&
                   (watch("localAgent_workerAgentIdNumber") || "").length === 10 &&
@@ -1365,7 +1381,7 @@ export const useFormLayout = ({
               ) },
               { type: "custom", component: (
                 <div className="flex flex-col gap-2">
-                  <HijriDatePickerInput control={control} name="externalAgent_workerAgentDateOfBirthHijri" label={t("nicDetails.dobHijri")} rules={{ required: true }} onChangeHandler={(date, onChange) => { userPickedDateRef.current = true; if (!date || Array.isArray(date)) { setValue("externalAgent_gregorianDate", ""); return; } const gregorianStr = date.convert(gregorian, gregorianLocaleEn).format("YYYY/MM/DD"); const gregorianStorage = gregorianStr.replace(/\//g, ""); if (watch("externalAgent_gregorianDate") !== gregorianStorage) { setValue("externalAgent_gregorianDate", gregorianStorage); } }} notRequired={false} />
+                  <HijriDatePickerInput control={control} name="externalAgent_workerAgentDateOfBirthHijri" label={t("nicDetails.dobHijri")} rules={{ required: true }} onChangeHandler={(date, onChange) => { userPickedDateRef.current = true; if (!date || Array.isArray(date)) { setValue("externalAgent_gregorianDate", ""); return; } const gregorianStr = date.convert(gregorian, gregorianLocaleEn).format("YYYY/MM/DD"); const gregorianStorage = gregorianStr.replace(/\//g, ""); if (watch("externalAgent_gregorianDate") !== gregorianStorage) { setValue("externalAgent_gregorianDate", gregorianStorage); } }} notRequired={false} isDateOfBirth={true} />
                   <GregorianDateDisplayInput control={control} name="externalAgent_gregorianDate" label={t("nicDetails.dobGrog")} notRequired={false} />
                 </div>
               ) },
@@ -1377,7 +1393,7 @@ export const useFormLayout = ({
                 validation: { required: t("nameValidation") },
               },
               { type: "input", name: "externalAgent_phoneNumber", label: t("nicDetails.phoneNumber"), inputType: "text", placeholder: t("nicDetails.phonePlaceholder"), value: watch("externalAgent_phoneNumber"), onChange: (v: string) => setValue("externalAgent_phoneNumber", v), validation: { required: t("phoneNumberValidation"), pattern: { value: /^05\d{8}$/, message: t("phoneValidationMessage") } } },
-              { type: externalAgentNICResponse?.NICDetails?.Region ? "readonly" : "autocomplete", name: "externalAgent_region", isLoading: false, label: t("nicDetails.region"), value: externalAgentNICResponse?.NICDetails?.Region || watch("externalAgent_region"), ...(externalAgentNICResponse?.NICDetails?.Region ? {} : { options: RegionOptions || [], validation: { required: t("regionValidation") } }) },
+              { type: externalAgentNICResponse?.NICDetails?.Region ? "readonly" : "autocomplete", name: "externalAgent_region", isLoading: false, label: t("nicDetails.region"), value: externalAgentNICResponse?.NICDetails?.Region || watch("externalAgent_region"), ...(externalAgentNICResponse?.NICDetails?.Region ? {} : { options: RegionOptions || [], validation: { required: t("regionValidation") }, onChange: (value: any) => { setValue("externalAgent_region", value); setValue("externalAgent_city", null); } }) },
               { type: externalAgentNICResponse?.NICDetails?.City ? "readonly" : "autocomplete", name: "externalAgent_city", isLoading: false, label: t("nicDetails.city"), value: externalAgentNICResponse?.NICDetails?.City || watch("externalAgent_city"), ...(externalAgentNICResponse?.NICDetails?.City ? {} : { options: CityOptions || [], validation: { required: t("cityValidation") } }) },
               { isLoading: nicAgentLoading, type: externalAgentNICResponse?.NICDetails?.Occupation ? "readonly" : "autocomplete", name: "externalAgent_occupation", label: t("nicDetails.occupation"), value: externalAgentNICResponse?.NICDetails?.Occupation || watch("externalAgent_occupation"), ...(externalAgentNICResponse?.NICDetails?.Occupation ? {} : { options: OccupationOptions || [], validation: { required: t("occupationValidation") } }) },
               { isLoading: nicAgentLoading, type: externalAgentNICResponse?.NICDetails?.Gender ? "readonly" : "autocomplete", name: "externalAgent_gender", label: t("nicDetails.gender"), value: externalAgentNICResponse?.NICDetails?.Gender && agentType === "external_agency" ? externalAgentNICResponse.NICDetails.Gender : watch("externalAgent_gender"), ...(externalAgentNICResponse?.NICDetails?.Gender ? {} : { options: GenderOptions || [], validation: { required: t("genderValidation") } }) },
@@ -1458,6 +1474,7 @@ export const useFormLayout = ({
                     if (shouldFetchNic) refetchNICAgent();
                   }}
                   notRequired={false}
+                  isDateOfBirth={true}
                 />
                 <GregorianDateDisplayInput
                   control={control}

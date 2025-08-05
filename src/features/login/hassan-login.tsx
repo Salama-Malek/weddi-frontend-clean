@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import logo from "@/assets/logo.svg";
-import FormWrapper from "@/shared/components/form/FromWrapper";
+import FormWrapper from "@/shared/components/form/FormWrapper";
 import * as jose from "jose";
 import { useNavigate } from "react-router-dom";
 const userTypes = [

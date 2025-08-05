@@ -1,5 +1,4 @@
-import { FORM_DEFAULTS } from "@/mock/genderData";
-import { FormProvider, useAPIFormsData } from "@/providers/FormContext";
+import { useAPIFormsData } from "@/providers/FormContext";
 import Button from "@/shared/components/button";
 import { ReactNode, useState } from "react";
 import { FieldValues, UseFormHandleSubmit } from "react-hook-form";
@@ -86,8 +85,26 @@ const StepNavigation = <T extends FieldValues>({
 
   const isNextEnabled =
     isLastStep
-      ? canProceed
+      ? canProceed && isValid
       : isValid && isPassedVerifiedInput && !isButtonDisabled?.("next") && !isFormSubmitting;
+
+  // Save button should be disabled when there are no case topics (canProceed is false)
+  // But only for edit cases (when showFooterBtn is false), not for case creation
+  const isSaveEnabled = showFooterBtn 
+    ? isNextEnabled // Case creation: use normal logic
+    : (canProceed !== false ? isNextEnabled : false); // Edit case: check canProceed
+
+  // console.log("[🔍 STEP NAVIGATION] Save button logic:", {
+  //   showFooterBtn,
+  //   canProceed,
+  //   isNextEnabled,
+  //   isSaveEnabled,
+  //   isEditCase: !showFooterBtn,
+  //   isValid,
+  //   isPassedVerifiedInput,
+  //   isFormSubmitting,
+  //   isLastStep
+  // });
 
   const isSaveLoading =
     actionButtonName === "Save" && isFormSubmitting && (isLoading ?? true);
@@ -96,29 +113,77 @@ const StepNavigation = <T extends FieldValues>({
 
   const handleSaveClick = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
+    // Prevent multiple rapid save calls
     if (!handleSave || isFormSubmitting) return;
 
+    console.log("[🔍 STEP NAVIGATION] Save button clicked - starting save operation");
+    
     try {
       const response = await handleSave() as ApiResponse;
+
+      console.log("[🔍 STEP NAVIGATION] Save operation completed, response:", response);
 
       const validErrors = response?.ErrorCodeList?.filter(
         (element: any) => element.ErrorCode || element.ErrorDesc
       ) || [];
 
       if (validErrors.length > 0) {
+        // Show validation error toasts based on API response
+        validErrors.forEach((error: any) => {
+          toast.error(error.ErrorDesc || "Validation error");
+        });
         return;
       }
 
-      if (response?.SuccessCode === "200") {
-        handleRemoveValidation?.();
-        toast.success(tStepper("save_success"));
-      }
+                     // More robust success condition - prioritize ServiceStatus when SuccessCode is not present
+        const hasSuccessCode = response?.SuccessCode === "200";
+        const hasSuccessStatus = response?.ServiceStatus === "Success";
+        const hasNoErrors = !response?.ErrorCodeList || response.ErrorCodeList.length === 0;
+        
+        // Check if errors are just warnings (non-blocking)
+        const hasOnlyWarnings = response?.ErrorCodeList?.every((error: any) => 
+          error.ErrorCode?.startsWith('W') || error.ErrorDesc?.toLowerCase().includes('warning')
+        );
+        
+        const isSuccessful = (hasSuccessStatus && (hasNoErrors || hasOnlyWarnings)) || (hasSuccessCode && (hasNoErrors || hasOnlyWarnings));
+        
+        if (isSuccessful) {
+          console.log("[StepNavigation] API call confirmed successful, showing success toast");
+          handleRemoveValidation?.();
+          toast.success(tStepper("save_success"));
+        } else if (response?.SuccessCode === "IN_PROGRESS") {
+          console.log("[StepNavigation] Operation in progress, not showing any toast");
+          // Don't show any toast when operation is in progress
+        } else {
+          console.log("[StepNavigation] API response not successful, not showing success toast:", {
+            SuccessCode: response?.SuccessCode,
+            ServiceStatus: response?.ServiceStatus,
+            ErrorCodeList: response?.ErrorCodeList,
+            isSuccessful,
+            hasNoErrors,
+            hasOnlyWarnings
+          });
+          
+          // Log the actual error details for debugging
+          if (response?.ErrorCodeList?.length > 0) {
+            console.log("[StepNavigation] Error details:", response.ErrorCodeList);
+          }
+        }
     } catch (error: any) {
-      toast.error(tStepper("save_error"));
+      console.error("[StepNavigation] Save error:", error);
+      // Show error toast based on the actual error from API
+      const errorMessage = error?.data?.ErrorDetails?.[0]?.ErrorDesc || 
+                          error?.data?.ErrorDescription || 
+                          error?.message || 
+                          tStepper("save_error");
+      toast.error(errorMessage);
     }
   };
 
-  const handleMyCases = () => {
+  const handleMyCases = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log("[🔍 GO TO MY CASES] Navigating to manage-hearings, caseId:", caseId);
     navigate(`/manage-hearings/${caseId}`);
   };
 
@@ -169,6 +234,7 @@ const StepNavigation = <T extends FieldValues>({
     }
   };
 
+  // console.log("[🔍 STEP NAVIGATION] Rendering with showFooterBtn:", showFooterBtn, "currentStep:", currentStep);
   return (
     <form onSubmit={onSubmit} className="space-y-6">
       {currentStep === 0 && (
@@ -186,7 +252,10 @@ const StepNavigation = <T extends FieldValues>({
       {children}
 
       {/* Footer Buttons */}
-      {showFooterBtn && (
+      {(() => {
+        // console.log("[🔍 STEP NAVIGATION] Main footer condition:", { showFooterBtn, currentStep, shouldShow: showFooterBtn && currentStep !== 2 });
+        return showFooterBtn && currentStep !== 2;
+      })() && (
         <div className="flex flex-wrap justify-between gap-4 mt-4 border-t pb-6 pt-4 border-t-gray-300 w-full">
           <Button
             type="button"
@@ -215,10 +284,10 @@ const StepNavigation = <T extends FieldValues>({
               <Button
                 type="button"
                 isLoading={isSaveLoading}
-                variant={isNextEnabled ? "secondary" : "disabled"}
-                typeVariant={isNextEnabled ? "outline" : "freeze"}
+                variant={isSaveEnabled ? "secondary" : "disabled"}
+                typeVariant={isSaveEnabled ? "outline" : "freeze"}
                 onClick={handleSaveClick}
-                disabled={!isNextEnabled || isFormSubmitting}
+                disabled={!isSaveEnabled || isFormSubmitting}
               >
                 {tStepper("save")}
               </Button>
@@ -237,13 +306,16 @@ const StepNavigation = <T extends FieldValues>({
         </div>
       )}
 
-      {currentStep === 2 && (
+      {(() => {
+        // console.log("[🔍 STEP NAVIGATION] Step 2 footer condition:", { currentStep, shouldShow: currentStep === 2 });
+        return currentStep === 2;
+      })() && (
         <div className="flex justify-between mt-4 border-t pb-6 pt-4 border-t-gray-300 w-full">
           <Button
             type="button"
             variant="secondary"
             typeVariant="outline"
-            onClick={handleMyCases}
+            onClick={(e) => handleMyCases(e)}
           >
             {tStepper("go_to_my_case")}
           </Button>
@@ -251,10 +323,10 @@ const StepNavigation = <T extends FieldValues>({
           <Button
             type="button"
             isLoading={isSaveLoading}
-            variant={isNextEnabled ? "primary" : "disabled"}
-            typeVariant={isNextEnabled ? "outline" : "freeze"}
-            onClick={handleSave}
-            disabled={!isNextEnabled}
+            variant={isSaveEnabled ? "primary" : "disabled"}
+            typeVariant={isSaveEnabled ? "outline" : "freeze"}
+            onClick={handleSaveClick}
+            disabled={!isSaveEnabled || isFormSubmitting}
           >
             {tStepper("save")}
           </Button>
@@ -289,23 +361,25 @@ const StepNavigation = <T extends FieldValues>({
       )}
 
 
-      {!showFooterBtn && (
+      {!showFooterBtn && currentStep !== 2 && (
         <div className="flex justify-between mt-4 border-t pb-6 pt-4 border-t-gray-300 w-full">
           <Button
+            type="button"
             variant="secondary"
             typeVariant="outline"
-            onClick={handleMyCases}
+            onClick={(e) => handleMyCases(e)}
           >
             {tStepper("go_to_my_case")}
           </Button>
 
 
           <Button
+            type="button"
             isLoading={isSaveLoading}
-            variant={isNextEnabled ? "primary" : "disabled"}
-            typeVariant={isNextEnabled ? "outline" : "freeze"}
-            onClick={handleSave}
-            disabled={!isNextEnabled}
+            variant={isSaveEnabled ? "primary" : "disabled"}
+            typeVariant={isSaveEnabled ? "outline" : "freeze"}
+            onClick={handleSaveClick}
+            disabled={!isSaveEnabled || isFormSubmitting}
           >
             {tStepper("save")}
           </Button>

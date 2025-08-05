@@ -68,7 +68,11 @@ export const DateOfBirthField: React.FC<DateOfBirthFieldProps> = ({
         notRequired={notRequired}
         calendarType="hijri"
         value={dateInfo.dateObject}
+        control={control as any}
+        name={hijriFieldName as any}
+        rules={notRequired ? {} : { required: true }}
         onDateChange={(info) => setDateInfo(info)}
+        isDateOfBirth={true} // Enable future date validation for date of birth fields
       />
       <div className="mt-2">
         <label className="text-sm !leading-5 normal block mb-1">

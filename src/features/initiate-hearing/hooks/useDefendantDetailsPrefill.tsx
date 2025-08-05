@@ -1,163 +1,131 @@
-import { useEffect } from "react";
-import { UseFormSetValue, UseFormTrigger } from "react-hook-form";
-import { useCookieState } from "./useCookieState";
+import { useEffect, useState } from "react";
 import { useLazyGetCaseDetailsQuery } from "@/features/manage-hearings/api/myCasesApis";
+import { useCookieState } from "./useCookieState";
+
+// دالة مساعدة لإرجاع null إذا كان الكائن فارغًا
+function nullifyIfEmpty(obj: any) {
+  if (
+    obj &&
+    typeof obj === "object" &&
+    "label" in obj &&
+    "value" in obj &&
+    (obj.value === "" ||
+      obj.value === null ||
+      obj.value === undefined ||
+      obj.value?.toString().trim() === "")
+  ) {
+    return null;
+  }
+  return obj;
+}
 
 const useDefendantDetailsPrefill = (
-  setValue: UseFormSetValue<any>,
-  trigger: UseFormTrigger<any>
+  setValue: (field: string, value: any) => void
 ) => {
-  const [getCookie, setCookie] = useCookieState();
-  const [triggerCaseDetailsQuery, { data: fetchedCaseDetails, isSuccess }] =
-    useLazyGetCaseDetailsQuery();
+  const [getCookie] = useCookieState();
+  const [triggerCaseDetailsQuery] = useLazyGetCaseDetailsQuery();
+  const [isFeatched, setIsfetched] = useState(false);
+  const [defendantData, setDefendantData] = useState<any | null>(null);
 
   useEffect(() => {
     const caseId = getCookie("caseId");
-    const userType = getCookie("userType");
     const userClaims = getCookie("userClaims");
-    const mainCategory = getCookie("mainCategory")?.value;
-    const subCategory = getCookie("subCategory")?.value;
+    const userType = getCookie("userType");
+    const lang = userClaims?.AcceptedLanguage?.toUpperCase() || "EN";
 
-    if (caseId && userType) {
-      const userConfigs: any = {
-        Worker: {
-          UserType: userType,
-          IDNumber: userClaims?.UserID,
-        },
-        Establishment: {
-          UserType: userType,
-          IDNumber: userClaims?.UserID,
-          FileNumber: userClaims?.File_Number,
-        },
-        "Legal representative": {
-          UserType: userType,
-          IDNumber: userClaims?.UserID,
-          MainGovernment: mainCategory || "",
-          SubGovernment: subCategory || "",
-        },
-      };
+    if (!caseId || !userType) return;
 
-      triggerCaseDetailsQuery({
-        ...userConfigs[userType],
-        CaseID: caseId,
-        AcceptedLanguage: userClaims?.AcceptedLanguage?.toUpperCase() || "EN",
-        SourceSystem: "E-Services",
-      });
-    }
-  }, [getCookie, triggerCaseDetailsQuery]);
+    const payload = {
+      CaseID: caseId,
+      UserType: userType,
+      IDNumber: userClaims?.UserID || "",
+      AcceptedLanguage: lang,
+      SourceSystem: "E-Services",
+      FileNumber:
+        userType === "Establishment" ? userClaims?.File_Number || "" : "",
+      MainGovernment:
+        userType === "Legal representative"
+          ? getCookie("mainCategory")?.value || ""
+          : "",
+      SubGovernment:
+        userType === "Legal representative"
+          ? getCookie("subCategory")?.value || ""
+          : "",
+    };
 
-  useEffect(() => {
-    if (isSuccess && fetchedCaseDetails) {
-      setCookie("caseDetails", fetchedCaseDetails);
-    }
-  }, [isSuccess, fetchedCaseDetails, setCookie]);
+    triggerCaseDetailsQuery(payload).then((result) => {
+      const details = result?.data?.CaseDetails;
+      setIsfetched(true);
+      if (!details) return;
+      localStorage.setItem("DefendantDetails", JSON.stringify(details));
+      setDefendantData(EXtractDefendantDetailsData(details));
+    });
+  }, []);
 
-  useEffect(() => {
-    const caseDetails = getCookie("caseDetails");
-    if (caseDetails?.CaseDetails) {
-      const details = caseDetails.CaseDetails;
+  const EXtractDefendantDetailsData = (caseDetails: any) => {
+    console.log("Get Case Datails ", caseDetails);
 
-      setValue("defendantStatus", details.DefendantType || "Establishment");
-      setValue(
-        "defendantDetails",
-        details.DefendantType === "Government" ? "Government" : "Others"
-      );
+    return {
+      defendantStatus: caseDetails?.DefendantType,
+      defendantDetails:
+        caseDetails?.DefendantType_Code === "Government" ? "Government" : "Others",
+      nationalIdNumber: caseDetails?.DefendantId,
+      def_date_hijri: caseDetails?.DefendantHijiriDOB,
+      DefendantsEstablishmentPrisonerName: caseDetails?.DefendantName,
+      mobileNumber: caseDetails?.Defendant_PhoneNumber,
+      defendantRegion: nullifyIfEmpty({
+        value: caseDetails?.Defendant_Region_Code,
+        label: caseDetails?.Defendant_Region,
+      }),
+      defendantCity: nullifyIfEmpty({
+        value: caseDetails?.Defendant_City_Code,
+        label: caseDetails?.Defendant_City,
+      }),
+      occupation: nullifyIfEmpty({
+        value: caseDetails?.Defendant_Occupation_Code,
+        label: caseDetails?.Defendant_Occupation,
+      }),
+      gender: nullifyIfEmpty({
+        value: caseDetails?.Defendant_Gender_Code,
+        label: caseDetails?.Defendant_Gender,
+      }),
+      nationality: nullifyIfEmpty({
+        value: caseDetails?.Defendant_Nationality_Code,
+        label: caseDetails?.Defendant_Nationality,
+      }),
+      DefendantFileNumber: caseDetails?.DefendantEstFileNumber,
+      Defendant_Establishment_data_NON_SELECTED: {
+        EstablishmentName:
+          caseDetails?.EstablishmentFullName || caseDetails?.DefendantName || "",
+        FileNumber: caseDetails?.DefendantEstFileNumber || "",
+        CRNumber: caseDetails?.Defendant_CRNumber || "",
+        Number700: caseDetails?.Defendant_Number700 || "",
+        Region: caseDetails?.Defendant_Region || "",
+        Region_Code: caseDetails?.Defendant_Region_Code || "",
+        City: caseDetails?.Defendant_City || "",
+        City_Code: caseDetails?.Defendant_City_Code || "",
+      },
+      main_category_of_the_government_entity: nullifyIfEmpty({
+        value: caseDetails?.Defendant_MainGovtDefend_Code,
+        label: caseDetails?.Defendant_MainGovtDefend,
+      }),
+      subcategory_of_the_government_entity: nullifyIfEmpty({
+        value: caseDetails?.DefendantSubGovtDefend_Code,
+        label: caseDetails?.DefendantSubGovtDefend,
+      }),
+      // Additional fields for establishment data
+      establishment_phoneNumber: caseDetails?.Defendant_PhoneNumber,
+      Defendant_CRNumber: caseDetails?.Defendant_CRNumber,
+      Defendant_Number700: caseDetails?.Defendant_Number700,
+      // Date fields
+      def_date_gregorian: caseDetails?.Defendant_ApplicantBirthDate,
 
-      setValue("nationalIdNumber", details.DefendantId || "");
-      setValue("def_date_hijri", details.DefendantHijiriDOB || "");
-      setValue(
-        "DefendantsEstablishmentPrisonerName",
-        details.DefendantName || ""
-      );
-      setValue("mobileNumber", details.Defendant_PhoneNumber || "");
+      // for plaintiff deatils 
+      PlaintiffId :  caseDetails?.PlaintiffId
+    };
+  };
 
-      setValue("defendantRegion", {
-        value: details.Defendant_Region_Code || "",
-        label: details.Defendant_Region || "",
-      });
-      setValue("defendantCity", {
-        value: details.Defendant_City_Code || "",
-        label: details.Defendant_City || "",
-      });
-      setValue("occupation", {
-        value: details.Defendant_Occupation_Code || "",
-        label: details.Defendant_Occupation || "",
-      });
-      setValue("gender", {
-        value: details.Defendant_Gender_Code || "",
-        label: details.Defendant_Gender || "",
-      });
-      setValue("nationality", {
-        value: details.Defendant_Nationality_Code || "",
-        label: details.Defendant_Nationality || "",
-      });
-
-      if (details.DefendantType === "Establishment") {
-        setValue(
-          "DefendantFileNumber",
-          details.DefendantEstFileNumber || ""
-        );
-        setValue("Defendant_Establishment_data_NON_SELECTED", {
-          EstablishmentName:
-            details.Defendant_EstablishmentNameDetails || "",
-          FileNumber: details.DefendantEstFileNumber || "",
-          CRNumber: details.Defendant_CRNumber || "",
-        });
-      }
-
-      if (details.DefendantType === "Government") {
-        if (
-          details.Defendant_MainGovtDefend_Code &&
-          details.Defendant_MainGovtDefend
-        ) {
-          setValue(
-            "main_category_of_the_government_entity",
-            {
-              value: details.Defendant_MainGovtDefend_Code,
-              label: details.Defendant_MainGovtDefend,
-            },
-            { shouldValidate: true }
-          );
-        }
-
-        if (
-          details.DefendantSubGovtDefend_Code &&
-          details.DefendantSubGovtDefend
-        ) {
-          setValue(
-            "subcategory_of_the_government_entity",
-            {
-              value: details.DefendantSubGovtDefend_Code,
-              label: details.DefendantSubGovtDefend,
-            },
-            { shouldValidate: true }
-          );
-        }
-      }
-
-      trigger("defendantStatus");
-      trigger("defendantDetails");
-      trigger("nationalIdNumber");
-      trigger("def_date_hijri");
-      trigger("DefendantsEstablishmentPrisonerName");
-      trigger("mobileNumber");
-      trigger("defendantRegion");
-      trigger("defendantCity");
-      trigger("occupation");
-      trigger("gender");
-      trigger("nationality");
-
-      if (details.DefendantType === "Government") {
-        trigger("main_category_of_the_government_entity");
-        trigger("subcategory_of_the_government_entity");
-      }
-
-      if (details.DefendantType === "Establishment") {
-        trigger("DefendantFileNumber");
-        trigger("Defendant_Establishment_data_NON_SELECTED");
-      }
-    }
-  }, [getCookie, setValue, trigger]);
+  return { isFeatched, defendantData };
 };
 
-export default useDefendantDetailsPrefill; 
+export default useDefendantDetailsPrefill;

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, useRef } from "react";
+import React, { useEffect, useMemo, useState, useRef, useCallback } from "react";
 import { skipToken } from "@reduxjs/toolkit/query";
 import { useTranslation } from "react-i18next";
 import withStepNavigation, {
@@ -8,8 +8,9 @@ import { DynamicForm } from "@/shared/components/form/DynamicForm";
 import { FormData } from "@/shared/components/form/form.types";
 import { toast } from "react-toastify";
 import Loader from "@/shared/components/loader";
-import { formatDateToYYYYMMDD, toWesternDigits } from "@/shared/lib/helpers";
+import { formatDateToYYYYMMDD, toWesternDigits, isHijriDateInFuture } from "@/shared/lib/helpers";
 import { useWatch } from "react-hook-form";
+import { useNICServiceErrorContext } from "@/shared/context/NICServiceErrorContext";
 
 import {
   useGetNICDetailsQuery,
@@ -29,10 +30,11 @@ import { useGetUserTypeLegalRepQuery } from "@/features/login/api/loginApis";
 import { useOtpVerification } from "@/features/initiate-hearing/hooks/useOtpVerification";
 import { useCookieState } from "@/features/initiate-hearing/hooks/useCookieState";
 import useCaseDetailsPrefill from "@/features/initiate-hearing/hooks/useCaseDetailsPrefill";
+import useEmbassyCaseDetailsPrefill from "@/features/initiate-hearing/hooks/useEmbassyCaseDetailsPrefill";
 import { useSaveClaimantDetailsMutation } from "@/features/initiate-hearing/api/create-case/apis";
 import { useAPIFormsData } from "@/providers/FormContext";
 import { useIncompleteCaseHandler } from "@/features/initiate-hearing/hooks/useIncompleteCaseHandler";
-import { claimantDetailsPayload } from "@/features/initiate-hearing/api/create-case/payloads";
+import { claimantDetailsPayload, emabsyClaimantPayload } from "@/features/initiate-hearing/api/create-case/payloads";
 
 import { useFormLayout } from "./claimant.forms.formLayout";
 import { useEstablishmentPlaintiffFormLayout } from "../../establishment-tabs/plaintiff/plaintiff.forms.formLayout";
@@ -132,19 +134,34 @@ const ClaimantDetailsContainer: React.FC<
     const lang = i18n.language.toUpperCase();
     const [isAgencyValidating, setIsAgencyValidating] = useState(false);
 
+    const { handleNICResponse, setTryAgainCallback } = useNICServiceErrorContext();
+
     const [getCookie, setCookie] = useCookieState();
     const userClaims = getCookie("userClaims");
     const userId = userClaims?.UserID || "";
     const userName = userClaims?.FullName || "";
     const userType = getCookie("userType");
     const { clearFormData } = useAPIFormsData();
+    
+    // Memoize setValue to prevent infinite loops
+    const memoizedSetValue = useCallback(setValue, [setValue]);
+    const memoizedSetError = useCallback(setError, [setError]);
+    const memoizedClearErrors = useCallback(clearErrors, [clearErrors]);
+    
     useEffect(() => {
       // Keep this for initial setup, but individual fields are managed
       // by useIncompleteCaseHandler and other hooks.
     }, [clearFormData]);
 
-    useIncompleteCaseHandler(setValue, trigger);
-    useCaseDetailsPrefill(setValue, trigger);
+    useIncompleteCaseHandler(memoizedSetValue, trigger);
+    
+    // Use embassy-specific prefill for embassy users, regular prefill for others
+    const isEmbassyUserForPrefill = userType?.toLowerCase().includes("embassy user");
+    if (isEmbassyUserForPrefill) {
+      useEmbassyCaseDetailsPrefill(memoizedSetValue, trigger);
+    } else {
+      useCaseDetailsPrefill(memoizedSetValue, trigger);
+    }
 
     const claimantStatus = watch("claimantStatus") as
       | "principal"
@@ -155,9 +172,9 @@ const ClaimantDetailsContainer: React.FC<
     useEffect(() => {
       // Set default claimant status on mount to avoid race conditions
       if (!watchedClaimantStatus) {
-        setValue("claimantStatus", "principal");
+        memoizedSetValue("claimantStatus", "principal");
       }
-    }, [watchedClaimantStatus, setValue]);
+    }, []); // Only run once on mount
 
     const principalId = userId;
     const principalDob = formatDateToYYYYMMDD(userClaims?.UserDOB);
@@ -180,7 +197,7 @@ const ClaimantDetailsContainer: React.FC<
       phoneNumber: (watch("phoneNumber") as string) || "",
       plaintiffId: claimantStatus === "principal" ? userId : representativeId,
       plaintiffName: claimantStatus === "principal" ? userName : "",
-      setValue: setValue as any,
+      setValue: memoizedSetValue as any,
     });
 
     // --- Agent info ---
@@ -227,8 +244,8 @@ const ClaimantDetailsContainer: React.FC<
     const hasValidAgency = agentType === "local_agency" && agentInfo?.Agent?.ErrorDescription === "Success";
 
     // --- Lookup data queries ---
-    const isEmbassyUser = userType?.toLowerCase().includes("embassy user");
     const isEstablishmentUser = userType?.toLowerCase().includes("establishment");
+    const isLegalRepresentativeUser = userType?.toLowerCase().includes("legal representative");
     let selectedRegionForCity: any = null;
     let cityFieldName: string = "plaintiffCity";
     // Determine correct region/city fields for lookup and assignment
@@ -237,7 +254,7 @@ const ClaimantDetailsContainer: React.FC<
         ? watch("establishment_region")?.value
         : watch("establishment_region") || "";
       cityFieldName = "establishment_city";
-    } else if (isEmbassyUser) {
+    } else if (isEmbassyUserForPrefill) {
       if (claimantStatus === "representative") {
         selectedRegionForCity = typeof watch("embassyAgent_region") === "object"
           ? watch("embassyAgent_region")?.value
@@ -322,7 +339,9 @@ const ClaimantDetailsContainer: React.FC<
           claimantStatus !== "principal" ||
           !principalId ||
           principalId.length !== 10 ||
-          !principalDob,
+          !principalDob ||
+          isHijriDateInFuture(principalDob) ||
+          isLegalRepresentativeUser,
       }
     );
 
@@ -343,7 +362,9 @@ const ClaimantDetailsContainer: React.FC<
           !representativeId ||
           representativeId.length !== 10 ||
           !representativeDob ||
-          representativeDob.length !== 8,
+          representativeDob.length !== 8 ||
+          isHijriDateInFuture(representativeDob) ||
+          isLegalRepresentativeUser,
       }
     );
 
@@ -366,12 +387,15 @@ const ClaimantDetailsContainer: React.FC<
         skip:
           agentType !== "external_agency" ||
           externalAgentId.length !== 10 ||
-          externalAgentDob.length !== 8,
+          externalAgentDob.length !== 8 ||
+          isHijriDateInFuture(externalAgentDob) ||
+          isLegalRepresentativeUser,
       }
     );
 
     const localAgentId = watch("localAgent_workerAgentIdNumber") || "";
     const localAgentDob = toWesternDigits(watch("localAgent_workerAgentDateOfBirthHijri") || "");
+    
     const {
       data: localAgentNICResponse,
       isFetching: localAgentNICLoading,
@@ -389,11 +413,29 @@ const ClaimantDetailsContainer: React.FC<
           !hasValidAgency ||
           localAgentId.length !== 10 ||
           !safeAllowedIds.includes(localAgentId) ||
-          localAgentDob.length !== 8,
+          localAgentDob.length !== 8 ||
+          isHijriDateInFuture(localAgentDob) ||
+          isLegalRepresentativeUser,
       }
     );
 
     const errorToastShownRef = useRef(false);
+
+    // NIC Service Error handling
+    const handleTryAgain = useCallback(() => {
+      // Refetch all NIC queries (only for non-legal representative users)
+      if (!isLegalRepresentativeUser) {
+        if (principalNICRefetch) principalNICRefetch();
+        if (representativeNICRefetch) representativeNICRefetch();
+        if (refetchExternalAgentNIC) refetchExternalAgentNIC();
+        if (refetchLocalAgentNIC) refetchLocalAgentNIC();
+      }
+    }, [principalNICRefetch, representativeNICRefetch, refetchExternalAgentNIC, refetchLocalAgentNIC, isLegalRepresentativeUser]);
+
+    // Set the try again callback when component mounts
+    useEffect(() => {
+      setTryAgainCallback(handleTryAgain);
+    }, [setTryAgainCallback, handleTryAgain]);
 
     useEffect(() => {
       try {
@@ -457,8 +499,8 @@ const ClaimantDetailsContainer: React.FC<
           "Agent_CurrentPlaceOfWork",
           "Agent_ResidencyAddress",
         ].forEach((f) => {
-          setValue(f as any, "");
-          clearErrors(f);
+          memoizedSetValue(f as any, "");
+          memoizedClearErrors(f);
         });
 
         // [
@@ -482,11 +524,11 @@ const ClaimantDetailsContainer: React.FC<
       }
 
       if (agentInfo?.Agent?.ErrorDescription === "Success") {
-        setValue("agentName", agentInfo?.Agent.AgentName || "");
-        setValue("agencyStatus", agentInfo?.Agent.MandateStatus || "");
-        setValue("agencySource", agentInfo?.Agent.MandateSource || "");
+        memoizedSetValue("agentName", agentInfo?.Agent.AgentName || "");
+        memoizedSetValue("agencyStatus", agentInfo?.Agent.MandateStatus || "");
+        memoizedSetValue("agencySource", agentInfo?.Agent.MandateSource || "");
         toast.success(t("agencyFound"));
-        clearErrors("agencyNumber");
+        memoizedClearErrors("agencyNumber");
         errorToastShownRef.current = false; 
       }
     } catch (error) {
@@ -498,7 +540,7 @@ const ClaimantDetailsContainer: React.FC<
       });
       setIsAgencyValidating(false);
     }
-    }, [agentInfo, isAgentFetching, setValue, setError, clearErrors, t]);
+    }, [agentInfo, isAgentFetching, memoizedSetValue, memoizedSetError, memoizedClearErrors, t]);
 
     const idNumber = watch("idNumber");
 
@@ -510,8 +552,8 @@ const ClaimantDetailsContainer: React.FC<
       ) {
         if (representativeId === userId) {
           toast.error(t("error.cannotUseOwnId"));
-          setValue("workerAgentIdNumber", "");
-          clearErrors("workerAgentIdNumber");
+          memoizedSetValue("workerAgentIdNumber", "");
+          memoizedClearErrors("workerAgentIdNumber");
           [
             "workerAgentDateOfBirthHijri",
             "gregorianDate",
@@ -524,15 +566,15 @@ const ClaimantDetailsContainer: React.FC<
             "hijriDate",
             "phoneNumber",
           ].forEach((f) => {
-            setValue(f as any, "");
-            clearErrors(f);
+            memoizedSetValue(f as any, "");
+            memoizedClearErrors(f);
           });
         } else if (
           agentType === "local_agency" &&
           !allowedIds.includes(representativeId)
         ) {
           // Always validate and show error for invalid ID
-          setError("idNumber", {
+          memoizedSetError("idNumber", {
             type: "validate",
             message: t("error.idNotUnderAgency"),
           });
@@ -550,12 +592,12 @@ const ClaimantDetailsContainer: React.FC<
             "hijriDate",
             "phoneNumber",
           ].forEach((f) => {
-            setValue(f as any, "");
-            clearErrors(f);
+            memoizedSetValue(f as any, "");
+            memoizedClearErrors(f);
           });
         } else {
           if (errors.idNumber) {
-            clearErrors("idNumber");
+            memoizedClearErrors("idNumber");
           }
         }
       }
@@ -564,9 +606,9 @@ const ClaimantDetailsContainer: React.FC<
       representativeId,
       allowedIds,
       userId,
-      setValue,
-      setError,
-      clearErrors,
+      memoizedSetValue,
+      memoizedSetError,
+      memoizedClearErrors,
       t,
       idNumber,
       errors,
@@ -587,15 +629,15 @@ const ClaimantDetailsContainer: React.FC<
         const isValidId = allowedIds.includes(representativeId);
         
         if (!isValidId) {
-          setError("idNumber", {
+          memoizedSetError("idNumber", {
             type: "validate",
             message: t("error.idNotUnderAgency"),
           });
         } else {
-          clearErrors("idNumber");
+          memoizedClearErrors("idNumber");
         }
       }
-    }, [representativeId, allowedIds, claimantStatus, agentType, setError, clearErrors, t]);
+    }, [representativeId, allowedIds, claimantStatus, agentType, memoizedSetError, memoizedClearErrors, t]);
 
     const embasyUserData = getCookie("storeAllUserTypeData");
     const embassyUserNationalityCode =
@@ -650,23 +692,151 @@ const ClaimantDetailsContainer: React.FC<
     // --- Save mutation ---
     const [saveClaimantDetails] = useSaveClaimantDetailsMutation();
     const handleSubmitStep = async () => {
-      const formData = watch();
-      // Debug: log form data before payload construction
-      // console.log('[DEBUG formData]', formData);
-      // Use the shared payload builder
-      const payload = claimantDetailsPayload(
-        "Next",
-        formData,
-        userClaims,
-        formData?.isDomestic,
-        null, // pass nicDetailObj if available
-        null, // pass attorneyData if available
-        userType,
-        getCookie("caseId") || "",
-        lang
-      );
-      const isCaseCreated = !!getCookie("caseId");
-      await saveClaimantDetails({ data: payload, isCaseCreated });
+      console.log("🚀 handleSubmitStep called");
+      
+      try {
+        const formData = watch();
+        
+        console.log("=== handleSubmitStep Debug ===");
+        console.log("User Type:", userType);
+        console.log("Claimant Status:", claimantStatus);
+        console.log("Full Form Data:", formData);
+        
+        // Select the appropriate NIC response based on user type and agent type
+        let nicDetailObj = null;
+        
+        if (userType?.toLowerCase().includes("embassy user")) {
+          console.log("Processing Embassy User");
+          // For embassy users, use the embassy agent NIC data if available
+          if (claimantStatus === "principal") {
+            console.log("Processing Embassy Principal");
+            // For embassy principal, construct NIC data with proper structure including codes
+            const nicDetails = principalNICResponse?.NICDetails;
+            if (nicDetails) {
+              nicDetailObj = {
+                PlaintiffName: nicDetails.PlaintiffName || "",
+                DateOfBirthHijri: nicDetails.DateOfBirthHijri || "",
+                DateOfBirthGregorian: nicDetails.DateOfBirthGregorian || "",
+                PhoneNumber: nicDetails.PhoneNumber || "",
+                Region_Code: nicDetails.Region_Code || "",
+                City_Code: nicDetails.City_Code || "",
+                Occupation_Code: nicDetails.Occupation_Code || "",
+                Gender_Code: nicDetails.Gender_Code || "",
+                Nationality_Code: nicDetails.Nationality_Code || "",
+                Applicant: nicDetails.Applicant || "",
+                Applicant_Code: nicDetails.Applicant_Code || "",
+                // Add the display values
+                Region: nicDetails.Region || "",
+                City: nicDetails.City || "",
+                Occupation: nicDetails.Occupation || "",
+                Gender: nicDetails.Gender || "",
+                Nationality: nicDetails.Nationality || "",
+              };
+            } else {
+              nicDetailObj = null;
+            }
+            console.log("Principal NIC Details Object:", nicDetailObj);
+          } else if (claimantStatus === "representative") {
+            console.log("Processing Embassy Agent");
+            // For embassy agents, ALWAYS construct NIC data from the form fields
+            // This ensures we never use the principal's NIC data for agents
+            
+            // Get embassy info to ensure nationality matches
+            const embasyUserData = getCookie("storeAllUserTypeData");
+            const embassyInfo = embasyUserData?.EmbassyInfo?.[0];
+            
+            // Debug: Log the form data to see what we have
+            console.log("Embassy Agent Form Data:", {
+              userName: formData?.embassyAgent_userName,
+              idNumber: formData?.embassyAgent_workerAgentIdNumber,
+              hijriDOB: formData?.embassyAgent_workerAgentDateOfBirthHijri,
+              gregorianDOB: formData?.embassyAgent_gregorianDate,
+              phoneNumber: formData?.embassyAgent_phoneNumber,
+              region: formData?.embassyAgent_region,
+              city: formData?.embassyAgent_city,
+              occupation: formData?.embassyAgent_occupation,
+              gender: formData?.embassyAgent_gender,
+              nationality: formData?.embassyAgent_nationality,
+              applicant: formData?.embassyAgent_applicant,
+            });
+            
+            // Always construct NIC data from the form fields for embassy agents
+            // This ensures we use the agent's data, not the principal's cached data
+            nicDetailObj = {
+              PlaintiffName: formData?.embassyAgent_userName || "",
+              DateOfBirthHijri: formData?.embassyAgent_workerAgentDateOfBirthHijri || "",
+              DateOfBirthGregorian: formData?.embassyAgent_gregorianDate || "",
+              PhoneNumber: formData?.embassyAgent_phoneNumber || "",
+              Region_Code: formData?.embassyAgent_region?.value || formData?.embassyAgent_region || "",
+              City_Code: formData?.embassyAgent_city?.value || formData?.embassyAgent_city || "",
+              Occupation_Code: formData?.embassyAgent_occupation?.value || formData?.embassyAgent_occupation || "",
+              Gender_Code: formData?.embassyAgent_gender?.value || formData?.embassyAgent_gender || "",
+              // Use the nationality from the form (which should match embassy nationality after validation)
+              Nationality_Code: formData?.embassyAgent_nationality?.value || formData?.embassyAgent_nationality || "",
+              Applicant: formData?.embassyAgent_applicant || "",
+              Applicant_Code: formData?.embassyAgent_applicant === "DW1" ? "DW1" : formData?.embassyAgent_applicant === "DW2" ? "DW2" : "",
+              // Add the actual values from NIC response
+              Region: formData?.embassyAgent_region?.label || formData?.embassyAgent_region || "",
+              City: formData?.embassyAgent_city?.label || formData?.embassyAgent_city || "",
+              Occupation: formData?.embassyAgent_occupation?.label || formData?.embassyAgent_occupation || "",
+              Gender: formData?.embassyAgent_gender?.label || formData?.embassyAgent_gender || "",
+              Nationality: formData?.embassyAgent_nationality?.label || formData?.embassyAgent_nationality || "",
+            };
+            
+            console.log("Agent NIC Details Object:", nicDetailObj);
+          }
+        } else {
+          console.log("Processing Non-Embassy User");
+          // For non-embassy users, use the existing logic
+          if (claimantStatus === "principal") {
+            nicDetailObj = principalNICResponse?.NICDetails || null;
+          } else if (claimantStatus === "representative") {
+            if (agentType === "local_agency") {
+              nicDetailObj = localAgentNICResponse?.NICDetails || null;
+            } else if (agentType === "external_agency") {
+              nicDetailObj = externalAgentNICResponse?.NICDetails || null;
+            } else {
+              nicDetailObj = representativeNICResponse?.NICDetails || null;
+            }
+          }
+        }
+        
+        console.log("Final NIC Details Object:", nicDetailObj);
+        
+        // Use the appropriate payload builder based on user type
+        let payload;
+        if (userType?.toLowerCase().includes("embassy user")) {
+          // For embassy users, use the embassy-specific payload function
+          const { emabsyClaimantPayload: embassyPayload } = await import("@/features/initiate-hearing/api/create-case/payloads");
+          payload = embassyPayload(
+            "Next",
+            formData,
+            getCookie("caseId") || "",
+            userClaims,
+            lang,
+            userType,
+            nicDetailObj
+          );
+        } else {
+          // For non-embassy users, use the regular payload function
+          payload = claimantDetailsPayload(
+            "Next",
+            formData,
+            userClaims,
+            formData?.isDomestic,
+            nicDetailObj, // pass the appropriate NIC details
+            null, // pass attorneyData if available
+            userType,
+            getCookie("caseId") || "",
+            lang
+          );
+        }
+        const isCaseCreated = !!getCookie("caseId");
+        await saveClaimantDetails({ data: payload, isCaseCreated });
+      } catch (error) {
+        console.error("Error in handleSubmitStep:", error);
+        throw error;
+      }
     };
 
     // --- Establishment & Legal-Rep ---
@@ -702,7 +872,7 @@ const ClaimantDetailsContainer: React.FC<
           apiLoadingStates,
           regionData: regionData?.DataElements,
           cityData: cityData?.DataElements,
-          setValue,
+          setValue: setValue,
         });
       }
       if (userType?.toLowerCase().includes("legal representative")) {
@@ -732,8 +902,8 @@ const ClaimantDetailsContainer: React.FC<
           OccupationOptions: mapOptions(occupationData),
           GenderOptions: mapOptions(genderData),
           NationalityOptions: mapOptions(nationalityData),
-          setError,
-          clearErrors,
+          setError: setError,
+          clearErrors: clearErrors,
           isVerified,
         });
       }
@@ -782,8 +952,8 @@ const ClaimantDetailsContainer: React.FC<
             setIsAgencyValidating(false);
           }
         },
-        setError,
-        clearErrors,
+        setError: setError,
+        clearErrors: clearErrors,
         verifyOtp: sendOtpHandler,
         isVerify: isVerified,
         principalNICResponse,
@@ -805,74 +975,74 @@ const ClaimantDetailsContainer: React.FC<
     useEffect(() => {
       if (externalAgentNICResponse?.NICDetails && agentType === "external_agency") {
         const d = externalAgentNICResponse.NICDetails;
-        setValue("externalAgent_userName", d.PlaintiffName || "");
-        setValue("externalAgent_region", d.Region_Code ? { value: d.Region_Code, label: d.Region } : null);
-        setValue("externalAgent_city", d.City_Code ? { value: d.City_Code, label: d.City } : null);
-        setValue("externalAgent_occupation", d.Occupation_Code ? { value: d.Occupation_Code, label: d.Occupation } : null);
-        setValue("externalAgent_gender", d.Gender_Code ? { value: d.Gender_Code, label: d.Gender } : null);
-        setValue("externalAgent_nationality", d.Nationality_Code ? { value: d.Nationality_Code, label: d.Nationality } : null);
-        setValue("externalAgent_phoneNumber", d.PhoneNumber ? d.PhoneNumber.toString() : "");
+        memoizedSetValue("externalAgent_userName", d.PlaintiffName || "");
+        memoizedSetValue("externalAgent_region", d.Region_Code ? { value: d.Region_Code, label: d.Region } : null);
+        memoizedSetValue("externalAgent_city", d.City_Code ? { value: d.City_Code, label: d.City } : null);
+        memoizedSetValue("externalAgent_occupation", d.Occupation_Code ? { value: d.Occupation_Code, label: d.Occupation } : null);
+        memoizedSetValue("externalAgent_gender", d.Gender_Code ? { value: d.Gender_Code, label: d.Gender } : null);
+        memoizedSetValue("externalAgent_nationality", d.Nationality_Code ? { value: d.Nationality_Code, label: d.Nationality } : null);
+        memoizedSetValue("externalAgent_phoneNumber", d.PhoneNumber ? d.PhoneNumber.toString() : "");
       }
-    }, [externalAgentNICResponse, agentType, setValue]);
+    }, [externalAgentNICResponse, agentType, memoizedSetValue]);
 
     // Auto-fill city field from NIC/lookup response for all user types
     useEffect(() => {
       // Embassy agent
-      if (isEmbassyUser && claimantStatus === "representative" && externalAgentNICResponse?.NICDetails) {
+      if (isEmbassyUserForPrefill && claimantStatus === "representative" && externalAgentNICResponse?.NICDetails) {
         const d = externalAgentNICResponse.NICDetails;
-        setValue("embassyAgent_city", d.City_Code ? { value: d.City_Code, label: d.City } : null);
+        memoizedSetValue("embassyAgent_city", d.City_Code ? { value: d.City_Code, label: d.City } : null);
       }
       // Embassy principal
-      if (isEmbassyUser && claimantStatus === "principal" && externalAgentNICResponse?.NICDetails) {
+      if (isEmbassyUserForPrefill && claimantStatus === "principal" && externalAgentNICResponse?.NICDetails) {
         const d = externalAgentNICResponse.NICDetails;
-        setValue("city", d.City_Code ? { value: d.City_Code, label: d.City } : null);
+        memoizedSetValue("city", d.City_Code ? { value: d.City_Code, label: d.City } : null);
       }
       // Establishment
       if (isEstablishmentUser && externalAgentNICResponse?.NICDetails) {
         const d = externalAgentNICResponse.NICDetails;
-        setValue("establishment_city", d.City_Code ? { value: d.City_Code, label: d.City } : null);
+        memoizedSetValue("establishment_city", d.City_Code ? { value: d.City_Code, label: d.City } : null);
       }
       // Worker principal
-      if (!isEmbassyUser && !isEstablishmentUser && claimantStatus === "principal" && externalAgentNICResponse?.NICDetails) {
+      if (!isEmbassyUserForPrefill && !isEstablishmentUser && claimantStatus === "principal" && externalAgentNICResponse?.NICDetails) {
         const d = externalAgentNICResponse.NICDetails;
-        setValue("principal_city", d.City_Code ? { value: d.City_Code, label: d.City } : null);
+        memoizedSetValue("principal_city", d.City_Code ? { value: d.City_Code, label: d.City } : null);
       }
       // Worker agent (local)
-      if (!isEmbassyUser && !isEstablishmentUser && claimantStatus === "representative" && agentType === "local_agency" && externalAgentNICResponse?.NICDetails) {
+      if (!isEmbassyUserForPrefill && !isEstablishmentUser && claimantStatus === "representative" && agentType === "local_agency" && externalAgentNICResponse?.NICDetails) {
         const d = externalAgentNICResponse.NICDetails;
-        setValue("localAgent_city", d.City_Code ? { value: d.City_Code, label: d.City } : null);
+        memoizedSetValue("localAgent_city", d.City_Code ? { value: d.City_Code, label: d.City } : null);
       }
       // Worker agent (external)
-      if (!isEmbassyUser && !isEstablishmentUser && claimantStatus === "representative" && agentType === "external_agency" && externalAgentNICResponse?.NICDetails) {
+      if (!isEmbassyUserForPrefill && !isEstablishmentUser && claimantStatus === "representative" && agentType === "external_agency" && externalAgentNICResponse?.NICDetails) {
         const d = externalAgentNICResponse.NICDetails;
-        setValue("externalAgent_city", d.City_Code ? { value: d.City_Code, label: d.City } : null);
+        memoizedSetValue("externalAgent_city", d.City_Code ? { value: d.City_Code, label: d.City } : null);
       }
       // Worker default
-      if (!isEmbassyUser && !isEstablishmentUser && claimantStatus !== "principal" && claimantStatus !== "representative" && externalAgentNICResponse?.NICDetails) {
+      if (!isEmbassyUserForPrefill && !isEstablishmentUser && claimantStatus !== "principal" && claimantStatus !== "representative" && externalAgentNICResponse?.NICDetails) {
         const d = externalAgentNICResponse.NICDetails;
-        setValue("plaintiffCity", d.City_Code ? { value: d.City_Code, label: d.City } : null);
+        memoizedSetValue("plaintiffCity", d.City_Code ? { value: d.City_Code, label: d.City } : null);
       }
-    }, [externalAgentNICResponse, agentType, setValue, isEmbassyUser, isEstablishmentUser, claimantStatus]);
+    }, [externalAgentNICResponse, agentType, memoizedSetValue, isEmbassyUserForPrefill, isEstablishmentUser, claimantStatus]);
 
     // Double-check local agent NIC call and effect
     useEffect(() => {
       if (localAgentNICResponse?.NICDetails && agentType === "local_agency") {
         const d = localAgentNICResponse.NICDetails;
-        setValue("localAgent_city", d.City_Code ? { value: d.City_Code, label: d.City } : null);
+        memoizedSetValue("localAgent_city", d.City_Code ? { value: d.City_Code, label: d.City } : null);
       }
       if (isEstablishmentUser && localAgentNICResponse?.NICDetails) {
         const d = localAgentNICResponse.NICDetails;
-        setValue("establishment_city", d.City_Code ? { value: d.City_Code, label: d.City } : null);
+        memoizedSetValue("establishment_city", d.City_Code ? { value: d.City_Code, label: d.City } : null);
       }
-      if (!isEmbassyUser && !isEstablishmentUser && claimantStatus === "principal" && localAgentNICResponse?.NICDetails) {
+      if (!isEmbassyUserForPrefill && !isEstablishmentUser && claimantStatus === "principal" && localAgentNICResponse?.NICDetails) {
         const d = localAgentNICResponse.NICDetails;
-        setValue("principal_city", d.City_Code ? { value: d.City_Code, label: d.City } : null);
+        memoizedSetValue("principal_city", d.City_Code ? { value: d.City_Code, label: d.City } : null);
       }
-      if (!isEmbassyUser && !isEstablishmentUser && claimantStatus !== "principal" && claimantStatus !== "representative" && localAgentNICResponse?.NICDetails) {
+      if (!isEmbassyUserForPrefill && !isEstablishmentUser && claimantStatus !== "principal" && claimantStatus !== "representative" && localAgentNICResponse?.NICDetails) {
         const d = localAgentNICResponse.NICDetails;
-        setValue("plaintiffCity", d.City_Code ? { value: d.City_Code, label: d.City } : null);
+        memoizedSetValue("plaintiffCity", d.City_Code ? { value: d.City_Code, label: d.City } : null);
       }
-    }, [localAgentNICResponse, agentType, setValue, isEmbassyUser, isEstablishmentUser, claimantStatus]);
+    }, [localAgentNICResponse, agentType, memoizedSetValue, isEmbassyUserForPrefill, isEstablishmentUser, claimantStatus]);
 
     // Add debug logs for isValid and errors
     // console.log('[DEBUG Next Button] isValid:', isValid, 'errors:', errors);
@@ -885,37 +1055,37 @@ const ClaimantDetailsContainer: React.FC<
       if (previousAgentTypeRef.current && previousAgentTypeRef.current !== currentAgentType) {
         // Clear local agent fields when switching away from local_agency
         if (previousAgentTypeRef.current === "local_agency") {
-          setValue("localAgent_workerAgentIdNumber", "");
-          setValue("localAgent_workerAgentDateOfBirthHijri", "");
-          setValue("localAgent_gregorianDate", "");
-          setValue("localAgent_userName", "");
-          setValue("localAgent_phoneNumber", "");
-          setValue("localAgent_region", null);
-          setValue("localAgent_city", null);
-          setValue("localAgent_occupation", null);
-          setValue("localAgent_gender", null);
-          setValue("localAgent_nationality", null);
-          clearErrors("localAgent_workerAgentIdNumber");
+          memoizedSetValue("localAgent_workerAgentIdNumber", "");
+          memoizedSetValue("localAgent_workerAgentDateOfBirthHijri", "");
+          memoizedSetValue("localAgent_gregorianDate", "");
+          memoizedSetValue("localAgent_userName", "");
+          memoizedSetValue("localAgent_phoneNumber", "");
+          memoizedSetValue("localAgent_region", null);
+          memoizedSetValue("localAgent_city", null);
+          memoizedSetValue("localAgent_occupation", null);
+          memoizedSetValue("localAgent_gender", null);
+          memoizedSetValue("localAgent_nationality", null);
+          memoizedClearErrors("localAgent_workerAgentIdNumber");
         }
         
         // Clear external agent fields when switching away from external_agency
         if (previousAgentTypeRef.current === "external_agency") {
-          setValue("externalAgent_workerAgentIdNumber", "");
-          setValue("externalAgent_workerAgentDateOfBirthHijri", "");
-          setValue("externalAgent_gregorianDate", "");
-          setValue("externalAgent_userName", "");
-          setValue("externalAgent_phoneNumber", "");
-          setValue("externalAgent_region", null);
-          setValue("externalAgent_city", null);
-          setValue("externalAgent_occupation", null);
-          setValue("externalAgent_gender", null);
-          setValue("externalAgent_nationality", null);
-          clearErrors("externalAgent_workerAgentIdNumber");
+          memoizedSetValue("externalAgent_workerAgentIdNumber", "");
+          memoizedSetValue("externalAgent_workerAgentDateOfBirthHijri", "");
+          memoizedSetValue("externalAgent_gregorianDate", "");
+          memoizedSetValue("externalAgent_userName", "");
+          memoizedSetValue("externalAgent_phoneNumber", "");
+          memoizedSetValue("externalAgent_region", null);
+          memoizedSetValue("externalAgent_city", null);
+          memoizedSetValue("externalAgent_occupation", null);
+          memoizedSetValue("externalAgent_gender", null);
+          memoizedSetValue("externalAgent_nationality", null);
+          memoizedClearErrors("externalAgent_workerAgentIdNumber");
         }
       }
       
       previousAgentTypeRef.current = currentAgentType;
-    }, [watch("agentType"), setValue, clearErrors]);
+    }, [watch("agentType"), memoizedSetValue, memoizedClearErrors]);
 
     // --- Clear fields when switching claimant status ---
     const previousClaimantStatusRef = useRef<string | undefined>();
@@ -925,132 +1095,152 @@ const ClaimantDetailsContainer: React.FC<
       if (previousClaimantStatusRef.current && previousClaimantStatusRef.current !== currentClaimantStatus) {
         // Clear principal fields when switching away from principal
         if (previousClaimantStatusRef.current === "principal") {
-          setValue("principal_hijriDate", "");
-          setValue("principal_gregorianDate", "");
-          setValue("principal_userName", "");
-          setValue("principal_phoneNumber", "");
-          setValue("principal_region", null);
-          setValue("principal_city", null);
-          setValue("principal_occupation", null);
-          setValue("principal_gender", null);
-          setValue("principal_nationality", null);
+          memoizedSetValue("principal_hijriDate", "");
+          memoizedSetValue("principal_gregorianDate", "");
+          memoizedSetValue("principal_userName", "");
+          memoizedSetValue("principal_phoneNumber", "");
+          memoizedSetValue("principal_region", null);
+          memoizedSetValue("principal_city", null);
+          memoizedSetValue("principal_occupation", null);
+          memoizedSetValue("principal_gender", null);
+          memoizedSetValue("principal_nationality", null);
         }
         
         // Clear representative fields when switching away from representative
         if (previousClaimantStatusRef.current === "representative") {
-          setValue("workerAgentIdNumber", "");
-          setValue("workerAgentDateOfBirthHijri", "");
-          setValue("gregorianDate", "");
-          setValue("userName", "");
-          setValue("phoneNumber", "");
-          setValue("region", null);
-          setValue("city", null);
-          setValue("occupation", null);
-          setValue("gender", null);
-          setValue("nationality", null);
+          memoizedSetValue("workerAgentIdNumber", "");
+          memoizedSetValue("workerAgentDateOfBirthHijri", "");
+          memoizedSetValue("gregorianDate", "");
+          memoizedSetValue("userName", "");
+          memoizedSetValue("phoneNumber", "");
+          memoizedSetValue("region", null);
+          memoizedSetValue("city", null);
+          memoizedSetValue("occupation", null);
+          memoizedSetValue("gender", null);
+          memoizedSetValue("nationality", null);
         }
       }
       
       previousClaimantStatusRef.current = currentClaimantStatus;
-    }, [watch("claimantStatus"), setValue]);
+    }, [watch("claimantStatus"), memoizedSetValue]);
 
     // --- NIC Error Handling Effects ---
     useEffect(() => {
       // Handle external agent NIC errors
       if (externalAgentNICResponse?.ErrorDetails && agentType === "external_agency") {
+        // Check for ER4054 service error first
+        if (handleNICResponse(externalAgentNICResponse)) {
+          return; // Error was handled by service error modal
+        }
+        
         const errorDesc = externalAgentNICResponse.ErrorDetails[0]?.ErrorDesc;
         if (errorDesc) {
           toast.error(errorDesc);
           // Clear date fields
-          setValue("externalAgent_workerAgentDateOfBirthHijri", "");
-          setValue("externalAgent_gregorianDate", "");
+          memoizedSetValue("externalAgent_workerAgentDateOfBirthHijri", "");
+          memoizedSetValue("externalAgent_gregorianDate", "");
           // Clear other fields that depend on NIC
-          setValue("externalAgent_userName", "");
-          setValue("externalAgent_region", null);
-          setValue("externalAgent_city", null);
-          setValue("externalAgent_occupation", null);
-          setValue("externalAgent_gender", null);
-          setValue("externalAgent_nationality", null);
-          setValue("externalAgent_phoneNumber", "");
+          memoizedSetValue("externalAgent_userName", "");
+          memoizedSetValue("externalAgent_region", null);
+          memoizedSetValue("externalAgent_city", null);
+          memoizedSetValue("externalAgent_occupation", null);
+          memoizedSetValue("externalAgent_gender", null);
+          memoizedSetValue("externalAgent_nationality", null);
+          memoizedSetValue("externalAgent_phoneNumber", "");
         }
       }
-    }, [externalAgentNICResponse, agentType, setValue]);
+    }, [externalAgentNICResponse, agentType, handleNICResponse, memoizedSetValue]);
 
     useEffect(() => {
       // Handle local agent NIC errors
       if (localAgentNICResponse?.ErrorDetails && agentType === "local_agency") {
+        // Check for ER4054 service error first
+        if (handleNICResponse(localAgentNICResponse)) {
+          return; // Error was handled by service error modal
+        }
+        
         const errorDesc = localAgentNICResponse.ErrorDetails[0]?.ErrorDesc;
         if (errorDesc) {
           toast.error(errorDesc);
           // Clear date fields
-          setValue("localAgent_workerAgentDateOfBirthHijri", "");
-          setValue("localAgent_gregorianDate", "");
+          memoizedSetValue("localAgent_workerAgentDateOfBirthHijri", "");
+          memoizedSetValue("localAgent_gregorianDate", "");
           // Clear other fields that depend on NIC
-          setValue("localAgent_userName", "");
-          setValue("localAgent_region", null);
-          setValue("localAgent_city", null);
-          setValue("localAgent_occupation", null);
-          setValue("localAgent_gender", null);
-          setValue("localAgent_nationality", null);
-          setValue("localAgent_phoneNumber", "");
+          memoizedSetValue("localAgent_userName", "");
+          memoizedSetValue("localAgent_region", null);
+          memoizedSetValue("localAgent_city", null);
+          memoizedSetValue("localAgent_occupation", null);
+          memoizedSetValue("localAgent_gender", null);
+          memoizedSetValue("localAgent_nationality", null);
+          memoizedSetValue("localAgent_phoneNumber", "");
         }
       }
-    }, [localAgentNICResponse, agentType, setValue]);
+    }, [localAgentNICResponse, agentType, handleNICResponse, memoizedSetValue]);
 
     useEffect(() => {
       // Handle principal NIC errors
       if (principalNICResponse?.ErrorDetails && claimantStatus === "principal") {
+        // Check for ER4054 service error first
+        if (handleNICResponse(principalNICResponse)) {
+          return; // Error was handled by service error modal
+        }
+        
         const errorDesc = principalNICResponse.ErrorDetails[0]?.ErrorDesc;
         if (errorDesc) {
           toast.error(errorDesc);
           // Clear date fields
-          setValue("principal_hijriDate", "");
-          setValue("principal_gregorianDate", "");
+          memoizedSetValue("principal_hijriDate", "");
+          memoizedSetValue("principal_gregorianDate", "");
           // Clear other fields that depend on NIC
-          setValue("principal_userName", "");
-          setValue("principal_region", null);
-          setValue("principal_city", null);
-          setValue("principal_occupation", null);
-          setValue("principal_gender", null);
-          setValue("principal_nationality", null);
-          setValue("principal_phoneNumber", "");
+          memoizedSetValue("principal_userName", "");
+          memoizedSetValue("principal_region", null);
+          memoizedSetValue("principal_city", null);
+          memoizedSetValue("principal_occupation", null);
+          memoizedSetValue("principal_gender", null);
+          memoizedSetValue("principal_nationality", null);
+          memoizedSetValue("principal_phoneNumber", "");
         }
       }
-    }, [principalNICResponse, claimantStatus, setValue]);
+    }, [principalNICResponse, claimantStatus, handleNICResponse, memoizedSetValue]);
 
     useEffect(() => {
       // Handle representative NIC errors
       if (representativeNICResponse?.ErrorDetails && claimantStatus === "representative") {
+        // Check for ER4054 service error first
+        if (handleNICResponse(representativeNICResponse)) {
+          return; // Error was handled by service error modal
+        }
+        
         const errorDesc = representativeNICResponse.ErrorDetails[0]?.ErrorDesc;
         if (errorDesc) {
           toast.error(errorDesc);
           // Clear date fields
-          setValue("workerAgentDateOfBirthHijri", "");
-          setValue("gregorianDate", "");
+          memoizedSetValue("workerAgentDateOfBirthHijri", "");
+          memoizedSetValue("gregorianDate", "");
           // Clear other fields that depend on NIC
-          setValue("userName", "");
-          setValue("region", null);
-          setValue("city", null);
-          setValue("occupation", null);
-          setValue("gender", null);
-          setValue("nationality", null);
-          setValue("phoneNumber", "");
+          memoizedSetValue("userName", "");
+          memoizedSetValue("region", null);
+          memoizedSetValue("city", null);
+          memoizedSetValue("occupation", null);
+          memoizedSetValue("gender", null);
+          memoizedSetValue("nationality", null);
+          memoizedSetValue("phoneNumber", "");
         }
       }
-    }, [representativeNICResponse, claimantStatus, setValue]);
+    }, [representativeNICResponse, claimantStatus, handleNICResponse, memoizedSetValue]);
 
     // Principal NIC error handling (city field)
     useEffect(() => {
       if (principalNICResponse?.ErrorDetails && claimantStatus === "principal") {
-        setValue("principal_city", null);
+        memoizedSetValue("principal_city", null);
       }
       if (isEstablishmentUser && principalNICResponse?.ErrorDetails) {
-        setValue("establishment_city", null);
+        memoizedSetValue("establishment_city", null);
       }
-      if (isEmbassyUser && claimantStatus === "principal" && principalNICResponse?.ErrorDetails) {
-        setValue("city", null);
+      if (isEmbassyUserForPrefill && claimantStatus === "principal" && principalNICResponse?.ErrorDetails) {
+        memoizedSetValue("city", null);
       }
-    }, [principalNICResponse, claimantStatus, setValue, isEmbassyUser, isEstablishmentUser]);
+    }, [principalNICResponse, claimantStatus, memoizedSetValue, isEmbassyUserForPrefill, isEstablishmentUser]);
 
     return (
       <>
@@ -1060,7 +1250,6 @@ const ClaimantDetailsContainer: React.FC<
             <Loader />
           </div>
         )}
-
 
         <div
           className={`relative ${isAgencyValidating || nicLoading ? "pointer-events-none" : ""

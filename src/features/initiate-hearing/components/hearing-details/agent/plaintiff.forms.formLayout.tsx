@@ -6,7 +6,7 @@ import { useAgentFormOptions } from "./plaintiff.forms.formOptions";
 import { useGetNICDetailsQuery } from "@/features/initiate-hearing/api/create-case/plaintiffDetailsApis";
 import { formatDateToYYYYMMDD } from "@/shared/utils/dateUtils";
 import { DigitOnlyInput } from '@/shared/components/form/InputField';
-import { toWesternDigits } from '@/shared/lib/helpers';
+import { toWesternDigits, isHijriDateInFuture } from '@/shared/lib/helpers';
 
 /**
  * Builds dynamic form sections for PlaintiffDetails,
@@ -59,7 +59,7 @@ export const usePlaintiffFormLayout = (): SectionLayout[] => {
       AcceptedLanguage: lang,
       SourceSystem: "E-Services",
     },
-    { skip: !plaintiffId || !plaintiffHijriDOB }
+    { skip: !plaintiffId || !plaintiffHijriDOB || isHijriDateInFuture(formatDateToYYYYMMDD(plaintiffHijriDOB) || "") }
   );
 
   // Agent flow

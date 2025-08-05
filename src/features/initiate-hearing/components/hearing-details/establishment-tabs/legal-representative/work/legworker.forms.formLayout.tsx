@@ -197,8 +197,8 @@ export const legRepVsWorkerUseFormLayout = (
       if (selectedWorkerRegion !== prevSelectedWorkerRegion) {
         setValue("jobLocationCity", null);
         setValue("laborOffice", null);
-        resetField("jobLocationCity");
-        resetField("laborOffice");
+        // resetField("jobLocationCity");
+        // resetField("laborOffice");
         setPrevSelectedWorkerRegion(selectedWorkerRegion);
       }
     } else if (selectedWorkerRegion !== prevSelectedWorkerRegion) {
@@ -209,8 +209,6 @@ export const legRepVsWorkerUseFormLayout = (
     selectedWorkerRegion,
     hasManuallySelectedCity,
     prevSelectedWorkerRegion,
-    setValue,
-    resetField,
   ]);
 
   // for cleaning if the region is reselected 
@@ -218,11 +216,11 @@ export const legRepVsWorkerUseFormLayout = (
     if (!selectedWorkerRegion) {
       setValue("jobLocationCity", null);
       setValue("laborOffice", null);
-      resetField("jobLocationCity");
-      resetField("laborOffice");
+      // resetField("jobLocationCity");
+      // resetField("laborOffice");
       setHasManuallySelectedCity(false);
     }
-  }, [selectedWorkerRegion, setValue, resetField]);
+  }, [selectedWorkerRegion]);
 
   const { data: regionData, isFetching: isRegionLoading } =
     useGetWorkerRegionLookupDataQuery(
@@ -295,7 +293,7 @@ export const legRepVsWorkerUseFormLayout = (
         label: laborOfficeData?.DataElements?.[0]?.ElementValue || "",
       });
     }
-  }, [laborOfficeData, isLaborLoading]);
+  }, [laborOfficeData, isLaborLoading, selectedWorkerRegion, selectedWorkerCity]);
 
   const TypeOfWageOptions = React.useMemo(() => {
     if (!salaryTypeData?.DataElements) return [];
@@ -394,7 +392,7 @@ export const legRepVsWorkerUseFormLayout = (
   ): true | string => {
     value = toWesternDigits(value); // Always normalize to Western numerals
     if (!value || typeof value !== "string") {
-      return t("This field is required");
+      return t("fieldRequired");
     }
 
     const isValidPattern = /^\d{8}$/.test(value);
@@ -522,16 +520,14 @@ export const legRepVsWorkerUseFormLayout = (
       workData?.jobCity.value &&
       CityOptions.length > 0
     ) {
-      const found = CityOptions.find((opt:any) => opt?.value === workData?.jobCity?.value);
+      const found = CityOptions.find((opt: any) => opt?.value === workData?.jobCity?.value);
       if (found) {
         setValue("jobLocationCity", found, { shouldValidate: true });
       }
     }
-    // You may want to add dependencies on CityOptions, workData, isPreFill, setValue
   }, [CityOptions, workData, isPreFill, setValue]);
   const isArabic = i18n.language === "ar";
   const gregorianLocale = isArabic ? gregorianLocaleAr : gregorianLocaleEn;
-  //////stop Here
   return [
     {
       title: t("tab3_title"),
@@ -599,7 +595,7 @@ export const legRepVsWorkerUseFormLayout = (
               name={"contractDateHijri" as keyof FormData}
               label={t("contractDateHijri")}
               rules={{
-                required: t("This field is required"),
+                required: t("fieldRequired"),
                 validate: (value: string) =>
                   validateDate(
                     value,
@@ -620,6 +616,7 @@ export const legRepVsWorkerUseFormLayout = (
                   .format("YYYYMMDD");
                 setValue("contractDateGregorian", gregorian);
               }}
+              isDateOfBirth={true}
             />
           ),
         },
@@ -650,7 +647,7 @@ export const legRepVsWorkerUseFormLayout = (
                   name={"contractExpiryDateHijri" as keyof FormData}
                   label={t("contractExpiryDateHijri")}
                   rules={{
-                    required: t("This field is required"),
+                    required: t("fieldRequired"),
                     validate: (value: string) =>
                       validateDate(
                         value,
@@ -746,8 +743,9 @@ export const legRepVsWorkerUseFormLayout = (
                   control={control}
                   name={"dateOfFirstWorkingDayGregorian" as keyof FormData}
                   label={t("dateofFirstworkingdayGregorian")}
+                  isDateOfBirth={true}
                   rules={{
-                    required: t("This field is required"),
+                    required: t("fieldRequired"),
                     // Add any additional validation as needed
                   }}
                   onChangeHandler={(date, onChange) => {
@@ -762,51 +760,6 @@ export const legRepVsWorkerUseFormLayout = (
             },
 
 
-            // {
-            //   type: "custom",
-            //   name: "dateofFirstworkingdayHijri",
-            //   component: (
-            //     <HijriDatePickerInput
-            //       control={control}
-            //       name={"dateofFirstworkingdayHijri" as keyof FormData}
-            //       label={t("dateofFirstworkingdayHijri")}
-            //       rules={{
-            //         required: t("This field is required"),
-            //         validate: (value: string) =>
-            //           validateDate(
-            //             value,
-            //             "work-start",
-            //             dateofFirstworkingdayHijri,
-            //             contractExpiryDateHijri
-            //           ),
-            //       }}
-            //       onChangeHandler={(date, onChange) => {
-            //         if (!date || Array.isArray(date)) {
-            //           setValue("dateOfFirstWorkingDayGregorian", "");
-            //           onChange("");
-            //           return;
-            //         }
-            //         onChange(date.format("YYYYMMDD"));
-            //         const gregorian = date
-            //           .convert(gregorianCalendar, gregorianLocaleEn)
-            //           .format("YYYYMMDD");
-            //         setValue("dateOfFirstWorkingDayGregorian", gregorian);
-            //       }}
-            //     />
-            //   ),
-            // },
-            // {
-            //   type: "custom",
-            //   name: "dateOfFirstWorkingDayGregorian",
-            //   component: (
-            //     <GregorianDateDisplayInput
-            //       control={control}
-            //       name={"dateOfFirstWorkingDayGregorian" as keyof FormData}
-            //       label={t("dateofFirstworkingdayGregorian")}
-            //     />
-            //   ),
-            // },
-
 
 
             ...(!isStillEmployed
@@ -820,7 +773,7 @@ export const legRepVsWorkerUseFormLayout = (
                       name={"dateOfLastWorkingDayGregorian" as keyof FormData}
                       label={t("dateofLastworkingdayGregorian")}
                       rules={{
-                        required: t("This field is required"),
+                        required: t("fieldRequired"),
                         // Add any additional validation as needed
                       }}
                       onChangeHandler={(date, onChange) => {
@@ -833,55 +786,7 @@ export const legRepVsWorkerUseFormLayout = (
                     />
                   ),
                 },
-                // {
-                //   type: "custom",
-                //   name: "dateoflastworkingdayHijri",
-                //   component: (
-                //     <HijriDatePickerInput
-                //       control={control}
-                //       name={"dateoflastworkingdayHijri" as keyof FormData}
-                //       label={t("dateoflastworkingdayHijri")}
-                //       rules={{
-                //         required: t("This field is required"),
-                //         validate: (value: string) =>
-                //           validateDate(
-                //             value,
-                //             "work-end",
-                //             dateofFirstworkingdayHijri,
-                //             contractExpiryDateHijri
-                //           ),
-                //       }}
-                //       onChangeHandler={(date, onChange) => {
-                //         if (!date || Array.isArray(date)) {
-                //           setValue("dateOfLastWorkingDayGregorian", "");
-                //           onChange("");
-                //           return;
-                //         }
-                //         onChange(date.format("YYYYMMDD"));
-                //         const gregorian = date
-                //           .convert(gregorianCalendar, gregorianLocaleEn)
-                //           .format("YYYYMMDD");
-                //         setValue(
-                //           "dateOfLastWorkingDayGregorian",
-                //           gregorian
-                //         );
-                //       }}
-                //     />
-                //   ),
-                // },
-                // {
-                //   type: "custom",
-                //   name: "dateOfLastWorkingDayGregorian",
-                //   component: (
-                //     <GregorianDateDisplayInput
-                //       control={control}
-                //       name={
-                //         "dateOfLastWorkingDayGregorian" as keyof FormData
-                //       }
-                //       label={t("dateofLastworkingdayGregorian")}
-                //     />
-                //   ),
-                // },
+  
               ]
               : []),
           ]),
@@ -900,10 +805,8 @@ export const legRepVsWorkerUseFormLayout = (
             setValue("jobLocation", value);
             setValue("jobLocationCity", null);
             setValue("laborOffice", null);
-            resetField("jobLocationCity");
-            resetField("laborOffice");
             setPrevSelectedWorkerRegion(value);
-            setHasManuallySelectedCity(false); // <-- Add this
+            setHasManuallySelectedCity(false);
           },
           validation: { required: t("regionValidation") },
           ...(workData &&
@@ -927,7 +830,7 @@ export const legRepVsWorkerUseFormLayout = (
             setValue("jobLocationCity", value);
             if (!value) {
               setValue("laborOffice", null);
-              resetField("laborOffice");
+              // resetField("laborOffice");
             }
             setHasManuallySelectedCity(!!value);
           },

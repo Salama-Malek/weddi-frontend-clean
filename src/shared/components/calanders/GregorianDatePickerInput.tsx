@@ -13,6 +13,7 @@ interface GregorianDatePickerInputProps {
   rules: any;
   onChangeHandler: (date: DateObject | DateObject[] | null, onChange: (value: string) => void) => void;
   notRequired?: boolean;
+  isDateOfBirth?: boolean;
 }
 
 export const GregorianDatePickerInput: React.FC<GregorianDatePickerInputProps> = ({
@@ -22,8 +23,9 @@ export const GregorianDatePickerInput: React.FC<GregorianDatePickerInputProps> =
   rules,
   onChangeHandler,
   notRequired,
+  isDateOfBirth,
 }) => {
-  const { t, i18n } = useTranslation('placeholder');
+  const { t, i18n } = useTranslation('hearingdetails');
 
   const formatDateForDisplay = (date: string) => {
     if (!date || date.length !== 8) return date;
@@ -39,12 +41,15 @@ export const GregorianDatePickerInput: React.FC<GregorianDatePickerInputProps> =
     const gregorian = date.format("YYYY/MM/DD");
     // Convert to YYYYMMDD format for storage
     const gregorianStorage = gregorian.replace(/\//g, '');
-    
+
     onChange(gregorianStorage);
     if (onChangeHandler) {
       onChangeHandler(date, onChange);
     }
   };
+
+  // Set maxDate to today if isDateOfBirth is true
+  const maxDate = isDateOfBirth ? new DateObject() : undefined;
 
   return (
     <Controller
@@ -61,20 +66,20 @@ export const GregorianDatePickerInput: React.FC<GregorianDatePickerInputProps> =
               value={
                 value
                   ? new DateObject({
-                      date: formatDateForDisplay(value),
-                      format: "YYYY/MM/DD",
-                    })
+                    date: formatDateForDisplay(value),
+                    format: "YYYY/MM/DD",
+                  })
                   : undefined
               }
               onChange={(date) => handleDateChange(date, onChange)}
-              inputClass={`w-full p-2 border rounded text-sm focus:ring-1 focus:outline-none pr-8 ${
-                error
-                  ? "border-red-500 focus:ring-red-500"
-                  : "border-gray-400 focus:ring-blue-500"
-              }`}
+              inputClass={`w-full p-2 border rounded text-sm focus:ring-1 focus:outline-none pr-8 ${error
+                ? "border-red-500 focus:ring-red-500"
+                : "border-gray-400 focus:ring-blue-500"
+                }`}
               calendarPosition="bottom-right"
+              maxDate={isDateOfBirth ? maxDate : undefined}
             />
-              <div className={`absolute ${i18n.dir() === "rtl" ? "left-2" : "right-2"} top-1/2 transform -translate-y-1/2 pointer-events-none`}>
+            <div className={`absolute ${i18n.dir() === "rtl" ? "left-2" : "right-2"} top-1/2 transform -translate-y-1/2 pointer-events-none`}>
               <Calculator01Icon className="text-gray-500" />
             </div>
           </div>

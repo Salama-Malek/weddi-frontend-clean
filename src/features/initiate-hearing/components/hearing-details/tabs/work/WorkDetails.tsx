@@ -49,6 +49,7 @@ const WorkDetails = ({
     workData
   } = useWorkDetailsPrefill(setValue as any);
   useEffect(() => {
+      
     [
       "typeOfWage",
       "salary",

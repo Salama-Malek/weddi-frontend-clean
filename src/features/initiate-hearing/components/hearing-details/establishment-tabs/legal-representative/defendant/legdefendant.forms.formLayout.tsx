@@ -7,11 +7,12 @@ import { options } from "@/features/initiate-hearing/config/Options";
 import { useCookieState } from "@/features/initiate-hearing/hooks/useCookieState";
 import { skipToken } from "@reduxjs/toolkit/query";
 import { useGetGenderLookupDataQuery, useGetNationalityLookupDataQuery, useGetNICDetailsQuery, useGetOccupationLookupDataQuery, useGetWorkerCityLookupDataQuery, useGetWorkerRegionLookupDataQuery } from "@/features/initiate-hearing/api/create-case/plaintiffDetailsApis";
+import { useNICServiceErrorContext } from "@/shared/context/NICServiceErrorContext";
 import { useLazyGetCaseDetailsQuery } from "@/features/manage-hearings/api/myCasesApis";
 import { toast } from "react-toastify";
 import useCaseDetailsPrefill from "@/features/initiate-hearing/hooks/useCaseDetailsPrefill";
 import { formatDateToYYYYMMDD } from "@/shared/utils/dateUtils";
-import { toWesternDigits } from '@/shared/lib/helpers';
+import { toWesternDigits, isHijriDateInFuture } from '@/shared/lib/helpers';
 import { HijriDatePickerInput } from "@/shared/components/calanders/HijriDatePickerInput";
 import { GregorianDateDisplayInput } from "@/shared/components/calanders/GregorianDateDisplayInput";
 import hijriCalendar from "react-date-object/calendars/arabic";
@@ -49,6 +50,20 @@ export const useLegelDefendantFormLayout = ({
   // Add state to track if form has been initialized
   const [isFormInitialized, setIsFormInitialized] = useState(false);
   const [hasAttemptedFetch, setHasAttemptedFetch] = useState(false);
+
+  // NIC Service Error handling
+  const handleTryAgain = React.useCallback(() => {
+    // Refetch NIC query by triggering a re-render
+    setIsValidCallNic(false);
+    setTimeout(() => setIsValidCallNic(true), 100);
+  }, []);
+
+  const { handleNICResponse, setTryAgainCallback } = useNICServiceErrorContext();
+
+  // Set the try again callback when component mounts
+  React.useEffect(() => {
+    setTryAgainCallback(handleTryAgain);
+  }, [setTryAgainCallback, handleTryAgain]);
 
   // Lookups Apis Calls  
   const { data: regionData, isLoading: isRegionLoading } = useGetWorkerRegionLookupDataQuery({
@@ -102,7 +117,7 @@ export const useLegelDefendantFormLayout = ({
       }
       : skipToken,
     {
-      skip: !isValidCallNic
+      skip: !isValidCallNic || isHijriDateInFuture(formatDateToYYYYMMDD(watchDateOfBirth) || "")
     }
   );
 
@@ -249,6 +264,11 @@ export const useLegelDefendantFormLayout = ({
   }, [caseDetailsData, nicData, setValue, watchNationalId, isFormInitialized, setCookie]);
 
   useEffect(() => {
+    // Check for ER4054 service error first
+    if (nicData && handleNICResponse(nicData)) {
+      return; // Error was handled by service error modal
+    }
+
     if (nicData?.NICDetails) {
       setValue("DefendantsEstablishmentPrisonerId", watchNationalId);
       
@@ -278,7 +298,7 @@ export const useLegelDefendantFormLayout = ({
       setIsFormInitialized(true);
 
     }
-  }, [nicData])
+  }, [nicData, handleNICResponse, watchNationalId])
   // Clear form fields when NIC validation changes
   useEffect(() => {
     if (!isValidCallNic && !isFormInitialized) {
@@ -382,6 +402,7 @@ export const useLegelDefendantFormLayout = ({
                 label={t("establishment_tab2.dobHijri")}
                 rules={{ required: t("dateOfBirthValidation") }}
                 notRequired={false}
+                isDateOfBirth={true}
                 onChangeHandler={(date: any, onChange: (value: string) => void) => {
                   if (date && !Array.isArray(date)) {
                     const hijriDate = date.convert(hijriCalendar, hijriLocale);

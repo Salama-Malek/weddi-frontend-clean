@@ -61,7 +61,15 @@
     "searchButton": "Search",
     "no_results_found": "No results found."
   },
-  "hearingdetails": {
+    "hearingdetails": {
+    "dateFormatValidation": "Date must be in YYYYMMDD format.",
+    "yearRangeValidation": "Year must be between 1300 and 1500 (Hijri).",
+    "yearRangeValidationGregorian": "Year must be between 1900 and 2100 (Gregorian).",
+    "monthRangeValidation": "Month must be between 01 and 12.",
+    "dayRangeValidation": "Day must be between 01 and 30.",
+    "dayRangeValidationGregorian": "Day must be between 01 and 31.",
+    "invalidDateValidation": "Please enter a valid date.",
+    "futureDateValidation": "Date of birth cannot be in the future.",
     "workerType": "Worker Type",
     "nicDetails": {
       "idNumber": "ID Number",
@@ -127,6 +135,12 @@
     "subCategoryGovernValidation": "Please select sub category of the government entity.",
     "mainCategoryGovernValidation": "Please select main category of the government entity.",
     "fileNumberValidation": "Please enter file number.",
+    "establishmentLoadingMessage": "Please click anywhere outside and wait for calling the API",
+    "establishmentLoadingDetails": "Loading establishment details...",
+    "establishmentErrorFetching": "Error fetching establishment details. Please try again.",
+    "establishmentNotFound": "No establishment found for this File Number",
+    "establishmentWaitForLoading": "Please wait for establishment details to load",
+    "establishmentEnterValidNumber": "Please enter a valid file number and wait for establishment details to load",
     "contractTypeValidation": "Please select contract type.",
     "contractNumberValidation": "Please enter contract number.",
     "agencyNumberValidation": "Please enter agency number.",
@@ -308,6 +322,7 @@
     "sub_category_required": "Sub category is required",
     "amount": "Amount",
     "compensationAmount": "Compensation Amount",
+    "refundType": "Refund Type",
     "injuryDateHijri": "Injury Date (Hijri)",
     "injuryDateGregorian": "Injury Date (Gregorian)",
     "injuryType": "Injury Type",
@@ -320,6 +335,7 @@
     "payDue": "Pay Due",
     "Next": "Next",
     "managerialDecisionDateGregorian": "Managerial Decision Date (Gregorian)",
+    "accommodationSource": "Accommodation Source",
     "doesBylawsIncludeAddingAccommodations": "Does By laws Include Adding Accommodations?",
     "doesContractIncludeAddingAccommodations": "Does Contract include adding accommodations?",
     "housingSpecificationInByLaws": "Housing Specifications in By laws",
@@ -467,6 +483,7 @@
   },
   "countryCodeSelection": "Please select country code first",
   "manageHearingDetails": {
+    "AgentInformation": "Agent Information",
     "ApplicantType": "ApplicantType",
     "ApplicantType_Code": "Applicant Type",
     "CertifiedBy": "CertifiedBy",
@@ -484,6 +501,10 @@
     "Defendant_Number700": "Code 700",
     "Defendant_City": "City",
     "Defendant_ContractNumber": "Contract Number",
+    "Defendant_ContractStartDate": "Contract Start Date",
+    "Defendant_ContractStartDateHijri": "Contract Start Date (Hijri)",
+    "Defendant_ContractEndDate": "Contract End Date",
+    "Defendant_ContractEndDateHijri": "Contract End Date (Hijri)",
     "Defendant_ContractType": "Contract Type",
     "Defendant_EmailAddress": "Email",
     "Defendant_FirstLanguage": "First Language",
@@ -495,6 +516,11 @@
     "Defendant_PhoneNumber": "Phone Number",
     "Defendant_Region": "Region",
     "Defendant_Salary": "Salary",
+    "EmbassyName": "Embassy Name",
+    "EmbassyEmailAddress": "Embassy Email Address",
+    "EmbassyNationality": "Embassy Nationality",
+    "EmbassyPhone": "Embassy Phone Number",
+    "EmbassyFirstLanguage": "Embassy First Language",
     "HasInternationalNumber": "Has International Number",
     "InternationalCountryName": "International Country Name",
     "InternationalNumber": "International Number",
@@ -659,8 +685,6 @@
     "DefendantType_Code": "Defendant Type Code",
     "Defendant_ApplicantBirthDate": "Defendant Date of Birth",
     "Defendant_City_Code": "Defendant City Code",
-    "Defendant_ContractEndDate": "Defendant Contract End Date",
-    "Defendant_ContractStartDate": "Defendant Contract Start Date",
     "Defendant_ContractType_Code": "Defendant Contract Type Code",
     "Defendant_FirstLanguage_Code": "Defendant First Language Code",
     "Defendant_Gender_Code": "Defendant Gender Code",
@@ -714,6 +738,10 @@
     "update_error": "Failed to update case.",
     "resend_error": "Failed to resend appointment.",
     "download_error": "Failed to download document.",
+    "not_authorized_to_edit_case": "You are not authorized to edit this case.",
+    "case_cannot_be_edited_current_status": "This case cannot be edited in its current status.",
+    "unable_to_retrieve_case_details": "Unable to retrieve case details.",
+    "error_retrieving_case_details": "Error retrieving case details.",
     "save": "Save",
     "yes": "Yes",
     "not": "No",
@@ -733,7 +761,12 @@
     "submit": "Submit",
     "incomplete_case_alert": "The case was closed upon your request during the session. You may reopen it within 21 days, provided that you state the reason for reopening the case.",
     "alert": "Alert",
-    "rejected_status": "Rejected Reason:"
+    "rejected_status": "Rejected Reason:",
+    "warning": "Warning",
+    "warning_icon": "Warning Icon",
+    "redirecting_in_seconds": "Redirecting in {{seconds}} seconds...",
+    "modal_will_close_automatically": "This modal will close automatically and redirect you to the home page.",
+    "close_and_redirect": "Close & Redirect"
   },
   "managehearings": {
     "breadcrumbs": {
@@ -1036,6 +1069,11 @@
       "unauthorized": "You are not authorized to access this service",
       "server_error": "Server error occurred while validating your NIC"
     },
+    "nic_service_error": {
+      "title": "Service Error",
+      "try_again": "Try Again",
+      "home_page": "Home Page"
+    },
     "case_creation": {
       "storage": {
         "step": "step",
@@ -1065,7 +1103,8 @@
         "upload_failed": "Failed to upload attachments. Please try again."
       },
       "upload_success": "Attachment uploaded successfully",
-      "remove_success": "Attachment removed successfully."
+      "remove_success": "Attachment removed successfully.",
+      "remove_failed": "Failed to remove attachment. Please try again."
     },
     "homePageWarning": "Switch account from home page",
     "homePageWarningDesc": "You are currently using the legal representative account. To change the account, change the account in the home page"
@@ -1087,5 +1126,9 @@
     "main_category_required": "Main category is required",
     "sub_category_required": "Sub category is required"
   },
-  "finalSubmit": "Final Submit"
+  "finalSubmit": "Final Submit",
+  "Please wait for establishment details to load":"Please wait for establishment details to load",
+  "No establishment found for this File Number": "No establishment found for this File Number",
+  "Error fetching establishment details. Please try again.": "Error fetching establishment details. Please try again.",
+  "Please complete all required fields before proceeding": "Please complete all required fields before proceeding"
 }

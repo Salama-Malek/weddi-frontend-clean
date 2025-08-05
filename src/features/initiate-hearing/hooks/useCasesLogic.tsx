@@ -14,7 +14,7 @@ import { TokenClaims } from "@/features/login/components/AuthProvider";
 import { useSearchParams } from "react-router-dom";
 import { useApiErrorHandler } from "@/shared/hooks/useApiErrorHandler";
 import { useGetNICDetailsQuery } from "@/features/initiate-hearing/api/create-case/plaintiffDetailsApis";
-import { formatDateToYYYYMMDD } from "@/shared/lib/helpers";
+import { formatDateToYYYYMMDD, isHijriDateInFuture } from "@/shared/lib/helpers";
  
 const tabs: string[] = [
   "1.Plaintiff's Details",
@@ -109,11 +109,13 @@ export const useCasesLogic = () => {
       SourceSystem: "E-Services",
     },
     {
-      skip:
-        claimantStatus !== "principal" ||
-        !principalId ||
-        principalId.length !== 10 ||
-        !principalDob,
+              skip:
+          claimantStatus !== "principal" ||
+          !principalId ||
+          principalId.length !== 10 ||
+          !principalDob ||
+          isHijriDateInFuture(principalDob) ||
+          userType === "Legal representative",
     }
   );
   const { data: representativeNICResponse } = useGetNICDetailsQuery(
@@ -124,12 +126,14 @@ export const useCasesLogic = () => {
       SourceSystem: "E-Services",
     },
     {
-      skip:
-        claimantStatus !== "representative" ||
-        !representativeId ||
-        representativeId.length !== 10 ||
-        !representativeDob ||
-        representativeDob.length !== 8,
+              skip:
+          claimantStatus !== "representative" ||
+          !representativeId ||
+          representativeId.length !== 10 ||
+          !representativeDob ||
+          representativeDob.length !== 8 ||
+          isHijriDateInFuture(representativeDob) ||
+          userType === "Legal representative",
     }
   );
  
@@ -143,7 +147,7 @@ export const useCasesLogic = () => {
     const latestFormValues = getValues();
     setFormData(latestFormValues);
     setActionButtonName("Next");
- 
+
     // Determine claimantStatus from form values
     const claimantStatus = latestFormValues.claimantStatus;
     let nicDetails = undefined;
@@ -164,14 +168,23 @@ export const useCasesLogic = () => {
       attorneyData,
       nicDetails // pass as extra arg
     );
- 
+
     if (latestFormValues && payload && Object.keys(payload).length > 0) {
       try {
-        const apiResponse = await handleSaveOrSubmit(localStep, localTab, payload);
- 
+        // Pass additional parameters for embassy logic
+        const apiResponse = await handleSaveOrSubmit(
+          localStep, 
+          localTab, 
+          payload,
+          latestFormValues, // formData
+          userClaims,       // userClaims
+          userType,         // userType
+          isRTL            // lang
+        );
+
         let nextStep = localStep;
         let nextTab = localTab;
- 
+
         if (localStep === 0) {
           if (localTab < 2) {
             nextTab = localTab + 1;
@@ -183,27 +196,29 @@ export const useCasesLogic = () => {
           nextStep = 2;
           nextTab = 0;
         }
- 
 
- 
         // Use centralized error handling to check if response is successful
         const isSuccessful = !hasErrors(apiResponse) && (apiResponse?.SuccessCode === "200" || apiResponse?.ServiceStatus === "Success");
- 
+
         if (isSuccessful) {
           localStorage.setItem("step", nextStep.toString());
           localStorage.setItem("tab", nextTab.toString());
- 
+
           setLocalStep(nextStep);
           setLocalTab(nextTab);
- 
+
           updateParams(nextStep, nextTab);
- 
+
           setActionButtonName("");
           setLastSaved(false);
- 
+
           window.dispatchEvent(new Event("storage"));
+        } else {
+          // Clear actionButtonName on API error to allow retry
+          setActionButtonName("");
         }
       } catch (error) {
+        setActionButtonName("");
         // Error handling
       }
     }
@@ -211,7 +226,20 @@ export const useCasesLogic = () => {
  
   const handleSave = async () => {
     const latestFormValues = getValues();
-    setFormData(latestFormValues);
+    console.log("[🔍 USE CASES LOGIC] handleSave called with form values:", {
+      defendantStatus: latestFormValues.defendantStatus,
+      defendantDetails: latestFormValues.defendantDetails,
+      DefendantFileNumber: latestFormValues.DefendantFileNumber,
+      Defendant_Establishment_data_NON_SELECTED: latestFormValues.Defendant_Establishment_data_NON_SELECTED,
+      defendantRegion: latestFormValues.defendantRegion,
+      defendantCity: latestFormValues.defendantCity,
+      phoneNumber: latestFormValues.phoneNumber,
+      timestamp: new Date().toISOString()
+    });
+    
+    // Don't call setFormData during save operation to prevent form reset
+    // This prevents the form from losing data during the save process
+    console.log("[🔍 USE CASES LOGIC] Skipping setFormData during save to prevent data loss");
     setActionButtonName("Save");
     try {
       // Determine claimantStatus from form values
@@ -234,11 +262,32 @@ export const useCasesLogic = () => {
         attorneyData,
         nicDetails // pass as extra arg
       );
+
+      console.log("[🔍 USE CASES LOGIC] Payload generated:", payload);
  
       if (payload && Object.keys(payload).length > 0) {
-        const response = await handleSaveOrSubmit(localStep, localTab, payload);
-        setLastSaved(true);
-        setActionButtonName("");
+        // Pass additional parameters for embassy logic (same as handleNext)
+        const response = await handleSaveOrSubmit(
+          localStep, 
+          localTab, 
+          payload,
+          latestFormValues, // formData
+          userClaims,       // userClaims
+          userType,         // userType
+          isRTL            // lang
+        );
+        
+        // Check if the response indicates success or error
+        const isSuccessful = !hasErrors(response) && (response?.SuccessCode === "200" || response?.ServiceStatus === "Success");
+        
+        if (isSuccessful) {
+          setLastSaved(true);
+          setActionButtonName("");
+        } else {
+          // Clear actionButtonName on API error to allow retry
+          setActionButtonName("");
+        }
+        
         return response;
       } else {
         // Return a default error response when no payload is available
@@ -253,6 +302,7 @@ export const useCasesLogic = () => {
         };
       }
     } catch (error) {
+      setActionButtonName("");
       throw error;
     }
   };

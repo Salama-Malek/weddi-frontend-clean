@@ -11,7 +11,7 @@ import { options } from "@/features/initiate-hearing/config/Options";
 import { formatDateGMT, formatHijriDate } from "@/shared/lib/helpers";
 import { useCookieState } from "@/features/initiate-hearing/hooks/useCookieState";
 import { placeholderCSS } from "react-select/dist/declarations/src/components/Placeholder";
-import HijriDateField from "@/shared/components/calanders/NewDatePicker";
+import { DateOfBirthField } from "@/shared/components/calanders";
 import { useFormResetContext } from '@/providers/FormResetProvider';
 
 export const useFormLayout = (
@@ -161,14 +161,13 @@ export const useFormLayout = (
           type: "custom",
           name: "contractStartDate",
           component: (
-            <HijriDateField
+            <DateOfBirthField
               control={control}
               setValue={setValue}
               hijriFieldName="contractDateHijri"
               gregorianFieldName="contractDateGregorian"
               hijriLabel={t("contractDateHijri")}
               gregorianLabel={t("contractDateGregorian")}
-              type="contract-start"
             />
           ),
         },
@@ -177,15 +176,13 @@ export const useFormLayout = (
           type: "custom",
           name: "contractEndDate",
           component: (
-            <HijriDateField
+            <DateOfBirthField
               control={control}
               setValue={setValue}
               hijriFieldName="contractExpiryDateHijri"
               gregorianFieldName="contractExpiryDateGregorian"
               hijriLabel={t("contractExpiryDateHijri")}
               gregorianLabel={t("contractExpiryDateGregorian")}
-              type="contract-end"
-              relatedStartDate={watch("contractDateHijri") as string}
             />
           ),
         },
@@ -225,14 +222,13 @@ export const useFormLayout = (
                 type: "custom",
                 name: "firstWorkingDate",
                 component: (
-                  <HijriDateField
+                  <DateOfBirthField
                     control={control}
                     setValue={setValue}
                     hijriFieldName="dateofFirstworkingdayHijri"
                     gregorianFieldName="dateOfFirstWorkingDayGregorian"
                     hijriLabel={t("dateofFirstworkingdayHijri")}
                     gregorianLabel={t("dateofFirstworkingdayGregorian")}
-                    type="work-start"
                   />
                 ),
               }
@@ -246,15 +242,13 @@ export const useFormLayout = (
               type: "custom",
               name: "lastWorkingDate",
               component: (
-                <HijriDateField
+                <DateOfBirthField
                   control={control}
                   setValue={setValue}
                   hijriFieldName="dateoflastworkingdayHijri"
                   gregorianFieldName="dateofLastworkingdayGregorian"
                   hijriLabel={t("dateoflastworkingdayHijri")}
                   gregorianLabel={t("dateofLastworkingdayGregorian")}
-                  type="work-end"
-                  relatedStartDate={watch("dateofFirstworkingdayHijri")}
                 />
               ),
             },

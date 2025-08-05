@@ -30,6 +30,7 @@ export const GregorianDateDisplayInput: React.FC<GregorianDateDisplayInputProps>
 
   return (
     <Controller
+      shouldUnregister={false}
       control={control}
       name={name}
       render={({ field: { value } }) => (

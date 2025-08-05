@@ -1,5 +1,6 @@
 import { api } from "@/config/api";
 import { ApiResponse } from "@/shared/modules/case-creation/components/StepNavigation";
+import { processAttachmentKey } from "@/shared/lib/helpers";
 
 interface ExtractAcknowledgment {
   ModuleKey: string;
@@ -71,13 +72,21 @@ export const caseApi = api.injectEndpoints({
       }),
     }),
     getFileDetails: builder.query<any, any>({
-      query: ({ AttachmentKey, AcceptedLanguage }) => ({
-        url: `/WeddiServices/V1/DownloadAttachment`,
-        params: {
-          AttachmentKey: AttachmentKey,
-          AcceptedLanguage: AcceptedLanguage,
-        },
-      }),
+      query: ({ AttachmentKey, AcceptedLanguage }) => {
+        // Process AttachmentKey to handle special characters
+        const processedAttachmentKey = processAttachmentKey(AttachmentKey);
+        
+        console.log('[getFileDetails] Original AttachmentKey:', AttachmentKey);
+        console.log('[getFileDetails] Processed AttachmentKey:', processedAttachmentKey);
+        
+        return {
+          url: `/WeddiServices/V1/DownloadAttachment`,
+          params: {
+            AttachmentKey: processedAttachmentKey,
+            AcceptedLanguage: AcceptedLanguage,
+          },
+        };
+      },
     }),
     // getCaseDetails: builder.query<any, any>({
     //   query: ({ CaseID, AcceptedLanguage, SourceSystem }) => ({

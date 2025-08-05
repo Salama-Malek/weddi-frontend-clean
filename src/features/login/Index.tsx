@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import logo from "@/assets/logo.svg";
-import FormWrapper from "@/shared/components/form/FromWrapper";
+import FormWrapper from "@/shared/components/form/FormWrapper";
 import * as jose from "jose";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useCookieState } from "../initiate-hearing/hooks/useCookieState";
@@ -158,7 +158,30 @@ const LoginForm: React.FC = () => {
     {
       lable: "Esablishment User",
       data: {
+        // File_Number: "8-71322",
         File_Number: "8-71322",
+        UserDOB: "01/01/1980",
+        UserID: "1124878024",
+        UserName: "Est User",
+        AcceptedLanguage: LanguageArray[1].value,
+        UserType: userTypes[0].value,
+      }
+    },
+    {
+      lable: "Esablishment User without city",
+      data: {
+         File_Number: "11-1437115",
+        UserDOB: "01/01/1980",
+        UserID: "1100055753",
+        UserName: "Est User",
+        AcceptedLanguage: LanguageArray[1].value,
+        UserType: userTypes[0].value,
+      }
+    },
+    {
+      lable: "Esablishment User without Rigion",
+      data: {
+         File_Number: "8-71322",
         UserDOB: "01/01/1980",
         UserID: "1124878024",
         UserName: "Est User",

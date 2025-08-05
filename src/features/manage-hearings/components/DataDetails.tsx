@@ -326,7 +326,7 @@ const workerSectionOrderAgainistEsta: SectionOrder = {
 // Embassy as Agent vs Government
 const embasyAsAgentVsGovSectionOrder: SectionOrder = {
   agent: {
-    title: "agent_information",
+    title: "AgentInformation",
     fields: [
       "EmbassyName",
       "EmbassyEmailAddress",
@@ -377,7 +377,7 @@ const embasyAsAgentVsGovSectionOrder: SectionOrder = {
 // Embassy as Agent vs Establishment
 const embasyAsAgentVsEstSectionOrder: SectionOrder = {
   agent: {
-    title: "agent_information",
+    title: "AgentInformation",
     fields: [
       "EmbassyName",
       "EmbassyEmailAddress",

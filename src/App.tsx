@@ -107,7 +107,7 @@ const routesConfig: RouteObject[] = [
 ];
 
 const router = createBrowserRouter(routesConfig, {
-  basename: '/portal'
+  basename: '/portal/'
 });
 
 const App = () => {

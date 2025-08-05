@@ -11,6 +11,7 @@ import hijriCalendar from "react-date-object/calendars/arabic";
 import hijriLocale from "react-date-object/locales/arabic_ar";
 import gregorianCalendar from "react-date-object/calendars/gregorian";
 import gregorianLocaleEn from "react-date-object/locales/gregorian_en";
+import { useCallback } from "react";
 
 export function EmbassyAgentFormLayout(props: EmbassyAgentFormProps): SectionLayout[] {
   const { t } = useTranslation("hearingdetails");
@@ -20,6 +21,30 @@ export function EmbassyAgentFormLayout(props: EmbassyAgentFormProps): SectionLay
   const userClaims = getCookie("userClaims");
   const idNumber = userClaims?.UserID || "";
   const nic = nicAgent?.NICDetails;
+
+  // Create a stable onChangeHandler for the date picker
+  const handleDateChange = useCallback((date: any, onChange: (value: string) => void) => {
+    if (date && !Array.isArray(date)) {
+      // Ensure the date is a Hijri date object
+      const hijriDate = date.convert(hijriCalendar, hijriLocale);
+      const gregorianDate = date.convert(gregorianCalendar, gregorianLocaleEn);
+      const hijri = hijriDate.format("YYYYMMDD");
+      const gregorian = gregorianDate.format("YYYYMMDD");
+      console.log('Hijri:', hijri, 'Gregorian:', gregorian);
+      
+      // Only set gregorian date if it's different to prevent unnecessary updates
+      const currentGregorian = watch("embassyAgent_gregorianDate");
+      if (currentGregorian !== gregorian) {
+        setValue("embassyAgent_gregorianDate" as any, gregorian);
+      }
+    } else {
+      // Only clear if it's not already empty
+      const currentGregorian = watch("embassyAgent_gregorianDate");
+      if (currentGregorian) {
+        setValue("embassyAgent_gregorianDate" as any, "");
+      }
+    }
+  }, [setValue, watch]);
 
   return [
     {
@@ -67,19 +92,8 @@ export function EmbassyAgentFormLayout(props: EmbassyAgentFormProps): SectionLay
                 label={t("nicDetails.dobHijri")}
                 rules={{ required: t("dateValidation") }}
                 notRequired={false}
-                onChangeHandler={(date: any, onChange: (value: string) => void) => {
-                  if (date && !Array.isArray(date)) {
-                    // Ensure the date is a Hijri date object
-                    const hijriDate = date.convert(hijriCalendar, hijriLocale);
-                    const gregorianDate = date.convert(gregorianCalendar, gregorianLocaleEn);
-                    const hijri = hijriDate.format("YYYYMMDD");
-                    const gregorian = gregorianDate.format("YYYYMMDD");
-                    console.log('Hijri:', hijri, 'Gregorian:', gregorian);
-                    props.setValue("embassyAgent_gregorianDate" as any, gregorian);
-                  } else {
-                    props.setValue("embassyAgent_gregorianDate" as any, "");
-                  }
-                }}
+                isDateOfBirth={true}
+                onChangeHandler={handleDateChange}
               />
               <GregorianDateDisplayInput
                 control={props.control}
@@ -96,7 +110,10 @@ export function EmbassyAgentFormLayout(props: EmbassyAgentFormProps): SectionLay
         // Region
         ...(nic?.Region && validNationality
           ? [{ type: "readonly" as const, label: t("nicDetails.region"), value: nic.Region, isLoading: nicAgentLoading }]
-          : [{ type: "autocomplete" as const, name: "embassyAgent_region", label: t("nicDetails.region"), options: RegionOptions, value: watch("embassyAgent_region"), onChange: (v: any) => setValue("embassyAgent_region", v), validation: { required: t("regionValidation") }, isLoading: nicAgentLoading }]),
+          : [{ type: "autocomplete" as const, name: "embassyAgent_region", label: t("nicDetails.region"), options: RegionOptions, value: watch("embassyAgent_region"), onChange: (v: any) => {
+  setValue("embassyAgent_region", v);
+  setValue("embassyAgent_city", null);
+}, validation: { required: t("regionValidation") }, isLoading: nicAgentLoading }]),
         // City
         ...(nic?.City && validNationality
           ? [{ type: "readonly" as const, label: t("nicDetails.city"), value: nic.City, isLoading: nicAgentLoading }]

@@ -95,7 +95,22 @@ export const FormProvider: React.FC<FormProviderProps> = ({
   // helpers
   const setFormData = (data: FormData) => {
     setFormDataState(data);
-    formMethods.reset(data);
+    
+    // Only reset if the data is actually different from current form values
+    // This prevents unnecessary resets that can cause data loss
+    const currentValues = formMethods.getValues();
+    const hasSignificantChanges = Object.keys(data).some(key => {
+      const currentValue = (currentValues as any)[key];
+      const newValue = (data as any)[key];
+      return JSON.stringify(currentValue) !== JSON.stringify(newValue);
+    });
+    
+    if (hasSignificantChanges) {
+      console.log("[🔍 FORM CONTEXT] Resetting form with new data");
+      formMethods.reset(data);
+    } else {
+      console.log("[🔍 FORM CONTEXT] Skipping form reset - no significant changes");
+    }
   };
 
   const clearFormData = (validate = true) => {

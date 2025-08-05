@@ -42,6 +42,21 @@ const Header = () => {
     isMenueCahngeFlag
   } = useUser();
 
+  // Check if user was originally a legal representative based on userClaims
+  const isOriginallyLegalRep = userClaims?.UserType === "2";
+  
+  // Also check the stored original user type cookie as fallback
+  const originalUserType = getCookie("originalUserType");
+  
+  // Check the stored API response data to see if user has legal representative capabilities
+  const storedUserTypeData = getCookie("storeAllUserTypeData");
+  const hasLegalRepCapability = storedUserTypeData?.UserTypeList?.some(
+    (userType: any) => userType.UserType === "Legal representative"
+  );
+  
+  const shouldShowSwitchOption = originalUserType === "Legal representative" || 
+                                hasLegalRepCapability;
+
   useEffect(() => {
     const id = setInterval(() => setCurrentDateTime(new Date()), 60_000);
     return () => clearInterval(id);
@@ -148,26 +163,26 @@ const Header = () => {
 
   };
 
-  const settingsItems = isLegalRepstate
+  const settingsItems = shouldShowSwitchOption
     ? [
-      {
-        label: t("switch_account"),
-        value: "switch_account",
-        onClick: handleSwitchAccount,
-      },
-      {
-        label: t("logout"),
-        value: "logout",
-        onClick: handleLogout,
-      }
-    ]
+        {
+          label: t("switch_account"),
+          value: "switch_account",
+          onClick: handleSwitchAccount,
+        },
+        {
+          label: t("logout"),
+          value: "logout",
+          onClick: handleLogout,
+        }
+      ]
     : [
-      {
-        label: t("logout"),
-        value: "logout",
-        onClick: handleLogout,
-      }
-    ];
+        {
+          label: t("logout"),
+          value: "logout",
+          onClick: handleLogout,
+        }
+      ];
 
   const notificationItems =
     notificationData?.UINotificationList?.length > 0

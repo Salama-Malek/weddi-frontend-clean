@@ -37,7 +37,7 @@ import { getHearingTopicsColumns } from "./config/colums";
 import { useAttachments } from "./hooks/useAttachments";
 import { useFormLayout as useFormLayoutWorker } from "./config/forms.layout.worker";
 import { useFormLayout as useFormLayoutEstablishment } from "./config/forms.layout.establishment";
-import { getPayloadBySubTopicID } from "./api/establishment.add.case.payload";
+import { getPayloadBySubTopicID } from "./api/case.topics.payload";
 import { useLazyGetCaseDetailsQuery } from "@/features/manage-hearings/api/myCasesApis";
 import { TokenClaims } from "@/features/login/components/AuthProvider";
 import { toast } from "react-toastify";
@@ -56,6 +56,8 @@ import { useApiErrorHandler } from "@/shared/hooks/useApiErrorHandler";
 import FeaturedIcon from "@/assets/Featured icon.svg";
 import { useRemoveAttachmentMutation } from "./api/apis";
 import { isOtherCommission } from "./utils/isOtherCommission";
+import { isOtherAllowance } from "./utils/isOtherAllowance";
+import { useSubTopicPrefill } from "./hooks/useSubTopicPrefill"; 
 
 const Modal = lazy(() => import("@/shared/components/modal/Modal"));
 const ReusableTable = lazy(() =>
@@ -159,23 +161,64 @@ function EditHearingTopicsDetails({
       submitCount,
     },
     unregister,
+    clearErrors,
   } = methods;
 
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const prefillDoneRef = useRef<string | null>(null);
+  const isUpdatingRef = useRef<boolean>(false);
 
   useEffect(() => {
     return () => {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
+      // Reset refs on cleanup
+      isUpdatingRef.current = false;
+      prefillDoneRef.current = null;
     };
   }, []);
 
   const [getCookie] = useCookieState({ caseId: "" });
-  const [caseId] = useState(getCookie("caseId"));
+  const [caseId, setCaseId] = useState(getCookie("caseId"));
   const navigate = useNavigate();
+
+  // Modal state for critical errors with countdown
+  const [showCriticalErrorModal, setShowCriticalErrorModal] = useState(false);
+  const [criticalErrorMessage, setCriticalErrorMessage] = useState("");
+  const [countdown, setCountdown] = useState(7);
+
+  // Watch for changes in the caseId cookie and update state accordingly
+  useEffect(() => {
+    const currentCookieCaseId = getCookie("caseId");
+    if (currentCookieCaseId !== caseId) {
+      console.log("[🔍 CASE ID UPDATE] Cookie caseId changed from", caseId, "to", currentCookieCaseId);
+      setCaseId(currentCookieCaseId);
+    }
+  }, [getCookie, caseId]);
+
+  // Handle countdown and navigation in useEffect
+  useEffect(() => {
+    if (!showCriticalErrorModal) return;
+
+    const countdownInterval = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(countdownInterval);
+          setShowCriticalErrorModal(false);
+          navigate("/");
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(countdownInterval);
+  }, [showCriticalErrorModal, navigate]);
+
   const [lastSaved, setLastSaved] = useState(false);
   const { updateParams, currentStep, currentTab } = useNavigationService();
+  console.log("[🔍 EDIT HEARING TOPICS DETAILS] Component rendered with showFooter:", showFooter, "currentStep:", currentStep);
   const [updateHearingTopics, { isLoading: addHearingLoading }] =
     useUpdateHearingTopicsMutation();
   const UserClaims: TokenClaims = getCookie("userClaims");
@@ -191,11 +234,80 @@ function EditHearingTopicsDetails({
 
   const { handleResponse } = useApiErrorHandler();
 
-  const onSubmit = (data: TopicFormValues) => { };
+  const onSubmit = async (data: TopicFormValues) => {
+    console.log("[🔍 onSubmit] Called with data:", data);
+    console.log("[🔍 onSubmit] Form state:", { isValid, isSubmitting, lastAction });
+    
+    // Prevent multiple rapid Next button calls
+    if (lastAction === "Next" || isSubmitting) {
+      console.log("[🔍 onSubmit] Preventing multiple calls - lastAction:", lastAction, "isSubmitting:", isSubmitting);
+      return;
+    }
+    
+    try {
+      console.log("[🔍 onSubmit] About to call handleNext");
+      console.log("[🔍 onSubmit] Current loading state:", { isSubmitting, isUpdatingRef: isUpdatingRef.current });
+      
+      const result = await handleNext();
+      console.log("[🔍 onSubmit] handleNext result:", result);
+      
+      if (result.success && result.response) {
+        // Only show success toast if we have a confirmed successful API response
+        const hasSuccessCode = result.response?.SuccessCode === "200";
+        const hasSuccessStatus = result.response?.ServiceStatus === "Success";
+        const hasNoErrors = !result.response?.ErrorCodeList || result.response.ErrorCodeList.length === 0;
+        
+        console.log("[🔍 onSubmit] Response analysis:", {
+          hasSuccessCode,
+          hasSuccessStatus,
+          hasNoErrors,
+          SuccessCode: result.response?.SuccessCode,
+          ServiceStatus: result.response?.ServiceStatus,
+          ErrorCodeList: result.response?.ErrorCodeList,
+          fullResponse: result.response
+        });
+        
+        // More robust success condition - prioritize ServiceStatus when SuccessCode is not present
+        const isSuccessful = (hasSuccessStatus && hasNoErrors) || (hasSuccessCode && hasNoErrors);
+        
+        if (isSuccessful) {
+          console.log("[🔍 onSubmit] API call confirmed successful, showing success toast");
+          toast.success(t("save_success"));
+        } else {
+          console.log("[🔍 onSubmit] API call not successful, not showing success toast");
+          console.log("[🔍 onSubmit] Failed conditions:", {
+            hasSuccessCode,
+            hasSuccessStatus,
+            hasNoErrors,
+            isSuccessful
+          });
+        }
+      } else if (result.error) {
+        console.error("[🔍 onSubmit] handleNext failed:", result.error);
+        // Show error toast based on the actual error from API
+        const errorMessage = result.error?.ErrorDesc || 
+                            result.error?.message || 
+                            t("api_error_generic");
+        toast.error(errorMessage);
+      }
+    } catch (error: any) {
+      console.error("[🔍 onSubmit] Unexpected error in handleNext:", error);
+      toast.error(t("api_error_generic"));
+    }
+  };
+
+  // Function to handle critical errors with modal and countdown
+  const handleCriticalError = useCallback((message: string) => {
+    console.log("[🔍 CRITICAL ERROR] Setting modal with message:", message);
+    setCriticalErrorMessage(message);
+    setShowCriticalErrorModal(true);
+    setCountdown(7);
+  }, []);
 
   const mainCategory = watch("mainCategory") ?? null;
   const subCategory: any = watch("subCategory") ?? null;
   const { t } = useTranslation("hearingtopics");
+  const { t: tManageHearing } = useTranslation("manageHearingDetails");
   const { isOpen, close, toggle } = useToggle();
   const userClaims = getCookie("userClaims");
   const [caseTopics, setCaseTopics] = useState<any[]>([]);
@@ -220,6 +332,64 @@ function EditHearingTopicsDetails({
       goToLegalStep();
     }
   }, [subCategory?.value, mainCategory?.value, isEditing]);
+
+  // Unregister fields when subcategory changes to prevent stale data
+  useEffect(() => {
+    if (isEditing) return; // Don't unregister when editing
+
+    const currentSubCategory = subCategory?.value;
+    if (!currentSubCategory) return;
+
+    // Define fields for each subcategory
+    const subcategoryFields: Record<string, string[]> = {
+      "CMR-8": ["CMR8_wagesAmount", "CMR8_fromDateHijri", "CMR8_fromDateGregorian", "CMR8_toDateHijri", "CMR8_toDateGregorian"],
+      "BR-1": ["BR1_accordingToAgreement", "BR1_bonusAmount", "BR1_dateHijri", "BR1_dateGregorian"],
+      "BPSR-1": ["BPSR1_commissionType", "BPSR1_accordingToAgreement", "BPSR1_bonusProfitShareAmount", "BPSR1_amountRatio", "BPSR1_otherCommission", "BPSR1_fromDateHijri", "BPSR1_fromDateGregorian", "BPSR1_toDateHijri", "BPSR1_toDateGregorian"],
+      "DR-1": [],
+      "JAR-3": ["JAR3_promotionMechanism", "JAR3_additionalUpgrade"],
+      "JAR-4": ["JAR4_CurrentPosition", "JAR4_WantedJob"],
+      "RFR-1": ["RFR1_Amount", "RFR1_Consideration", "RFR1_dateHijri", "RFR1_dateGregorian"],
+      "LRESR-1": ["LRESR1_Amount"],
+      "RUF-1": ["refundType", "refundAmount"],
+      "WR-1": ["WR1_forAllowance", "WR1_otherAllowance"],
+      "WR-2": ["WR2_wageAmount"],
+      "CMR-1": ["CMR1_amountsPaidFor", "CMR1_theAmountRequired"],
+      "CMR-3": ["CMR3_compensationAmount", "CMR3_injuryDateHijri", "CMR3_injuryDateGregorian", "CMR3_injuryType"],
+      "CMR-4": ["CMR4_compensationAmount"],
+      "CMR-5": ["CMR5_kindOfHoliday", "CMR5_totalAmount", "CMR5_workingHours", "CMR5_additionalDetails"],
+      "CMR-6": ["CMR6_newPayAmount", "CMR6_payIncreaseType", "CMR6_wageDifference", "CMR6_fromDateHijri", "CMR6_fromDateGregorian", "CMR6_toDateHijri", "CMR6_toDateGregorian"],
+      "CMR-7": ["CMR7_durationOfLeaveDue", "CMR7_payDue", "CMR7_fromDateHijri", "CMR7_fromDateGregorian", "CMR7_toDateHijri", "CMR7_toDateGregorian"],
+      "EDO-1": ["EDO1_fromLocation", "EDO1_toLocation", "EDO1_managerialDecisionDateHijri", "EDO1_managerialDecisionDateGregorian", "EDO1_managerialDecisionNumber"],
+      "EDO-2": ["EDO2_fromJob", "EDO2_toJob", "EDO2_managerialDecisionDateHijri", "EDO2_managerialDecisionDateGregorian", "EDO2_managerialDecisionNumber"],
+      "EDO-3": ["EDO3_amountOfReduction", "EDO3_managerialDecisionDateHijri", "EDO3_managerialDecisionDateGregorian", "EDO3_managerialDecisionNumber"],
+      "EDO-4": ["EDO4_typesOfPenalties", "EDO4_managerialDecisionDateHijri", "EDO4_managerialDecisionDateGregorian", "EDO4_managerialDecisionNumber"],
+      "LCUT-1": ["LCUT1_amountOfCompensation"],
+      "TTR-1": ["TTR1_travelingWay"],
+      "RR-1": ["RR1_Amount", "RR1_Type"],
+      "JAR-2": ["JAR2_currentJobTitle", "JAR2_requiredJobTitle"],
+      "RLRAHI-1": ["request_date_hijri", "request_date_gregorian"],
+      "MIR-1": ["MIR1_typeOfRequest"],
+      "HIR-1": ["HIR1_IsBylawsIncludeAddingAccomodation", "HIR1_IsContractIncludeAddingAccommodation", "HIR1_HousingSpecificationsInContract", "HIR1_HousingSpecificationsInBylaws", "HIR1_HousingSpecifications"],
+    };
+
+    // Get all possible fields from all subcategories
+    const allPossibleFields = new Set<string>();
+    Object.values(subcategoryFields).forEach(fields => {
+      fields.forEach(field => allPossibleFields.add(field));
+    });
+
+    // Get current subcategory fields
+    const currentFields = subcategoryFields[currentSubCategory] || [];
+
+    // Unregister fields that are not in the current subcategory
+    allPossibleFields.forEach(field => {
+      if (!currentFields.includes(field)) {
+        unregister(field);
+      }
+    });
+
+    console.log(`[🔄 FIELD UNREGISTRATION] Unregistered fields for ${currentSubCategory}`);
+  }, [subCategory?.value, isEditing, unregister]);
 
   const [triggerCaseDetailsQuery, { data: caseDetailsData }] =
     useLazyGetCaseDetailsQuery();
@@ -254,6 +424,8 @@ function EditHearingTopicsDetails({
   const { data: payIncreaseTypeData } = lookup.payIncreaseType(
     subCategory?.value
   );
+  // typeOfCustodyData is not available in lookup, will be undefined
+  const typeOfCustodyData = undefined;
 
   const PayIncreaseTypeOptions = useMemo<Option[]>(
     () =>
@@ -368,53 +540,6 @@ function EditHearingTopicsDetails({
       setPreviewFile(true);
     }
   };
-
-  useEffect(() => {
-    if (!caseId || caseDetailsData?.CaseDetails) return;
-
-    const fetchCaseDetails = async () => {
-      const userConfigs: Record<string, any> = {
-        Worker: {
-          UserType: userType,
-          IDNumber: userID,
-        },
-        "Embassy User": {
-          UserType: userType,
-          IDNumber: userID,
-        },
-        Establishment: {
-          UserType: userType,
-          IDNumber: userID,
-          FileNumber: fileNumber,
-        },
-        "Legal representative": {
-          UserType: userType,
-          IDNumber: userID,
-          MainGovernment: mainCategory2 || "",
-          SubGovernment: subCategory2 || "",
-        },
-      };
-
-      await triggerCaseDetailsQuery({
-        ...userConfigs[userType],
-        CaseID: caseId,
-        AcceptedLanguage: currentLanguage,
-        SourceSystem: "E-Services",
-      });
-    };
-
-    fetchCaseDetails();
-  }, [
-    caseId,
-    currentLanguage,
-    triggerCaseDetailsQuery,
-    userType,
-    fileNumber,
-    mainCategory2,
-    subCategory2,
-    userID,
-    caseDetailsData,
-  ]);
 
   // Add a ref to track if topics have been loaded from caseDetailsData
   const topicsLoadedRef = useRef(false);
@@ -623,14 +748,17 @@ function EditHearingTopicsDetails({
           }
           : {}),
         // Add correct mapping for RFR-1 date fields
-        ...(topic.SubTopicID === "RFR-1"
-          ? {
-            amount: topic.amount || "",
-            consideration: topic.consideration || "",
-            date_hijri: topic.date_hijri || "",
-            date_gregorian: topic.date_gregorian || "",
-          }
-          : {}),
+        ...(topic.SubTopicID === "RFR-1" && {
+          RFR1_Amount: topic.Amount ?? "",
+          RFR1_Consideration: topic.Consideration ?? "",
+          RFR1_dateHijri: topic.pyTempDate ?? "",
+          RFR1_dateGregorian: topic.Date_New ?? "",
+          // Legacy fields for backward compatibility
+          amount: topic.Amount ?? "",
+          consideration: topic.Consideration ?? "",
+          date_hijri: topic.pyTempDate ?? "",
+          date_gregorian: topic.Date_New ?? "",
+        }),
         // --- EDO-3 Amount Of Reduction mapping ---
         ...(topic.SubTopicID === "EDO-3"
           ? {
@@ -683,31 +811,41 @@ function EditHearingTopicsDetails({
 
         // ──────────────── WR SUBTOPICS MAPPING ────────────────
 
-        // Add correct mapping for WR-1 date fields
+        // Add correct mapping for WR-1 fields with new naming convention
         ...(topic.SubTopicID === "WR-1"
           ? {
-            from_date_hijri: topic.pyTempDate || topic.from_date_hijri || "",
-            from_date_gregorian:
-              topic.FromDate_New || topic.from_date_gregorian || "",
-            to_date_hijri: topic.Date_New || topic.to_date_hijri || "",
-            to_date_gregorian:
-              topic.ToDate_New || topic.to_date_gregorian || "",
-          }
-          : {}),
-        // Add correct mapping for forAllowance dropdown (WR-1 only)
-        ...(topic.SubTopicID === "WR-1"
-          ? {
+            WR1_wageAmount: topic.Amount || topic.wageAmount || topic.amount || "",
+            WR1_forAllowance: topic.ForAllowance_Code
+              ? { value: topic.ForAllowance_Code, label: topic.ForAllowance }
+              : null,
+            WR1_otherAllowance: topic.OtherAllowance || "",
+            WR1_fromDateHijri: topic.pyTempDate || "",
+            WR1_fromDateGregorian: topic.FromDate_New || "",
+            WR1_toDateHijri: topic.Date_New || "",
+            WR1_toDateGregorian: topic.ToDate_New || "",
+            // Legacy fields for backward compatibility
+            wageAmount: topic.Amount || topic.wageAmount || topic.amount || "",
             forAllowance: topic.ForAllowance_Code
               ? { value: topic.ForAllowance_Code, label: topic.ForAllowance }
               : null,
             otherAllowance: topic.OtherAllowance || "",
+            from_date_hijri: topic.pyTempDate || "",
+            from_date_gregorian: topic.FromDate_New || "",
+            to_date_hijri: topic.Date_New || "",
+            to_date_gregorian: topic.ToDate_New || "",
           }
           : {}),
 
         // Add correct mapping for WR-2 fields
         ...(topic.SubTopicID === "WR-2"
           ? {
-            amount: topic.OverdueWagesAmount || "",
+            WR2_wageAmount: topic.OverdueWagesAmount || topic.Amount || "",
+            WR2_fromDateHijri: topic.pyTempDate || "",
+            WR2_fromDateGregorian: topic.FromDate_New || "",
+            WR2_toDateHijri: topic.Date_New || "",
+            WR2_toDateGregorian: topic.ToDate_New || "",
+            // Legacy fields for backward compatibility
+            amount: topic.OverdueWagesAmount || topic.Amount || "",
             from_date_hijri: topic.pyTempDate || "",
             from_date_gregorian: topic.FromDate_New || "",
             to_date_hijri: topic.Date_New || "",
@@ -744,7 +882,14 @@ function EditHearingTopicsDetails({
         // ──────────────── MIR SUBTOPICS MAPPING ────────────────
         ...(topic.SubTopicID === "MIR-1"
           ? {
-            requestType: topic.RequestType_Code
+            MIR1_typeOfRequest: topic.RequestType_Code
+              ? { value: topic.RequestType_Code, label: topic.RequestType }
+              : null,
+            MIR1_requiredDegreeOfInsurance: topic.RequiredDegreeInsurance || "",
+            MIR1_theReason: topic.Reason || "",
+            MIR1_currentInsuranceLevel: topic.CurrentInsuranceLevel || "",
+            // Legacy fields for backward compatibility
+            typeOfRequest: topic.RequestType_Code
               ? { value: topic.RequestType_Code, label: topic.RequestType }
               : null,
             requiredDegreeOfInsurance: topic.RequiredDegreeInsurance || "",
@@ -767,6 +912,22 @@ function EditHearingTopicsDetails({
         // ──────────────── CMR SUBTOPICS MAPPING ────────────────
         // CMR-1: Treatment refunds
         ...(topic.SubTopicID === "CMR-1" && {
+          CMR1_amountsPaidFor:
+            topic.AmountsPaidFor_Code && topic.AmountsPaidFor
+              ? {
+                value: topic.AmountsPaidFor_Code,
+                label: topic.AmountsPaidFor,
+              }
+              : topic.AmountsPaidFor_Code
+                ? {
+                  value: topic.AmountsPaidFor_Code,
+                  label: topic.AmountsPaidFor_Code,
+                }
+                : null,
+          CMR1_theAmountRequired: topic.AmountRequired
+            ? String(topic.AmountRequired)
+            : "",
+          // Legacy fields for backward compatibility
           amountsPaidFor:
             topic.AmountsPaidFor_Code && topic.AmountsPaidFor
               ? {
@@ -785,6 +946,11 @@ function EditHearingTopicsDetails({
         }),
         // CMR-3: Request compensation for work injury
         ...(topic.SubTopicID === "CMR-3" && {
+          CMR3_compensationAmount: topic.Amount ? String(topic.Amount) : "",
+          CMR3_injuryDateHijri: topic.pyTempText || "",
+          CMR3_injuryDateGregorian: topic.InjuryDate_New || "",
+          CMR3_injuryType: topic.TypeOfWorkInjury || "",
+          // Legacy fields for backward compatibility
           compensationAmount: topic.Amount ? String(topic.Amount) : "",
           injury_date_hijri: topic.pyTempText || "",
           injury_date_gregorian: topic.InjuryDate_New || "",
@@ -792,10 +958,26 @@ function EditHearingTopicsDetails({
         }),
         // CMR-4: Request compensation for the duration of the notice
         ...(topic.SubTopicID === "CMR-4" && {
+          CMR4_compensationAmount: topic.Amount ? String(topic.Amount) : "",
+          // Legacy fields for backward compatibility
           amount: topic.Amount ? String(topic.Amount) : "",
         }),
         // CMR-5: Pay for work during vacation
         ...(topic.SubTopicID === "CMR-5" && {
+          CMR5_kindOfHoliday:
+            topic.LeaveType_Code && topic.LeaveType
+              ? { value: topic.LeaveType_Code, label: topic.LeaveType }
+              : topic.LeaveType_Code
+                ? { value: topic.LeaveType_Code, label: topic.LeaveType_Code }
+                : null,
+          CMR5_totalAmount: topic.TotalAmountRequired
+            ? String(topic.TotalAmountRequired)
+            : "",
+          CMR5_workingHours: topic.WorkingHoursCount
+            ? String(topic.WorkingHoursCount)
+            : "",
+          CMR5_additionalDetails: topic.AdditionalDetails || "",
+          // Legacy fields for backward compatibility
           kindOfHoliday:
             topic.LeaveType_Code && topic.LeaveType
               ? { value: topic.LeaveType_Code, label: topic.LeaveType }
@@ -813,6 +995,16 @@ function EditHearingTopicsDetails({
 
         // CMR-6: The Wage Difference/increase
         ...(topic.SubTopicID === "CMR-6" && {
+          CMR6_newPayAmount: topic.NewPayAmount ? String(topic.NewPayAmount) : "",
+          CMR6_payIncreaseType: topic.PayIncreaseType_Code
+            ? { value: topic.PayIncreaseType_Code, label: topic.PayIncreaseType }
+            : null,
+          CMR6_wageDifference: topic.WageDifference ? String(topic.WageDifference) : "",
+          CMR6_fromDateHijri: topic.pyTempDate || "",
+          CMR6_fromDateGregorian: topic.FromDate_New || "",
+          CMR6_toDateHijri: topic.Date_New || "",
+          CMR6_toDateGregorian: topic.ToDate_New || "",
+          // Legacy fields for backward compatibility
           from_date_hijri: topic.pyTempDate || "",
           from_date_gregorian: topic.FromDate_New || "",
           to_date_hijri: topic.Date_New || "",
@@ -825,17 +1017,28 @@ function EditHearingTopicsDetails({
         }),
         // CMR-7: Request for overtime pay
         ...(topic.SubTopicID === "CMR-7" && {
+          CMR7_durationOfLeaveDue: topic.DurationOfLeaveDue ? String(topic.DurationOfLeaveDue) : "",
+          CMR7_payDue: topic.PayDue ? String(topic.PayDue) : "",
+          CMR7_fromDateHijri: topic.pyTempDate || "",
+          CMR7_fromDateGregorian: topic.FromDate_New || "",
+          CMR7_toDateHijri: topic.Date_New || "",
+          CMR7_toDateGregorian: topic.ToDate_New || "",
+          // Legacy fields for backward compatibility
           pyTempDate: topic.pyTempDate || "",
           toDate_gregorian: topic.ToDate_New || "",
           date_hijri: topic.Date_New || "",
           fromDate_gregorian: topic.FromDate_New || "",
-          durationOfLeaveDue: topic.DurationOfLeaveDue
-            ? String(topic.DurationOfLeaveDue)
-            : "",
+          durationOfLeaveDue: topic.DurationOfLeaveDue ? String(topic.DurationOfLeaveDue) : "",
           payDue: topic.PayDue ? String(topic.PayDue) : "",
         }),
         // CMR-8: Pay stop time
         ...(topic.SubTopicID === "CMR-8" && {
+          CMR8_wagesAmount: topic.WagesAmount ? String(topic.WagesAmount) : "",
+          CMR8_fromDateHijri: topic.pyTempDate || "",
+          CMR8_fromDateGregorian: topic.FromDate_New || "",
+          CMR8_toDateHijri: topic.Date_New || "",
+          CMR8_toDateGregorian: topic.ToDate_New || "",
+          // Legacy fields for backward compatibility
           pyTempDate: topic.pyTempDate || "",
           toDate_gregorian: topic.ToDate_New || "",
           date_hijri: topic.Date_New || "",
@@ -897,8 +1100,8 @@ function EditHearingTopicsDetails({
         // ──────────────── RR SUBTOPICS MAPPING ────────────────
         // RR-1: Reward Request
         ...(topic.SubTopicID === "RR-1" && {
-          amount: topic.amount || "",
-          rewardType: topic.rewardType || "",
+          amount: topic.Amount || topic.amount || "",
+          rewardType: topic.Type || topic.rewardType || "",
         }),
         // ──────────────── END RR SUBTOPICS MAPPING ────────────────
 
@@ -910,34 +1113,53 @@ function EditHearingTopicsDetails({
             topic.RequiredJobTitle || topic.requiredJobTitle || "",
         }),
         // JAR-3: Promotion Mechanism
-        ...(topic.SubTopicID === "JAR-3" && {
-          doesTheInternalRegulationIncludePromotionMechanism:
-            topic.doesTheInternalRegulationIncludePromotionMechanism || false,
-          doesContractIncludeAdditionalUpgrade:
-            topic.doesContractIncludeAdditionalUpgrade || false,
-        }),
+        ...(topic.SubTopicID === "JAR-3"
+          ? {
+            doesTheInternalRegulationIncludePromotionMechanism:
+              topic.PromotionMechanism === "Yes" || topic.doesTheInternalRegulationIncludePromotionMechanism,
+            doesContractIncludeAdditionalUpgrade:
+              topic.AdditionalUpgrade === "Yes" || topic.doesContractIncludeAdditionalUpgrade,
+          }
+          : {}),
         // JAR-4: Job Application Request (currentPosition, theWantedJob)
         ...(topic.SubTopicID === "JAR-4" && {
           currentPosition: topic.CurrentPosition || topic.currentPosition || "",
-          theWantedJob: topic.TheWantedJob || topic.theWantedJob || "",
+          theWantedJob: topic.TheWantedJob || topic.theWantedJob || topic.WantedJob || "",
         }),
         // ──────────────── END JAR SUBTOPICS MAPPING ────────────────
+        // ──────────────── RUF SUBTOPICS MAPPING ────────────────
+        // RUF-1: Reimbursement of Undue Funds
+        ...(topic.SubTopicID === "RUF-1" && {
+          RefundType: topic.RefundType || topic.refundType || "",
+          refundAmount: topic.Amount || topic.amount || "", // Map to specific field name
+        }),
+        // ──────────────── END RUF SUBTOPICS MAPPING ────────────────
         // ──────────────── LRESR SUBTOPICS MAPPING ────────────────
         // LRESR-1: End of Service Reward
         ...(topic.SubTopicID === "LRESR-1" && {
-          amount: topic.amount || "",
+          LRESR1_Amount: topic.Amount || topic.amount || "",
+          // Legacy fields for backward compatibility
+          endOfServiceRewardAmount: topic.Amount || topic.amount || "",
         }),
         // LRESR-2: End of Service Reward (amount, consideration)
         ...(topic.SubTopicID === "LRESR-2" && {
-          amount: topic.amount || "",
-          consideration: topic.consideration || "",
+          endOfServiceRewardAmount: topic.Amount || topic.amount || "", // Changed from "amount"
+          consideration: topic.Consideration || topic.consideration || "",
         }),
         // LRESR-3: End of Service Reward (amount, rewardType)
         ...(topic.SubTopicID === "LRESR-3" && {
-          amount: topic.amount || "",
-          rewardType: topic.rewardType || "",
+          endOfServiceRewardAmount: topic.Amount || topic.amount || "", // Changed from "amount"
+          rewardType: topic.RewardType || topic.rewardType || "",
         }),
         // ──────────────── END LRESR SUBTOPICS MAPPING ────────────────
+        // ──────────────── LCUT SUBTOPICS MAPPING ────────────────
+        // LCUT-1: Labor Contract and Unemployment Termination
+        ...(topic.SubTopicID === "LCUT-1" && {
+          LCUT1_amountOfCompensation: topic.AmountOfCompensation || topic.amountOfCompensation || "",
+          // Legacy fields for backward compatibility
+          amountOfCompensation: topic.AmountOfCompensation || topic.amountOfCompensation || "",
+        }),
+        // ──────────────── END LCUT SUBTOPICS MAPPING ────────────────
       }));
       setCaseTopics(formattedTopics);
       topicsLoadedRef.current = true;
@@ -988,190 +1210,150 @@ function EditHearingTopicsDetails({
     return caseTopics.slice(start, end);
   }, [caseTopics, pagination.pageIndex, pagination.pageSize]);
 
+  // Case details fetching and validation useEffect
+  useEffect(() => {
+    if (!caseId) return;
+
+    const fetchCaseDetails = async () => {
+      console.log("[🔍 CASE DETAILS] Fetching case details for caseId:", caseId);
+      console.log("[🔍 CASE DETAILS] Current caseDetailsData:", caseDetailsData);
+      
+      const userConfigs: Record<string, any> = {
+        Worker: {
+          UserType: userType,
+          IDNumber: userID,
+        },
+        "Embassy User": {
+          UserType: userType,
+          IDNumber: userID,
+        },
+        Establishment: {
+          UserType: userType,
+          IDNumber: userID,
+          FileNumber: fileNumber,
+        },
+        "Legal representative": {
+          UserType: userType,
+          IDNumber: userID,
+          MainGovernment: mainCategory2 || "",
+          SubGovernment: subCategory2 || "",
+        },
+      };
+
+      console.log("[🔍 CASE DETAILS] Calling API with config:", {
+        ...userConfigs[userType],
+        CaseID: caseId,
+        AcceptedLanguage: currentLanguage,
+        SourceSystem: "E-Services",
+      });
+      
+      try {
+        const result = await triggerCaseDetailsQuery({
+          ...userConfigs[userType],
+          CaseID: caseId,
+          AcceptedLanguage: currentLanguage,
+          SourceSystem: "E-Services",
+        });
+        
+        console.log("[🔍 CASE DETAILS] API result:", result);
+        
+        // Check if the API call was successful and if UpdateCase is "true" and StatusWork_Code is "Under-Negotiations"
+        if (result.data?.CaseDetails) {
+          const updateCase = result.data.CaseDetails.UpdateCase;
+          const statusWorkCode = result.data.CaseDetails.StatusWork_Code;
+          console.log("[🔍 CASE DETAILS] UpdateCase value:", updateCase);
+          console.log("[🔍 CASE DETAILS] StatusWork_Code value:", statusWorkCode);
+          
+          if (updateCase !== "true") {
+            console.log("[🔍 CASE DETAILS] UpdateCase is not 'true', showing critical error modal");
+            handleCriticalError(tManageHearing("not_authorized_to_edit_case"));
+            return;
+          }
+
+          if (statusWorkCode !== "Under-Negotiations" && statusWorkCode !== "Under-NegotiationsCI") {
+            console.log("[🔍 CASE DETAILS] StatusWork_Code is not 'Under-Negotiations', showing critical error modal");
+            handleCriticalError(tManageHearing("case_cannot_be_edited_current_status"));
+            return;
+          }
+        } else {
+          console.log("[🔍 CASE DETAILS] No CaseDetails in response, showing critical error modal");
+          handleCriticalError(tManageHearing("unable_to_retrieve_case_details"));
+          return;
+        }
+                } catch (error: any) {
+                  console.log("[🔍 CASE DETAILS] Error fetching case details:", error);
+                  console.log("[🔍 CASE DETAILS] Error data:", error?.data);
+                  console.log("[🔍 CASE DETAILS] Error details:", error?.data?.ErrorDetails);
+                  
+                  // Check for specific API error responses
+                  if (error?.data?.ErrorDetails && Array.isArray(error.data.ErrorDetails)) {
+                    const firstError = error.data.ErrorDetails[0];
+                    console.log("[🔍 CASE DETAILS] Error details found:", firstError);
+                    
+                    // Handle "You are not authorized to view the case" error
+                    if (firstError?.ErrorCode === "ERR002") {
+                      console.log("[🔍 CASE DETAILS] User not authorized error detected");
+                      handleCriticalError(firstError.ErrorDesc || tManageHearing("not_authorized_to_edit_case"));
+                      return;
+                    }
+                    
+                    // Handle "No Records Found" error
+                    if (firstError?.ErrorCode === "ER4059") {
+                      console.log("[🔍 CASE DETAILS] No records found error detected");
+                      handleCriticalError(firstError.ErrorDesc || tManageHearing("unable_to_retrieve_case_details"));
+                      return;
+                    }
+                  }
+                  
+                  // For other general errors, show normal toast
+                  toast.error(tManageHearing("error_retrieving_case_details"));
+                  navigate("/");
+                  return;
+                }
+    };
+
+    fetchCaseDetails();
+              }, [
+              caseId,
+              currentLanguage,
+              triggerCaseDetailsQuery,
+              userType,
+              fileNumber,
+              mainCategory2,
+              subCategory2,
+              userID,
+              navigate,
+              tManageHearing,
+              handleCriticalError,
+            ]);
+
   const handleTopicSelect = (topic: any, index: number) => {
+    console.log("[🔍 EDIT TOPIC] Starting prefill for topic:", {
+      SubTopicID: topic.SubTopicID,
+      MainTopicID: topic.MainTopicID,
+      index,
+      topicKeys: Object.keys(topic)
+    });
+
     // Reset form first to clear any previous data
     reset();
 
+    // Reset prefill ref when selecting a new topic
+    prefillDoneRef.current = null;
+
     // --- Normalize mainCategory and subCategory to always be objects ---
-    if (typeof topic.mainCategory === "string") {
-      setValue("mainCategory", {
-        value: topic.mainCategory,
-        label: topic.mainCategory,
-      });
-    } else {
-      setValue("mainCategory", topic.mainCategory);
-    }
-    if (typeof topic.subCategory === "string") {
-      setValue("subCategory", {
-        value: topic.subCategory,
-        label: topic.subCategory,
-      });
-    } else {
-      setValue("subCategory", topic.subCategory);
-    }
-    // --- END normalization ---
+    const mainCategoryOpt = typeof topic.mainCategory === "string"
+      ? { value: topic.mainCategory, label: topic.mainCategory }
+      : topic.mainCategory ?? { value: topic.MainTopicID, label: topic.CaseTopicName };
+    setValue("mainCategory", mainCategoryOpt);
 
+    const subCategoryOpt = typeof topic.subCategory === "string"
+      ? { value: topic.subCategory, label: topic.subCategory }
+      : topic.subCategory ?? { value: topic.SubTopicID, label: topic.SubTopicName };
+    setValue("subCategory", subCategoryOpt);
 
-    if (topic.SubTopicID === "CMR-6") {
-      setValue("from_date_hijri", topic.from_date_hijri || topic.pyTempDate || "");
-      setValue("from_date_gregorian", topic.from_date_gregorian || topic.FromDate_New || "");
-      setValue("to_date_hijri", topic.to_date_hijri || topic.Date_New || "");
-      setValue("to_date_gregorian", topic.to_date_gregorian || topic.ToDate_New || "");
-      setValue("newPayAmount", topic.newPayAmount || topic.NewPayAmount || "");
-      setValue("payIncreaseType", topic.payIncreaseType || (topic.PayIncreaseType_Code ? { value: topic.PayIncreaseType_Code, label: topic.PayIncreaseType } : null));
-      setValue("wageDifference", topic.wageDifference || topic.WageDifference || "");
-    }
-
-
-
-    // --- HIR-1 accommodation radio auto-select logic ---
-    if (topic.doesBylawsIncludeAddingAccommodations) {
-      setValue("accommodationSource", "bylaws");
-    } else if (topic.doesContractIncludeAddingAccommodations) {
-      setValue("accommodationSource", "contract");
-    } else {
-      setValue("accommodationSource", "");
-    }
-    // --- END HIR-1 logic ---
-
-    // RFR-1: Set date fields from topic when editing from UI
-    if (topic.subCategory?.value === "RFR-1" || topic.SubTopicID === "RFR-1") {
-      reset({
-        ...topic,
-        date_hijri: topic.date_hijri || "",
-        date_gregorian: topic.date_gregorian || "",
-      });
-    }
-
-// --- BPSR-1 prefilling ---
-if (topic.SubTopicID === "BPSR-1" || topic.subCategory?.value === "BPSR-1") {
-  const commissionCode =
-    topic.CommissionType_Code ??
-    topic.commissionType?.value ??
-    topic.CommissionType;
-
-  setValue(
-    "commissionType",
-    ensureOption(
-      commissionTypeLookupData?.DataElements,
-      commissionCode,
-      topic.CommissionTypeLabel || topic.CommissionType
-    ),
-    { shouldDirty: false, shouldValidate: false }
-  );
-
-  const agrCode =
-    topic.AccordingToAgreement_Code ??
-    topic.accordingToAgreement?.value ??
-    topic.AccordingToAgreement;
-
-  setValue(
-    "accordingToAgreement",
-    ensureOption(
-      accordingToAgreementLookupData?.DataElements,
-      agrCode,
-      topic.AccordingToAgreement
-    ),
-    { shouldDirty: false, shouldValidate: false }
-  );
-
-  setValue("amount", String(topic.Amount ?? topic.amount ?? ""), { shouldDirty: false });
-  setValue("amountRatio", String(topic.AmountRatio ?? topic.amountRatio ?? ""), { shouldDirty: false });
-  setValue("from_date_hijri", topic.pyTempDate ?? topic.FromDateHijri ?? topic.from_date_hijri ?? "", { shouldDirty: false });
-  setValue("from_date_gregorian", topic.FromDate_New ?? topic.FromDateGregorian ?? topic.from_date_gregorian ?? "", { shouldDirty: false });
-  setValue("to_date_hijri", topic.Date_New ?? topic.ToDateHijri ?? topic.to_date_hijri ?? "", { shouldDirty: false });
-  setValue("to_date_gregorian", topic.ToDate_New ?? topic.ToDateGregorian ?? topic.to_date_gregorian ?? "", { shouldDirty: false });
-  setValue("otherCommission", String(topic.OtherCommission ?? topic.otherCommission ?? ""), { shouldDirty: false });
-}
-
-
-    // forAllowance
-    let forAllowanceLabel = topic.forAllowance?.label || topic.ForAllowance;
-    let forAllowanceValue = topic.forAllowance?.value || topic.ForAllowance;
-    let forAllowanceOption = {
-      value: forAllowanceValue,
-      label: forAllowanceLabel,
-    };
-    if (forAllowanceValue && forAllowanceLabel) {
-      setValue("forAllowance", forAllowanceOption);
-    } else {
-      setValue("forAllowance", null);
-    }
-
-    // travelingWay
-    console.log("--- Debugging travelingWay ---");
-    console.log("Topic object:", JSON.stringify(topic, null, 2));
-    console.log("travelingWayData:", travelingWayData);
-    let travelingWayLabel = topic.travelingWay?.label || topic.TravelingWay;
-    let travelingWayValue = topic.travelingWay?.value || topic.TravelingWay;
-    console.log("Initial travelingWayValue:", travelingWayValue);
-    console.log("Initial travelingWayLabel:", travelingWayLabel);
-
-    // Fix: Use travelingWayData.DataElements to get the label if available
-    if (travelingWayData?.DataElements && travelingWayValue) {
-      console.log(
-        "travelingWayData.DataElements is available. Searching for value:",
-        travelingWayValue
-      );
-      const found = travelingWayData.DataElements.find(
-        (item: any) => item.ElementKey === travelingWayValue
-      );
-      if (found) {
-        console.log("Found matching element:", found);
-        travelingWayLabel = found.ElementValue;
-      } else {
-        console.log(
-          "No matching element found in travelingWayData.DataElements."
-        );
-      }
-    } else {
-      console.log(
-        "travelingWayData or its DataElements are not available, or travelingWayValue is missing."
-      );
-    }
-    let travelingWayOption = {
-      value: travelingWayValue,
-      label: travelingWayLabel,
-    };
-    console.log("Final travelingWayOption to be set:", travelingWayOption);
-    if (travelingWayValue && travelingWayLabel) {
-      setValue("travelingWay", travelingWayOption);
-    } else {
-      setValue("travelingWay", null);
-    }
-    console.log("--- End Debugging travelingWay ---");
-
-    // typeOfRequest
-    let typeOfRequestLabel = topic.typeOfRequest?.label || topic.TypeOfRequest;
-    let typeOfRequestValue = topic.typeOfRequest?.value || topic.TypeOfRequest;
-    let typeOfRequestOption = {
-      value: typeOfRequestValue,
-      label: typeOfRequestLabel,
-    };
-    if (typeOfRequestValue && typeOfRequestLabel) {
-      setValue("typeOfRequest", typeOfRequestOption);
-    } else {
-      setValue("typeOfRequest", null);
-    }
-
-    // typesOfPenalties
-    let typesOfPenaltiesLabel =
-      topic.typesOfPenalties?.label || topic.TypesOfPenalties;
-    let typesOfPenaltiesValue =
-      topic.typesOfPenalties?.value || topic.TypesOfPenalties;
-    let typesOfPenaltiesOption = {
-      value: typesOfPenaltiesValue,
-      label: typesOfPenaltiesLabel,
-    };
-    if (typesOfPenaltiesValue && typesOfPenaltiesLabel) {
-      setValue("typesOfPenalties", typesOfPenaltiesOption);
-    } else {
-      setValue("typesOfPenalties", null);
-    }
-
-    // Set the edit topic with the original topic data (not extracted form fields)
-    // The prefilling hook will handle the extraction and setting of form values
-    setEditTopic(topic);
+    // Set the edit topic with the original topic data and index
+    setEditTopic({ ...topic, index });
     setEditTopicIndex(index);
 
     // Show appropriate sections
@@ -1190,7 +1372,7 @@ if (topic.SubTopicID === "BPSR-1" || topic.subCategory?.value === "BPSR-1") {
           setShowDeleteConfirm(true);
         },
       }),
-    [t, toggle]
+    [t, toggle, caseTopics] // Added caseTopics to dependencies
   );
 
   const goToLegalStep = () => {
@@ -1206,7 +1388,10 @@ if (topic.SubTopicID === "BPSR-1" || topic.subCategory?.value === "BPSR-1") {
   };
 
   const handleSend = () => {
+    console.log("[🚀 SEND TOPIC] Preparing to send. caseTopics:", caseTopics);
     const result = saveTopic();
+    console.log("[🚀 SEND TOPIC] saveTopic() returned:", result);
+
     reset();
     setDate({ hijri: null, gregorian: null, dateObject: null });
     setShowLegalSection(false);
@@ -1217,8 +1402,15 @@ if (topic.SubTopicID === "BPSR-1" || topic.subCategory?.value === "BPSR-1") {
   };
 
   const handleAddTopic = async () => {
+    console.log("[🔥 ADD TOPIC] Current form values:", getValues());
+    console.log("[🔥 ADD TOPIC] Current caseTopics before add:", caseTopics);
+    console.log("[🔥 ADD TOPIC] Form errors:", formState.errors);
+    console.log("[🔥 ADD TOPIC] Is form valid:", formState.isValid);
+
     const result = saveTopic();
     if (result === 1) {
+      console.log("[✅ ADD TOPIC] Topic successfully added. New caseTopics:", caseTopics);
+
       reset();
       setDate({ hijri: null, gregorian: null, dateObject: null });
       setShowLegalSection(false);
@@ -1226,35 +1418,42 @@ if (topic.SubTopicID === "BPSR-1" || topic.subCategory?.value === "BPSR-1") {
       setEditTopic(null);
       setEditTopicIndex(null);
     }
+    else {
+      console.warn("[⚠️ ADD TOPIC] Validation failed. Not adding topic.");
+    }
   };
 
   const handleUpdate = () => {
     if (!editTopic) return;
 
     const updatedValues = getValues();
+    console.log("[📝 UPDATE TOPIC] Original topic:", editTopic);
+    console.log("[📝 UPDATE TOPIC] New form values:", updatedValues);
+    console.log("[📝 UPDATE TOPIC] otherAllowance value:", updatedValues.otherAllowance);
+    console.log("[📝 UPDATE TOPIC] forAllowance value:", updatedValues.forAllowance);
 
     const mainCategoryValue =
       updatedValues.mainCategory?.value ||
-      editTopic.MainTopicID ||
-      editTopic.mainCategory?.value;
+      editTopic?.MainTopicID ||
+      editTopic?.mainCategory?.value;
     const mainCategoryLabel =
       updatedValues.mainCategory?.label ||
-      editTopic.MainSectionHeader ||
-      editTopic.mainCategory?.label;
+      editTopic?.MainSectionHeader ||
+      editTopic?.mainCategory?.label;
     const subCategoryValue =
       updatedValues.subCategory?.value ||
-      editTopic.SubTopicID ||
-      editTopic.subCategory?.value;
+      editTopic?.SubTopicID ||
+      editTopic?.subCategory?.value;
     const subCategoryLabel =
       updatedValues.subCategory?.label ||
-      editTopic.SubTopicName ||
-      editTopic.subCategory?.label;
+      editTopic?.SubTopicName ||
+      editTopic?.subCategory?.label;
 
     const formatDateForStorage = (date: string) =>
       date ? date.replace(/\//g, "") : "";
 
+    // Base topic structure
     const updatedTopic: any = {
-      ...updatedValues,
       MainTopicID: mainCategoryValue,
       SubTopicID: subCategoryValue,
       MainSectionHeader: mainCategoryLabel,
@@ -1262,153 +1461,723 @@ if (topic.SubTopicID === "BPSR-1" || topic.subCategory?.value === "BPSR-1") {
       CaseTopicName: mainCategoryLabel,
       subCategory: { value: subCategoryValue, label: subCategoryLabel },
       mainCategory: { value: mainCategoryValue, label: mainCategoryLabel },
-
-      acknowledged: updatedValues.acknowledged || editTopic.acknowledged,
-      amount: updatedValues.amount || editTopic.amount,
-      payDue: updatedValues.payDue || editTopic.payDue,
-      durationOfLeaveDue:
-        updatedValues.durationOfLeaveDue || editTopic.durationOfLeaveDue,
-      wagesAmount: updatedValues.wagesAmount || editTopic.wagesAmount,
-      compensationAmount:
-        updatedValues.compensationAmount || editTopic.compensationAmount,
-      injuryType: updatedValues.injuryType || editTopic.injuryType,
-      bonusAmount: updatedValues.bonusAmount || editTopic.bonusAmount,
-      otherCommission:
-        updatedValues.otherCommission || editTopic.otherCommission,
-      amountOfCompensation:
-        updatedValues.amountOfCompensation || editTopic.amountOfCompensation,
-      damagedValue: updatedValues.damagedValue || editTopic.damagedValue,
-      requiredJobTitle:
-        updatedValues.requiredJobTitle || editTopic.requiredJobTitle,
-      currentJobTitle:
-        updatedValues.currentJobTitle || editTopic.currentJobTitle,
-      damagedType: updatedValues.damagedType || editTopic.damagedType,
-      currentInsuranceLevel:
-        updatedValues.currentInsuranceLevel || editTopic.currentInsuranceLevel,
-      theReason: updatedValues.theReason || editTopic.theReason,
-      theWantedJob: updatedValues.theWantedJob || editTopic.theWantedJob,
-      currentPosition:
-        updatedValues.currentPosition || editTopic.currentPosition,
-      typeOfRequest: updatedValues.typeOfRequest || editTopic?.typeOfRequest,
-      kindOfHoliday: updatedValues.kindOfHoliday || editTopic?.kindOfHoliday,
-      commissionType: updatedValues.commissionType || editTopic?.commissionType,
-      accordingToAgreement:
-        updatedValues.accordingToAgreement || editTopic?.accordingToAgreement,
-      forAllowance: updatedValues.forAllowance || editTopic?.forAllowance,
-      travelingWay: updatedValues.travelingWay || editTopic?.travelingWay,
-      typesOfPenalties:
-        updatedValues.typesOfPenalties || editTopic?.typesOfPenalties,
-      fromLocation: updatedValues.fromLocation || editTopic?.fromLocation,
-      toLocation: updatedValues.toLocation || editTopic?.toLocation,
-      loanAmount: updatedValues.loanAmount || editTopic?.loanAmount,
-      amountRatio: updatedValues.amountRatio || editTopic?.amountRatio,
-      requiredDegreeOfInsurance:
-        updatedValues.requiredDegreeOfInsurance ||
-        editTopic?.requiredDegreeOfInsurance,
-      typeOfCustody: updatedValues.typeOfCustody || editTopic?.typeOfCustody,
-      amountsPaidFor: updatedValues.amountsPaidFor || editTopic?.amountsPaidFor,
-      request_date_hijri:
-        updatedValues.request_date_hijri || editTopic?.request_date_hijri,
-      date_hijri: updatedValues.date_hijri || editTopic?.date_hijri,
-      gregorianDate: updatedValues.gregorianDate || editTopic?.gregorianDate,
-      decisionNumber: updatedValues.decisionNumber,
-      Region_Code: updatedValues.DefendantsEstablishmentRegion,
-      City_Code: updatedValues.DefendantsEstablishmentCity,
-      Occupation_Code: updatedValues.DefendantsEstablishOccupation,
-      Gender_Code: updatedValues.DefendantsEstablishmentGender,
-      Nationality_Code: updatedValues.DefendantsEstablishmentNationality,
-      PrisonerId: updatedValues.DefendantsEstablishmentPrisonerId,
-      from_date_hijri:
-        updatedValues.from_date_hijri || editTopic?.from_date_hijri,
-      to_date_hijri: updatedValues.to_date_hijri || editTopic?.to_date_hijri,
-      rewardType: updatedValues.rewardType || editTopic.rewardType,
-      consideration: updatedValues.consideration || editTopic.consideration,
-      AdditionalDetails:
-        updatedValues.additionalDetails || editTopic.AdditionalDetails,
-      ToDateHijri: formatDateForStorage(updatedValues.to_date_hijri),
-      ToDateGregorian: formatDateForStorage(updatedValues.to_date_gregorian),
-      newPayAmount: updatedValues.newPayAmount || editTopic.newPayAmount,
-      payIncreaseType:
-        updatedValues.payIncreaseType || editTopic.payIncreaseType,
-      wageDifference: updatedValues.wageDifference || editTopic.wageDifference,
-      from_date_gregorian:
-        updatedValues.from_date_gregorian || editTopic.from_date_gregorian,
-      to_date_gregorian:
-        updatedValues.to_date_gregorian || editTopic.to_date_gregorian,
-
-      ManagerialDecisionDateHijri: formatDateForStorage(
-        updatedValues.managerial_decision_date_hijri
-      ),
-      ManagerialDecisionDateGregorian: formatDateForStorage(
-        updatedValues.managerial_decision_date_gregorian
-      ),
-      ManagerialDecisionNumber:
-        updatedValues.managerialDecisionNumber ||
-        editTopic.ManagerialDecisionNumber ||
-        "",
-
-      InjuryDateHijri: formatDateForStorage(updatedValues.injury_date_hijri),
-      InjuryDateGregorian: formatDateForStorage(
-        updatedValues.injury_date_gregorian
-      ),
-      RequestDateHijri: formatDateForStorage(updatedValues.request_date_hijri),
-      RequestDateGregorian: formatDateForStorage(
-        updatedValues.request_date_gregorian
-      ),
-      DateHijri: formatDateForStorage(updatedValues.date_hijri),
-      DateGregorian: formatDateForStorage(updatedValues.date_gregorian),
-      FromDateHijri: formatDateForStorage(updatedValues.from_date_hijri),
-      FromDateGregorian: formatDateForStorage(
-        updatedValues.from_date_gregorian
-      ),
+      acknowledged: updatedValues.acknowledged || editTopic?.acknowledged,
     };
 
-    // ==================== BPSR-1 FIX ====================
-    if (subCategoryValue === "BPSR-1") {
-      updatedTopic.CommissionType =
-        updatedValues.commissionType?.value ??
-        editTopic.CommissionType ??
-        "";
-      updatedTopic.AccordingToAgreement =
-        updatedValues.accordingToAgreement?.value ??
-        editTopic.AccordingToAgreement ??
-        "";
-      updatedTopic.Amount = updatedValues.amount ?? editTopic.amount ?? "";
-      updatedTopic.AmountRatio =
-        updatedValues.amountRatio ?? editTopic.amountRatio ?? "";
-      updatedTopic.pyTempDate =
-        updatedValues.from_date_hijri ?? editTopic.pyTempDate ?? "";
-      updatedTopic.FromDate_New =
-        updatedValues.from_date_gregorian ??
-        editTopic.FromDate_New ??
-        "";
-      updatedTopic.Date_New =
-        updatedValues.to_date_hijri ?? editTopic.Date_New ?? "";
-      updatedTopic.ToDate_New =
-        updatedValues.to_date_gregorian ??
-        editTopic.ToDate_New ??
-        "";
-      updatedTopic.OtherCommission = isOtherCommission(
-        updatedValues.commissionType
-      )
-        ? updatedValues.otherCommission ??
-        editTopic.otherCommission ??
-        ""
-        : "";
-    }
-    // ====================================================
+    // ==================== SUBTOPIC-SPECIFIC HANDLERS ====================
 
-    setCaseTopics((prev) =>
-      prev.map((topic, idx) => (idx === editTopicIndex ? updatedTopic : topic))
-    );
+    // WR-1: Worker Rights - Salary Payment
+    if (subCategoryValue === "WR-1") {
+      const {
+        WR1_forAllowance,
+        WR1_otherAllowance,
+        WR1_wageAmount,
+        WR1_fromDateHijri,
+        WR1_fromDateGregorian,
+        WR1_toDateHijri,
+        WR1_toDateGregorian,
+      } = updatedValues;
+
+      console.log("[📝 UPDATE TOPIC] WR-1 Debug - WR1_forAllowance:", WR1_forAllowance);
+      console.log("[📝 UPDATE TOPIC] WR-1 Debug - WR1_otherAllowance:", WR1_otherAllowance);
+
+      Object.assign(updatedTopic, {
+        ForAllowance: WR1_forAllowance?.label ?? "",
+        ForAllowance_Code: WR1_forAllowance?.value ?? "",
+        WR1_forAllowance: WR1_forAllowance ?? null, // Store the full object for API payload generation
+        OtherAllowance: WR1_otherAllowance ?? "",
+        WR1_otherAllowance: WR1_otherAllowance ?? "", // Also store in lowercase for consistency
+        Amount: WR1_wageAmount ?? "", // Use new field name
+        pyTempDate: formatDateForStorage(WR1_fromDateHijri),
+        FromDate_New: formatDateForStorage(WR1_fromDateGregorian),
+        Date_New: formatDateForStorage(WR1_toDateHijri),
+        ToDate_New: formatDateForStorage(WR1_toDateGregorian),
+        // Legacy fields for backward compatibility
+        forAllowance: WR1_forAllowance ?? null,
+        otherAllowance: WR1_otherAllowance ?? "",
+        wageAmount: WR1_wageAmount ?? "",
+        from_date_hijri: WR1_fromDateHijri ?? "",
+        from_date_gregorian: WR1_fromDateGregorian ?? "",
+        to_date_hijri: WR1_toDateHijri ?? "",
+        to_date_gregorian: WR1_toDateGregorian ?? "",
+      });
+
+      console.log("[📝 UPDATE TOPIC] WR-1 Debug - Final OtherAllowance:", updatedTopic.OtherAllowance);
+    }
+
+    // WR-2: Worker Rights - End of Service
+    else if (subCategoryValue === "WR-2") {
+      const {
+        WR2_wageAmount,
+        WR2_fromDateHijri,
+        WR2_fromDateGregorian,
+        WR2_toDateHijri,
+        WR2_toDateGregorian,
+      } = updatedValues;
+
+      Object.assign(updatedTopic, {
+        Amount: WR2_wageAmount ?? "",
+        WR2_wageAmount: WR2_wageAmount ?? "", // Store in new field name
+        pyTempDate: formatDateForStorage(WR2_fromDateHijri),
+        FromDate_New: formatDateForStorage(WR2_fromDateGregorian),
+        Date_New: formatDateForStorage(WR2_toDateHijri),
+        ToDate_New: formatDateForStorage(WR2_toDateGregorian),
+        // Legacy fields for backward compatibility
+        wageAmount: WR2_wageAmount ?? "",
+        from_date_hijri: WR2_fromDateHijri ?? "",
+        from_date_gregorian: WR2_fromDateGregorian ?? "",
+        to_date_hijri: WR2_toDateHijri ?? "",
+        to_date_gregorian: WR2_toDateGregorian ?? "",
+      });
+    }
+
+    // BPSR-1: Bonus and Profit Share Request
+    else if (subCategoryValue === "BPSR-1") {
+      const {
+        commissionType,
+        accordingToAgreement,
+        bonusProfitShareAmount,
+        amountRatio,
+        from_date_hijri,
+        from_date_gregorian,
+        to_date_hijri,
+        to_date_gregorian,
+        otherCommission,
+      } = updatedValues;
+
+      Object.assign(updatedTopic, {
+        CommissionType: commissionType?.label ?? "",
+        CommissionType_Code: commissionType?.value ?? "",
+        commissionType: commissionType ?? null, // Store the full object for API payload generation
+        AccordingToAgreement: accordingToAgreement?.label ?? "",
+        AccordingToAgreement_Code: accordingToAgreement?.value ?? "",
+        accordingToAgreement: accordingToAgreement ?? null, // Store the full object for API payload generation
+        Amount: bonusProfitShareAmount ?? "",
+        bonusProfitShareAmount: bonusProfitShareAmount ?? "", // Also store in lowercase for consistency
+        AmountRatio: amountRatio ?? "",
+        amountRatio: amountRatio ?? "", // Also store in lowercase for consistency
+        pyTempDate: formatDateForStorage(from_date_hijri),
+        FromDate_New: formatDateForStorage(from_date_gregorian),
+        Date_New: formatDateForStorage(to_date_hijri),
+        ToDate_New: formatDateForStorage(to_date_gregorian),
+        OtherCommission: otherCommission ?? "",
+        otherCommission: otherCommission ?? "", // Also store in lowercase for consistency
+      });
+    }
+
+    // MIR-1: Medical Insurance Request
+    else if (subCategoryValue === "MIR-1") {
+      const {
+        MIR1_typeOfRequest,
+        MIR1_requiredDegreeOfInsurance,
+        MIR1_theReason,
+        MIR1_currentInsuranceLevel,
+      } = updatedValues;
+
+      Object.assign(updatedTopic, {
+        RequestType: MIR1_typeOfRequest?.label ?? "",
+        RequestType_Code: MIR1_typeOfRequest?.value ?? "",
+        RequiredDegreeInsurance: MIR1_requiredDegreeOfInsurance ?? "",
+        Reason: MIR1_theReason ?? "",
+        CurrentInsuranceLevel: MIR1_currentInsuranceLevel ?? "",
+        // Legacy fields for backward compatibility
+        typeOfRequest: MIR1_typeOfRequest,
+        requiredDegreeOfInsurance: MIR1_requiredDegreeOfInsurance ?? "",
+        theReason: MIR1_theReason ?? "",
+        currentInsuranceLevel: MIR1_currentInsuranceLevel ?? "",
+      });
+    }
+
+    // CMR-1: Compensation Request - Amounts Paid For
+    else if (subCategoryValue === "CMR-1") {
+      const {
+        amountsPaidFor,
+        theAmountRequired,
+      } = updatedValues;
+
+      Object.assign(updatedTopic, {
+        AmountsPaidFor: amountsPaidFor?.label ?? "",
+        AmountsPaidFor_Code: amountsPaidFor?.value ?? "",
+        AmountRequired: theAmountRequired ?? "",
+      });
+    }
+
+    // CMR-3: Compensation Request - Work Injury
+    else if (subCategoryValue === "CMR-3") {
+      const {
+        compensationAmount,
+        injury_date_hijri,
+        injury_date_gregorian,
+        injuryType,
+      } = updatedValues;
+
+      Object.assign(updatedTopic, {
+        Amount: compensationAmount ?? "",
+        InjuryDateHijri: formatDateForStorage(injury_date_hijri),
+        InjuryDateGregorian: formatDateForStorage(injury_date_gregorian),
+        TypeOfWorkInjury: injuryType ?? "",
+      });
+    }
+
+    // CMR-4: Compensation Request - General
+    else if (subCategoryValue === "CMR-4") {
+      const {
+        noticeCompensationAmount,
+      } = updatedValues;
+
+      Object.assign(updatedTopic, {
+        Amount: noticeCompensationAmount ?? "",
+      });
+    }
+
+    // CMR-5: Compensation Request - Holiday
+    else if (subCategoryValue === "CMR-5") {
+      const {
+        kindOfHoliday,
+        totalAmount,
+        workingHours,
+        additionalDetails,
+      } = updatedValues;
+
+      Object.assign(updatedTopic, {
+        KindOfHoliday: kindOfHoliday?.label ?? "",
+        KindOfHoliday_Code: kindOfHoliday?.value ?? "",
+        TotalAmount: totalAmount ?? "",
+        WorkingHours: workingHours ?? "",
+        AdditionalDetails: additionalDetails ?? "",
+      });
+    }
+
+    // CMR-6: Compensation Request - Pay Increase
+    else if (subCategoryValue === "CMR-6") {
+      const {
+        newPayAmount,
+        payIncreaseType,
+        from_date_hijri,
+        from_date_gregorian,
+        to_date_hijri,
+        to_date_gregorian,
+        wageDifference,
+      } = updatedValues;
+
+      Object.assign(updatedTopic, {
+        NewPayAmount: newPayAmount ?? "",
+        PayIncreaseType: payIncreaseType?.label ?? "",
+        PayIncreaseType_Code: payIncreaseType?.value ?? "",
+        payIncreaseType: payIncreaseType ?? null, // Store the full object for API payload generation
+        from_date_hijri: formatDateForStorage(from_date_hijri),
+        from_date_gregorian: formatDateForStorage(from_date_gregorian),
+        to_date_hijri: formatDateForStorage(to_date_hijri),
+        to_date_gregorian: formatDateForStorage(to_date_gregorian),
+        WageDifference: wageDifference ?? "",
+        wageDifference: wageDifference ?? "", // Also store in lowercase for consistency
+      });
+    }
+
+    // CMR-7: Compensation Request - Leave
+    else if (subCategoryValue === "CMR-7") {
+      const {
+        from_date_hijri,
+        from_date_gregorian,
+        to_date_hijri,
+        to_date_gregorian,
+        durationOfLeaveDue,
+        payDue,
+      } = updatedValues;
+
+      Object.assign(updatedTopic, {
+        from_date_hijri: formatDateForStorage(from_date_hijri),
+        from_date_gregorian: formatDateForStorage(from_date_gregorian),
+        to_date_hijri: formatDateForStorage(to_date_hijri),
+        to_date_gregorian: formatDateForStorage(to_date_gregorian),
+        DurationOfLeaveDue: durationOfLeaveDue ?? "",
+        PayDue: payDue ?? "",
+        durationOfLeaveDue: durationOfLeaveDue ?? "", // Also store in lowercase for consistency
+        payDue: payDue ?? "", // Also store in lowercase for consistency
+      });
+    }
+
+    // CMR-8: Compensation Request - Wages
+    else if (subCategoryValue === "CMR-8") {
+      const {
+        wagesAmount,
+        from_date_hijri,
+        from_date_gregorian,
+        to_date_hijri,
+        to_date_gregorian,
+      } = updatedValues;
+
+      Object.assign(updatedTopic, {
+        WagesAmount: wagesAmount ?? "",
+        wagesAmount: wagesAmount ?? "", // Also store in lowercase for consistency
+        from_date_hijri: formatDateForStorage(from_date_hijri),
+        from_date_gregorian: formatDateForStorage(from_date_gregorian),
+        to_date_hijri: formatDateForStorage(to_date_hijri),
+        to_date_gregorian: formatDateForStorage(to_date_gregorian),
+      });
+    }
+
+    // BR-1: Bonus Request
+    else if (subCategoryValue === "BR-1") {
+      const {
+        BR1_accordingToAgreement,
+        BR1_bonusAmount,
+        BR1_dateHijri,
+        BR1_dateGregorian,
+      } = updatedValues;
+
+      Object.assign(updatedTopic, {
+        AccordingToAgreement: BR1_accordingToAgreement?.label ?? "",
+        AccordingToAgreement_Code: BR1_accordingToAgreement?.value ?? "",
+        Premium: BR1_bonusAmount ?? "",
+        BR1_bonusAmount: BR1_bonusAmount ?? "", // Store in new field name
+        pyTempDate: formatDateForStorage(BR1_dateHijri),
+        Date_New: formatDateForStorage(BR1_dateGregorian),
+        // Legacy fields for backward compatibility
+        accordingToAgreement: BR1_accordingToAgreement ?? null,
+        bonusAmount: BR1_bonusAmount ?? "",
+        date_hijri: BR1_dateHijri ?? "",
+        date_gregorian: BR1_dateGregorian ?? "",
+      });
+    }
+
+    // EDO-1: Establishment Decision - Location
+    else if (subCategoryValue === "EDO-1") {
+      const {
+        EDO1_fromLocation,
+        EDO1_toLocation,
+        EDO1_managerialDecisionDateHijri,
+        EDO1_managerialDecisionDateGregorian,
+        EDO1_managerialDecisionNumber,
+      } = updatedValues;
+
+      Object.assign(updatedTopic, {
+        FromLocation: EDO1_fromLocation?.label ?? "",
+        FromLocation_Code: EDO1_fromLocation?.value ?? "",
+        ToLocation: EDO1_toLocation?.label ?? "",
+        ToLocation_Code: EDO1_toLocation?.value ?? "",
+        Date_New: formatDateForStorage(EDO1_managerialDecisionDateHijri),
+        ManDecsDate: formatDateForStorage(EDO1_managerialDecisionDateGregorian),
+        ManagerialDecisionNumber: EDO1_managerialDecisionNumber ?? "",
+        // Legacy fields for backward compatibility
+        fromLocation: EDO1_fromLocation ?? null,
+        toLocation: EDO1_toLocation ?? null,
+        managerial_decision_date_hijri: EDO1_managerialDecisionDateHijri ?? "",
+        managerial_decision_date_gregorian: EDO1_managerialDecisionDateGregorian ?? "",
+        managerialDecisionNumber: EDO1_managerialDecisionNumber ?? "",
+      });
+    }
+
+    // EDO-2: Establishment Decision - Job
+    else if (subCategoryValue === "EDO-2") {
+      const {
+        EDO2_fromJob,
+        EDO2_toJob,
+        EDO2_managerialDecisionDateHijri,
+        EDO2_managerialDecisionDateGregorian,
+        EDO2_managerialDecisionNumber,
+      } = updatedValues;
+
+      Object.assign(updatedTopic, {
+        FromJob: EDO2_fromJob ?? "",
+        ToJob: EDO2_toJob ?? "",
+        Date_New: formatDateForStorage(EDO2_managerialDecisionDateHijri),
+        ManDecsDate: formatDateForStorage(EDO2_managerialDecisionDateGregorian),
+        ManagerialDecisionNumber: EDO2_managerialDecisionNumber ?? "",
+        // Legacy fields for backward compatibility
+        fromJob: EDO2_fromJob ?? "",
+        toJob: EDO2_toJob ?? "",
+        managerial_decision_date_hijri: EDO2_managerialDecisionDateHijri ?? "",
+        managerial_decision_date_gregorian: EDO2_managerialDecisionDateGregorian ?? "",
+        managerialDecisionNumber: EDO2_managerialDecisionNumber ?? "",
+      });
+    }
+
+    // EDO-3: Establishment Decision - Reduction
+    else if (subCategoryValue === "EDO-3") {
+      const {
+        EDO3_amountOfReduction,
+        EDO3_managerialDecisionDateHijri,
+        EDO3_managerialDecisionDateGregorian,
+        EDO3_managerialDecisionNumber,
+      } = updatedValues;
+
+      Object.assign(updatedTopic, {
+        AmountOfReduction: EDO3_amountOfReduction ?? "",
+        pyTempDate: formatDateForStorage(EDO3_managerialDecisionDateHijri),
+        ManagerialDecisionDate_New: formatDateForStorage(EDO3_managerialDecisionDateGregorian),
+        ManagerialDecisionNumber: EDO3_managerialDecisionNumber ?? "",
+        // Legacy fields for backward compatibility
+        amountOfReduction: EDO3_amountOfReduction ?? "",
+        managerial_decision_date_hijri: EDO3_managerialDecisionDateHijri ?? "",
+        managerial_decision_date_gregorian: EDO3_managerialDecisionDateGregorian ?? "",
+        managerialDecisionNumber: EDO3_managerialDecisionNumber ?? "",
+      });
+    }
+
+    // EDO-4: Establishment Decision - Penalty
+    else if (subCategoryValue === "EDO-4") {
+      const {
+        EDO4_typesOfPenalties,
+        EDO4_managerialDecisionDateHijri,
+        EDO4_managerialDecisionDateGregorian,
+        EDO4_managerialDecisionNumber,
+      } = updatedValues;
+
+      Object.assign(updatedTopic, {
+        PenalityType: EDO4_typesOfPenalties?.value ?? "",
+        PenalityTypeLabel: EDO4_typesOfPenalties?.label ?? "",
+        Date_New: formatDateForStorage(EDO4_managerialDecisionDateHijri),
+        ManDecsDate: formatDateForStorage(EDO4_managerialDecisionDateGregorian),
+        ManagerialDecisionNumber: EDO4_managerialDecisionNumber ?? "",
+        // Legacy fields for backward compatibility
+        typesOfPenalties: EDO4_typesOfPenalties ?? null,
+        managerial_decision_date_hijri: EDO4_managerialDecisionDateHijri ?? "",
+        managerial_decision_date_gregorian: EDO4_managerialDecisionDateGregorian ?? "",
+        managerialDecisionNumber: EDO4_managerialDecisionNumber ?? "",
+      });
+    }
+
+    // HIR-1: Housing Insurance Request
+    else if (subCategoryValue === "HIR-1") {
+      const {
+        HIR1_IsBylawsIncludeAddingAccomodation,
+        HIR1_IsContractIncludeAddingAccommodation,
+        HIR1_HousingSpecificationsInContract,
+        HIR1_HousingSpecificationsInBylaws,
+        HIR1_HousingSpecifications,
+      } = updatedValues;
+
+      // Ensure both accommodation flags have values
+      const bylawsFlag = HIR1_IsBylawsIncludeAddingAccomodation || "";
+      const contractFlag = HIR1_IsContractIncludeAddingAccommodation || "";
+      
+      // If one is "Yes" and the other is empty, set the empty one to "No"
+      const finalBylawsFlag = bylawsFlag === "Yes" ? "Yes" : (contractFlag === "Yes" ? "No" : "");
+      const finalContractFlag = contractFlag === "Yes" ? "Yes" : (bylawsFlag === "Yes" ? "No" : "");
+
+      Object.assign(updatedTopic, {
+        IsBylawsIncludeAddingAccomodation: finalBylawsFlag,
+        IsContractIncludeAddingAccommodation: finalContractFlag,
+        HousingSpecificationsInContract: HIR1_HousingSpecificationsInContract ?? "",
+        HousingSpecificationsInBylaws: HIR1_HousingSpecificationsInBylaws ?? "",
+        HousingSpecifications: HIR1_HousingSpecifications ?? "",
+        // Legacy fields for backward compatibility
+        doesBylawsIncludeAddingAccommodations: finalBylawsFlag === "Yes",
+        doesContractIncludeAddingAccommodations: finalContractFlag === "Yes",
+        housingSpecificationInByLaws: HIR1_HousingSpecificationsInBylaws ?? "",
+        housingSpecificationsInContract: HIR1_HousingSpecificationsInContract ?? "",
+        actualHousingSpecifications: HIR1_HousingSpecifications ?? "",
+      });
+    }
+
+    // JAR-2: Job and Assignment Request - Title
+    else if (subCategoryValue === "JAR-2") {
+      const {
+        JAR2_currentJobTitle,
+        JAR2_requiredJobTitle,
+      } = updatedValues;
+
+      Object.assign(updatedTopic, {
+        CurrentJobTitle: JAR2_currentJobTitle ?? "",
+        RequiredJobTitle: JAR2_requiredJobTitle ?? "",
+        // Legacy fields for backward compatibility
+        currentJobTitle: JAR2_currentJobTitle ?? "",
+        requiredJobTitle: JAR2_requiredJobTitle ?? "",
+      });
+    }
+
+    // JAR-3: Job and Assignment Request - Promotion
+    else if (subCategoryValue === "JAR-3") {
+      const {
+        JAR3_promotionMechanism,
+        JAR3_additionalUpgrade,
+      } = updatedValues;
+
+      Object.assign(updatedTopic, {
+        PromotionMechanism: JAR3_promotionMechanism ?? "",
+        AdditionalUpgrade: JAR3_additionalUpgrade ?? "",
+        // Legacy fields for backward compatibility
+        promotionMechanism: JAR3_promotionMechanism ?? "",
+        additionalUpgrade: JAR3_additionalUpgrade ?? "",
+      });
+    }
+
+    // JAR-4: Job and Assignment Request - Position
+    else if (subCategoryValue === "JAR-4") {
+      const {
+        JAR4_CurrentPosition,
+        JAR4_WantedJob,
+      } = updatedValues;
+
+      Object.assign(updatedTopic, {
+        CurrentPosition: JAR4_CurrentPosition ?? "",
+        WantedJob: JAR4_WantedJob ?? "",
+        // Legacy fields for backward compatibility
+        currentPosition: JAR4_CurrentPosition ?? "",
+        theWantedJob: JAR4_WantedJob ?? "",
+      });
+    }
+
+    // LRESR-1: Labor Relations and Employment Service Request
+    else if (subCategoryValue === "LRESR-1") {
+      const {
+        LRESR1_Amount,
+      } = updatedValues;
+
+      Object.assign(updatedTopic, {
+        Amount: LRESR1_Amount ?? "",
+        // Legacy fields for backward compatibility
+        amount: LRESR1_Amount ?? "",
+      });
+    }
+
+    // TTR-1: Travel and Transportation Request
+    else if (subCategoryValue === "TTR-1") {
+      const {
+        TTR1_travelingWay,
+      } = updatedValues;
+
+      Object.assign(updatedTopic, {
+        TravelingWay: TTR1_travelingWay?.label ?? "",
+        TravelingWay_Code: TTR1_travelingWay?.value ?? "",
+        // Legacy fields for backward compatibility
+        travelingWay: TTR1_travelingWay ?? null,
+      });
+    }
+
+    // RFR-1: Reward and Financial Request
+    else if (subCategoryValue === "RFR-1") {
+      const {
+        RFR1_Amount,
+        RFR1_Consideration,
+        RFR1_dateHijri,
+        RFR1_dateGregorian,
+      } = updatedValues;
+
+      Object.assign(updatedTopic, {
+        Amount: RFR1_Amount ?? "",
+        Consideration: RFR1_Consideration ?? "",
+        DateHijri: formatDateForStorage(RFR1_dateHijri),
+        DateGregorian: formatDateForStorage(RFR1_dateGregorian),
+        // Legacy fields for backward compatibility
+        rewardRequestAmount: RFR1_Amount ?? "",
+        consideration: RFR1_Consideration ?? "",
+        date_hijri: RFR1_dateHijri ?? "",
+        date_gregorian: RFR1_dateGregorian ?? "",
+      });
+    }
+
+    // RR-1: Reward Request
+    else if (subCategoryValue === "RR-1") {
+      const {
+        RR1_Amount,
+        RR1_Type,
+      } = updatedValues;
+
+      Object.assign(updatedTopic, {
+        Amount: RR1_Amount ?? "",
+        Type: RR1_Type ?? "",
+        // Legacy fields for backward compatibility
+        rewardAmount: RR1_Amount ?? "",
+        rewardType: RR1_Type ?? "",
+      });
+    }
+
+    // LCUT-1: Labor Contract and Unemployment Termination
+    else if (subCategoryValue === "LCUT-1") {
+      const {
+        LCUT1_amountOfCompensation,
+      } = updatedValues;
+
+      Object.assign(updatedTopic, {
+        AmountOfCompensation: LCUT1_amountOfCompensation ?? "",
+        // Legacy fields for backward compatibility
+        amountOfCompensation: LCUT1_amountOfCompensation ?? "",
+      });
+    }
+
+
+
+    // DR-1: Document Request (No specific fields)
+    else if (subCategoryValue === "DR-1") {
+      // DR-1 has no specific fields, just acknowledgment
+    }
+
+    // CR-1: Custody Request
+    else if (subCategoryValue === "CR-1") {
+      const {
+        typeOfCustody,
+        compensationAmount,
+      } = updatedValues;
+
+      Object.assign(updatedTopic, {
+        TypeOfCustody: typeOfCustody?.label ?? "",
+        TypeOfCustody_Code: typeOfCustody?.value ?? "",
+        Amount: compensationAmount ?? "", // Changed from "amount"
+      });
+    }
+
+    // LCUTE-1: Labor Contract and Unemployment Termination - Establishment
+    else if (subCategoryValue === "LCUTE-1") {
+      const {
+        amountOfCompensation,
+      } = updatedValues;
+
+      Object.assign(updatedTopic, {
+        AmountOfCompensation: amountOfCompensation ?? "",
+      });
+    }
+
+    // DPVR-1: Damages and Property Value Request
+    else if (subCategoryValue === "DPVR-1") {
+      const {
+        damagedValue,
+        damagedType,
+        amountOfCompensation,
+      } = updatedValues;
+
+      Object.assign(updatedTopic, {
+        DamagedValue: damagedValue ?? "",
+        DamagedType: damagedType ?? "",
+        AmountOfCompensation: amountOfCompensation ?? "",
+      });
+    }
+
+    // LRESR-1: End of Service Reward
+    else if (subCategoryValue === "LRESR-1") {
+      const {
+        LRESR1_Amount,
+      } = updatedValues;
+
+      Object.assign(updatedTopic, {
+        Amount: LRESR1_Amount ?? "",
+        // Legacy fields for backward compatibility
+        endOfServiceRewardAmount: LRESR1_Amount ?? "",
+      });
+    }
+
+    // AWRW-1: Additional Worker Rights and Wages
+    else if (subCategoryValue === "AWRW-1") {
+      const {
+        amount,
+        from_date_hijri,
+        from_date_gregorian,
+        to_date_hijri,
+        to_date_gregorian,
+      } = updatedValues;
+
+      Object.assign(updatedTopic, {
+        Amount: amount ?? "",
+        FromDateHijri: formatDateForStorage(from_date_hijri),
+        FromDateGregorian: formatDateForStorage(from_date_gregorian),
+        ToDateHijri: formatDateForStorage(to_date_hijri),
+        ToDateGregorian: formatDateForStorage(to_date_gregorian),
+      });
+    }
+
+    // AWRW-2: Additional Worker Rights and Wages
+    else if (subCategoryValue === "AWRW-2") {
+      const {
+        amount,
+        from_date_hijri,
+        from_date_gregorian,
+        to_date_hijri,
+        to_date_gregorian,
+      } = updatedValues;
+
+      Object.assign(updatedTopic, {
+        Amount: amount ?? "",
+        FromDateHijri: formatDateForStorage(from_date_hijri),
+        FromDateGregorian: formatDateForStorage(from_date_gregorian),
+        ToDateHijri: formatDateForStorage(to_date_hijri),
+        ToDateGregorian: formatDateForStorage(to_date_gregorian),
+      });
+    }
+
+    // RLRAHI-1: Regional Labor Relations and Additional Housing Information
+    else if (subCategoryValue === "RLRAHI-1") {
+      const {
+        fromLocation,
+        toLocation,
+        managerial_decision_date_hijri,
+        managerial_decision_date_gregorian,
+        managerialDecisionNumber,
+        additionalDetails,
+      } = updatedValues;
+
+      Object.assign(updatedTopic, {
+        FromLocation: fromLocation?.label ?? "",
+        FromLocation_Code: fromLocation?.value ?? "",
+        ToLocation: toLocation?.label ?? "",
+        ToLocation_Code: toLocation?.value ?? "",
+        ManagerialDecisionDateHijri: formatDateForStorage(managerial_decision_date_hijri),
+        ManagerialDecisionDateGregorian: formatDateForStorage(managerial_decision_date_gregorian),
+        ManagerialDecisionNumber: managerialDecisionNumber ?? "",
+        AdditionalDetails: additionalDetails ?? "",
+      });
+    }
+
+    // RUF-1: Refund Request (Establishment)
+    else if (subCategoryValue === "RUF-1") {
+      const {
+        RefundType,
+        refundAmount,
+      } = updatedValues;
+
+      console.log("[📝 UPDATE TOPIC] RUF-1 Debug - RefundType:", RefundType);
+      console.log("[📝 UPDATE TOPIC] RUF-1 Debug - refundAmount:", refundAmount);
+
+      Object.assign(updatedTopic, {
+        RefundType: RefundType ?? "",
+        Amount: refundAmount ?? "",
+      });
+    }
+
+    // Default case for any unhandled subtopics
+    else {
+      console.warn(`[⚠️ UPDATE TOPIC] No specific handler for subtopic: ${subCategoryValue}`);
+      // Fallback to generic mapping for unhandled subtopics
+      Object.assign(updatedTopic, {
+        ...updatedValues,
+        // Add any common fields that should be mapped for all subtopics
+      });
+    }
+
+    // ====================================================
+    console.log("[📝 UPDATE TOPIC] Mapped payload to save:", updatedTopic);
+    console.log("[📝 UPDATE TOPIC] otherAllowance in updatedTopic:", updatedTopic.otherAllowance);
+    console.log("[📝 UPDATE TOPIC] forAllowance in updatedTopic:", updatedTopic.forAllowance);
+
+    setCaseTopics((prev) => {
+      console.log("[📝 UPDATE TOPIC] Previous caseTopics before update:", prev);
+      console.log("[📝 UPDATE TOPIC] Updating topic at index:", editTopicIndex);
+      
+      const newTopics = prev.map((topic, idx) => {
+        if (idx === editTopicIndex) {
+          console.log(`[📝 UPDATE TOPIC] Updating topic ${idx} (BPSR-1):`, topic, "->", updatedTopic);
+          return updatedTopic;
+        } else {
+          console.log(`[📝 UPDATE TOPIC] Keeping topic ${idx} unchanged:`, topic);
+          return topic;
+        }
+      });
+      
+      console.log("[📝 UPDATE TOPIC] Updated caseTopics:", newTopics);
+      
+      // Update the editTopic with the new values immediately, preserving the index
+      setEditTopic({ ...updatedTopic, index: editTopicIndex });
+      
+      return newTopics;
+    });
 
     toast.success(t("topic_updated_successfully") || "Topic updated successfully");
+    console.log("[✅ UPDATE TOPIC] Updated editTopic:", updatedTopic);
 
     reset();
     setDate({ hijri: null, gregorian: null, dateObject: null });
     setShowLegalSection(false);
     setShowTopicData(false);
-    setEditTopic(null);
     setEditTopicIndex(null);
     close();
   };
@@ -1420,6 +2189,8 @@ if (topic.SubTopicID === "BPSR-1" || topic.subCategory?.value === "BPSR-1") {
     setShowTopicData(false);
     setEditTopic(null);
     close();
+    // Reset prefill ref when modal closes
+    prefillDoneRef.current = null;
   };
 
   const handleSave = () => {
@@ -1435,39 +2206,83 @@ if (topic.SubTopicID === "BPSR-1" || topic.subCategory?.value === "BPSR-1") {
   );
 
   const handleSaveApi = async (): Promise<ApiResponse> => {
+    console.log("[📡 SAVE API] Function called");
+    console.log("[📡 SAVE API] Current state:", { lastAction, isSubmitting, isUpdatingRef: isUpdatingRef.current });
+    
+    // Prevent multiple calls to UpdateCaseTopics
+    if (lastAction === "Save" || isSubmitting || isUpdatingRef.current) {
+      console.log("[📡 SAVE API] Preventing multiple calls - lastAction:", lastAction, "isSubmitting:", isSubmitting, "isUpdating:", isUpdatingRef.current);
+      // Return a response that indicates operation is in progress - don't show success toast
+      return {
+        ServiceStatus: "InProgress",
+        SuccessCode: "IN_PROGRESS",
+        ErrorCodeList: []
+      };
+    }
+
+    console.log("[📡 SAVE API] Last saved flag before:", lastSaved);
+    setLastAction("Save");
+    isUpdatingRef.current = true;
+    const payload = getPayloadBySubTopicID(caseTopics, subCategory, "Save", caseId);
+    console.log("[📡 SAVE API] Payload to send:", payload);
+
     try {
-      setLastAction("Save");
-      const payload = getPayloadBySubTopicID(
-        caseTopics,
-        subCategory,
-        "Save",
-        caseId
-      );
-      // Use the injected API if provided, otherwise fallback
       const response = onSaveApi
         ? await onSaveApi(payload)
         : await updateHearingTopics(payload).unwrap();
-      if (
-        response?.SuccessCode === "200" &&
-        (!response?.ErrorCodeList || response?.ErrorCodeList?.length === 0)
-      ) {
-        toast.success(t("save_success"));
+
+      console.log("[📡 SAVE API] Response received:", response);
+      console.log("[📡 SAVE API] SuccessCode:", response?.SuccessCode);
+      console.log("[📡 SAVE API] ServiceStatus:", response?.ServiceStatus);
+      console.log("[📡 SAVE API] ErrorCodeList:", response?.ErrorCodeList);
+      
+      const isSuccessCode = response?.SuccessCode === "200";
+      const isSuccessStatus = response?.ServiceStatus === "Success";
+      const hasNoErrors = !response?.ErrorCodeList || response?.ErrorCodeList.length === 0;
+      
+      console.log("[📡 SAVE API] Success conditions:", { isSuccessCode, isSuccessStatus, hasNoErrors });
+      
+      // Check if there are validation errors in the response
+      if (response?.ErrorCodeList && response.ErrorCodeList.length > 0) {
+        console.log("[📡 SAVE API] Validation errors found in API response");
+        setLastAction(undefined);
+        return response;
+      }
+      
+      if ((isSuccessCode || isSuccessStatus) && hasNoErrors) {
+        console.log("[📡 SAVE API] API call successful");
         setLastSaved(true);
+        setLastAction(undefined); // Reset lastAction after successful save
+      } else {
+        console.log("[📡 SAVE API] API call not successful");
+        setLastAction(undefined); // Reset lastAction even on failure
+        isUpdatingRef.current = false;
       }
       return response;
     } catch (error: any) {
+      console.error("[📡 SAVE API] Error during save:", error);
       setLastAction(undefined);
-      const errorMessage = error?.message || t("save_error");
-      toast.error(errorMessage);
+      isUpdatingRef.current = false;
+      // Don't show toast here - let the caller handle the error
       return Promise.reject(error);
+    } finally {
+      isUpdatingRef.current = false;
     }
   };
 
-  const handleNext = async () => {
+
+  const handleNext = async (): Promise<{ success: boolean; error?: any; response?: any }> => {
+    // Prevent multiple calls to UpdateCaseTopics
+    if (lastAction === "Next" || isSubmitting || isUpdatingRef.current) {
+      console.log("[🔍 HANDLE NEXT] Preventing multiple calls - lastAction:", lastAction, "isSubmitting:", isSubmitting, "isUpdating:", isUpdatingRef.current);
+      return { success: false, error: new Error("Operation already in progress") };
+    }
+
     const latestFormValues = getValues();
     setFormData(latestFormValues);
     try {
       setLastAction("Next");
+      isUpdatingRef.current = true;
       const payload = getPayloadBySubTopicID(
         caseTopics,
         subCategory,
@@ -1477,18 +2292,73 @@ if (topic.SubTopicID === "BPSR-1" || topic.subCategory?.value === "BPSR-1") {
 
       const response = await updateHearingTopics(payload).unwrap();
 
-      // Use centralized error handling
-      const isSuccessful = handleResponse(response);
+      console.log("[🔍 HANDLE NEXT] API Response:", response);
+      console.log("[🔍 HANDLE NEXT] Response ServiceStatus:", response?.ServiceStatus);
+      console.log("[🔍 HANDLE NEXT] Response ErrorCodeList:", response?.ErrorCodeList);
 
+      // Check if there are validation errors in the response
+      if (response?.ErrorCodeList && response.ErrorCodeList.length > 0) {
+        console.log("[🔍 HANDLE NEXT] Validation errors found in API response");
+        setLastAction(undefined);
+        isUpdatingRef.current = false;
+        return { 
+          success: false, 
+          error: response.ErrorCodeList[0], 
+          response 
+        };
+      }
+
+      // Check if the response indicates success
+      const hasSuccessCode = response?.SuccessCode === "200";
+      const hasSuccessStatus = response?.ServiceStatus === "Success";
+      const hasNoErrors = !response?.ErrorCodeList || response.ErrorCodeList.length === 0;
+      
+      // Additional check for empty ErrorCodeList array
+      const hasEmptyErrorList = Array.isArray(response?.ErrorCodeList) && response.ErrorCodeList.length === 0;
+
+      console.log("[🔍 HANDLE NEXT] Response analysis:", {
+        hasSuccessCode,
+        hasSuccessStatus,
+        hasNoErrors,
+        hasEmptyErrorList,
+        SuccessCode: response?.SuccessCode,
+        ServiceStatus: response?.ServiceStatus,
+        ErrorCodeList: response?.ErrorCodeList,
+        fullResponse: response
+      });
+
+      // More robust success condition - prioritize ServiceStatus when SuccessCode is not present
+      const isSuccessful = (hasSuccessStatus && hasNoErrors) || (hasSuccessCode && hasNoErrors);
+      
       if (isSuccessful) {
-        // Only navigate if the API call is successful
+        // API call successful - navigate to next step
+        console.log("[🔍 HANDLE NEXT] API call successful, navigating to next step");
+        console.log("[🔍 HANDLE NEXT] Showing success toast");
+        toast.success(t("save_success"));
         updateParams(currentStep + 1, 0);
+        return { success: true, response };
+      } else {
+        console.log("[🔍 HANDLE NEXT] API call was not successful");
+        console.log("[🔍 HANDLE NEXT] Failed conditions:", {
+          hasSuccessCode,
+          hasSuccessStatus,
+          hasNoErrors,
+          hasEmptyErrorList,
+          isSuccessful
+        });
+        // Clear lastAction to allow retry
+        setLastAction(undefined);
+        isUpdatingRef.current = false;
+        return { success: false, response };
       }
       // Errors are automatically handled by the centralized error handler
     } catch (error: any) {
       setLastAction(undefined);
-      const errorMessage = error?.message || t("api_error_generic");
-      toast.error(errorMessage);
+      isUpdatingRef.current = false;
+      console.error("[🔍 HANDLE NEXT] Error during API call:", error);
+      return { success: false, error };
+    } finally {
+      isUpdatingRef.current = false;
     }
   };
 
@@ -1506,15 +2376,130 @@ if (topic.SubTopicID === "BPSR-1" || topic.subCategory?.value === "BPSR-1") {
   const saveTopic = (): number => {
     const newTopic = getValues();
 
-    // التحقق من القيم الفارغة
+    console.log('[🔍 SAVE TOPIC] All form values:', newTopic);
+
+    // التحقق من القيم الفارغة - Improved validation with subtopic-specific logic
+    const subTopicID = newTopic.subCategory?.value;
+    
     for (const [key, value] of Object.entries(newTopic)) {
-      if (
-        value === "" &&
-        key !== "housingSpecificationsInContract" &&
-        key !== "actualHousingSpecifications" &&
-        key !== "housingSpecificationInByLaws" &&
-        key !== "regulatoryText"
-      ) {
+      // Skip validation for optional fields
+      const optionalFields = [
+        "housingSpecificationsInContract",
+        "actualHousingSpecifications", 
+        "housingSpecificationInByLaws",
+        "regulatoryText",
+        "date_hijri",
+        "date_gregorian",
+        "managerial_decision_date_hijri",
+        "managerial_decision_date_gregorian",
+        "topicData", // Form metadata
+        "legalSection", // Form metadata
+        "subCategoryData", // Form metadata
+        "subCategoryOptions", // Form metadata
+        // MIR-1 conditional fields - these are handled by dynamic validation
+        "MIR1_requiredDegreeOfInsurance",
+        "MIR1_theReason", 
+        "MIR1_currentInsuranceLevel",
+        "requiredDegreeOfInsurance",
+        "theReason",
+        "currentInsuranceLevel",
+        // HIR-1 conditional fields - these are handled by dynamic validation
+        "HIR1_HousingSpecificationsInBylaws",
+        "HIR1_HousingSpecificationsInContract",
+        "HIR1_HousingSpecifications",
+        "HIR1_IsBylawsIncludeAddingAccomodation",
+        "HIR1_IsContractIncludeAddingAccommodation"
+      ];
+      
+      // Special handling for WR-1 otherAllowance field
+      if ((key === "otherAllowance" || key === "WR1_otherAllowance") && subTopicID === "WR-1") {
+        const forAllowance = newTopic.WR1_forAllowance || newTopic.forAllowance;
+        const isOther = forAllowance && (
+          ["FA11", "OTHER", "3"].includes(String(forAllowance.value)) ||
+          (forAllowance.label ?? "").toLowerCase().includes("other")
+        );
+        
+        // Only validate otherAllowance if forAllowance is "Other"
+        if (!isOther) {
+          continue; // Skip validation for this field
+        }
+      }
+
+      // Special handling for BPSR-1 otherCommission field
+      if ((key === "otherCommission" || key === "BPSR1_otherCommission") && subTopicID === "BPSR-1") {
+        const commissionType = newTopic.BPSR1_commissionType || newTopic.commissionType;
+        const isOther = commissionType && (
+          ["OTHER", "3"].includes(String(commissionType.value)) ||
+          (commissionType.label ?? "").toLowerCase().includes("other")
+        );
+
+        // Only validate otherCommission if commissionType is "Other"
+        if (!isOther) {
+          continue; // Skip validation for this field
+        }
+      }
+
+      // Special handling for MIR-1 fields
+      if (subTopicID === "MIR-1") {
+        const typeOfRequest = newTopic.typeOfRequest;
+        const requiresAdditionalFields = typeOfRequest && ["REQT1", "REQT2", "REQT3"].includes(String(typeOfRequest.value));
+        const requiresReasonAndCurrentLevel = typeOfRequest && String(typeOfRequest.value) === "REQT3";
+
+        // Skip validation for requiredDegreeOfInsurance if not needed
+        if (key === "requiredDegreeOfInsurance" && !requiresAdditionalFields) {
+          continue;
+        }
+
+        // Skip validation for theReason and currentInsuranceLevel if not needed
+        if ((key === "theReason" || key === "currentInsuranceLevel") && !requiresReasonAndCurrentLevel) {
+          continue;
+        }
+      }
+
+      // Special handling for HIR-1 accommodation source fields
+      if (subTopicID === "HIR-1") {
+        const accommodationSource = newTopic.HIR1_AccommodationSource;
+        
+        // Skip validation for housing specifications fields if they belong to the unselected option
+        if (key === "HIR1_HousingSpecificationsInBylaws" && accommodationSource !== "bylaws") {
+          continue; // Skip validation for bylaws field if contract is selected
+        }
+        
+        if ((key === "HIR1_HousingSpecificationsInContract" || key === "HIR1_HousingSpecifications") && accommodationSource !== "contract") {
+          continue; // Skip validation for contract fields if bylaws is selected
+        }
+        
+        // Skip validation for the accommodation source flags if they belong to the unselected option
+        if (key === "HIR1_IsBylawsIncludeAddingAccomodation" && accommodationSource !== "bylaws") {
+          continue; // Skip validation for bylaws flag if contract is selected
+        }
+        
+        if (key === "HIR1_IsContractIncludeAddingAccommodation" && accommodationSource !== "contract") {
+          continue; // Skip validation for contract flag if bylaws is selected
+        }
+        
+        // For accommodation source flags, only validate if they are empty (not "Yes" or "No")
+        if ((key === "HIR1_IsBylawsIncludeAddingAccomodation" || key === "HIR1_IsContractIncludeAddingAccommodation") && 
+            (value === "Yes" || value === "No")) {
+          continue; // Skip validation if the field has a valid value
+        }
+      }
+
+      // Special handling for topics with required date fields
+      if (["CMR-6", "CMR-7", "CMR-8", "BR-1", "BPSR-1", "RLRAHI-1"].includes(subTopicID)) {
+        const requiredDateFields = ["from_date_hijri", "to_date_hijri", "date_hijri"];
+        if (requiredDateFields.includes(key) && (value === "" || (typeof value === "string" && value.trim().length === 0))) {
+          console.log(`[🔍 SAVE TOPIC] ${subTopicID} validation failed for required date field: ${key} with value: "${value}"`);
+          return 0;
+        }
+      }
+      
+      if ((value === "" || (typeof value === "string" && value.trim().length === 0)) && !optionalFields.includes(key)) {
+        console.log(`[🔍 SAVE TOPIC] Validation failed for field: ${key} with value: "${value}"`);
+        console.log(`[🔍 SAVE TOPIC] SubTopicID: ${subTopicID}`);
+        console.log(`[🔍 SAVE TOPIC] forAllowance:`, newTopic.forAllowance);
+        console.log(`[🔍 SAVE TOPIC] Optional fields:`, optionalFields);
+        console.log(`[🔍 SAVE TOPIC] Is field optional:`, optionalFields.includes(key));
         return 0;
       }
     }
@@ -1526,8 +2511,8 @@ if (topic.SubTopicID === "BPSR-1" || topic.subCategory?.value === "BPSR-1") {
     //     topic.MainTopicID === newTopic.mainCategory.value &&
     //     // استثناء الموضوع الحالي في حالة التعديل
     //     (!editTopic ||
-    //       topic.SubTopicID !== editTopic.subCategory.value ||
-    //       topic.MainTopicID !== editTopic.mainCategory.value)
+    //       topic.SubTopicID !== editTopic?.subCategory.value ||
+    //       topic.MainTopicID !== editTopic?.mainCategory.value)
     // );
 
     // if (isDuplicate) {
@@ -1671,68 +2656,153 @@ if (topic.SubTopicID === "BPSR-1" || topic.subCategory?.value === "BPSR-1") {
           : undefined,
       // ──────────────── EDO SUBTOPICS MAPPING ────────────────
       // EDO-1: Cancellation of the location transfer decision
-      ...(newTopic.SubTopicID === "EDO-1" && {
-        fromLocation: newTopic.FromLocation_Code
+      ...(newTopic.subCategory?.value === "EDO-1" && {
+        // New EDO-1 specific fields
+        EDO1_fromLocation: newTopic.EDO1_fromLocation || newTopic.fromLocation || (newTopic.FromLocation_Code
           ? { value: newTopic.FromLocation_Code, label: newTopic.FromLocation }
-          : null,
-        toLocation: newTopic.ToLocation_Code
+          : null),
+        EDO1_toLocation: newTopic.EDO1_toLocation || newTopic.toLocation || (newTopic.ToLocation_Code
           ? { value: newTopic.ToLocation_Code, label: newTopic.ToLocation }
-          : null,
-        managerial_decision_date_hijri: newTopic.Date_New || "",
-        managerial_decision_date_gregorian: newTopic.ManDecsDate || "",
-        managerialDecisionNumber: newTopic.ManagerialDecisionNumber || "",
+          : null),
+        EDO1_managerialDecisionDateHijri: newTopic.EDO1_managerialDecisionDateHijri || newTopic.managerial_decision_date_hijri || newTopic.Date_New || "",
+        EDO1_managerialDecisionDateGregorian: newTopic.EDO1_managerialDecisionDateGregorian || newTopic.managerial_decision_date_gregorian || newTopic.ManDecsDate || "",
+        EDO1_managerialDecisionNumber: newTopic.EDO1_managerialDecisionNumber || newTopic.managerialDecisionNumber || "",
+        // Legacy fields for backward compatibility
+        fromLocation: newTopic.fromLocation || (newTopic.FromLocation_Code
+          ? { value: newTopic.FromLocation_Code, label: newTopic.FromLocation }
+          : null),
+        toLocation: newTopic.toLocation || (newTopic.ToLocation_Code
+          ? { value: newTopic.ToLocation_Code, label: newTopic.ToLocation }
+          : null),
+        managerial_decision_date_hijri: newTopic.managerial_decision_date_hijri || newTopic.Date_New || "",
+        managerial_decision_date_gregorian: newTopic.managerial_decision_date_gregorian || newTopic.ManDecsDate || "",
+        managerialDecisionNumber: newTopic.managerialDecisionNumber || "",
       }),
       // EDO-2: Cancellation of the job transfer decision
-      ...(newTopic.SubTopicID === "EDO-2" && {
-        fromJob: newTopic.FromJob || "",
-        toJob: newTopic.ToJob || "",
-        managerial_decision_date_hijri: newTopic.Date_New || "",
-        managerial_decision_date_gregorian: newTopic.ManDecsDate || "",
-        managerialDecisionNumber: newTopic.ManagerialDecisionNumber || "",
+      ...(newTopic.subCategory?.value === "EDO-2" && {
+        // New EDO-2 specific fields
+        EDO2_fromJob: newTopic.EDO2_fromJob || newTopic.fromJob || newTopic.FromJob || "",
+        EDO2_toJob: newTopic.EDO2_toJob || newTopic.toJob || newTopic.ToJob || "",
+        EDO2_managerialDecisionDateHijri: newTopic.EDO2_managerialDecisionDateHijri || newTopic.managerial_decision_date_hijri || newTopic.Date_New || "",
+        EDO2_managerialDecisionDateGregorian: newTopic.EDO2_managerialDecisionDateGregorian || newTopic.managerial_decision_date_gregorian || newTopic.ManDecsDate || "",
+        EDO2_managerialDecisionNumber: newTopic.EDO2_managerialDecisionNumber || newTopic.managerialDecisionNumber || "",
+        // Legacy fields for backward compatibility
+        fromJob: newTopic.fromJob || newTopic.FromJob || "",
+        toJob: newTopic.toJob || newTopic.ToJob || "",
+        managerial_decision_date_hijri: newTopic.managerial_decision_date_hijri || newTopic.Date_New || "",
+        managerial_decision_date_gregorian: newTopic.managerial_decision_date_gregorian || newTopic.ManDecsDate || "",
+        managerialDecisionNumber: newTopic.managerialDecisionNumber || "",
       }),
       // EDO-3: Cancellation of the wage reduction decision
-      ...(newTopic.SubTopicID === "EDO-3" && {
-        amountOfReduction: newTopic.AmountOfReduction || "",
-        managerial_decision_date_hijri: newTopic.pyTempDate || "",
-        managerial_decision_date_gregorian:
-          newTopic.ManagerialDecisionDate_New || "",
-        managerialDecisionNumber: newTopic.ManagerialDecisionNumber || "",
+      ...(newTopic.subCategory?.value === "EDO-3" && {
+        // New EDO-3 specific fields
+        EDO3_amountOfReduction: newTopic.EDO3_amountOfReduction || newTopic.amountOfReduction || newTopic.AmountOfReduction || "",
+        EDO3_managerialDecisionDateHijri: newTopic.EDO3_managerialDecisionDateHijri || newTopic.managerial_decision_date_hijri || newTopic.pyTempDate || "",
+        EDO3_managerialDecisionDateGregorian: newTopic.EDO3_managerialDecisionDateGregorian || newTopic.managerial_decision_date_gregorian || newTopic.ManagerialDecisionDate_New || "",
+        EDO3_managerialDecisionNumber: newTopic.EDO3_managerialDecisionNumber || newTopic.managerialDecisionNumber || "",
+        // Legacy fields for backward compatibility
+        amountOfReduction: newTopic.amountOfReduction || newTopic.AmountOfReduction || "",
+        managerial_decision_date_hijri: newTopic.managerial_decision_date_hijri || newTopic.pyTempDate || "",
+        managerial_decision_date_gregorian: newTopic.managerial_decision_date_gregorian || newTopic.ManagerialDecisionDate_New || "",
+        managerialDecisionNumber: newTopic.managerialDecisionNumber || "",
       }),
       // EDO-4: Cancellation of disciplinary penalty decision
-      ...(newTopic.SubTopicID === "EDO-4" && {
-        typesOfPenalties: newTopic.PenalityType_Code
+      ...(newTopic.subCategory?.value === "EDO-4" && {
+        // New EDO-4 specific fields
+        EDO4_typesOfPenalties: newTopic.EDO4_typesOfPenalties || newTopic.typesOfPenalties || (newTopic.PenalityType_Code
           ? { value: newTopic.PenalityType_Code, label: newTopic.PenalityType }
-          : null,
-        managerial_decision_date_hijri: newTopic.Date_New || "",
-        managerial_decision_date_gregorian: newTopic.ManDecsDate || "",
-        managerialDecisionNumber: newTopic.ManagerialDecisionNumber || "",
+          : null),
+        EDO4_managerialDecisionDateHijri: newTopic.EDO4_managerialDecisionDateHijri || newTopic.managerial_decision_date_hijri || newTopic.Date_New || "",
+        EDO4_managerialDecisionDateGregorian: newTopic.EDO4_managerialDecisionDateGregorian || newTopic.managerial_decision_date_gregorian || newTopic.ManDecsDate || "",
+        EDO4_managerialDecisionNumber: newTopic.EDO4_managerialDecisionNumber || newTopic.managerialDecisionNumber || "",
+        // Legacy fields for backward compatibility
+        typesOfPenalties: newTopic.typesOfPenalties || (newTopic.PenalityType_Code
+          ? { value: newTopic.PenalityType_Code, label: newTopic.PenalityType }
+          : null),
+        managerial_decision_date_hijri: newTopic.managerial_decision_date_hijri || newTopic.Date_New || "",
+        managerial_decision_date_gregorian: newTopic.managerial_decision_date_gregorian || newTopic.ManDecsDate || "",
+        managerialDecisionNumber: newTopic.managerialDecisionNumber || "",
       }),
       // ──────────────── END EDO SUBTOPICS MAPPING ────────────────
-      // Add correct mapping for WR-2 fields
-      ...(newTopic.SubTopicID === "WR-2"
+      // Add correct mapping for WR-1 fields
+      ...(newTopic.subCategory?.value === "WR-1"
         ? {
-          amount: newTopic.OverdueWagesAmount || "",
-          from_date_hijri: newTopic.pyTempDate || "",
-          from_date_gregorian: newTopic.FromDate_New || "",
-          to_date_hijri: newTopic.Date_New || "",
-          to_date_gregorian: newTopic.ToDate_New || "",
+          // New WR-1 specific fields
+          WR1_wageAmount: newTopic.WR1_wageAmount || newTopic.wageAmount || "",
+          WR1_fromDateHijri: newTopic.WR1_fromDateHijri || newTopic.from_date_hijri || "",
+          WR1_fromDateGregorian: newTopic.WR1_fromDateGregorian || newTopic.from_date_gregorian || "",
+          WR1_toDateHijri: newTopic.WR1_toDateHijri || newTopic.to_date_hijri || "",
+          WR1_toDateGregorian: newTopic.WR1_toDateGregorian || newTopic.to_date_gregorian || "",
+          WR1_forAllowance: newTopic.WR1_forAllowance || newTopic.forAllowance || null,
+          WR1_otherAllowance: newTopic.WR1_otherAllowance || newTopic.otherAllowance || "",
+          // Legacy fields for backward compatibility
+          wageAmount: newTopic.wageAmount || "",
+          from_date_hijri: newTopic.from_date_hijri || "",
+          from_date_gregorian: newTopic.from_date_gregorian || "",
+          to_date_hijri: newTopic.to_date_hijri || "",
+          to_date_gregorian: newTopic.to_date_gregorian || "",
+          forAllowance: newTopic.forAllowance || null,
+          otherAllowance: newTopic.otherAllowance || "",
+        }
+        : {}),
+      // Add correct mapping for WR-2 fields
+      ...(newTopic.subCategory?.value === "WR-2"
+        ? {
+          WR2_wageAmount: newTopic.WR2_wageAmount || newTopic.wageAmount || "",
+          WR2_fromDateHijri: newTopic.WR2_fromDateHijri || newTopic.from_date_hijri || "",
+          WR2_fromDateGregorian: newTopic.WR2_fromDateGregorian || newTopic.from_date_gregorian || "",
+          WR2_toDateHijri: newTopic.WR2_toDateHijri || newTopic.to_date_hijri || "",
+          WR2_toDateGregorian: newTopic.WR2_toDateGregorian || newTopic.to_date_gregorian || "",
+          // Legacy fields for backward compatibility
+          wageAmount: newTopic.wageAmount || "",
+          from_date_hijri: newTopic.from_date_hijri || "",
+          from_date_gregorian: newTopic.from_date_gregorian || "",
+          to_date_hijri: newTopic.to_date_hijri || "",
+          to_date_gregorian: newTopic.to_date_gregorian || "",
         }
         : {}),
       // ──────────────── MIR SUBTOPICS MAPPING ────────────────
       ...(newTopic.SubTopicID === "MIR-1"
         ? {
-          requestType: newTopic.RequestType_Code
+          typeOfRequest: newTopic.typeOfRequest
             ? {
-              value: newTopic.RequestType_Code,
-              label: newTopic.RequestType,
+              value: newTopic.typeOfRequest.value,
+              label: newTopic.typeOfRequest.label,
             }
             : null,
-          requiredDegreeOfInsurance: newTopic.RequiredDegreeInsurance || "",
-          theReason: newTopic.Reason || "",
-          currentInsuranceLevel: newTopic.CurrentInsuranceLevel || "",
+          requiredDegreeOfInsurance: newTopic.requiredDegreeOfInsurance || "",
+          theReason: newTopic.theReason || "",
+          currentInsuranceLevel: newTopic.currentInsuranceLevel || "",
         }
         : {}),
       // ──────────────── END MIR SUBTOPICS MAPPING ────────────────
+
+      // ──────────────── HIR SUBTOPICS MAPPING ────────────────
+      ...(newTopic.subCategory?.value === "HIR-1"
+        ? {
+          // Ensure both accommodation flags have values
+          IsBylawsIncludeAddingAccomodation: (() => {
+            const bylawsFlag = newTopic.HIR1_IsBylawsIncludeAddingAccomodation || "";
+            const contractFlag = newTopic.HIR1_IsContractIncludeAddingAccommodation || "";
+            return bylawsFlag === "Yes" ? "Yes" : (contractFlag === "Yes" ? "No" : "");
+          })(),
+          IsContractIncludeAddingAccommodation: (() => {
+            const bylawsFlag = newTopic.HIR1_IsBylawsIncludeAddingAccomodation || "";
+            const contractFlag = newTopic.HIR1_IsContractIncludeAddingAccommodation || "";
+            return contractFlag === "Yes" ? "Yes" : (bylawsFlag === "Yes" ? "No" : "");
+          })(),
+          HousingSpecificationsInContract: newTopic.HIR1_HousingSpecificationsInContract || "",
+          HousingSpecificationsInBylaws: newTopic.HIR1_HousingSpecificationsInBylaws || "",
+          HousingSpecifications: newTopic.HIR1_HousingSpecifications || "",
+          // Legacy fields for backward compatibility
+          doesBylawsIncludeAddingAccommodations: newTopic.HIR1_IsBylawsIncludeAddingAccomodation === "Yes",
+          doesContractIncludeAddingAccommodations: newTopic.HIR1_IsContractIncludeAddingAccommodation === "Yes",
+          housingSpecificationInByLaws: newTopic.HIR1_HousingSpecificationsInBylaws || "",
+          housingSpecificationsInContract: newTopic.HIR1_HousingSpecificationsInContract || "",
+          actualHousingSpecifications: newTopic.HIR1_HousingSpecifications || "",
+        }
+        : {}),
+      // ──────────────── END HIR SUBTOPICS MAPPING ────────────────
 
       // ──────────────── TTR SUBTOPICS MAPPING ────────────────
       ...(newTopic.SubTopicID === "TTR-1"
@@ -1750,6 +2820,16 @@ if (topic.SubTopicID === "BPSR-1" || topic.subCategory?.value === "BPSR-1") {
       // ──────────────── CMR SUBTOPICS MAPPING ────────────────
       // CMR-1: Treatment refunds
       ...(newTopic.SubTopicID === "CMR-1" && {
+        CMR1_amountsPaidFor:
+          newTopic.CMR1_amountsPaidFor && typeof newTopic.CMR1_amountsPaidFor === "object"
+            ? newTopic.CMR1_amountsPaidFor
+            : null,
+        CMR1_theAmountRequired:
+          newTopic.CMR1_theAmountRequired !== undefined &&
+            newTopic.CMR1_theAmountRequired !== null
+            ? String(newTopic.CMR1_theAmountRequired)
+            : "",
+        // Legacy fields for backward compatibility
         amountsPaidFor:
           newTopic.amountsPaidFor && typeof newTopic.amountsPaidFor === "object"
             ? newTopic.amountsPaidFor
@@ -1762,24 +2842,52 @@ if (topic.SubTopicID === "BPSR-1" || topic.subCategory?.value === "BPSR-1") {
       }),
       // CMR-3: Request compensation for work injury
       ...(newTopic.SubTopicID === "CMR-3" && {
+        CMR3_compensationAmount:
+          newTopic.CMR3_compensationAmount !== undefined &&
+            newTopic.CMR3_compensationAmount !== null
+            ? String(newTopic.CMR3_compensationAmount)
+            : "",
+        CMR3_injuryDateHijri: newTopic.CMR3_injuryDateHijri || "",
+        CMR3_injuryDateGregorian: newTopic.CMR3_injuryDateGregorian || "",
+        CMR3_injuryType: newTopic.CMR3_injuryType || "",
+        // Legacy fields for backward compatibility
         compensationAmount:
           newTopic.compensationAmount !== undefined &&
             newTopic.compensationAmount !== null
             ? String(newTopic.compensationAmount)
             : "",
-        injury_date_hijri: newTopic.injury_date_hijri ?? "",
-        injury_date_gregorian: newTopic.injury_date_gregorian ?? "",
-        injuryType: newTopic.injuryType ?? "",
+        injury_date_hijri: newTopic.injury_date_hijri || "",
+        injury_date_gregorian: newTopic.injury_date_gregorian || "",
+        injuryType: newTopic.injuryType || "",
       }),
       // CMR-4: Request compensation for the duration of the notice
-      ...(newTopic.SubTopicID === "CMR-4" && {
+      ...(newTopic.subCategory?.value === "CMR-4" && {
+        CMR4_compensationAmount:
+          newTopic.CMR4_compensationAmount !== undefined && newTopic.CMR4_compensationAmount !== null
+            ? String(newTopic.CMR4_compensationAmount)
+            : "",
+        // Legacy fields for backward compatibility
         amount:
-          newTopic.amount !== undefined && newTopic.amount !== null
-            ? String(newTopic.amount)
+          newTopic.noticeCompensationAmount !== undefined && newTopic.noticeCompensationAmount !== null
+            ? String(newTopic.noticeCompensationAmount)
             : "",
       }),
       // CMR-5: Pay for work during vacation
-      ...(newTopic.SubTopicID === "CMR-5" && {
+      ...(newTopic.subCategory?.value === "CMR-5" && {
+        CMR5_kindOfHoliday:
+          newTopic.CMR5_kindOfHoliday && typeof newTopic.CMR5_kindOfHoliday === "object"
+            ? newTopic.CMR5_kindOfHoliday
+            : null,
+        CMR5_totalAmount:
+          newTopic.CMR5_totalAmount !== undefined && newTopic.CMR5_totalAmount !== null
+            ? String(newTopic.CMR5_totalAmount)
+            : "",
+        CMR5_workingHours:
+          newTopic.CMR5_workingHours !== undefined && newTopic.CMR5_workingHours !== null
+            ? String(newTopic.CMR5_workingHours)
+            : "",
+        CMR5_additionalDetails: newTopic.CMR5_additionalDetails ?? "",
+        // Legacy fields for backward compatibility
         kindOfHoliday:
           newTopic.kindOfHoliday && typeof newTopic.kindOfHoliday === "object"
             ? newTopic.kindOfHoliday
@@ -1795,7 +2903,21 @@ if (topic.SubTopicID === "BPSR-1" || topic.subCategory?.value === "BPSR-1") {
         additionalDetails: newTopic.additionalDetails ?? "",
       }),
       // CMR-6: The Wage Difference/increase
-      ...(newTopic.SubTopicID === "CMR-6" && {
+      ...(newTopic.subCategory?.value === "CMR-6" && {
+        CMR6_newPayAmount:
+          newTopic.CMR6_newPayAmount !== undefined && newTopic.CMR6_newPayAmount !== null
+            ? String(newTopic.CMR6_newPayAmount)
+            : "",
+        CMR6_payIncreaseType:
+          newTopic.CMR6_payIncreaseType && typeof newTopic.CMR6_payIncreaseType === "object"
+            ? newTopic.CMR6_payIncreaseType
+            : null,
+        CMR6_wageDifference: newTopic.CMR6_wageDifference ?? "",
+        CMR6_fromDateHijri: newTopic.CMR6_fromDateHijri ?? "",
+        CMR6_fromDateGregorian: newTopic.CMR6_fromDateGregorian ?? "",
+        CMR6_toDateHijri: newTopic.CMR6_toDateHijri ?? "",
+        CMR6_toDateGregorian: newTopic.CMR6_toDateGregorian ?? "",
+        // Legacy fields for backward compatibility
         from_date_hijri: newTopic.from_date_hijri ?? "",
         from_date_gregorian: newTopic.from_date_gregorian ?? "",
         to_date_hijri: newTopic.to_date_hijri ?? "",
@@ -1823,6 +2945,15 @@ if (topic.SubTopicID === "BPSR-1" || topic.subCategory?.value === "BPSR-1") {
       }),
       // CMR-8: Pay stop time
       ...(newTopic.SubTopicID === "CMR-8" && {
+        CMR8_wagesAmount:
+          newTopic.CMR8_wagesAmount !== undefined && newTopic.CMR8_wagesAmount !== null
+            ? String(newTopic.CMR8_wagesAmount)
+            : "",
+        CMR8_fromDateHijri: newTopic.CMR8_fromDateHijri ?? "",
+        CMR8_fromDateGregorian: newTopic.CMR8_fromDateGregorian ?? "",
+        CMR8_toDateHijri: newTopic.CMR8_toDateHijri ?? "",
+        CMR8_toDateGregorian: newTopic.CMR8_toDateGregorian ?? "",
+        // Legacy fields for backward compatibility
         pyTempDate: newTopic.pyTempDate ?? "",
         toDate_gregorian: newTopic.toDate_gregorian ?? "",
         date_hijri: newTopic.date_hijri ?? "",
@@ -1836,44 +2967,57 @@ if (topic.SubTopicID === "BPSR-1" || topic.subCategory?.value === "BPSR-1") {
 
       // ──────────────── BR SUBTOPICS MAPPING ────────────────
       // BR-1: Bonus Request
-      ...(newTopic.SubTopicID === "BR-1" && {
-        AccordingToAgreement: newTopic.accordingToAgreement?.value ?? "",
-        BonusAmount: newTopic.bonusAmount ?? "",
-        date_hijri: newTopic.date_hijri ?? "",
-        date_gregorian: newTopic.date_gregorian ?? "",
+      ...(newTopic.subCategory?.value === "BR-1" && {
+        BR1_accordingToAgreement: newTopic.BR1_accordingToAgreement || newTopic.accordingToAgreement || null,
+        BR1_bonusAmount: newTopic.BR1_bonusAmount || newTopic.bonusAmount || "",
+        BR1_dateHijri: newTopic.BR1_dateHijri || newTopic.date_hijri || "",
+        BR1_dateGregorian: newTopic.BR1_dateGregorian || newTopic.date_gregorian || "",
+        // Legacy fields for backward compatibility
+        accordingToAgreement: newTopic.accordingToAgreement || null,
+        bonusAmount: newTopic.bonusAmount || "",
+        date_hijri: newTopic.date_hijri || "",
+        date_gregorian: newTopic.date_gregorian || "",
       }),
       // ──────────────── END BR SUBTOPICS MAPPING ────────────────
 
       // ──────────────── BPSR SUBTOPICS MAPPING ────────────────
       // BPSR-1: Bonus and Profit Share Request
-      ...(newTopic.SubTopicID === "BPSR-1" && {
-        CommissionType: newTopic.commissionType?.value ?? "",
-        AccordingToAgreement: newTopic.accordingToAgreement?.value ?? "",
-        Amount: newTopic.amount ?? "",
-        AmountRatio: newTopic.amountRatio ?? "",
-        pyTempDate: newTopic.from_date_hijri ?? "",
-        FromDate_New: newTopic.from_date_gregorian ?? "",
-        Date_New: newTopic.to_date_hijri ?? "",
-        ToDate_New: newTopic.to_date_gregorian ?? "",
-        OtherCommission: isOtherCommission(newTopic.commissionType)
-          ? newTopic.otherCommission ?? ""
-          : "",
+      ...(newTopic.subCategory?.value === "BPSR-1" && {
+        // New BPSR-1 specific fields
+        BPSR1_commissionType: newTopic.BPSR1_commissionType || newTopic.commissionType || null,
+        BPSR1_accordingToAgreement: newTopic.BPSR1_accordingToAgreement || newTopic.accordingToAgreement || null,
+        BPSR1_bonusProfitShareAmount: newTopic.BPSR1_bonusProfitShareAmount || newTopic.bonusProfitShareAmount || "",
+        BPSR1_amountRatio: newTopic.BPSR1_amountRatio || newTopic.amountRatio || "",
+        BPSR1_fromDateHijri: newTopic.BPSR1_fromDateHijri || newTopic.from_date_hijri || "",
+        BPSR1_fromDateGregorian: newTopic.BPSR1_fromDateGregorian || newTopic.from_date_gregorian || "",
+        BPSR1_toDateHijri: newTopic.BPSR1_toDateHijri || newTopic.to_date_hijri || "",
+        BPSR1_toDateGregorian: newTopic.BPSR1_toDateGregorian || newTopic.to_date_gregorian || "",
+        BPSR1_otherCommission: newTopic.BPSR1_otherCommission || newTopic.otherCommission || "",
+        // Legacy fields for backward compatibility
+        commissionType: newTopic.commissionType || null,
+        accordingToAgreement: newTopic.accordingToAgreement || null,
+        bonusProfitShareAmount: newTopic.bonusProfitShareAmount || "",
+        amountRatio: newTopic.amountRatio || "",
+        from_date_hijri: newTopic.from_date_hijri || "",
+        from_date_gregorian: newTopic.from_date_gregorian || "",
+        to_date_hijri: newTopic.to_date_hijri || "",
+        to_date_gregorian: newTopic.to_date_gregorian || "",
+        otherCommission: newTopic.otherCommission || "",
       }),
 
       // ──────────────── END BPSR SUBTOPICS MAPPING ────────────────
 
       // ──────────────── DR SUBTOPICS MAPPING ────────────────
-      // DR-1: Documents Requests
+      // DR-1: Documents Requests (No specific fields)
       ...(newTopic.SubTopicID === "DR-1" && {
-        documentType: newTopic.documentType ?? null,
-        documentReason: newTopic.documentReason ?? "",
+        // DR-1 has no specific fields, just acknowledgment
       }),
       // ──────────────── END DR SUBTOPICS MAPPING ────────────────
 
       // ──────────────── RR SUBTOPICS MAPPING ────────────────
       // RR-1: Reward Request
-      ...(newTopic.SubTopicID === "RR-1" && {
-        amount: newTopic.amount ?? "",
+      ...(newTopic.subCategory?.value === "RR-1" && {
+        amount: newTopic.rewardAmount ?? "", // Changed from "amount"
         rewardType: newTopic.rewardType ?? "",
       }),
       // ──────────────── END RR SUBTOPICS MAPPING ────────────────
@@ -1885,35 +3029,71 @@ if (topic.SubTopicID === "BPSR-1" || topic.subCategory?.value === "BPSR-1") {
         requiredJobTitle: newTopic.requiredJobTitle ?? "",
       }),
       // JAR-3: Promotion Mechanism
-      ...(newTopic.SubTopicID === "JAR-3" && {
-        doesTheInternalRegulationIncludePromotionMechanism:
-          newTopic.doesTheInternalRegulationIncludePromotionMechanism ?? false,
-        doesContractIncludeAdditionalUpgrade:
-          newTopic.doesContractIncludeAdditionalUpgrade ?? false,
-      }),
+      ...(newTopic.SubTopicID === "JAR-3"
+        ? {
+          doesTheInternalRegulationIncludePromotionMechanism:
+            newTopic.doesTheInternalRegulationIncludePromotionMechanism ?? false,
+          doesContractIncludeAdditionalUpgrade:
+            newTopic.doesContractIncludeAdditionalUpgrade ?? false,
+        }
+        : {}),
       // JAR-4: Job Application Request (currentPosition, theWantedJob)
       ...(newTopic.SubTopicID === "JAR-4" && {
         currentPosition: newTopic.currentPosition ?? "",
         theWantedJob: newTopic.theWantedJob ?? "",
       }),
       // ──────────────── END JAR SUBTOPICS MAPPING ────────────────
+      // ──────────────── RFR SUBTOPICS MAPPING ────────────────
+      // RFR-1: Reward and Financial Request
+      ...(newTopic.subCategory?.value === "RFR-1" && {
+        amount: newTopic.RFR1_Amount ?? newTopic.rewardRequestAmount ?? "",
+        consideration: newTopic.RFR1_Consideration ?? newTopic.consideration ?? "",
+      }),
+      // ──────────────── END RFR SUBTOPICS MAPPING ────────────────
+      // ──────────────── RUF SUBTOPICS MAPPING ────────────────
+      // RUF-1: Reimbursement of Undue Funds
+      ...(newTopic.SubTopicID === "RUF-1" && {
+        RefundType: newTopic.RefundType || newTopic.refundType || "",
+        refundAmount: newTopic.Amount || newTopic.amount || "", // Map to specific field name
+      }),
+      // ──────────────── END RUF SUBTOPICS MAPPING ────────────────
       // ──────────────── LRESR SUBTOPICS MAPPING ────────────────
       // LRESR-1: End of Service Reward
-      ...(newTopic.SubTopicID === "LRESR-1" && {
-        amount: newTopic.amount ?? "",
+      ...(newTopic.subCategory?.value === "LRESR-1" && {
+        amount: newTopic.LRESR1_Amount ?? "",
       }),
       // LRESR-2: End of Service Reward (amount, consideration)
-      ...(newTopic.SubTopicID === "LRESR-2" && {
-        amount: newTopic.amount ?? "",
+      ...(newTopic.subCategory?.value === "LRESR-2" && {
+        amount: newTopic.endOfServiceRewardAmount ?? "", // Changed from "amount"
         consideration: newTopic.consideration ?? "",
       }),
       // LRESR-3: End of Service Reward (amount, rewardType)
-      ...(newTopic.SubTopicID === "LRESR-3" && {
-        amount: newTopic.amount ?? "",
+      ...(newTopic.subCategory?.value === "LRESR-3" && {
+        amount: newTopic.endOfServiceRewardAmount ?? "", // Changed from "amount"
         rewardType: newTopic.rewardType ?? "",
       }),
       // ──────────────── END LRESR SUBTOPICS MAPPING ────────────────
+      // ──────────────── LCUT SUBTOPICS MAPPING ────────────────
+      // LCUT-1: Labor Contract and Unemployment Termination
+      ...(newTopic.subCategory?.value === "LCUT-1" && {
+        amountOfCompensation: newTopic.LCUT1_amountOfCompensation ?? "",
+      }),
+      // ──────────────── END LCUT SUBTOPICS MAPPING ────────────────
     };
+
+    // MIR-1: Medical Insurance Request
+    if (newTopic.subCategory?.value === "MIR-1" || newTopic.SubTopicID === "MIR-1") {
+      // New MIR-1 specific fields
+      topicToSave.MIR1_typeOfRequest = newTopic.MIR1_typeOfRequest || newTopic.typeOfRequest;
+      topicToSave.MIR1_requiredDegreeOfInsurance = newTopic.MIR1_requiredDegreeOfInsurance || newTopic.requiredDegreeOfInsurance;
+      topicToSave.MIR1_theReason = newTopic.MIR1_theReason || newTopic.theReason;
+      topicToSave.MIR1_currentInsuranceLevel = newTopic.MIR1_currentInsuranceLevel || newTopic.currentInsuranceLevel;
+      // Legacy fields for backward compatibility
+      topicToSave.typeOfRequest = newTopic.typeOfRequest || newTopic.MIR1_typeOfRequest;
+      topicToSave.requiredDegreeOfInsurance = newTopic.requiredDegreeOfInsurance || newTopic.MIR1_requiredDegreeOfInsurance;
+      topicToSave.theReason = newTopic.theReason || newTopic.MIR1_theReason;
+      topicToSave.currentInsuranceLevel = newTopic.currentInsuranceLevel || newTopic.MIR1_currentInsuranceLevel;
+    }
 
     // تحديث حالة caseTopics
     setCaseTopics((prev) => {
@@ -1930,7 +3110,28 @@ if (topic.SubTopicID === "BPSR-1" || topic.subCategory?.value === "BPSR-1") {
   const isStep3 = showTopicData;
   const isStep2 = showLegalSection;
 
-  // Use the new prefilling hook
+  // Use the new centralized subtopic prefill hook
+  const { prefillSubTopic } = useSubTopicPrefill({
+    setValue,
+    trigger,
+    isEditing,
+    editTopic,
+    lookupData: {
+      commissionTypeLookupData,
+      accordingToAgreementLookupData,
+      typeOfRequestLookupData,
+      forAllowanceData,
+      regionData,
+      leaveTypeData,
+      payIncreaseTypeData,
+      amountPaidData,
+      travelingWayData,
+      typesOfPenaltiesData,
+      typeOfCustodyData,
+    },
+  });
+
+  // Use the legacy prefilling hook for backward compatibility
   useCaseTopicsPrefill({
     setValue,
     trigger,
@@ -1938,6 +3139,35 @@ if (topic.SubTopicID === "BPSR-1" || topic.subCategory?.value === "BPSR-1") {
     isEditing,
     editTopic,
   });
+
+  // Dynamic field registration for MIR-1 conditional fields
+  useEffect(() => {
+    if (subCategory?.value === "MIR-1") {
+      const typeOfRequest = watch("MIR1_typeOfRequest");
+      
+      // Check if additional fields are needed
+      const needsAdditionalFields = typeOfRequest && ["REQT1", "REQT2", "REQT3"].includes(String(typeOfRequest.value));
+      const needsReasonAndCurrentLevel = typeOfRequest && String(typeOfRequest.value) === "REQT3";
+      
+      // Register/unregister fields based on requirements
+      if (needsAdditionalFields) {
+        register("MIR1_requiredDegreeOfInsurance");
+      } else {
+        unregister("MIR1_requiredDegreeOfInsurance");
+        setValue("MIR1_requiredDegreeOfInsurance", "");
+      }
+      
+      if (needsReasonAndCurrentLevel) {
+        register("MIR1_theReason");
+        register("MIR1_currentInsuranceLevel");
+      } else {
+        unregister("MIR1_theReason");
+        unregister("MIR1_currentInsuranceLevel");
+        setValue("MIR1_theReason", "");
+        setValue("MIR1_currentInsuranceLevel", "");
+      }
+    }
+  }, [subCategory?.value, watch("MIR1_typeOfRequest"), register, unregister, setValue]);
 
   // Utility to convert Hijri (YYYYMMDD) to Gregorian (YYYYMMDD)
   function hijriToGregorian(hijri: string) {
@@ -1956,145 +3186,26 @@ if (topic.SubTopicID === "BPSR-1" || topic.subCategory?.value === "BPSR-1") {
   // Handle date context and section visibility when editing
   useEffect(() => {
     if (isEditing && editTopic && isOpen) {
-      // RFR-1 specific date mapping
-      if (
-        editTopic.subCategory?.value === "RFR-1" ||
-        editTopic.SubTopicID === "RFR-1"
-      ) {
-        setValue("date_hijri", editTopic.pyTempDate || "");
-        setValue("date_gregorian", editTopic.Date_New || "");
-      } else {
-        // Existing logic for other topics
-        if (editTopic.date_hijri) {
-          setDate({
-            hijri: editTopic.date_hijri,
-            gregorian: editTopic.gregorianDate,
-            dateObject: null,
-          });
-        }
-        setValue("from_date_hijri", editTopic.from_date_hijri);
-        setValue(
-          "from_date_gregorian",
-          editTopic.from_date_gregorian ||
-          hijriToGregorian(editTopic.from_date_hijri)
-        );
-        setValue("to_date_hijri", editTopic.to_date_hijri);
-        setValue(
-          "to_date_gregorian",
-          editTopic.to_date_gregorian ||
-          hijriToGregorian(editTopic.to_date_hijri)
-        );
-        setValue("injury_date_hijri", editTopic.injury_date_hijri);
-        setValue(
-          "injury_date_gregorian",
-          editTopic.injury_date_gregorian ||
-          hijriToGregorian(editTopic.injury_date_hijri)
-        );
-      }
-      // Prefill CMR-5 fields
-      if (editTopic.subCategory?.value === "CMR-5") {
-        setValue("kindOfHoliday", editTopic.kindOfHoliday ?? null);
-        setValue("totalAmount", editTopic.totalAmount ?? "");
-        setValue("workingHours", editTopic.workingHours ?? "");
-        setValue("additionalDetails", editTopic.additionalDetails ?? "");
-      }
-      if (editTopic.SubTopicID === "CMR-6") {
-        setValue("from_date_hijri", editTopic.from_date_hijri ?? editTopic.pyTempDate ?? "");
-        setValue("from_date_gregorian", editTopic.from_date_gregorian ?? editTopic.FromDate_New ?? "");
-        setValue("to_date_hijri", editTopic.to_date_hijri ?? editTopic.Date_New ?? "");
-        setValue("to_date_gregorian", editTopic.to_date_gregorian ?? editTopic.ToDate_New ?? "");
-        setValue("newPayAmount", editTopic.newPayAmount ?? editTopic.NewPayAmount ?? "");
-        setValue("payIncreaseType", editTopic.payIncreaseType ?? null);
-        setValue("wageDifference", editTopic.wageDifference ?? editTopic.WageDifference ?? "");
-      }
-
-
-      // Prefill EDO-2 fields
-      if (editTopic.subCategory?.value === "EDO-2") {
-        setValue("fromJob", editTopic.fromJob ?? "");
-        setValue("toJob", editTopic.toJob ?? "");
-        setValue(
-          "managerial_decision_date_hijri",
-          editTopic.managerial_decision_date_hijri ?? ""
-        );
-        setValue(
-          "managerial_decision_date_gregorian",
-          editTopic.managerial_decision_date_gregorian ?? ""
-        );
-        setValue(
-          "managerialDecisionNumber",
-          editTopic.managerialDecisionNumber ?? ""
-        );
-      }
-      // Prefill EDO-3 fields
-      if (editTopic.subCategory?.value === "EDO-3") {
-        setValue("amountOfReduction", editTopic.amountOfReduction ?? "");
-        setValue(
-          "managerial_decision_date_hijri",
-          editTopic.managerial_decision_date_hijri ?? ""
-        );
-        setValue(
-          "managerial_decision_date_gregorian",
-          editTopic.managerial_decision_date_gregorian ?? ""
-        );
-        setValue(
-          "managerialDecisionNumber",
-          editTopic.managerialDecisionNumber ?? ""
-        );
-      }
-      // Prefill EDO-4 fields
-      if (editTopic.subCategory?.value === "EDO-4") {
-        setValue("typesOfPenalties", editTopic.typesOfPenalties ?? null);
-        setValue(
-          "managerial_decision_date_hijri",
-          editTopic.managerial_decision_date_hijri ?? ""
-        );
-        setValue(
-          "managerial_decision_date_gregorian",
-          editTopic.managerial_decision_date_gregorian ?? ""
-        );
-        setValue(
-          "managerialDecisionNumber",
-          editTopic.managerialDecisionNumber ?? ""
-        );
-      }
-      // ──────────────── END EDO SUBTOPICS PREFILL ────────────────
-      // Set From Location and To Location fields (always use code for lookup)
-      const fromLocationCode =
-        editTopic.fromLocation?.value ||
-        editTopic.FromLocation_Code ||
-        editTopic.fromLocation;
-      if (fromLocationCode && regionData?.DataElements) {
-        const fromLocationOption = regionData.DataElements.find(
-          (item: any) => String(item.ElementKey) === String(fromLocationCode)
-        );
-        setValue("fromLocation", {
-          value: String(fromLocationCode),
-          label: fromLocationOption
-            ? fromLocationOption.ElementValue
-            : String(fromLocationCode),
-        });
-      }
-      const toLocationCode =
-        editTopic.toLocation?.value ||
-        editTopic.ToLocation_Code ||
-        editTopic.toLocation;
-      if (toLocationCode && regionData?.DataElements) {
-        const toLocationOption = regionData.DataElements.find(
-          (item: any) => String(item.ElementKey) === String(toLocationCode)
-        );
-        setValue("toLocation", {
-          value: String(toLocationCode),
-          label: toLocationOption
-            ? toLocationOption.ElementValue
-            : String(toLocationCode),
-        });
-      }
+      console.log("[🔧 MODAL OPEN] Setting up form for editing:", editTopic);
+      
       // Show appropriate sections
       setShowLegalSection(true);
       setShowTopicData(true);
     }
-  }, [isEditing, editTopic, isOpen, setShowLegalSection, setShowTopicData]);
+  }, [isEditing, editTopic?.SubTopicID, editTopic?.id, editTopic?.index, isOpen, setShowLegalSection, setShowTopicData]);
+
+  // Trigger prefill when editTopic changes and modal is open
+  useEffect(() => {
+    if (isEditing && editTopic && isOpen) {
+      console.log("[🔍 PREFILL TRIGGER] editTopic changed, triggering prefill");
+      setTimeout(() => {
+        console.log("[🔍 PREFILL TRIGGER] Calling prefillSubTopic");
+        prefillSubTopic();
+      }, 100); // Small delay to ensure form is ready
+    }
+  }, [isEditing, editTopic, isOpen]); // Removed prefillSubTopic from dependencies
+
+
 
   const handleClearMainCategory = useCallback(() => {
     setValue("mainCategory", null);
@@ -2317,6 +3428,7 @@ if (topic.SubTopicID === "BPSR-1" || topic.subCategory?.value === "BPSR-1") {
         payIncreaseTypeData,
         PayIncreaseTypeOptions,
         control,
+        trigger,
       });
 
   // Fix the FormData type issue
@@ -2394,9 +3506,9 @@ if (topic.SubTopicID === "BPSR-1" || topic.subCategory?.value === "BPSR-1") {
   useEffect(() => {
     if (isEditing && editTopic && typeOfRequestLookupData?.DataElements) {
       const code =
-        editTopic.RequestType_Code ||
-        editTopic.RequestType ||
-        editTopic.TypeOfRequest;
+        editTopic?.RequestType_Code ||
+        editTopic?.RequestType ||
+        editTopic?.TypeOfRequest;
       const matchedOption = findOption(
         typeOfRequestLookupData.DataElements.map((item: any) => ({
           value: item.ElementKey,
@@ -2411,9 +3523,9 @@ if (topic.SubTopicID === "BPSR-1" || topic.subCategory?.value === "BPSR-1") {
   useEffect(() => {
     if (isEditing && editTopic && regionData?.DataElements) {
       let fromLocationCode =
-        editTopic.fromLocation?.value ??
-        editTopic.FromLocation_Code ??
-        editTopic.fromLocation;
+        editTopic?.fromLocation?.value ??
+        editTopic?.FromLocation_Code ??
+        editTopic?.fromLocation;
       if (fromLocationCode && regionData?.DataElements) {
         // Try both string and number comparison
         const fromLocationOption = regionData.DataElements.find(
@@ -2430,9 +3542,9 @@ if (topic.SubTopicID === "BPSR-1" || topic.subCategory?.value === "BPSR-1") {
       }
 
       let toLocationCode =
-        editTopic.toLocation?.value ??
-        editTopic.ToLocation_Code ??
-        editTopic.toLocation;
+        editTopic?.toLocation?.value ??
+        editTopic?.ToLocation_Code ??
+        editTopic?.toLocation;
       if (toLocationCode && regionData?.DataElements) {
         const toLocationOption = regionData.DataElements.find(
           (item: any) =>
@@ -2449,483 +3561,13 @@ if (topic.SubTopicID === "BPSR-1" || topic.subCategory?.value === "BPSR-1") {
     }
   }, [isEditing, editTopic, regionData, setValue]);
 
-  useEffect(() => {
-    if (isEditing && editTopic && (isOpen || true)) {
-      // ──────────────── CMR SUBTOPICS PREFILL ────────────────
-      // CMR-1: Treatment refunds
-      if (
-        editTopic.subCategory?.value === "CMR-1" ||
-        editTopic.SubTopicID === "CMR-1"
-      ) {
-        setValue("amountsPaidFor", editTopic.amountsPaidFor ?? null, {
-          shouldValidate: true,
-          shouldDirty: true,
-        });
-        setValue("theAmountRequired", editTopic.theAmountRequired ?? "", {
-          shouldValidate: true,
-          shouldDirty: true,
-        });
-        trigger(["amountsPaidFor", "theAmountRequired"]);
-      }
-      // CMR-3: Request compensation for work injury
-      if (
-        editTopic.subCategory?.value === "CMR-3" ||
-        editTopic.SubTopicID === "CMR-3"
-      ) {
-        setValue("compensationAmount", editTopic.compensationAmount ?? "", {
-          shouldValidate: true,
-          shouldDirty: true,
-        });
-        setValue("injury_date_hijri", editTopic.injury_date_hijri ?? "", {
-          shouldValidate: true,
-          shouldDirty: true,
-        });
-        setValue(
-          "injury_date_gregorian",
-          editTopic.injury_date_gregorian ?? "",
-          { shouldValidate: true, shouldDirty: true }
-        );
-        setValue("injuryType", editTopic.injuryType ?? "", {
-          shouldValidate: true,
-          shouldDirty: true,
-        });
-        trigger([
-          "compensationAmount",
-          "injury_date_hijri",
-          "injury_date_gregorian",
-          "injuryType",
-        ]);
-      }
-      // CMR-4: Request compensation for the duration of the notice
-      if (
-        editTopic.subCategory?.value === "CMR-4" ||
-        editTopic.SubTopicID === "CMR-4"
-      ) {
-        setValue("amount", editTopic.amount ?? "", {
-          shouldValidate: true,
-          shouldDirty: true,
-        });
-        trigger("amount");
-      }
-      // CMR-5: Pay for work during vacation
-      if (
-        editTopic.subCategory?.value === "CMR-5" ||
-        editTopic.SubTopicID === "CMR-5"
-      ) {
-        setValue("kindOfHoliday", editTopic.kindOfHoliday ?? null, {
-          shouldValidate: true,
-          shouldDirty: true,
-        });
-        setValue("totalAmount", editTopic.totalAmount ?? "", {
-          shouldValidate: true,
-          shouldDirty: true,
-        });
-        setValue("workingHours", editTopic.workingHours ?? "", {
-          shouldValidate: true,
-          shouldDirty: true,
-        });
-        setValue("additionalDetails", editTopic.additionalDetails ?? "", {
-          shouldValidate: true,
-          shouldDirty: true,
-        });
-        trigger([
-          "kindOfHoliday",
-          "totalAmount",
-          "workingHours",
-          "additionalDetails",
-        ]);
-      }
-
-      // CMR-6: The Wage Difference/increase
-      if (
-        editTopic.subCategory?.value === "CMR-6" ||
-        editTopic.SubTopicID === "CMR-6"
-      ) {
-        setValue("from_date_hijri", editTopic.from_date_hijri ?? editTopic.pyTempDate ?? "", { shouldValidate: true, shouldDirty: true });
-        setValue("from_date_gregorian", editTopic.from_date_gregorian ?? editTopic.FromDate_New ?? "", { shouldValidate: true, shouldDirty: true });
-        setValue("to_date_hijri", editTopic.to_date_hijri ?? editTopic.Date_New ?? "", { shouldValidate: true, shouldDirty: true });
-        setValue("to_date_gregorian", editTopic.to_date_gregorian ?? editTopic.ToDate_New ?? "", { shouldValidate: true, shouldDirty: true });
-        setValue("newPayAmount", editTopic.newPayAmount ?? editTopic.NewPayAmount ?? "", { shouldValidate: true, shouldDirty: true });
-        setValue("payIncreaseType", editTopic.payIncreaseType ?? null, { shouldValidate: true, shouldDirty: true });
-        setValue("wageDifference", editTopic.wageDifference ?? editTopic.WageDifference ?? "", { shouldValidate: true, shouldDirty: true });
-
-        trigger([
-          "from_date_hijri",
-          "from_date_gregorian",
-          "to_date_hijri",
-          "to_date_gregorian",
-          "newPayAmount",
-          "payIncreaseType",
-          "wageDifference",
-        ]);
-      }
-
-      // CMR-7: Request for overtime pay
-      if (
-        editTopic.subCategory?.value === "CMR-7" ||
-        editTopic.SubTopicID === "CMR-7"
-      ) {
-        setValue("pyTempDate", editTopic.pyTempDate ?? "", {
-          shouldValidate: true,
-          shouldDirty: true,
-        });
-        setValue("toDate_gregorian", editTopic.toDate_gregorian ?? "", {
-          shouldValidate: true,
-          shouldDirty: true,
-        });
-        setValue("date_hijri", editTopic.date_hijri ?? "", {
-          shouldValidate: true,
-          shouldDirty: true,
-        });
-        setValue("fromDate_gregorian", editTopic.fromDate_gregorian ?? "", {
-          shouldValidate: true,
-          shouldDirty: true,
-        });
-        setValue("durationOfLeaveDue", editTopic.durationOfLeaveDue ?? "", {
-          shouldValidate: true,
-          shouldDirty: true,
-        });
-        setValue("payDue", editTopic.payDue ?? "", {
-          shouldValidate: true,
-          shouldDirty: true,
-        });
-        trigger([
-          "pyTempDate",
-          "toDate_gregorian",
-          "date_hijri",
-          "fromDate_gregorian",
-          "durationOfLeaveDue",
-          "payDue",
-        ]);
-      }
-      // CMR-8: Pay stop time
-      if (
-        editTopic.subCategory?.value === "CMR-8" ||
-        editTopic.SubTopicID === "CMR-8"
-      ) {
-        setValue("pyTempDate", editTopic.pyTempDate ?? "", {
-          shouldValidate: true,
-          shouldDirty: true,
-        });
-        setValue("toDate_gregorian", editTopic.toDate_gregorian ?? "", {
-          shouldValidate: true,
-          shouldDirty: true,
-        });
-        setValue("date_hijri", editTopic.date_hijri ?? "", {
-          shouldValidate: true,
-          shouldDirty: true,
-        });
-        setValue("fromDate_gregorian", editTopic.fromDate_gregorian ?? "", {
-          shouldValidate: true,
-          shouldDirty: true,
-        });
-        setValue("wagesAmount", editTopic.wagesAmount ?? "", {
-          shouldValidate: true,
-          shouldDirty: true,
-        });
-        trigger([
-          "pyTempDate",
-          "toDate_gregorian",
-          "date_hijri",
-          "fromDate_gregorian",
-          "wagesAmount",
-        ]);
-      }
-      // ──────────────── END CMR SUBTOPICS PREFILL ────────────────
-
-      // ──────────────── LCUT SUBTOPICS PREFILL ────────────────
-      // LCUT-1, LCUTE-1: Lawsuit for compensation for unlawful termination
-      if (
-        editTopic.subCategory?.value === "LCUT-1" ||
-        editTopic.SubTopicID === "LCUT-1"
-      ) {
-        setValue("amountOfCompensation", editTopic.amountOfCompensation ?? "", {
-          shouldValidate: true,
-          shouldDirty: true,
-        });
-        trigger("amountOfCompensation");
-      }
-      if (
-        editTopic.subCategory?.value === "LCUTE-1" ||
-        editTopic.SubTopicID === "LCUTE-1"
-      ) {
-        setValue("amountOfCompensation", editTopic.amountOfCompensation ?? "", {
-          shouldValidate: true,
-          shouldDirty: true,
-        });
-        trigger("amountOfCompensation");
-      }
-      // ──────────────── END LCUT SUBTOPICS PREFILL ────────────────
-
-      // ──────────────── HIR SUBTOPICS PREFILL ────────────────
-      // HIR-1: Housing Insurance Request
-      if (
-        editTopic.subCategory?.value === "HIR-1" ||
-        editTopic.SubTopicID === "HIR-1"
-      ) {
-        setValue(
-          "doesBylawsIncludeAddingAccommodations",
-          editTopic.doesBylawsIncludeAddingAccommodations ?? false,
-          { shouldValidate: true, shouldDirty: true }
-        );
-        setValue(
-          "doesContractIncludeAddingAccommodations",
-          editTopic.doesContractIncludeAddingAccommodations ?? false,
-          { shouldValidate: true, shouldDirty: true }
-        );
-        setValue(
-          "housingSpecificationInByLaws",
-          editTopic.housingSpecificationInByLaws ?? "",
-          { shouldValidate: true, shouldDirty: true }
-        );
-        setValue(
-          "housingSpecificationsInContract",
-          editTopic.housingSpecificationsInContract ?? "",
-          { shouldValidate: true, shouldDirty: true }
-        );
-        setValue(
-          "actualHousingSpecifications",
-          editTopic.actualHousingSpecifications ?? "",
-          { shouldValidate: true, shouldDirty: true }
-        );
-        trigger([
-          "doesBylawsIncludeAddingAccommodations",
-          "doesContractIncludeAddingAccommodations",
-          "housingSpecificationInByLaws",
-          "housingSpecificationsInContract",
-          "actualHousingSpecifications",
-        ]);
-      }
-      // ──────────────── END HIR SUBTOPICS PREFILL ────────────────
-
-      // ──────────────── BR SUBTOPICS PREFILL ────────────────
-      // BR-1: Bonus Request
-      if (editTopic.subCategory?.value === "BR-1" || editTopic.SubTopicID === "BR-1") {
-        const code =
-          editTopic.AccordingToAgreement_Code ||
-          editTopic.AccordingToAgreement ||
-          editTopic.accordingToAgreement?.value;
-
-        setValue(
-          "accordingToAgreement",
-          resolveOption(
-            accordingToAgreementLookupData?.DataElements,
-            code,
-            editTopic.AccordingToAgreement
-          ),
-          { shouldValidate: true, shouldDirty: true }
-        );
-
-        setValue("bonusAmount", editTopic.bonusAmount ?? editTopic.Premium ?? "", { shouldValidate: true, shouldDirty: true });
-        setValue("date_hijri", editTopic.date_hijri ?? editTopic.pyTempDate ?? "", { shouldValidate: true, shouldDirty: true });
-        setValue("date_gregorian", editTopic.date_gregorian ?? editTopic.Date_New ?? "", { shouldValidate: true, shouldDirty: true });
-
-        trigger(["accordingToAgreement", "bonusAmount", "date_hijri", "date_gregorian"]);
-      }
-
-
-      // ──────────────── END BR SUBTOPICS PREFILL ────────────────
-
-      // ──────────────── BPSR SUBTOPICS PREFILL ────────────────
-      // BPSR-1: Bonus and Profit Share Request (FIXED)
-      if (
-        editTopic.subCategory?.value === "BPSR-1" ||
-        editTopic.SubTopicID === "BPSR-1"
-      ) {
-        const commissionCode =
-          editTopic.CommissionType_Code ??
-          editTopic.commissionType?.value ??
-          editTopic.CommissionType;
-
-        setValue(
-          "commissionType",
-          ensureOption(commissionTypeLookupData?.DataElements, commissionCode),
-          { shouldValidate: true, shouldDirty: true }
-        );
-
-        const agrCode =
-          editTopic.AccordingToAgreement_Code ??
-          editTopic.accordingToAgreement?.value ??
-          editTopic.AccordingToAgreement;
-
-        setValue(
-          "accordingToAgreement",
-          ensureOption(accordingToAgreementLookupData?.DataElements, agrCode),
-          { shouldValidate: true, shouldDirty: true }
-        );
-
-        setValue("amount", String(editTopic.Amount ?? editTopic.amount ?? ""), {
-          shouldValidate: true,
-          shouldDirty: true,
-        });
-        setValue("amountRatio", String(editTopic.AmountRatio ?? editTopic.amountRatio ?? ""), {
-          shouldValidate: true,
-          shouldDirty: true,
-        });
-        setValue(
-          "from_date_hijri",
-          editTopic.pyTempDate ?? editTopic.FromDateHijri ?? editTopic.from_date_hijri ?? "",
-          { shouldValidate: true, shouldDirty: true }
-        );
-        setValue(
-          "from_date_gregorian",
-          editTopic.FromDate_New ?? editTopic.FromDateGregorian ?? editTopic.from_date_gregorian ?? "",
-          { shouldValidate: true, shouldDirty: true }
-        );
-        setValue(
-          "to_date_hijri",
-          editTopic.Date_New ?? editTopic.ToDateHijri ?? editTopic.to_date_hijri ?? "",
-          { shouldValidate: true, shouldDirty: true }
-        );
-        setValue(
-          "to_date_gregorian",
-          editTopic.ToDate_New ?? editTopic.ToDateGregorian ?? editTopic.to_date_gregorian ?? "",
-          { shouldValidate: true, shouldDirty: true }
-        );
-        setValue("otherCommission", String(editTopic.OtherCommission ?? editTopic.otherCommission ?? ""), {
-          shouldValidate: true,
-          shouldDirty: true,
-        });
-
-        trigger([
-          "commissionType",
-          "accordingToAgreement",
-          "amount",
-          "amountRatio",
-          "from_date_hijri",
-          "from_date_gregorian",
-          "to_date_hijri",
-          "to_date_gregorian",
-          "otherCommission",
-        ]);
-      }
-
-      // ──────────────── END BPSR SUBTOPICS PREFILL ────────────────
-
-      // ──────────────── DR SUBTOPICS PREFILL ────────────────
-      // DR-1: Documents Requests
-      if (
-        editTopic.subCategory?.value === "DR-1" ||
-        editTopic.SubTopicID === "DR-1"
-      ) {
-        setValue("documentType", editTopic.documentType ?? null, {
-          shouldValidate: true,
-          shouldDirty: true,
-        });
-        setValue("documentReason", editTopic.documentReason ?? "", {
-          shouldValidate: true,
-          shouldDirty: true,
-        });
-        trigger(["documentType", "documentReason"]);
-      }
-      // ──────────────── END DR SUBTOPICS PREFILL ────────────────
-
-      // ──────────────── RR SUBTOPICS PREFILL ────────────────
-      // RR-1: Reward Request
-      if (
-        editTopic.subCategory?.value === "RR-1" ||
-        editTopic.SubTopicID === "RR-1"
-      ) {
-        setValue("amount", editTopic.amount ?? "", {
-          shouldValidate: true,
-          shouldDirty: true,
-        });
-        setValue("rewardType", editTopic.rewardType ?? "", {
-          shouldValidate: true,
-          shouldDirty: true,
-        });
-        trigger(["amount", "rewardType"]);
-      }
-      // ──────────────── END RR SUBTOPICS PREFILL ────────────────
-
-      // ──────────────── JAR SUBTOPICS PREFILL ────────────────
-      // JAR-2: Job Application Request (currentJobTitle, requiredJobTitle)
-      if (
-        editTopic.subCategory?.value === "JAR-2" ||
-        editTopic.SubTopicID === "JAR-2"
-      ) {
-        setValue("currentJobTitle", editTopic.currentJobTitle ?? "", {
-          shouldValidate: true,
-          shouldDirty: true,
-        });
-        setValue("requiredJobTitle", editTopic.requiredJobTitle ?? "", {
-          shouldValidate: true,
-          shouldDirty: true,
-        });
-        trigger(["currentJobTitle", "requiredJobTitle"]);
-      }
-      // JAR-3: Promotion Mechanism
-      if (
-        editTopic.subCategory?.value === "JAR-3" ||
-        editTopic.SubTopicID === "JAR-3"
-      ) {
-        setValue(
-          "doesTheInternalRegulationIncludePromotionMechanism",
-          editTopic.doesTheInternalRegulationIncludePromotionMechanism ?? false,
-          { shouldValidate: true, shouldDirty: true }
-        );
-        setValue(
-          "doesContractIncludeAdditionalUpgrade",
-          editTopic.doesContractIncludeAdditionalUpgrade ?? false,
-          { shouldValidate: true, shouldDirty: true }
-        );
-        trigger([
-          "doesTheInternalRegulationIncludePromotionMechanism",
-          "doesContractIncludeAdditionalUpgrade",
-        ]);
-      }
-      // JAR-4: Job Application Request (currentPosition, theWantedJob)
-      if (
-        editTopic.subCategory?.value === "JAR-4" ||
-        editTopic.SubTopicID === "JAR-4"
-      ) {
-        setValue("currentPosition", editTopic.currentPosition ?? "", {
-          shouldValidate: true,
-          shouldDirty: true,
-        });
-        setValue("theWantedJob", editTopic.theWantedJob ?? "", {
-          shouldValidate: true,
-          shouldDirty: true,
-        });
-        trigger(["currentPosition", "theWantedJob"]);
-      }
-      // ──────────────── END JAR SUBTOPICS PREFILL ────────────────
-
-      // ──────────────── RFR SUBTOPICS PREFILL ────────────────
-      // RFR-1: Lawsuit for refund request
-      if (
-        editTopic.subCategory?.value === "RFR-1" ||
-        editTopic.SubTopicID === "RFR-1"
-      ) {
-        setValue("amount", editTopic.amount ?? "", {
-          shouldValidate: true,
-          shouldDirty: true,
-        });
-        setValue("consideration", editTopic.consideration ?? "", {
-          shouldValidate: true,
-          shouldDirty: true,
-        });
-        setValue("date_hijri", editTopic.date_hijri ?? "", {
-          shouldValidate: true,
-          shouldDirty: true,
-        });
-        setValue("date_gregorian", editTopic.date_gregorian ?? "", {
-          shouldValidate: true,
-          shouldDirty: true,
-        });
-        trigger(["amount", "consideration", "date_hijri", "date_gregorian"]);
-      }
-      // ... existing code ...
-    }
-  }, [isEditing, editTopic, setValue, trigger, isOpen]);
-
   const { t: tCommon } = useTranslation("common");
 
   const [removeAttachment] = useRemoveAttachmentMutation();
 
   // Custom handler for AttachmentSection
   const handleRemoveAttachment = async (attachment: any, index: number) => {
-    console.log("handleRemoveAttachment called", { attachment, index });
+    // console.log("handleRemoveAttachment called", { attachment, index });
     const key =
       attachment.FileKey ||
       attachment.fileKey ||
@@ -2966,88 +3608,87 @@ if (topic.SubTopicID === "BPSR-1" || topic.subCategory?.value === "BPSR-1") {
     }
   };
 
-  // --- Ensure validation for CMR-1 autocomplete in edit mode ---
-  useEffect(() => {
-    if (
-      isEditing &&
-      editTopic &&
-      (editTopic.subCategory?.value === "CMR-1" ||
-        editTopic.SubTopicID === "CMR-1")
-    ) {
-      setValue("amountsPaidFor", editTopic.amountsPaidFor ?? null, {
-        shouldValidate: true,
-        shouldDirty: true,
-      });
-      setValue("theAmountRequired", editTopic.theAmountRequired ?? "", {
-        shouldValidate: true,
-        shouldDirty: true,
-      });
-      trigger(["amountsPaidFor", "theAmountRequired"]);
-    }
-  }, [isEditing, editTopic, setValue, trigger]);
 
-  // --- MIR-1 dynamic required fields fix (robust, watches form value) ---
-  const typeOfRequestValueMIR = watch("typeOfRequest")?.value;
-  useEffect(() => {
-    // Only for MIR-1
-    if (
-      (subCategory?.value === "MIR-1" || editTopic?.SubTopicID === "MIR-1") &&
-      typeOfRequestValueMIR !== undefined
-    ) {
-      // If the selected type REQUIRES the extra fields, trigger validation for them
-      if (
-        typeOfRequestValueMIR === "REQT1" ||
-        typeOfRequestValueMIR === "REQT2" ||
-        typeOfRequestValueMIR === "REQT3"
-      ) {
-        trigger([
-          "requiredDegreeOfInsurance",
-          "theReason",
-          "currentInsuranceLevel",
-        ]);
-      } else {
-        // If the selected type does NOT require the extra fields, clear/unregister them and trigger validation
-        setValue("requiredDegreeOfInsurance", "");
-        setValue("theReason", "");
-        setValue("currentInsuranceLevel", "");
-        if (unregister) {
-          unregister("requiredDegreeOfInsurance");
-          unregister("theReason");
-          unregister("currentInsuranceLevel");
-        }
-        trigger([
-          "requiredDegreeOfInsurance",
-          "theReason",
-          "currentInsuranceLevel",
-        ]);
-      }
-    }
-  }, [
-    typeOfRequestValueMIR,
-    subCategory?.value,
-    editTopic?.SubTopicID,
-    setValue,
-    unregister,
-    trigger,
-  ]);
-
-  // --- BPSR-1 dynamic required fields ---
+  // DYNAMIC: only require otherCommission when commissionType === "Other"
   const commissionTypeOpt = watch("commissionType");
   useEffect(() => {
-    if (
-      (subCategory?.value === "BPSR-1" || editTopic?.SubTopicID === "BPSR-1") &&
-      commissionTypeOpt !== undefined
-    ) {
-      if (isOtherCommission(commissionTypeOpt)) {
-        trigger("otherCommission");
-      } else {
-        setValue("otherCommission", "");
-        unregister?.("otherCommission");
-        trigger("otherCommission");
-      }
+    if (isOtherCommission(commissionTypeOpt)) {
+      // only register—and make it required—when we really need it
+      register("otherCommission", { required: t("fieldRequired") });
+    } else {
+      // completely unregister it (so no more validation or lingering errors)
+      unregister("otherCommission", { keepValue: false });
     }
-  }, [commissionTypeOpt, subCategory?.value, editTopic?.SubTopicID, setValue, unregister, trigger]);
+    // no need to trigger here: RHF will skip any unregistered field
+  }, [commissionTypeOpt, register, unregister, t]);
 
+  // DYNAMIC: only require otherAllowance when forAllowance === "Other"
+  const forAllowanceOpt = watch("WR1_forAllowance");
+  const isWR1 = subCategory?.value === "WR-1" || editTopic?.SubTopicID === "WR-1";
+  const isEditingWR1 = isEditing && editTopic?.SubTopicID === "WR-1";
+  
+  useEffect(() => {
+    console.log("[🔧 DYNAMIC REG] forAllowanceOpt:", forAllowanceOpt);
+    console.log("[🔧 DYNAMIC REG] isWR1:", isWR1);
+    console.log("[🔧 DYNAMIC REG] isEditingWR1:", isEditingWR1);
+    console.log("[🔧 DYNAMIC REG] isOtherAllowance:", isOtherAllowance(forAllowanceOpt));
+    
+    // Only run dynamic registration when we're actually editing a WR-1 topic
+    if (!isWR1 || !isEditingWR1) return;
+
+    if (isOtherAllowance(forAllowanceOpt)) {
+      console.log("[🔧 DYNAMIC REG] Registering WR1_otherAllowance field");
+      // only register—and make it required—when we really need it
+      register("WR1_otherAllowance", { required: t("fieldRequired") });
+      // Trigger validation to clear any existing errors
+      trigger("WR1_otherAllowance");
+    } else {
+      console.log("[🔧 DYNAMIC REG] Unregistering WR1_otherAllowance field");
+      // unregister it and clear the value when not needed
+      unregister("WR1_otherAllowance", { keepValue: false });
+    }
+  }, [forAllowanceOpt, isWR1, isEditingWR1, register, unregister, t, trigger]);
+
+  // Trigger validation when WR1_otherAllowance value changes
+  const otherAllowanceValue = watch("WR1_otherAllowance");
+  useEffect(() => {
+    console.log("[🔧 VALIDATION] otherAllowanceValue changed:", otherAllowanceValue);
+    console.log("[🔧 VALIDATION] isWR1:", isWR1);
+    console.log("[🔧 VALIDATION] isEditingWR1:", isEditingWR1);
+    console.log("[🔧 VALIDATION] isOtherAllowance:", isOtherAllowance(forAllowanceOpt));
+    if (isWR1 && isEditingWR1 && isOtherAllowance(forAllowanceOpt) && otherAllowanceValue !== undefined) {
+      console.log("[🔧 VALIDATION] Triggering WR1_otherAllowance validation");
+      trigger("WR1_otherAllowance");
+    }
+  }, [otherAllowanceValue, isWR1, isEditingWR1, forAllowanceOpt, trigger]);
+
+  // DYNAMIC: only require MIR-1 additional fields when typeOfRequest requires them
+  const typeOfRequestOpt = watch("MIR1_typeOfRequest");
+  const isMIR1 = subCategory?.value === "MIR-1" || editTopic?.SubTopicID === "MIR-1";
+  useEffect(() => {
+    if (!isMIR1) return;
+
+    const requiresAdditionalFields = typeOfRequestOpt && ["REQT1", "REQT2", "REQT3"].includes(String(typeOfRequestOpt.value));
+    const requiresReasonAndCurrentLevel = typeOfRequestOpt && String(typeOfRequestOpt.value) === "REQT3";
+
+    if (requiresAdditionalFields) {
+      register("MIR1_requiredDegreeOfInsurance", { required: t("fieldRequired") });
+    } else {
+      unregister("MIR1_requiredDegreeOfInsurance", { keepValue: false });
+      setValue("MIR1_requiredDegreeOfInsurance", "");
+    }
+
+    if (requiresReasonAndCurrentLevel) {
+      register("MIR1_theReason", { required: t("fieldRequired") });
+      register("MIR1_currentInsuranceLevel", { required: t("fieldRequired") });
+    } else {
+      unregister("MIR1_theReason", { keepValue: false });
+      unregister("MIR1_currentInsuranceLevel", { keepValue: false });
+      setValue("MIR1_theReason", "");
+      setValue("MIR1_currentInsuranceLevel", "");
+    }
+  }, [typeOfRequestOpt, isMIR1, register, unregister, setValue, t]);
+  
 
   // Add after handleTopicSelect and related hooks
   useEffect(() => {
@@ -3055,10 +3696,10 @@ if (topic.SubTopicID === "BPSR-1" || topic.subCategory?.value === "BPSR-1") {
       isEditing &&
       editTopic &&
       travelingWayData?.DataElements &&
-      editTopic.TravelingWay
+      editTopic?.TravelingWay
     ) {
       const found = travelingWayData.DataElements.find(
-        (item: any) => item.ElementKey === editTopic.TravelingWay
+        (item: any) => item.ElementKey === editTopic?.TravelingWay
       );
       if (found) {
         setValue("travelingWay", {
@@ -3074,6 +3715,7 @@ if (topic.SubTopicID === "BPSR-1" || topic.subCategory?.value === "BPSR-1") {
       <StepNavigation
         onSubmit={handleSubmit(onSubmit)}
         isValid={isValid}
+        isFormSubmitting={isSubmitting}
         isFirstStep={currentStep === 0 && currentTab === 0}
         isLastStep={currentStep === steps.length - 1}
         currentStep={currentStep}
@@ -3100,6 +3742,7 @@ if (topic.SubTopicID === "BPSR-1" || topic.subCategory?.value === "BPSR-1") {
                   <Button
                     variant="primary"
                     size="xs"
+                    type="button"
                     onClick={() => {
                       reset();
                       setValue("subCategory", null);
@@ -3274,7 +3917,7 @@ if (topic.SubTopicID === "BPSR-1" || topic.subCategory?.value === "BPSR-1") {
           {/* <FilePreviewModal file={previewFile} onClose={closePreview} /> */}
 
           {/* Delete Confirmation Modal */}
-          {showDeleteConfirm && (
+          {showDeleteConfirm ? (
             <Modal
               close={() => setShowDeleteConfirm(false)}
               header={t("delete_topic") || "Delete Topic"}
@@ -3303,6 +3946,51 @@ if (topic.SubTopicID === "BPSR-1" || topic.subCategory?.value === "BPSR-1") {
                 >
                   {t("yes") || "Yes"}
                 </Button>
+              </div>
+            </Modal>
+          ) : null}
+
+          {/* Critical Error Modal with Countdown */}
+          {showCriticalErrorModal && (
+            <Modal
+              close={() => {
+                // Immediately redirect if user tries to close the modal
+                setShowCriticalErrorModal(false);
+                navigate("/");
+              }}
+              header={tManageHearing("warning") || "Warning"}
+              modalWidth={500}
+              preventOutsideClick={true}
+            >
+              <div className="text-center">
+                <div className="mb-4">
+                  <img 
+                    src={FeaturedIcon} 
+                    alt={tManageHearing("warning_icon") || "Warning Icon"} 
+                    className="w-16 h-16 mx-auto mb-4"
+                  />
+                  <p className="text-sm text-gray-700 mb-4">
+                    {criticalErrorMessage}
+                  </p>
+                  <p className="text-sm text-gray-500 mb-2">
+                    {tManageHearing("redirecting_in_seconds", { seconds: countdown }) || `Redirecting in ${countdown} seconds...`}
+                  </p>
+                  <p className="text-xs text-gray-400">
+                    {tManageHearing("modal_will_close_automatically") || "This modal will close automatically and redirect you to the home page."}
+                  </p>
+                </div>
+                <div className="flex justify-center mt-4">
+                  <Button
+                    variant="secondary"
+                    onClick={() => {
+                      // Immediately redirect if user clicks close
+                      setShowCriticalErrorModal(false);
+                      navigate("/");
+                    }}
+                  >
+                    {tManageHearing("close_and_redirect") || "Close & Redirect"}
+                  </Button>
+                </div>
               </div>
             </Modal>
           )}

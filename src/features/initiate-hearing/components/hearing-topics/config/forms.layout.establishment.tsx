@@ -16,7 +16,6 @@ import { getStep2FormFields } from "./Step2From";
 import { subCategoryValue } from "@/mock/genderData";
 import { DateOfBirthField } from "@/shared/components/calanders";
 import { useTranslation } from "react-i18next";
-import NewDatePicker from "@/shared/components/calanders/NewDatePicker";
 import { HijriDatePickerInput } from "@/shared/components/calanders/HijriDatePickerInput";
 import { GregorianDateDisplayInput } from "@/shared/components/calanders/GregorianDateDisplayInput";
 import { DateObject } from "react-multi-date-picker";
@@ -26,6 +25,12 @@ import hijriLocale from "react-date-object/locales/arabic_en";
 import gregorianLocale from "react-date-object/locales/gregorian_en";
 import { useGetRegionLookupDataQuery } from "@/features/initiate-hearing/api/create-case/workDetailApis";
 
+interface UseFormLayoutParamsWithEstablishment extends UseFormLayoutParams {
+  payIncreaseTypeData: any;
+  PayIncreaseTypeOptions: any;
+  control: any;
+  trigger: (field: string | string[]) => void;
+}
 export const useFormLayout = ({
   t: t,
   MainTopicID: mainCategory,
@@ -64,7 +69,8 @@ export const useFormLayout = ({
   isMainCategoryLoading: isMainCategoryLoading,
   isSubCategoryLoading: isSubCategoryLoading,
   control,
-}: UseFormLayoutParams): SectionLayout[] => {
+  trigger,
+}: UseFormLayoutParamsWithEstablishment): SectionLayout[] => {
   const { t: tHearingTopics, i18n } = useTranslation("hearingtopics");
 
   // Add region lookup hook
@@ -193,7 +199,20 @@ export const useFormLayout = ({
           ...field,
           validation: {
             ...(field.validation || {}),
-            validate: (value: string) => value.trim().length > 0 || t('spacesOnlyNotAllowed'),
+            validate: (value: any) => {
+              // Handle different value types safely
+              if (value === null || value === undefined) {
+                return t('spacesOnlyNotAllowed');
+              }
+              if (typeof value === 'string') {
+                return value.trim().length > 0 || t('spacesOnlyNotAllowed');
+              }
+              if (typeof value === 'number') {
+                return value.toString().trim().length > 0 || t('spacesOnlyNotAllowed');
+              }
+              // For objects or other types, convert to string and check
+              return String(value).trim().length > 0 || t('spacesOnlyNotAllowed');
+            },
           },
         };
       }
@@ -323,12 +342,12 @@ export const useFormLayout = ({
         return buildForm([
           {
             type: "input",
-            name: "amount",
+            name: "compensationAmount", // Changed from "amount" to "compensationAmount"
             label: tHearingTopics("amount"),
             inputType: "number",
             min: 0,
-            value: watch("amount") || "",
-            onChange: (value) => setValue("amount", value),
+            value: isEditing ? editTopic?.CompensationAmount || editTopic?.compensationAmount || editTopic?.Amount || editTopic?.amount || watch("compensationAmount") || "" : watch("compensationAmount") || "",
+            onChange: (value) => setValue("compensationAmount", value),
             validation: { required: tHearingTopics("amount") },
             notRequired: false,
           },
@@ -364,7 +383,9 @@ export const useFormLayout = ({
             name: "typeOfRequest",
             label: tHearingTopics("typeOfRequest"),
             options: TypeOfRequestLookUpOptions,
-            value: watch("typeOfRequest")?.value,
+            value: isEditing && editTopic?.RequestType ?
+              { value: editTopic.RequestType, label: editTopic.RequestType } :
+              watch("typeOfRequest"),
             onChange: (option: Option | null) =>
               setValue("typeOfRequest", option),
             validation: { required: tHearingTopics("typeOfRequest") },
@@ -377,6 +398,9 @@ export const useFormLayout = ({
           value: editTopic.RequestType,
           label: editTopic.TypeOfRequest || editTopic.RequestType
         } : null);
+
+        console.log('[🔧 RLRAHI-1 FORM] effectiveTypeOfRequest:', effectiveTypeOfRequest);
+        console.log('[🔧 RLRAHI-1 FORM] editTopic?.RequestType:', editTopic?.RequestType);
 
         if (effectiveTypeOfRequest?.value === "RLRAHI1") {
           fields.push(
@@ -397,6 +421,7 @@ export const useFormLayout = ({
                       )
                     }
                     notRequired={false}
+                    isDateOfBirth={true}
                   />
                   <GregorianDateDisplayInput
                     control={control}
@@ -421,6 +446,9 @@ export const useFormLayout = ({
             }
           );
         } else if (effectiveTypeOfRequest?.value === "RLRAHI2") {
+          console.log('[🔧 RLRAHI-1 FORM] Adding loanAmount field for RLRAHI2');
+          console.log('[🔧 RLRAHI-1 FORM] editTopic?.LoanAmount:', editTopic?.LoanAmount);
+          console.log('[🔧 RLRAHI-1 FORM] editTopic?.loanAmount:', editTopic?.loanAmount);
           fields.push({
             type: "input",
             name: "loanAmount",
@@ -437,25 +465,29 @@ export const useFormLayout = ({
         return buildForm(addNoSpacesValidationToTextInputs(fields, tHearingTopics));
 
       case "RUF-1":
+        console.log('[🔧 RUF-1 FORM] editTopic data:', editTopic);
+        console.log('[🔧 RUF-1 FORM] editTopic?.RefundType:', editTopic?.RefundType);
+        console.log('[🔧 RUF-1 FORM] editTopic?.Amount:', editTopic?.Amount);
+        console.log('[🔧 RUF-1 FORM] editTopic?.refundAmount:', editTopic?.refundAmount);
         return buildForm(addNoSpacesValidationToTextInputs([
           {
             type: "input",
             name: "RefundType",
-            label: tHearingTopics("RefundType"),
+            label: tHearingTopics("refundType"),
             inputType: "text",
-            value: watch("RefundType") || "",
+            value: isEditing ? editTopic?.RefundType || watch("RefundType") || "" : watch("RefundType") || "",
             onChange: (value: string) => setValue("RefundType", value),
-            validation: { required: tHearingTopics("RefundType") },
+            validation: { required: tHearingTopics("refundType") },
             notRequired: false,
           },
           {
             type: "input",
-            name: "amount",
+            name: "refundAmount", // Changed from "amount" to "refundAmount"
             label: tHearingTopics("amount"),
             inputType: "number",
             min: 0,
-            value: watch("amount") || "",
-            onChange: (value: string) => setValue("amount", value),
+            value: isEditing ? editTopic?.Amount || editTopic?.refundAmount || editTopic?.amount || watch("refundAmount") || "" : watch("refundAmount") || "",
+            onChange: (value: string) => setValue("refundAmount", value),
             validation: { required: tHearingTopics("amount") },
             notRequired: false,
           },
@@ -542,15 +574,7 @@ export const useFormLayout = ({
       }
       : {
         children: [
-          {
-            type: "custom",
-            component: (
-              <></>
-              // <div className="p-4 bg-green-50 text-green-700 rounded-md">
-              //   {tHearingTopics("no_content_found")}
-              // </div>
-            ),
-          },
+          ...getCommonElements(true),
         ],
       }),
   };

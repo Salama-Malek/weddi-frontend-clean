@@ -311,6 +311,12 @@ const AuthProvider: React.FC<AuthProviderProps> = ({
           setCookie("userType", userType);
           setIsLegalRep(userType === "Legal representative");
           setUserTypeState(userType)
+          
+          // Store the original user type for role switching logic
+          // Check both userClaims and API response to determine if user is a legal representative
+          if (userType === "Legal representative") {
+            setCookie("originalUserType", "Legal representative");
+          }
         }
       }
     }

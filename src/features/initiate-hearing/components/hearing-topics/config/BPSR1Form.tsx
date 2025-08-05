@@ -2,7 +2,8 @@ import { FormElement, Option } from "@/shared/components/form/form.types";
 import { HijriDatePickerInput } from "@/shared/components/calanders/HijriDatePickerInput";
 import { GregorianDateDisplayInput } from "@/shared/components/calanders/GregorianDateDisplayInput";
 import { ensureOption } from "../edit-index";
-import { isOtherCommission } from "../utils/isOtherCommission"; 
+import { isOtherCommission } from "../utils/isOtherCommission";
+
 interface BPSR1FormProps {
   t: (key: string) => string;
   commissionType: Option | null;
@@ -19,6 +20,7 @@ interface BPSR1FormProps {
     setHijriValue: (value: string) => void,
     gregorianFieldName: string
   ) => void;
+  trigger: (field: string | string[]) => void;
 }
 
 export const getBPSR1FormFields = ({
@@ -33,12 +35,13 @@ export const getBPSR1FormFields = ({
   editTopic,
   control,
   handleHijriDateChange,
+  trigger,
 }: BPSR1FormProps): FormElement[] => {
-  const amount = watch("amount");
-  const amountRatio = watch("amountRatio");
-  const otherCommission = watch("otherCommission");
+  const amount = watch("BPSR1_bonusProfitShareAmount"); // Updated to use new field name
+  const amountRatio = watch("BPSR1_amountRatio");
+  const otherCommission = watch("BPSR1_otherCommission");
 
-  // Ensure we have a commissionType option in edit mode
+  // In edit mode, prefer the existing topic value
   let effectiveCommissionType = commissionType;
   if (!effectiveCommissionType && isEditing && editTopic?.CommissionType) {
     effectiveCommissionType = ensureOption(
@@ -49,41 +52,66 @@ export const getBPSR1FormFields = ({
 
   const needsOther = isOtherCommission(effectiveCommissionType);
 
+  // Custom validation for otherCommission
+  const otherCommissionValidation = {
+    validate: (value: any) => {
+      if (needsOther) {
+        // Handle different value types safely
+        if (value === null || value === undefined) {
+          return t("fieldRequired");
+        }
+        if (typeof value === 'string') {
+          return value.trim() !== "" || t("fieldRequired");
+        }
+        if (typeof value === 'number') {
+          return value.toString().trim() !== "" || t("fieldRequired");
+        }
+        // For objects or other types, convert to string and check
+        return String(value).trim() !== "" || t("fieldRequired");
+      }
+      return true;
+    },
+  };
+
   return [
     {
       type: "input",
-      name: "amount",
+      name: "BPSR1_bonusProfitShareAmount", // Updated to use new field name
       label: t("amount"),
       inputType: "number",
-      value: isEditing ? editTopic?.Amount ?? editTopic?.amount : amount,
+      value: isEditing
+        ? editTopic?.BPSR1_bonusProfitShareAmount ?? editTopic?.bonusProfitShareAmount ?? editTopic?.Amount ?? editTopic?.amount
+        : amount,
       validation: { required: t("fieldRequired") },
-      onChange: (v: string) => setValue("amount", v),
+      onChange: (v: string) => setValue("BPSR1_bonusProfitShareAmount", v),
     },
     {
       type: "input",
-      name: "amountRatio",
+      name: "BPSR1_amountRatio",
       label: t("amountRatio"),
       inputType: "number",
-      value: isEditing ? editTopic?.AmountRatio ?? editTopic?.amountRatio : amountRatio,
+      value: isEditing
+        ? editTopic?.BPSR1_amountRatio ?? editTopic?.amountRatio ?? editTopic?.AmountRatio
+        : amountRatio,
       validation: { required: t("fieldRequired") },
-      onChange: (v: string) => setValue("amountRatio", v),
+      onChange: (v: string) => setValue("BPSR1_amountRatio", v),
     },
     {
       type: "custom",
       component: (
         <div className="flex flex-col gap-2">
           <HijriDatePickerInput
-            control={control}
-            name="from_date_hijri"
+            control={control as any}
+            name="BPSR1_fromDateHijri"
             label={t("fromDateHijri")}
             rules={{ required: true }}
             onChangeHandler={(date, onChange) =>
-              handleHijriDateChange(date, onChange, "from_date_gregorian")
+              handleHijriDateChange(date, onChange, "BPSR1_fromDateGregorian")
             }
           />
           <GregorianDateDisplayInput
-            control={control}
-            name="from_date_gregorian"
+            control={control as any}
+            name="BPSR1_fromDateGregorian"
             label={t("fromDateGregorian")}
           />
         </div>
@@ -94,17 +122,17 @@ export const getBPSR1FormFields = ({
       component: (
         <div className="flex flex-col gap-2">
           <HijriDatePickerInput
-            control={control}
-            name="to_date_hijri"
+            control={control as any}
+            name="BPSR1_toDateHijri"
             label={t("toDateHijri")}
             rules={{ required: true }}
             onChangeHandler={(date, onChange) =>
-              handleHijriDateChange(date, onChange, "to_date_gregorian")
+              handleHijriDateChange(date, onChange, "BPSR1_toDateGregorian")
             }
           />
           <GregorianDateDisplayInput
-            control={control}
-            name="to_date_gregorian"
+            control={control as any}
+            name="BPSR1_toDateGregorian"
             label={t("toDateGregorian")}
           />
         </div>
@@ -112,40 +140,46 @@ export const getBPSR1FormFields = ({
     },
     {
       type: "autocomplete",
-      name: "commissionType",
+      name: "BPSR1_commissionType",
       label: t("commissionType"),
       options: CommissionTypeLookUpOptions,
       value: effectiveCommissionType,
-      onChange: (opt: Option | null) => setValue("commissionType", opt),
+      onChange: (opt: Option | null) => {
+        setValue("BPSR1_commissionType", opt);
+        trigger("BPSR1_commissionType");
+        // If the new commission type does not require 'otherCommission', clear it
+        if (!isOtherCommission(opt)) {
+          setValue("BPSR1_otherCommission", "");
+        }
+        // Always trigger validation for otherCommission
+        trigger("BPSR1_otherCommission");
+      },
       validation: { required: t("fieldRequired") },
     },
-    ...(needsOther
-      ? [
-          {
-            type: "input",
-            name: "otherCommission",
-            label: t("otherCommission"),
-            inputType: "text",
-            value: isEditing
-              ? editTopic?.OtherCommission ?? editTopic?.otherCommission ?? ""
-              : otherCommission,
-            onChange: (v: string) => setValue("otherCommission", v),
-            validation: { required: t("fieldRequired") },
-          } as const,
-        ]
-      : []),
+    {
+      type: "input",
+      name: "BPSR1_otherCommission",
+      label: t("otherCommission"),
+      inputType: "text",
+      value: "", // Let Controller manage the value
+      onChange: () => { }, // No-op, Controller handles this
+      validation: otherCommissionValidation,
+      // Only show if needed
+      condition: needsOther,
+    },
     {
       type: "autocomplete",
-      name: "accordingToAgreement",
+      name: "BPSR1_accordingToAgreement",
       label: t("accordingToTheAgreement"),
       options: AccordingToAgreementLookupLookUpOptions,
       value: isEditing
         ? ensureOption(
-            AccordingToAgreementLookupLookUpOptions,
-            editTopic?.accordingToAgreement?.value ?? editTopic?.AccordingToAgreement
-          )
+          AccordingToAgreementLookupLookUpOptions,
+          editTopic?.AccordingToAgreement_Code ?? editTopic?.AccordingToAgreement
+        )
         : accordingToAgreement,
-      onChange: (opt: Option | null) => setValue("accordingToAgreement", opt),
+      onChange: (opt: Option | null) =>
+        setValue("BPSR1_accordingToAgreement", opt),
       validation: { required: t("fieldRequired") },
     },
   ];

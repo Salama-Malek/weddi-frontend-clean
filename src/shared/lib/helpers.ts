@@ -139,3 +139,66 @@ export const formatDateString = (raw: string | undefined | null): string => {
 export function toWesternDigits(str: string): string {
   return typeof str === 'string' ? str.replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d).toString()) : str;
 }
+
+/**
+ * Process AttachmentKey to handle special characters properly
+ * @param attachmentKey - The raw attachment key from the API
+ * @returns Processed attachment key ready for API calls
+ */
+export const processAttachmentKey = (attachmentKey: string): string => {
+  if (!attachmentKey) return attachmentKey;
+  
+  // If the key contains URL-encoded characters, decode them
+  if (attachmentKey.includes('%')) {
+    try {
+      return decodeURIComponent(attachmentKey);
+    } catch (error) {
+      console.warn('Failed to decode AttachmentKey:', error);
+      // Keep original if decoding fails
+      return attachmentKey;
+    }
+  }
+  
+  // If the key contains + characters (URL-encoded spaces), decode them
+  if (attachmentKey.includes('+')) {
+    try {
+      return attachmentKey.replace(/\+/g, ' ');
+    } catch (error) {
+      console.warn('Failed to decode + characters in AttachmentKey:', error);
+      return attachmentKey;
+    }
+  }
+  
+  return attachmentKey;
+};
+
+/**
+ * Check if a Hijri date is in the future
+ * @param hijriDate - Date in YYYYMMDD format
+ * @returns true if the date is in the future, false otherwise
+ */
+export const isHijriDateInFuture = (hijriDate: string): boolean => {
+  if (!hijriDate || hijriDate.length !== 8) return false;
+  
+  try {
+    const DateObject = require("react-multi-date-picker").DateObject;
+    const hijriCalendar = require("react-date-object/calendars/arabic").default;
+    const hijriLocale = require("react-date-object/locales/arabic_en").default;
+    
+    const date = new DateObject({
+      date: `${hijriDate.slice(0, 4)}/${hijriDate.slice(4, 6)}/${hijriDate.slice(6)}`,
+      calendar: hijriCalendar,
+      locale: hijriLocale,
+      format: "YYYY/MM/DD",
+    });
+    
+    const today = new DateObject({
+      calendar: hijriCalendar,
+      locale: hijriLocale,
+    });
+    
+    return date.toDate() > today.toDate();
+  } catch (error) {
+    return false; // If there's an error parsing the date, assume it's not in the future
+  }
+};

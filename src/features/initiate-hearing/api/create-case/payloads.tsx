@@ -110,7 +110,8 @@ export const claimantDetailsPayload = (
   // Representative
   if (isAgent) {
     console.log("Fooooorm data", formData);
-    
+    console.log("NIC Details Object:", nicDetailObj);
+
     if (agentType === "local_agency") {
       payload.PlaintiffName = formData?.localAgent_userName || nicDetailObj?.PlaintiffName || "";
       payload.PlaintiffHijiriDOB = toWesternDigits(formData?.localAgent_workerAgentDateOfBirthHijri || nicDetailObj?.DateOfBirthHijri || "");
@@ -361,7 +362,7 @@ export const defendantWorkerPayload = (
   };
 
   // Set DomesticWorker based on NIC details
-  payload.DomesticWorker = nicDetailObj?.Applicant_Code === "DW1" ? "true" : "false";
+  // payload.DomesticWorker = nicDetailObj?.Applicant_Code === "DW1" ? "true" : "false";
 
   return payload;
 };
@@ -382,6 +383,20 @@ export const defendantDetailsPayload = (
   userClaims?: any,
   language: string = "EN"
 ): CasePayload => {
+  console.log("[🔍 PAYLOAD] defendantDetailsPayload called with:", {
+    buttonName,
+    defendantStatus: formData?.defendantStatus,
+    defendantDetails: formData?.defendantDetails,
+    DefendantFileNumber: formData?.DefendantFileNumber,
+    Defendant_Establishment_data: formData?.Defendant_Establishment_data,
+    Defendant_Establishment_data_NON_SELECTED: formData?.Defendant_Establishment_data_NON_SELECTED,
+    defendantRegion: formData?.defendantRegion,
+    defendantCity: formData?.defendantCity,
+    phoneNumber: formData?.phoneNumber,
+    establishment_phoneNumber: formData?.establishment_phoneNumber,
+    timestamp: new Date().toISOString()
+  });
+
   const lowUserType = userType?.toLowerCase();
   console.log("this is from deff payload ");
 
@@ -471,6 +486,15 @@ export const defendantDetailsPayload = (
       }
       // Establishment Others
       if (formData?.defendantDetails === "Others" && formData?.defendantStatus === "Establishment") {
+        console.log("[🔍 PAYLOAD] Generating payload for Establishment Others with formData:", {
+          defendantDetails: formData.defendantDetails,
+          defendantStatus: formData.defendantStatus,
+          Defendant_Establishment_data_NON_SELECTED: formData.Defendant_Establishment_data_NON_SELECTED,
+          defendantRegion: formData.defendantRegion,
+          defendantCity: formData.defendantCity,
+          establishment_phoneNumber: formData.establishment_phoneNumber
+        });
+        
         const payload = {
           ...getBasePayload(userClaims, language, userType),
           Flow_ButtonName: buttonName,
@@ -492,10 +516,20 @@ export const defendantDetailsPayload = (
           Defendant_City: formData?.defendantCity?.value || formData?.city?.value,
           Defendant_MobileNumber: formData?.establishment_phoneNumber,
         };
-        console.log("this is from deff payload if details is others ", payload);
+        console.log("[🔍 PAYLOAD] Generated payload for Establishment Others:", payload);
 
         return payload;
       }
+      console.log("[🔍 PAYLOAD] Generating payload for default case with formData:", {
+        defendantDetails: formData.defendantDetails,
+        defendantStatus: formData.defendantStatus,
+        Defendant_Establishment_data: formData.Defendant_Establishment_data,
+        Defendant_Establishment_data_NON_SELECTED: formData.Defendant_Establishment_data_NON_SELECTED,
+        defendantRegion: formData.defendantRegion,
+        defendantCity: formData.defendantCity,
+        establishment_phoneNumber: formData.establishment_phoneNumber
+      });
+      
       const payload = {
         ...getBasePayload(userClaims, language, userType),
         Flow_ButtonName: buttonName,
@@ -519,16 +553,16 @@ export const defendantDetailsPayload = (
             ?.CRNumber,
         //hassan code 700
         Defendant_Number700: formData?.Defendant_Establishment_data
-          ?.Number700,
+          ?.Number700 || formData?.Defendant_Establishment_data_NON_SELECTED?.Number700 || "",
         Defendant_Region: formData?.Defendant_Establishment_data
           ?.Region_Code || formData?.defendantRegion?.value || formData?.region?.value || "",
         Defendant_City:
           formData?.Defendant_Establishment_data
-            ?.City_Code || formData?.defendantCity?.value || formData?.city?.value || "1",
+            ?.City_Code || formData?.defendantCity?.value || formData?.city?.value || "",
         Defendant_PhoneNumber: formData?.establishment_phoneNumber,
         Defendant_MobileNumber: formData?.establishment_phoneNumber,
       };
-      console.log("this is from deff payload if details is selected ", payload);
+      console.log("[🔍 PAYLOAD] Generated payload for default case:", payload);
       return payload;
   }
 };
@@ -575,9 +609,9 @@ export const workDetailsPayload = (
           formData?.jobLocationCity?.value
         ),
         Defendant_JobStartDate: toWesternDigits(formatDateToYYYYMMDD(formData?.dateOfFirstWorkingDayGregorian) || ""),
-        Defendant_JobStartDateHijjari: toWesternDigits(formatDateToYYYYMMDD(formData?.dateofFirstworkingdayHijri) || ""),
+        // Defendant_JobStartDateHijjari: toWesternDigits(formatDateToYYYYMMDD(formData?.dateofFirstworkingdayHijri) || ""),
         Defendant_JobEndDate: toWesternDigits(formatDateToYYYYMMDD(formData?.dateOfLastWorkingDayGregorian) || ""),
-        Defendant_JobEndDateHijjari: toWesternDigits(formatDateToYYYYMMDD(formData?.dateoflastworkingdayHijri) || ""),
+        // Defendant_JobEndDateHijjari: toWesternDigits(formatDateToYYYYMMDD(formData?.dateoflastworkingdayHijri) || ""),
         Defendant_ClosestLaborOffice:
           formData?.laborOffice?.value,
       };
@@ -604,9 +638,9 @@ export const workDetailsPayload = (
         Defendant_ContractEndDate: toWesternDigits(extractValue(formatDateToYYYYMMDD(formData?.contractExpiryDateGregorian) || "")),
         Defendant_ContractEndDateHijjari: toWesternDigits(extractValue(formatDateToYYYYMMDD(formData?.contractExpiryDateHijri) || "")),
         Defendant_JobStartDate: toWesternDigits(formatDateToYYYYMMDD(formData?.dateOfFirstWorkingDayGregorian) || ""),
-        Defendant_JobStartDateHijjari: toWesternDigits(formatDateToYYYYMMDD(formData?.dateofFirstworkingdayHijri) || ""),
+        // Defendant_JobStartDateHijjari: toWesternDigits(formatDateToYYYYMMDD(formData?.dateofFirstworkingdayHijri) || ""),
         Defendant_JobEndDate: toWesternDigits(formatDateToYYYYMMDD(formData?.dateOfLastWorkingDayGregorian) || ""),
-        Defendant_JobEndDateHijjari: toWesternDigits(formatDateToYYYYMMDD(formData?.dateoflastworkingdayHijri) || ""),
+        // Defendant_JobEndDateHijjari: toWesternDigits(formatDateToYYYYMMDD(formData?.dateoflastworkingdayHijri) || ""),
         Defendant_ClosestLaborOffice:
           formData?.laborOffice?.value,
         Defendant_JobLocation: extractValue(
@@ -645,9 +679,9 @@ export const workDetailsPayload = (
         Plaintiff_ClosestLaborOffice:
           formData?.laborOffice?.value,
         Plaintiff_JobStartDate: toWesternDigits(formatDateToYYYYMMDD(formData?.dateOfFirstWorkingDayGregorian) || ""),
-       // Plaintiff_JobStartDateHijjari: toWesternDigits(formatDateToYYYYMMDD(formData?.dateofFirstworkingdayHijri) || ""),
+        // Plaintiff_JobStartDateHijjari: toWesternDigits(formatDateToYYYYMMDD(formData?.dateofFirstworkingdayHijri) || ""),
         Plaintiff_JobEndDate: toWesternDigits(formatDateToYYYYMMDD(formData?.dateOfLastWorkingDayGregorian) || ""),
-       // Plaintiff_JobEndDateHijjari: toWesternDigits(formatDateToYYYYMMDD(formData?.dateoflastworkingdayHijri) || ""),
+        // Plaintiff_JobEndDateHijjari: toWesternDigits(formatDateToYYYYMMDD(formData?.dateoflastworkingdayHijri) || ""),
       };
   }
 };
@@ -685,7 +719,7 @@ export const reviewPayload = (
 });
 
 // hassan add this payload
-const emabsyClaimantPayload = (
+export const emabsyClaimantPayload = (
   buttonName: "Next" | "Save",
   formData: any,
   getCaseId?: any,
@@ -703,20 +737,19 @@ const emabsyClaimantPayload = (
       ApplicantType: "Worker",
       PlaintiffType: "Self(Worker)",
       PlaintiffId: userClaims?.UserID || "",
-      PlaintiffName: formData?.userName || "",
+      PlaintiffName: formData?.embassyPrincipal_userName || nicDetailObj?.PlaintiffName || userClaims?.UserName || "",
       PlaintiffHijiriDOB: toWesternDigits((formatDateToYYYYMMDD(
-        formData?.hijriDate
-      ) ?? "")),
+        formData?.embassyPrincipal_hijriDate
+      ) ?? nicDetailObj?.DateOfBirthHijri ?? userClaims?.UserDOB ?? "")),
       Plaintiff_ApplicantBirthDate: toWesternDigits((formatDateToYYYYMMDD(
-        formData?.gregorianDate
-      ) ?? "")),
-      Plaintiff_PhoneNumber: formData?.phoneNumber || "",
-      Plaintiff_Region: formData?.region?.value || "",
-      Plaintiff_City: formData?.city?.value || "",
-      JobPracticing: formData?.occupation?.value || "",
-      Gender: formData?.gender?.value || "",
-      Worker_Nationality:
-        formData?.nationality?.value || "",
+        formData?.embassyPrincipal_gregorianDate
+      ) ?? nicDetailObj?.DateOfBirthGregorian ?? "")),
+      Plaintiff_PhoneNumber: formData?.embassyPrincipal_phoneNumber || nicDetailObj?.PhoneNumber?.toString() || "",
+      Plaintiff_Region: formData?.embassyPrincipal_region?.value || formData?.embassyPrincipal_region || nicDetailObj?.Region_Code || "",
+      Plaintiff_City: formData?.embassyPrincipal_city?.value || formData?.embassyPrincipal_city || nicDetailObj?.City_Code || "",
+      JobPracticing: formData?.embassyPrincipal_occupation?.value || formData?.embassyPrincipal_occupation || nicDetailObj?.Occupation_Code || "",
+      Gender: formData?.embassyPrincipal_gender?.value || formData?.embassyPrincipal_gender || nicDetailObj?.Gender_Code || "",
+      Worker_Nationality: formData?.embassyPrincipal_nationality?.value || formData?.embassyPrincipal_nationality || nicDetailObj?.Nationality_Code || "",
       IsGNRequired: formData?.isPhone || false,
       CountryCode: formData?.phoneCode?.value || "",
       GlobalPhoneNumber: formData?.interPhoneNumber || "",
@@ -734,29 +767,30 @@ const emabsyClaimantPayload = (
     ApplicantType: "Worker",
     PlaintiffType: "Agent",
     Agent_EmbassyName: formData?.embassyAgent_Agent_EmbassyName || "",
-    Agent_EmbassyNationality: formData?.embassyAgent_Agent_EmbassyNationality || "",
+    Agent_EmbassyNationality: formData?.embassyAgent_Nationality_Code || "",
     Agent_EmbassyPhone: formData?.embassyAgent_Agent_EmbassyPhone || "",
     Agent_EmbassyEmailAddress: formData?.embassyAgent_Agent_EmbassyEmailAddress || "",
     Agent_EmbassyFirstLanguage: formData?.embassyAgent_Agent_EmbassyFirstLanguage || "",
     PlaintiffId: formData?.embassyAgent_workerAgentIdNumber || "",
-    PlaintiffName: formData?.embassyAgent_userName || "",
+    PlaintiffName: formData?.embassyAgent_userName || nicDetailObj?.PlaintiffName || "",
     PlaintiffHijiriDOB: toWesternDigits((formatDateToYYYYMMDD(
       formData?.embassyAgent_workerAgentDateOfBirthHijri
-    ) ?? "")),
+    ) ?? nicDetailObj?.DateOfBirthHijri ?? "")),
     Plaintiff_ApplicantBirthDate: toWesternDigits((formatDateToYYYYMMDD(
       formData?.embassyAgent_gregorianDate
-    ) ?? "")),
-    Plaintiff_PhoneNumber: formData?.embassyAgent_phoneNumber || "",
-    Plaintiff_Region: formData?.embassyAgent_region?.value || formData?.embassyAgent_region || "",
-    Plaintiff_City: formData?.embassyAgent_city?.value || formData?.embassyAgent_city || "",
-    JobPracticing: formData?.embassyAgent_occupation?.value || formData?.embassyAgent_occupation || "",
-    Gender: formData?.embassyAgent_gender?.value || formData?.embassyAgent_gender || "",
-    Worker_Nationality: formData?.embassyAgent_nationality?.value || formData?.embassyAgent_nationality || "",
+    ) ?? nicDetailObj?.DateOfBirthGregorian ?? "")),
+    Plaintiff_PhoneNumber: formData?.embassyAgent_phoneNumber || nicDetailObj?.PhoneNumber?.toString() || "",
+    Plaintiff_Region: formData?.embassyAgent_region?.value || formData?.embassyAgent_region || nicDetailObj?.Region_Code || "",
+    Plaintiff_City: formData?.embassyAgent_city?.value || formData?.embassyAgent_city || nicDetailObj?.City_Code || "",
+    JobPracticing: formData?.embassyAgent_occupation?.value || formData?.embassyAgent_occupation || nicDetailObj?.Occupation_Code || "",
+    Gender: formData?.embassyAgent_gender?.value || formData?.embassyAgent_gender || nicDetailObj?.Gender_Code || "",
+    Worker_Nationality: formData?.embassyAgent_nationality?.value || formData?.embassyAgent_nationality || nicDetailObj?.Nationality_Code || "",
     IsGNRequired: formData?.isPhone || false,
     CountryCode: formData?.phoneCode?.value || "",
     GlobalPhoneNumber: formData?.interPhoneNumber || "",
     IsGNOtpVerified: formData?.isVerified || false,
     DomesticWorker: nicDetailObj?.Applicant_Code === "DW1" ? "true" : "false",
+    IDNumber: userClaims?.UserID || "",
   };
 };
 

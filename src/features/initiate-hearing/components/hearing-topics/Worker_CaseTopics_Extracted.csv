@@ -1,0 +1,146 @@
+,Case topic,Main Topic ID,Case topic arabic,Case Topic English,Applicant Type,Subtopic,Sub Topic ID,Sub topic arabic,Sub topic english,Arabic Field name (UI),Mandatory,English Fiels name (UI),Fieldname (in the System),Validation on Field (No. of Characters/Digits),Datatype,AttachmentDescription,Source,APIs details,Comments
+,EstablishmentDecisionsObjections,EDO,دعوى اعتراض على قرار المنشأة الإداري,Establishment Decisions Objections,Worker,CancellationOfTheLocationTransferDecision,EDO-1,النقل المكاني,Cancellation of the location transfer decision,من مكان,Yes,From Location,FromLocation,LookUpData API,string,"JobContract    --- For all case topics, you should  to add an optional attachment type called ""Other"" that already exists in the system.
+Other- اخرى                                                                                                                                                                                                                                                                                 ",LookUpData API,RegionName,
+,EstablishmentDecisionsObjections,,,,,,,,,إلى مكان,Yes,To Location,ToLocation,LookUpData API,string,,LookUpData API,RegionName,
+,EstablishmentDecisionsObjections,,,,,,,,,تاريخ قرار المدير (هجري),Yes,Managerial Decision Date (Hijri),Date_New, DD/MM/YYYY,Hijjari Date,,,,
+,EstablishmentDecisionsObjections,,,,,,,,,تاريخ قرار المدير (ميلادي),Yes,Managerial Decision Date (Gregorian),ManDecsDate, DD/MM/YYYY,English date,,,,
+,EstablishmentDecisionsObjections,,,,,,,,,رقم القرار الإداري,No,Managerial Decision Number,ManagerialDecisionNumber,50,integer,,,,
+,EstablishmentDecisionsObjections,,,,,CancellationOfTheJobTransferDecision,EDO-2,النقل الوظيفي,Cancellation of the job transfer decision,من وظيفة,Yes,From Job,FromJob,50,string(Alphabetical Value),"JobContract    --- For all case topics, you should  to add an optional attachment type called ""Other"" that already exists in the system.
+Other- اخرى                                                                                                                                                                                                                                                                                 ",,,
+,EstablishmentDecisionsObjections,,,,,,,,,إلى وظيفة,Yes,To Job ,ToJob,50,string(Alphabetical Value),,,,
+,EstablishmentDecisionsObjections,,,,,,,,,تاريخ قرار المدير (هجري),Yes,Managerial Decision Date (Hijri),Date_New, DD/MM/YYYY,Hijjari Date,,,,
+,EstablishmentDecisionsObjections,,,,,,,,,تاريخ قرار المدير (ميلادي),Yes,Managerial Decision Date (Gregorian),ManDecsDate, DD/MM/YYYY,English date,,,,
+,EstablishmentDecisionsObjections,,,,,,,,,رقم القرار الإداري,No,Managerial Decision Number,ManagerialDecisionNumber,50,integer,,,,
+,EstablishmentDecisionsObjections,,,,,CancellationOfTheWageReductionDecision,EDO-3,تخفيض الأجر,Cancellation of the wage reduction decision,مقدار التخفيض,Yes,Amount of Reduction,AmountOfReduction,6D,integer(6D),"JobContract  --- For all case topics, you should  to add an optional attachment type called ""Other"" that already exists in the system.
+Other- اخرى                                                                                                                                                                                                                                                                                       ",,,
+,EstablishmentDecisionsObjections,,,,,,,,,تاريخ قرار المدير (هجري),Yes,Managerial Decision Date (Hijri),pyTempDate, DD/MM/YYYY,Hijjari Date,,,,
+,EstablishmentDecisionsObjections,,,,,,,,,تاريخ قرار المدير (ميلادي),Yes,Managerial Decision Date (Gregorian),ManagerialDecisionDate_New, DD/MM/YYYY,English date,,,,
+,EstablishmentDecisionsObjections,,,,,,,,,رقم القرار الإداري,No,Managerial Decision Number,ManagerialDecisionNumber,50,String,,,,
+,EstablishmentDecisionsObjections,,,,,CancellationOfDisciplinaryPenaltyDecision,EDO-4,جزاء تأديبي,Cancellation of disciplinary penalty decision,انواع الجزاءات ,Yes,Types of penalties ,PenalityType,LookUpData API,string(Drop Down),"JobContract --- For all case topics, you should  to add an optional attachment type called ""Other"" that already exists in the system.
+Other- اخرى",LookUpData API,PenalityType,
+,EstablishmentDecisionsObjections,,,,,,,,,تاريخ قرار المدير (هجري),Yes,Managerial Decision Date (Hijri),Date_New, DD/MM/YYYY,Hijjari Date,,,,
+,EstablishmentDecisionsObjections,,,,,,,,,تاريخ قرار المدير (ميلادي),Yes,Managerial Decision Date (Gregorian),ManDecsDate, DD/MM/YYYY,English date,,,,
+,EstablishmentDecisionsObjections,,,,,,,,,رقم القرار الإداري,No,Managerial Decision Number,ManagerialDecisionNumber,50,String,,,,
+,WageRequest,WR,دعوى طلب اجر,Wage Request,Worker,RequestOfAllowance,WR-1,طلب بدل,Request of allowance,المبلغ,Yes,Amount,Amount,10 D,string(10 D),"JobContract--- For all case topics, you should  to add an optional attachment type called ""Other"" that already exists in the system.
+Other- اخرى",,,
+,WageRequest,,,,,,,,,من تاريخ (الهجري),Yes,From Date (Hijri),pyTempDate,DD/MM/YYYY,Hijjari Date,,,,
+,WageRequest,,,,,,,,,من تاريخ (ميلادي),Yes,From Date (Gregorian),ToDate_New,DD/MM/YYYY,English date,,,,
+,WageRequest,,,,,,,,,إلى تاريخ (الهجري),Yes,To Date (Hijri),Date_New,DD/MM/YYYY,Hijjari Date,,,,
+,WageRequest,,,,,,,,,إلى تاريخ (ميلادي),Yes,To Date (Gregorian),FromDate_New,DD/MM/YYYY,English date,,,,
+,WageRequest,,,,,,,,,مقابل بدل ,Yes,For Allowance,ForAllowance,LookUpData API,String,,LookUpData API,ForAllowance,
+,WageRequest,,,,,,,,,بدلات آخرى,"Yes(if 'For allowance' is بدلات آخرى then its required)
+
+Code
+
+FA11 -- بدلات آخرى",Other allowances ,OtherAllowance,50,String,,,,
+,WageRequest,,,,,LateFees,WR-2,طلب اجر متاخر ,Request for late payment,المبلغ,Yes,Amount,OverdueWagesAmount,10 D,string(10 D),"JobContract--- For all case topics, you should  to add an optional attachment type called ""Other"" that already exists in the system.
+Other- اخرى",,,
+,WageRequest,,,,,,,,,من تاريخ (الهجري),Yes,From Date (Hijri),pyTempDate,DD/MM/YYYY,Hijjari Date,,,,
+,WageRequest,,,,,,,,,من تاريخ (ميلادي),Yes,From Date (Gregorian),ToDate_New,DD/MM/YYYY,English date,,,,
+,WageRequest,,,,,,,,,إلى تاريخ (الهجري),Yes,To Date (Hijri),Date_New,DD/MM/YYYY,Hijjari Date,,,,
+,WageRequest,,,,,,,,,إلى تاريخ (ميلادي),Yes,To Date (Gregorian),FromDate_New,DD/MM/YYYY,English date,,,,
+,HousingInsuranceRequest,HIR,دعوى طلب تأمين سكن,Housing Insurance Request,Worker,RequestForHousingInsurance,HIR-1,طلب تأمين سكن,Request for housing insurance,هل تتضمن اللائحة الداخلية إضافة سكن؟,,Does Bylaws include adding accommodations?  ,IsBylawsIncludeAddingAccomodation,Yes/No,string(Radio Button ),"JobContract --- For all case topics, you should  to add an optional attachment type called ""Other"" that already exists in the system.
+Other- اخرى",Select “Yes” or “No” radio button,,
+,HousingInsuranceRequest,,,,,,,,,هل يتضمن العقد إضافة سكن؟,,Does Contract include adding accommodations?,IsContractIncludeAddingAccommodation,Yes/No,string(Radio Button ),,Select “Yes” or “No” radio button,,
+,HousingInsuranceRequest,,,,,,,,,مواصفات السكن في عقد العمل,"Yes- when field #72(IsContractIncludeAddingAccommodation) ""Yes""",Housing Specifications in Contract,HousingSpecificationsInContract,100,string,,,,
+,HousingInsuranceRequest,,,,,,,,,مواصفات السكن في اللائحة الداخلية,"Yes- when field #71(IsBylawsIncludeAddingAccomodation) ""Yes""",Housing Specifications in Bylaws,HousingSpecificationsInBylaws,100,string,,,,
+,HousingInsuranceRequest,,,,,,,,,مواصفات السكن,"Yes- when field #72(IsContractIncludeAddingAccommodation) ""Yes""",Housing Specifications,HousingSpecifications,100,string,,,,
+,MedicalInsuranceRequest,MIR,دعوى طلب تامين طبي,Medical Insurance Request,Worker,RequestForMedicalInsurance,MIR-1,طلب تأمين طبي,Request for medical insurance,نوع الطلب ,"""If the user chooses """"Modifying the insurance category,"""" we will display the following fiel:
+
+* Reason for Modification
+* Current Insurance Level
+* Required Degree of Insurance
+
+if the user chooses eaither """" Adding A family member to insurance """" or """"new insurance"""" will  display only the  field of  """"Required Degree of Insurance"""" ""
+
+Code 
+
+REQT1 -- Adding A family member to insurance
+REQT2 -- new insurance
+REQT3 -- Modifying the insurance category
+
+
+",Type of Request ,RequestType,LookUpData API,string(Drop Down),"JobContract --- For all case topics, you should  to add an optional attachment type called ""Other"" that already exists in the system.
+Other- اخرى",LookUpData API,RequestType,
+,MedicalInsuranceRequest,,,,,,,,,السبب ,,Reason ,Reason,100,string,,,,
+,MedicalInsuranceRequest,,,,,,,,,درجة التأمين الحالية ,,Current Insurance Level ,CurrentInsuranceLevel,50,string,,,,
+,MedicalInsuranceRequest,,,,,,,,,درجة التأمين المطوبة ,,Required degree of insurance ,RequiredDegreeInsurance,50,string,,,,
+,TravelTicketsRequest,TTR,دعوى طلب تذاكر سفر,Travel Tickets Request,Worker,RequestForTravelTicket,TTR-1,طلب تذاكر سفر,Request for travel ticket,وسيلة السفر ,Yes,Traveling way ,TravelingWay,LookUpData API,string (Drop Down),"JobContract --- For all case topics, you should  to add an optional attachment type called ""Other"" that already exists in the system.
+Other- اخرى",LookUpData API,TravelingWay,
+,CompensationRequest,CMR,دعوى طلب تعويض,Compensation Request,Worker,TreatmentRefunds,CMR-1,استرداد مبالغ علاجية,Treatment refunds,المبالغ المدفوعة عن:,Yes,Amounts paid for:,AmountsPaidFor,LookUpData API,String,"No Attachment Required --- For all case topics, you should  to add an optional attachment type called ""Other"" that already exists in the system.
+Other- اخرى",LookUpData API,AmountsPaid,
+,CompensationRequest,,,,,,,,,المبلغ المطلوب,Yes,The amount required,AmountRequired,(10 D),string(10 D),,,,
+,CompensationRequest,,,,,RequestCompensationForWorkInjury,CMR-3,إصابة العمل,Request compensation for work injury,المبلغ,Yes,Compensation Amount ,Amount,(10 D),string(10 D),"No Attachment Required --- For all case topics, you should  to add an optional attachment type called ""Other"" that already exists in the system.
+Other- اخرى",,,
+,CompensationRequest,,,,,,,,,تاريخ الإصابة (هجري),Yes,Injury Date (Hijri) ,pyTempText, DD/MM/YYYY,Hijjari Date,,,,
+,CompensationRequest,,,,,,,,,تاريخ الإصابة (ميلادي),Yes,Injury Date (Gregorian)  ,InjuryDate_New, DD/MM/YYYY,English date,,,,
+,CompensationRequest,,,,,,,,,نوع إصابة العمل,Yes,Injury Type,TypeOfWorkInjury,100,string(Alphabetical Value),,,,
+,CompensationRequest,,,,,RequestCompensationForTheDurationOfTheNotice,CMR-4,عن مدة الاشعار,Request compensation for the duration of the notice,المبلغ,Yes,Amount ,Amount,(10 D),string(10 D),"JobContract --- For all case topics, you should  to add an optional attachment type called ""Other"" that already exists in the system.
+Other- اخرى",,,
+,CompensationRequest,,,,,PayStopTime,CMR-8,أجر مدة الإيقاف,Pay stop time,مقدار الأجور المتأخرة,Yes,Wages Amount ,WagesAmount,(10 D),string(10 D),"JobContract --- For all case topics, you should  to add an optional attachment type called ""Other"" that already exists in the system.
+Other- اخرى",,,
+,CompensationRequest,,,,,,,,,التاريخ الهجري (من),Yes,From Date (Hijri),pyTempDate,DD/MM/YYYY,Hijjari Date,,,,
+,CompensationRequest,,,,,,,,,التاريخ الميلادي (من),Yes,From Date (Gregorian),ToDate_New,DD/MM/YYYY,English date,,,,
+,CompensationRequest,,,,,,,,,التاريخ الهجري (إلى),Yes,To Date (Hijri),Date_New,DD/MM/YYYY,Hijjari Date,,,,
+,CompensationRequest,,,,,,,,,التاريخ الميلادي (إلى),Yes,To Date (Gregorian),FromDate_New,DD/MM/YYYY,English date,,,,
+,CompensationRequest,,,,,TheWageDifferenceAndIncrease,CMR-6,فرق/ زيادة الاجر,The Wage Difference/increase,الاجر الجديد,Yes,New Pay Amount,NewPayAmount,(10 D),string(10 D),"JobContract --- For all case topics, you should  to add an optional attachment type called ""Other"" that already exists in the system.
+Other- اخرى",,,
+,CompensationRequest,,,,,,,,,نوع زيادة الاجر,Yes,Pay increase Type,PayIncreaseType,LookUpData API,String,,LookUpData API,PayIncreaseType,
+,CompensationRequest,,,,,,,,,التاريخ الهجري (من),Yes,From Date (Hijri),pyTempDate,DD/MM/YYYY,Hijjari Date,,,,
+,CompensationRequest,,,,,,,,,التاريخ الميلادي (من),Yes,From Date (Gregorian),ToDate_New,DD/MM/YYYY,English date,,,,
+,CompensationRequest,,,,,,,,,التاريخ الهجري (إلى),Yes,To Date (Hijri),Date_New,DD/MM/YYYY,Hijjari Date,,,,
+,CompensationRequest,,,,,,,,,التاريخ الميلادي (إلى),Yes,To Date (Gregorian),FromDate_New,DD/MM/YYYY,English date,,,,
+,CompensationRequest,,,,,,,,,فرق زيادة الاجر,Yes,Wage Difference,WageDifference,(10 D),string(10 D),,,,
+,CompensationRequest,,,,,Requestforovertimepay,CMR-7,طلب اجر ساعات عمل اضافية,Request for overtime pay,التاريخ الهجري (من),Yes,From Date (Hijri),pyTempDate,DD/MM/YYYY,Hijjari Date,"JobContract --- For all case topics, you should  to add an optional attachment type called ""Other"" that already exists in the system.
+Other- اخرى",,,
+,CompensationRequest,,,,,,,,,التاريخ الميلادي (من),Yes,From Date (Gregorian),ToDate_New,DD/MM/YYYY,English date,,,,
+,CompensationRequest,,,,,,,,,التاريخ الهجري (إلى),Yes,To Date (Hijri),Date_New,DD/MM/YYYY,Hijjari Date,,,,
+,CompensationRequest,,,,,,,,,التاريخ الميلادي (إلى),Yes,To Date (Gregorian),FromDate_New,DD/MM/YYYY,English date,,,,
+,CompensationRequest,,,,,,,,,مدة الاجازة المستحقة,Yes,Duration of leave due,DurationOfLeaveDue,(10 D),string(10 D),,,,
+,CompensationRequest,,,,,,,,,الاجر المستحق,Yes,Pay due,PayDue,(10 D),string(10 D),,,,
+,CompensationRequest,,,,,RequestAVacationPay,CMR-5,طلب أجر إجازة,Pay for work during vacation,نوع الاجازة ,Yes,the kind of holiday,LeaveType,LookUpData API,string,"JobContract --- For all case topics, you should  to add an optional attachment type called ""Other"" that already exists in the system.
+Other- اخرى",LookUpData API,LeaveType,
+,CompensationRequest,,,,,,,,,اجمالي المبلغ المطلوب,Yes,Total amount required,TotalAmountRequired,(10 D),string(10 D),,,,
+,CompensationRequest,,,,,,,,,ساعات العمل,Yes,working hours,WorkingHoursCount,(10 D),string(10 D),,,,
+,CompensationRequest,,,,,,,,,تفاصيل إضافية,No,Additional details,AdditionalDetails,50,String,,,,
+,BonusRequest,BR,دعوى طلب علاوة,Bonus Request,Worker,RequestForBonus,BR-1,طلب علاوة,Request for bonus,حسب اتفاق,Yes,According to Agreement ,AccordingToAgreement,50,string,"JobContract --- For all case topics, you should  to add an optional attachment type called ""Other"" that already exists in the system.
+Other- اخرى",LookUpData API,AccordingToAgreement,
+,BonusRequest,,,,,,,,,العلاوة,Yes,Premium,Premium,10 D,string,,,,
+,BonusRequest,,,,,,,,,التاريخ الهجري,Yes,Hijri Date,pyTempDate,DD/MM/YYYY,Hijjari Date,,,,
+,BonusRequest,,,,,,,,,التاريخ الميلادي,Yes,Gregorian Date,Date_New,DD/MM/YYYY,English date,,,,
+,BonusandProfitShareRequest,BPSR,دعوى طلب عمولات,Bonusand Profit Share Request,Worker,RequestForCommissions,BPSR-1,طلب عمولات,Request for commissions,المبلغ,Yes,Amount ,Amount,10 D,integer(10 D),"JobContract --- For all case topics, you should  to add an optional attachment type called ""Other"" that already exists in the system.
+Other- اخرى",,,
+,BonusandProfitShareRequest,,,,,,,,,نسبة المبلغ,Yes,Amount Ratio ,AmountRatio,10 D,string,,,,
+,BonusandProfitShareRequest,,,,,,,,,التاريخ الهجري (من),Yes,From Date (Hijri),pyTempDate,DD/MM/YYYY,Hijjari Date,,,,
+,BonusandProfitShareRequest,,,,,,,,,التاريخ الميلادي (من),Yes,From Date (Gregorian),ToDate_New,DD/MM/YYYY,English date,,,,
+,BonusandProfitShareRequest,,,,,,,,,التاريخ الهجري (إلى),Yes,To Date (Hijri),Date_New,DD/MM/YYYY,Hijjari Date,,,,
+,BonusandProfitShareRequest,,,,,,,,,التاريخ الميلادي (إلى),Yes,To Date (Gregorian),FromDate_New,DD/MM/YYYY,English date,,,,
+,BonusandProfitShareRequest,,,,,,,,,نوع العمولة,Yes,Commission Type ,CommissionType,LookUpData API,string,,LookUpData API,CommissionType,
+,BonusandProfitShareRequest,,,,,,,,,عمولات اخرى ,"Yes(If 'Commission Type' is   عمولات آخرى then its requried)
+
+Code
+
+CT4  -- عمولات آخرى",Other Commission ,OtherCommission,50,string,,,,
+,BonusandProfitShareRequest,,,,,,,,,حسب اتفاق,Yes,According to Agreement ,AccordingToAgreement,LookUpData API,string,,LookUpData API,AccordingToAgreement,
+,RewardRequest,RR,دعوى طلب مكافأة,Reward Request,Worker,RequestForReward,RR-1,طلب مكافأة,Request For Reward,المبلغ,Yes,Amount ,Amount,10 D,string(10 D),"JobContract --- For all case topics, you should  to add an optional attachment type called ""Other"" that already exists in the system.
+Other- اخرى",,,
+,RewardRequest,,,,,,,,,نوع المكافأة ,Yes,Reward Type,Type,50,string(Alphabetical Value),,,,
+,JobApplicationRequest,JAR,دعاوى طلبات وظيفية,Job Application Request,Worker,RequestToChangeJobTitle,JAR-2,طلب تعديل المسمى الوظيفي,Request to change job title,المسمى الوظيفي الحالي ,Yes,Current job title ,CurrentJobTitle,50,string,"JobContract --- For all case topics, you should  to add an optional attachment type called ""Other"" that already exists in the system.
+Other- اخرى",,,
+,JobApplicationRequest,,,,,,,,,المسمى الوظيفي المطلوب ,Yes,Required job title,RequiredJobTitle,50,string,,,,
+,JobApplicationRequest,,,,,PromotionRequest,JAR-3,طلب ترقية,Promotion request,هل تتضمن اللائحة الداخلية الية ترقيات ,Yes,Does the internal regulation include a promotion mechanism? ,PromotionMechanism,Yes/No,string,"Job Contract,Reason of Promotion --- For all case topics, you should  to add an optional attachment type called ""Other"" that already exists in the system.
+Other- اخرى",,,
+,JobApplicationRequest,,,,,,,,,هل يتضمن العقد اضافة ترقية ,Yes,Does the contract include an additional upgrade? ,AdditionalUpgrade,Yes/No,string,,,,
+,JobApplicationRequest,,,,,RequestOnJob,JAR-4,طلب تسكين على وظيفة,Request on job,الوظيفة الحالية ,Yes,Current Position,CurrentPosition,50,string,"JobContract --- For all case topics, you should  to add an optional attachment type called ""Other"" that already exists in the system.
+Other- اخرى",,,
+,JobApplicationRequest,,,,,,,,,الوظيفة المطلوبة ,Yes,The wanted Job ,WantedJob,50,string,,,,
+,DocumentsRequests,DR,دعوى طلب تسليم الوثائق,Documents Requests,Worker,RequestForDocumentsDelivery,DR-1,دعوى طلب تسليم الوثائق,Request for documents delivery,No Fields,,,,,,"JobContract --- For all case topics, you should  to add an optional attachment type called ""Other"" that already exists in the system.
+Other- اخرى",,,
+,RefundOfFundsRequest,RFR,دعوى استرداد المبالغ المالية,Lawsuit for refund request,Worker,WorkMoneyExpensesRequest,RFR-1,دعوى طلب مبالغ مالية أنفقها العامل لصالح العمل,Request Money Spent In Favor Of The Work,المبلغ,Yes,Amount ,Amount ,10 D,Decimal,"No Attachment Required --- For all case topics, you should  to add an optional attachment type called ""Other"" that already exists in the system.
+Other- اخرى",,,
+,RefundOfFundsRequest,,,,,,,,,مقابل,Yes,Consideration,Consideration,50,string,,,,
+,RefundOfFundsRequest,,,,,,,,,التاريخ الهجري,Yes,Hijri Date,pyTempDate,DD/MM/YYYY,Date,,,,
+,RefundOfFundsRequest,,,,,,,,,التاريخ الميلادي,Yes,Gregorian Date,Date_New,DD/MM/YYYY,Date,,,,
+,Lawsuitforcompensationforunlawfultermination,LCUT,دعوى طلب تعويض عن الانهاء الغير مشروع,Lawsuit for compensation for unlawful termination,Worker,RequestForCompensationForUnlawfulTermination,LCUT-1,طلب تعويض عن الانهاء الغير مشروع,Request for compensation for unlawful termination,مقدار التعويض,Yes,Amount of compensation,AmountOfCompensation,10 D,Decimal,"JobContract,  Proofofillegaltermination--- For all case topics, you should  to add an optional attachment type called ""Other"" that already exists in the system.
+Other- اخرى",,,
+,LawsuitRequestingEndOfServiceReward,LRESR,دعوى طلب مكافأة نهاية خدمة,Lawsuit of Requesting For The End Of Service Reward,Worker,RequestForTheEndOfServiceReward,LRESR-1,طلب مكافأة نهاية خدمة,Request for the end of service reward,المبلغ,Yes,Amount,Amount,10 D,string(10 D),,,,

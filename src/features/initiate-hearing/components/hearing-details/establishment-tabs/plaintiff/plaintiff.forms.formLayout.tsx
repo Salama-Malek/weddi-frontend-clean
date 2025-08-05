@@ -54,26 +54,42 @@ export const useEstablishmentPlaintiffFormLayout = ({
   }, [cityData]);
 
   useEffect(() => {
-    setValue("establishment_name", establishmentDetails?.EstablishmentName, {
-      shouldValidate: establishmentDetails?.EstablishmentName,
-    });
-    setValue("establishment_fileNumber", establishmentDetails?.FileNumber, {
-      shouldValidate: establishmentDetails?.FileNumber,
-    });
-    setValue("establishment_crNumber", establishmentDetails?.CRNumber, {
-      shouldValidate: establishmentDetails?.CRNumber,
-    });
-    setValue("establishment_id", establishmentDetails?.EstablishmentID, {
-      shouldValidate: establishmentDetails?.EstablishmentID,
-    });
-    setValue("establishment_phoneNumber", establishmentDetails?.ContactNumber, {
-      shouldValidate: establishmentDetails?.ContactNumber,
-    });
-    setValue("establishment_number700", establishmentDetails?.Number700, {
-      shouldValidate: establishmentDetails?.Number700,
-    });
-    setValue("establishment_region", { value: establishmentDetails?.Region_Code || "", label: establishmentDetails?.Region || "" });
-    setValue("establishment_city", { value: establishmentDetails?.City_Code || "", label: establishmentDetails?.City || "" });
+    if (establishmentDetails?.EstablishmentName) {
+      setValue("establishment_name", establishmentDetails.EstablishmentName, {
+        shouldValidate: true,
+      });
+    }
+    if (establishmentDetails?.FileNumber) {
+      setValue("establishment_fileNumber", establishmentDetails.FileNumber, {
+        shouldValidate: true,
+      });
+    }
+    if (establishmentDetails?.CRNumber) {
+      setValue("establishment_crNumber", establishmentDetails.CRNumber, {
+        shouldValidate: true,
+      });
+    }
+    if (establishmentDetails?.EstablishmentID) {
+      setValue("establishment_id", establishmentDetails.EstablishmentID, {
+        shouldValidate: true,
+      });
+    }
+    if (establishmentDetails?.ContactNumber) {
+      setValue("establishment_phoneNumber", establishmentDetails.ContactNumber, {
+        shouldValidate: true,
+      });
+    }
+    if (establishmentDetails?.Number700) {
+      setValue("establishment_number700", establishmentDetails.Number700, {
+        shouldValidate: true,
+      });
+    }
+    if (establishmentDetails?.Region_Code || establishmentDetails?.Region) {
+      setValue("establishment_region", { value: establishmentDetails?.Region_Code || "", label: establishmentDetails?.Region || "" });
+    }
+    if (establishmentDetails?.City_Code || establishmentDetails?.City) {
+      setValue("establishment_city", { value: establishmentDetails?.City_Code || "", label: establishmentDetails?.City || "" });
+    }
     setValue("claimantStatus", "establishment", {
       shouldValidate: true,
     });
@@ -119,7 +135,10 @@ export const useEstablishmentPlaintiffFormLayout = ({
           value: establishmentDetails?.Region,
           options: RegionOptions || [],
           validation: { required: t("regionValidation") },
-          onChange: () => {},
+          onChange: (value: any) => {
+            setValue("establishment_region", value);
+            setValue("establishment_city", null);
+          },
         },
         {
           type: !establishmentDetails?.City ? "autocomplete" : "readonly",
@@ -129,7 +148,7 @@ export const useEstablishmentPlaintiffFormLayout = ({
           value: establishmentDetails?.City,
           options: CityOptions || [],
           validation: { required: t("cityValidation") },
-          onChange: () => {},
+          onChange: () => { },
         },
         {
           type: !establishmentDetails?.ContactNumber ? "input" : "readonly",
@@ -146,7 +165,7 @@ export const useEstablishmentPlaintiffFormLayout = ({
               message: t("phoneValidationMessage"),
             },
           },
-          onChange: () => {},
+          onChange: () => { },
         },
       ],
     },

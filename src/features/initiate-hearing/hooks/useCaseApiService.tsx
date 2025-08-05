@@ -11,6 +11,7 @@ import { useCookieState } from "./useCookieState";
 import { toast } from "react-toastify";
 import { useTranslation } from "react-i18next";
 import { useApiErrorHandler } from "@/shared/hooks/useApiErrorHandler";
+import { emabsyClaimantPayload } from "../api/create-case/payloads";
 
 export const useCaseApiService = () => {
   const [saveClaimantDetails] = useSaveClaimantDetailsMutation();
@@ -27,7 +28,11 @@ export const useCaseApiService = () => {
   const handleSaveOrSubmit = async (
     currentStep: number,
     currentTab: number,
-    payload?: any
+    payload?: any,
+    formData?: any,
+    userClaims?: any,
+    userType?: string,
+    lang?: string
   ) => {
     try {
       let response;
@@ -35,17 +40,31 @@ export const useCaseApiService = () => {
       if (currentStep === 0) {
         switch (currentTab) {
           case 0:
+            // Handle embassy user logic here
+            let finalPayload = payload;
+            
+            if (userType?.toLowerCase().includes("embassy user") && formData) {
+              // For embassy users, use the dedicated embassy payload function
+              finalPayload = emabsyClaimantPayload(
+                "Next",
+                formData,
+                getCookie("caseId") || "",
+                userClaims,
+                lang || "EN",
+                userType,
+                null // nicDetailObj will be handled by the payload function
+              );
+            }
+            
             let payloadPoint = isCaseCreated ? {
-              ...payload,
+              ...finalPayload,
               "CaseID": isCaseCreated
-            } : { ...payload };
+            } : { ...finalPayload };
 
-            console.log("[Create API] Calling saveClaimantDetails", payloadPoint);
             response = await saveClaimantDetails({
               data: payloadPoint,
               isCaseCreated,
             }).unwrap();
-            console.log("[Create API] Response received", response);
 
             if (response?.CaseNumber) {
               setCookie("caseId", response?.CaseNumber);

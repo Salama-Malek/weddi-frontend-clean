@@ -20,6 +20,7 @@ import {
 import { getMIR1FormFields } from "./MIR1Form";
 import { getBPSR1FormFields } from "./BPSR1Form";
 import { getBR1FormFields } from "./BR1Form";
+import { isOtherAllowance } from "../utils/isOtherAllowance";
 import { getStep1FormFields } from "./Step1From";
 import { getStep2FormFields } from "./Step2From";
 import { HijriDatePickerInput } from "@/shared/components/calanders/HijriDatePickerInput";
@@ -31,6 +32,7 @@ import hijriLocale from "react-date-object/locales/arabic_en";
 import gregorianLocale from "react-date-object/locales/gregorian_en";
 import { useGetRegionLookupDataQuery } from "@/features/initiate-hearing/api/create-case/workDetailApis";
 import { useTranslation } from "react-i18next";
+import { createNumberOnlyValidation, handleNumberOnlyChange } from "@/shared/lib/formUtils";
 
 export const useFormLayout = ({
   t: t,
@@ -72,7 +74,7 @@ export const useFormLayout = ({
   trigger,
   lockAccommodationSource = false,
   errors,
-}: UseFormLayoutParams & { trigger: (fields: string[]) => void, lockAccommodationSource?: boolean, errors?: any, payIncreaseTypeData?: any }): SectionLayout[] => {
+}: UseFormLayoutParams & { trigger: (fields: string | string[]) => void, lockAccommodationSource?: boolean, errors?: any, payIncreaseTypeData?: any }): SectionLayout[] => {
   const { t: tHearingTopics, i18n } = useTranslation("hearingtopics");
 
   const PayIncreaseTypeOptions = React.useMemo(() => {
@@ -295,7 +297,20 @@ export const useFormLayout = ({
           ...field,
           validation: {
             ...(field.validation || {}),
-            validate: (value: string) => value.trim().length > 0 || tHearingTopics('fieldRequired'),
+            validate: (value: any) => {
+              // Handle different value types safely
+              if (value === null || value === undefined) {
+                return tHearingTopics('fieldRequired');
+              }
+              if (typeof value === 'string') {
+                return value.trim().length > 0 || tHearingTopics('fieldRequired');
+              }
+              if (typeof value === 'number') {
+                return value.toString().trim().length > 0 || tHearingTopics('fieldRequired');
+              }
+              // For objects or other types, convert to string and check
+              return String(value).trim().length > 0 || tHearingTopics('fieldRequired');
+            },
           },
         };
       }
@@ -355,26 +370,28 @@ export const useFormLayout = ({
 
     switch (currentSubCategory) {
       case "WR-2":
-      case "WR-1":
-        const baseFields = [
+        // WR-2 uses new specific field names
+        const wr2BaseFields = [
           {
             type: "input" as const,
-            name: "amount",
+            name: "WR2_wageAmount",
             label: t("amount"),
-            inputType: "number" as const,
-            min: 0,
-            value: watch("amount") || "",
-            onChange: (value: string) => setValue("amount", value),
-            validation: { required: tHearingTopics('fieldRequired') },
+            inputType: "text" as const,
+            value: watch("WR2_wageAmount") || "",
+            onChange: (value: string) => handleNumberOnlyChange(value, setValue, "WR2_wageAmount"),
+            validation: createNumberOnlyValidation(true, tHearingTopics('fieldRequired')),
             notRequired: false,
+            numberOnly: true,
+            invalidFeedback: errors?.WR2_wageAmount?.message,
+            control,
           },
           {
             type: "custom",
             component: (
               <div className="flex flex-col gap-2">
                 <HijriDatePickerInput
-                  control={control}
-                  name="from_date_hijri"
+                  control={control as any}
+                  name="WR2_fromDateHijri"
                   label={t("fromDateHijri")}
                   rules={{ required: tHearingTopics('fieldRequired') }}
                   notRequired={false}
@@ -382,13 +399,14 @@ export const useFormLayout = ({
                     handleHijriDateChange(
                       date,
                       onChange,
-                      "from_date_gregorian"
+                      "WR2_fromDateGregorian"
                     )
                   }
+                  isDateOfBirth={true}
                 />
                 <GregorianDateDisplayInput
-                  control={control}
-                  name="from_date_gregorian"
+                  control={control as any}
+                  name="WR2_fromDateGregorian"
                   label={t("fromDateGregorian")}
                   notRequired={false}
                 />
@@ -400,8 +418,8 @@ export const useFormLayout = ({
             component: (
               <div className="flex flex-col gap-2">
                 <HijriDatePickerInput
-                  control={control}
-                  name="to_date_hijri"
+                  control={control as any}
+                  name="WR2_toDateHijri"
                   label={t("toDateHijri")}
                   rules={{ required: tHearingTopics('fieldRequired') }}
                   notRequired={false}
@@ -409,13 +427,14 @@ export const useFormLayout = ({
                     handleHijriDateChange(
                       date,
                       onChange,
-                      "to_date_gregorian"
+                      "WR2_toDateGregorian"
                     )
                   }
+                  isDateOfBirth={true}
                 />
                 <GregorianDateDisplayInput
-                  control={control}
-                  name="to_date_gregorian"
+                  control={control as any}
+                  name="WR2_toDateGregorian"
                   label={t("toDateGregorian")}
                   notRequired={false}
                 />
@@ -423,50 +442,127 @@ export const useFormLayout = ({
             ),
           },
         ];
-        const shouldShowAllowanceFields =
-          watch("subCategory")?.value === "WR-1" ||
-          subCategory?.value === "WR-1";
+        return buildForm(addNoSpacesValidationToTextInputs(wr2BaseFields, t));
 
-        const allowanceFields = shouldShowAllowanceFields
-          ? [
-            {
-              type: "autocomplete" as const,
-              name: "forAllowance",
-              label: t("forAllowance"),
-              options: ForAllowanceOptions,
-              value: watch("forAllowance")?.value,
-              onChange: (option: Option | null) => {
-                setValue("forAllowance", option);
-                // Option type should always have a label property in this context
-                if (option && typeof option === 'object' && option.value === "FA11") {
-                  if (typeof trigger === 'function') trigger(["otherAllowance"]);
-                }
-              },
-              validation: { required: tHearingTopics('fieldRequired') },
-              notRequired: false,
+      case "WR-1":
+        // WR-1 uses new specific field names
+        const wr1BaseFields = [
+                                {
+                        type: "input" as const,
+                        name: "WR1_wageAmount",
+                        label: t("amount"),
+                        inputType: "text" as const,
+                        value: watch("WR1_wageAmount") || "",
+                        onChange: (value: string) => handleNumberOnlyChange(value, setValue, "WR1_wageAmount"),
+                        validation: createNumberOnlyValidation(true, tHearingTopics('fieldRequired')),
+                        notRequired: false,
+                        numberOnly: true,
+                        invalidFeedback: errors?.WR1_wageAmount?.message,
+                        control,
+                      },
+          {
+            type: "custom",
+            component: (
+              <div className="flex flex-col gap-2">
+                <HijriDatePickerInput
+                  control={control as any}
+                  name="WR1_fromDateHijri"
+                  label={t("fromDateHijri")}
+                  rules={{ required: tHearingTopics('fieldRequired') }}
+                  notRequired={false}
+                  onChangeHandler={(date, onChange) =>
+                    handleHijriDateChange(
+                      date,
+                      onChange,
+                      "WR1_fromDateGregorian"
+                    )
+                  }
+                  isDateOfBirth={true}
+                />
+                <GregorianDateDisplayInput
+                  control={control as any}
+                  name="WR1_fromDateGregorian"
+                  label={t("fromDateGregorian")}
+                  notRequired={false}
+                />
+              </div>
+            ),
+          },
+          {
+            type: "custom",
+            component: (
+              <div className="flex flex-col gap-2">
+                <HijriDatePickerInput
+                  control={control as any}
+                  name="WR1_toDateHijri"
+                  label={t("toDateHijri")}
+                  rules={{ required: tHearingTopics('fieldRequired') }}
+                  notRequired={false}
+                  onChangeHandler={(date, onChange) =>
+                    handleHijriDateChange(
+                      date,
+                      onChange,
+                      "WR1_toDateGregorian"
+                    )
+                  }
+                  isDateOfBirth={true}
+                />
+                <GregorianDateDisplayInput
+                  control={control as any}
+                  name="WR1_toDateGregorian"
+                  label={t("toDateGregorian")}
+                  notRequired={false}
+                />
+              </div>
+            ),
+          },
+        ];
+
+        const wr1AllowanceFields = [
+          {
+            type: "autocomplete" as const,
+            name: "WR1_forAllowance",
+            label: t("forAllowance"),
+            options: ForAllowanceOptions,
+            value: watch("WR1_forAllowance")?.value,
+            onChange: (option: Option | null) => {
+              setValue("WR1_forAllowance", option);
+              // Clear otherAllowance when changing from "Other" to something else
+              if (!isOtherAllowance(option)) {
+                setValue("WR1_otherAllowance", "");
+                // Force trigger to ensure field is unregistered
+                setTimeout(() => {
+                  if (typeof trigger === 'function') trigger(["WR1_otherAllowance"]);
+                }, 100);
+              } else {
+                // Trigger validation for otherAllowance when option changes
+                if (typeof trigger === 'function') trigger(["WR1_otherAllowance"]);
+              }
             },
-            ...(watch("forAllowance")?.value === "FA11" ||
-              (isEditing && editTopic?.ForAllowance === "FA11")
-              ? [
-                {
-                  type: "input" as const,
-                  name: "otherAllowance",
-                  label: t("otherAllowance"),
-                  inputType: "text" as const,
-                  value: isEditing
-                    ? editTopic?.OtherAllowance || editTopic?.otherAllowance
-                    : watch("otherAllowance") || "",
-                  onChange: (value: string) =>
-                    setValue("otherAllowance", value),
-                  validation: { required: tHearingTopics('fieldRequired') },
-                  notRequired: false,
+            validation: { required: tHearingTopics('fieldRequired') },
+            notRequired: false,
+          },
+          ...(isOtherAllowance(watch("WR1_forAllowance"))
+            ? [
+              {
+                type: "input" as const,
+                name: "WR1_otherAllowance",
+                label: t("otherAllowance"),
+                inputType: "text" as const,
+                value: watch("WR1_otherAllowance") || "",
+                onChange: (value: string) => {
+                  setValue("WR1_otherAllowance", value);
+                  // Trigger validation immediately when user types
+                  if (typeof trigger === 'function') trigger("WR1_otherAllowance");
                 },
-              ]
-              : []),
-          ]
-          : [];
+                validation: { required: tHearingTopics('fieldRequired') },
+                notRequired: false,
+              },
+            ]
+            : []),
+        ];
 
-        return buildForm(addNoSpacesValidationToTextInputs([...baseFields, ...allowanceFields], t));
+        return buildForm(addNoSpacesValidationToTextInputs([...wr1BaseFields, ...wr1AllowanceFields], t));
       case "MIR-1":
         return buildForm(
           getMIR1FormFields({
@@ -477,6 +573,7 @@ export const useFormLayout = ({
             isEditing,
             watch,
             editTopic,
+            trigger,
           })
         );
       case "BPSR-1":
@@ -493,6 +590,7 @@ export const useFormLayout = ({
             editTopic,
             control,
             handleHijriDateChange,
+            trigger,
           })
         );
       case "BR-1":
@@ -514,35 +612,32 @@ export const useFormLayout = ({
         return buildForm(addNoSpacesValidationToTextInputs([
           {
             type: "autocomplete",
-            name: "amountsPaidFor",
+            name: "CMR1_amountsPaidFor",
             label: t("amountsPaidFor"),
             options: AmountPaidLookupLookUpOptions,
-            value: isEditing ? editTopic?.amountsPaidFor : watch("amountsPaidFor"),
-            onChange: (option: Option | null) => setValue("amountsPaidFor", option),
+            value: isEditing ? editTopic?.CMR1_amountsPaidFor : watch("CMR1_amountsPaidFor"),
+            onChange: (option: Option | null) => setValue("CMR1_amountsPaidFor", option),
             validation: {
               required: tHearingTopics('fieldRequired'),
               validate: (val: any) =>
                 (val && typeof val === 'object' && !!val.value) || tHearingTopics('fieldRequired')
             },
             notRequired: false,
-            invalidFeedback: errors?.amountsPaidFor?.message,
+            invalidFeedback: errors?.CMR1_amountsPaidFor?.message,
             control,
           },
           {
             type: "input",
-            name: "theAmountRequired",
+            name: "CMR1_theAmountRequired",
             label: t("theAmountRequired"),
-            inputType: "number",
-            min: 0,
-            value: isEditing ? editTopic?.theAmountRequired : watch("theAmountRequired") || "",
-            onChange: (value: string) => setValue("theAmountRequired", value),
-            validation: {
-              required: tHearingTopics('fieldRequired'),
-              validate: (val: any) => (val !== "" && !isNaN(Number(val))) || tHearingTopics('fieldRequired')
-            },
+            inputType: "text",
+            value: isEditing ? editTopic?.CMR1_theAmountRequired : watch("CMR1_theAmountRequired") || "",
+            onChange: (value: string) => handleNumberOnlyChange(value, setValue, "CMR1_theAmountRequired"),
+            validation: createNumberOnlyValidation(true, tHearingTopics('fieldRequired')),
             notRequired: false,
-            invalidFeedback: errors?.theAmountRequired?.message,
+            invalidFeedback: errors?.CMR1_theAmountRequired?.message,
             control,
+            numberOnly: true,
           },
         ], t));
       case "CMR-3":
@@ -550,34 +645,35 @@ export const useFormLayout = ({
           addNoSpacesValidationToTextInputs([
             {
               type: "input",
-              name: "compensationAmount",
+              name: "CMR3_compensationAmount",
               label: t("compensationAmount"),
-              inputType: "number",
-              min: 0,
-              value: isEditing ? editTopic?.compensationAmount : watch("compensationAmount") || "",
-              onChange: (value: string) => setValue("compensationAmount", value),
-              validation: { required: tHearingTopics('fieldRequired') },
+              inputType: "text",
+              value: isEditing ? editTopic?.CMR3_compensationAmount : watch("CMR3_compensationAmount") || "",
+              onChange: (value: string) => handleNumberOnlyChange(value, setValue, "CMR3_compensationAmount"),
+              validation: createNumberOnlyValidation(true, tHearingTopics('fieldRequired')),
               notRequired: false,
-              invalidFeedback: errors?.compensationAmount?.message,
+              invalidFeedback: errors?.CMR3_compensationAmount?.message,
               control,
+              numberOnly: true,
             },
             {
               type: "custom",
               component: (
                 <div className="flex flex-col gap-2">
                   <HijriDatePickerInput
-                    control={control}
-                    name="injury_date_hijri"
+                    control={control as any}
+                    name="CMR3_injuryDateHijri"
                     label={t("injuryDateHijri")}
                     rules={{ required: tHearingTopics('fieldRequired') }}
                     notRequired={false}
                     onChangeHandler={(date, onChange) =>
-                      handleHijriDateChange(date, onChange, "injury_date_gregorian")
+                      handleHijriDateChange(date, onChange, "CMR3_injuryDateGregorian")
                     }
+                    isDateOfBirth={true}
                   />
                   <GregorianDateDisplayInput
-                    control={control}
-                    name="injury_date_gregorian"
+                    control={control as any}
+                    name="CMR3_injuryDateGregorian"
                     label={t("injuryDateGregorian")}
                     notRequired={false}
                   />
@@ -586,14 +682,14 @@ export const useFormLayout = ({
             },
             {
               type: "input",
-              name: "injuryType",
+              name: "CMR3_injuryType",
               label: t("injuryType"),
               inputType: "text",
-              value: isEditing ? editTopic?.injuryType : watch("injuryType") || "",
-              onChange: (value: string) => setValue("injuryType", value),
+              value: isEditing ? editTopic?.CMR3_injuryType : watch("CMR3_injuryType") || "",
+              onChange: (value: string) => setValue("CMR3_injuryType", value),
               validation: { required: tHearingTopics('fieldRequired') },
               notRequired: false,
-              invalidFeedback: errors?.injuryType?.message,
+              invalidFeedback: errors?.CMR3_injuryType?.message,
               control,
             },
           ], t)
@@ -605,19 +701,16 @@ export const useFormLayout = ({
             [
               {
                 type: "input",
-                name: "amount",
+                name: "CMR4_compensationAmount",
                 label: t("amount"),
-                inputType: "number",
-                min: 0,
-                value: isEditing ? editTopic?.amount : watch("amount") || "",
-                onChange: (value: string) => setValue("amount", value),
-                validation: {
-                  required: tHearingTopics("fieldRequired"),
-                  validate: (v: any) => (v !== "" && !isNaN(Number(v))) || tHearingTopics("fieldRequired"),
-                },
+                inputType: "text",
+                value: isEditing ? editTopic?.CMR4_compensationAmount : watch("CMR4_compensationAmount") || "",
+                onChange: (value: string) => handleNumberOnlyChange(value, setValue, "CMR4_compensationAmount"),
+                validation: createNumberOnlyValidation(true, tHearingTopics("fieldRequired")),
                 notRequired: false,
-                invalidFeedback: errors?.amount?.message,
+                invalidFeedback: errors?.CMR4_compensationAmount?.message,
                 control,
+                numberOnly: true,
               },
             ],
             t
@@ -631,11 +724,11 @@ export const useFormLayout = ({
             [
               {
                 type: "autocomplete",
-                name: "kindOfHoliday",
+                name: "CMR5_kindOfHoliday",
                 label: t("kindOfHoliday"),
                 options: LeaveTypeLookUpOptions,
-                value: isEditing ? editTopic?.kindOfHoliday : watch("kindOfHoliday"),
-                onChange: (opt: Option | null) => setValue("kindOfHoliday", opt),
+                value: isEditing ? editTopic?.CMR5_kindOfHoliday : watch("CMR5_kindOfHoliday"),
+                onChange: (opt: Option | null) => setValue("CMR5_kindOfHoliday", opt),
                 validation: {
                   required: tHearingTopics("fieldRequired"),
                   validate: (val: any) =>
@@ -643,53 +736,45 @@ export const useFormLayout = ({
                     tHearingTopics("fieldRequired"),
                 },
                 notRequired: false,
-                invalidFeedback: errors?.kindOfHoliday?.message,
+                invalidFeedback: errors?.CMR5_kindOfHoliday?.message,
                 control,
               },
               {
                 type: "input",
-                name: "totalAmount",
+                name: "CMR5_totalAmount",
                 label: t("totalAmount"),
-                inputType: "number",
-                min: 0,
-                value: isEditing ? editTopic?.totalAmount : watch("totalAmount") || "",
-                onChange: (v: string) => setValue("totalAmount", v),
-                validation: {
-                  required: tHearingTopics("fieldRequired"),
-                  validate: (v: any) =>
-                    (v !== "" && !isNaN(Number(v))) || tHearingTopics("fieldRequired"),
-                },
+                inputType: "text",
+                value: isEditing ? editTopic?.CMR5_totalAmount : watch("CMR5_totalAmount") || "",
+                onChange: (v: string) => handleNumberOnlyChange(v, setValue, "CMR5_totalAmount"),
+                validation: createNumberOnlyValidation(true, tHearingTopics("fieldRequired")),
                 notRequired: false,
-                invalidFeedback: errors?.totalAmount?.message,
+                invalidFeedback: errors?.CMR5_totalAmount?.message,
                 control,
+                numberOnly: true,
               },
               {
                 type: "input",
-                name: "workingHours",
+                name: "CMR5_workingHours",
                 label: t("workingHours"),
-                inputType: "number",
-                min: 0,
-                value: isEditing ? editTopic?.workingHours : watch("workingHours") || "",
-                onChange: (v: string) => setValue("workingHours", v),
-                validation: {
-                  required: tHearingTopics("fieldRequired"),
-                  validate: (v: any) =>
-                    (v !== "" && !isNaN(Number(v))) || tHearingTopics("fieldRequired"),
-                },
+                inputType: "text",
+                value: isEditing ? editTopic?.CMR5_workingHours : watch("CMR5_workingHours") || "",
+                onChange: (v: string) => handleNumberOnlyChange(v, setValue, "CMR5_workingHours"),
+                validation: createNumberOnlyValidation(true, tHearingTopics("fieldRequired")),
                 notRequired: false,
-                invalidFeedback: errors?.workingHours?.message,
+                invalidFeedback: errors?.CMR5_workingHours?.message,
                 control,
+                numberOnly: true,
               },
               {
                 type: "input",
-                name: "additionalDetails",
+                name: "CMR5_additionalDetails",
                 label: t("additionalDetails"),
                 inputType: "textarea",
-                value: isEditing ? editTopic?.additionalDetails : watch("additionalDetails") || "",
-                onChange: (v: string) => setValue("additionalDetails", v),
+                value: isEditing ? editTopic?.CMR5_additionalDetails : watch("CMR5_additionalDetails") || "",
+                onChange: (v: string) => setValue("CMR5_additionalDetails", v),
                 validation: { required: tHearingTopics("fieldRequired") },
                 notRequired: false,
-                invalidFeedback: errors?.additionalDetails?.message,
+                invalidFeedback: errors?.CMR5_additionalDetails?.message,
                 control,
                 colSpan: 2, // give textarea full width
               },
@@ -702,32 +787,35 @@ export const useFormLayout = ({
         return buildForm(addNoSpacesValidationToTextInputs([
           {
             type: "input",
-            name: "wagesAmount",
+            name: "CMR8_wagesAmount",
             label: t("wagesAmount"),
-            inputType: "number",
-            min: 0,
-            value: isEditing ? editTopic?.wagesAmount : watch("wagesAmount") || "",
-            onChange: (value: string) => setValue("wagesAmount", value),
-            validation: { required: tHearingTopics('fieldRequired') },
+            inputType: "text",
+            value: isEditing ? editTopic?.CMR8_wagesAmount : watch("CMR8_wagesAmount") || "",
+            onChange: (value: string) => handleNumberOnlyChange(value, setValue, "CMR8_wagesAmount"),
+            validation: createNumberOnlyValidation(true, tHearingTopics('fieldRequired')),
             notRequired: false,
+            numberOnly: true,
+            invalidFeedback: errors?.CMR8_wagesAmount?.message,
+            control,
           },
           {
             type: "custom",
             component: (
               <div className="flex flex-col gap-2">
                 <HijriDatePickerInput
-                  control={control}
-                  name="from_date_hijri"
+                  control={control as any}
+                  name="CMR8_fromDateHijri"
                   label={t("fromDateHijri")}
                   rules={{ required: tHearingTopics('fieldRequired') }}
                   notRequired={false}
                   onChangeHandler={(date, onChange) =>
-                    handleHijriDateChange(date, onChange, "from_date_gregorian")
+                    handleHijriDateChange(date, onChange, "CMR8_fromDateGregorian")
                   }
+                  isDateOfBirth={true}
                 />
                 <GregorianDateDisplayInput
-                  control={control}
-                  name="from_date_gregorian"
+                  control={control as any}
+                  name="CMR8_fromDateGregorian"
                   label={t("fromDateGregorian")}
                   notRequired={false}
                 />
@@ -739,18 +827,19 @@ export const useFormLayout = ({
             component: (
               <div className="flex flex-col gap-2">
                 <HijriDatePickerInput
-                  control={control}
-                  name="to_date_hijri"
+                  control={control as any}
+                  name="CMR8_toDateHijri"
                   label={t("toDateHijri")}
                   rules={{ required: tHearingTopics('fieldRequired') }}
                   notRequired={false}
                   onChangeHandler={(date, onChange) =>
-                    handleHijriDateChange(date, onChange, "to_date_gregorian")
+                    handleHijriDateChange(date, onChange, "CMR8_toDateGregorian")
                   }
+                  isDateOfBirth={true}
                 />
                 <GregorianDateDisplayInput
-                  control={control}
-                  name="to_date_gregorian"
+                  control={control as any}
+                  name="CMR8_toDateGregorian"
                   label={t("toDateGregorian")}
                   notRequired={false}
                 />
@@ -759,120 +848,53 @@ export const useFormLayout = ({
           },
         ], t));
       case "CMR-6":
-        return buildForm(
-          addNoSpacesValidationToTextInputs(
-            [
-              {
-                type: "input",
-                name: "newPayAmount",
-                label: t("newPayAmount"),
-                inputType: "number",
-                min: 0,
-                value: isEditing ? editTopic?.newPayAmount : watch("newPayAmount") || "",
-                onChange: (v: string) => setValue("newPayAmount", v),
-                validation: { required: tHearingTopics("fieldRequired") },
-                notRequired: false,
-                invalidFeedback: errors?.newPayAmount?.message,
-                control,
-              },
-              {
-                type: "autocomplete",
-                name: "payIncreaseType",
-                label: t("payIncreaseType"),
-                options: PayIncreaseTypeOptions,
-                value: isEditing ? editTopic?.payIncreaseType : watch("payIncreaseType"),
-                onChange: (opt: Option | null) => setValue("payIncreaseType", opt),
-                validation: {
-                  required: tHearingTopics("fieldRequired"),
-                  validate: (val: any) =>
-                    (val && typeof val === "object" && !!val.value) || tHearingTopics("fieldRequired"),
-                },
-                notRequired: false,
-                invalidFeedback: errors?.payIncreaseType?.message,
-                control,
-              },
-              {
-                type: "custom",
-                component: (
-                  <div className="flex flex-col gap-2">
-                    <HijriDatePickerInput
-                      control={control}
-                      name="from_date_hijri"
-                      label={t("fromDateHijri")}
-                      rules={{ required: tHearingTopics("fieldRequired") }}
-                      notRequired={false}
-                      onChangeHandler={(date, onChange) =>
-                        handleHijriDateChange(date, onChange, "from_date_gregorian")
-                      }
-                    />
-                    <GregorianDateDisplayInput
-                      control={control}
-                      name="from_date_gregorian"
-                      label={t("fromDateGregorian")}
-                      notRequired={false}
-                    />
-                  </div>
-                ),
-              },
-              {
-                type: "custom",
-                component: (
-                  <div className="flex flex-col gap-2">
-                    <HijriDatePickerInput
-                      control={control}
-                      name="to_date_hijri"
-                      label={t("toDateHijri")}
-                      rules={{ required: tHearingTopics("fieldRequired") }}
-                      notRequired={false}
-                      onChangeHandler={(date, onChange) =>
-                        handleHijriDateChange(date, onChange, "to_date_gregorian")
-                      }
-                    />
-                    <GregorianDateDisplayInput
-                      control={control}
-                      name="to_date_gregorian"
-                      label={t("toDateGregorian")}
-                      notRequired={false}
-                    />
-                  </div>
-                ),
-              },
-              {
-                type: "input",
-                name: "wageDifference",
-                label: t("wageDifference"),
-                inputType: "text",
-                value: isEditing ? editTopic?.wageDifference : watch("wageDifference") || "",
-                onChange: (v: string) => setValue("wageDifference", v),
-                validation: { required: tHearingTopics("fieldRequired") },
-                notRequired: false,
-                invalidFeedback: errors?.wageDifference?.message,
-                control,
-              },
-            ],
-            t
-          )
-        );
-
-      case "CMR-7":
         return buildForm(addNoSpacesValidationToTextInputs([
+          {
+            type: "input",
+            name: "CMR6_newPayAmount",
+            label: t("newPayAmount"),
+            inputType: "text",
+            value: isEditing ? editTopic?.CMR6_newPayAmount : watch("CMR6_newPayAmount") || "",
+            onChange: (v: string) => handleNumberOnlyChange(v, setValue, "CMR6_newPayAmount"),
+            validation: createNumberOnlyValidation(true, tHearingTopics("fieldRequired")),
+            notRequired: false,
+            invalidFeedback: errors?.CMR6_newPayAmount?.message,
+            control,
+            numberOnly: true,
+          },
+          {
+            type: "autocomplete",
+            name: "CMR6_payIncreaseType",
+            label: t("payIncreaseType"),
+            options: PayIncreaseTypeOptions,
+            value: isEditing ? editTopic?.CMR6_payIncreaseType : watch("CMR6_payIncreaseType"),
+            onChange: (opt: Option | null) => setValue("CMR6_payIncreaseType", opt),
+            validation: {
+              required: tHearingTopics("fieldRequired"),
+              validate: (val: any) =>
+                (val && typeof val === "object" && !!val.value) || tHearingTopics("fieldRequired"),
+            },
+            notRequired: false,
+            invalidFeedback: errors?.CMR6_payIncreaseType?.message,
+            control,
+          },
           {
             type: "custom",
             component: (
               <div className="flex flex-col gap-2">
                 <HijriDatePickerInput
-                  control={control}
-                  name="from_date_hijri"
+                  control={control as any}
+                  name="CMR6_fromDateHijri"
                   label={t("fromDateHijri")}
-                  rules={{ required: tHearingTopics('fieldRequired') }}
+                  rules={{ required: tHearingTopics("fieldRequired") }}
                   notRequired={false}
                   onChangeHandler={(date, onChange) =>
-                    handleHijriDateChange(date, onChange, "from_date_gregorian")
+                    handleHijriDateChange(date, onChange, "CMR6_fromDateGregorian")
                   }
                 />
                 <GregorianDateDisplayInput
-                  control={control}
-                  name="from_date_gregorian"
+                  control={control as any}
+                  name="CMR6_fromDateGregorian"
                   label={t("fromDateGregorian")}
                   notRequired={false}
                 />
@@ -884,18 +906,18 @@ export const useFormLayout = ({
             component: (
               <div className="flex flex-col gap-2">
                 <HijriDatePickerInput
-                  control={control}
-                  name="to_date_hijri"
+                  control={control as any}
+                  name="CMR6_toDateHijri"
                   label={t("toDateHijri")}
-                  rules={{ required: tHearingTopics('fieldRequired') }}
+                  rules={{ required: tHearingTopics("fieldRequired") }}
                   notRequired={false}
                   onChangeHandler={(date, onChange) =>
-                    handleHijriDateChange(date, onChange, "to_date_gregorian")
+                    handleHijriDateChange(date, onChange, "CMR6_toDateGregorian")
                   }
                 />
                 <GregorianDateDisplayInput
-                  control={control}
-                  name="to_date_gregorian"
+                  control={control as any}
+                  name="CMR6_toDateGregorian"
                   label={t("toDateGregorian")}
                   notRequired={false}
                 />
@@ -904,63 +926,131 @@ export const useFormLayout = ({
           },
           {
             type: "input",
-            name: "durationOfLeaveDue",
-            label: t("durationOfLeaveDue"),
+            name: "CMR6_wageDifference",
+            label: t("wageDifference"),
             inputType: "text",
-            value: isEditing ? editTopic?.durationOfLeaveDue : watch("durationOfLeaveDue") || "",
-            onChange: (value: string) => setValue("durationOfLeaveDue", value),
-            validation: { required: tHearingTopics('fieldRequired') },
+            value: isEditing ? editTopic?.CMR6_wageDifference : watch("CMR6_wageDifference") || "",
+            onChange: (v: string) => setValue("CMR6_wageDifference", v),
+            validation: { required: tHearingTopics("fieldRequired") },
             notRequired: false,
+            invalidFeedback: errors?.CMR6_wageDifference?.message,
+            control,
+          },
+        ], t));
+
+      case "CMR-7":
+        return buildForm(addNoSpacesValidationToTextInputs([
+          {
+            type: "custom",
+            component: (
+              <div className="flex flex-col gap-2">
+                <HijriDatePickerInput
+                  control={control as any}
+                  name="CMR7_fromDateHijri"
+                  label={t("fromDateHijri")}
+                  rules={{ required: tHearingTopics('fieldRequired') }}
+                  notRequired={false}
+                  onChangeHandler={(date, onChange) =>
+                    handleHijriDateChange(date, onChange, "CMR7_fromDateGregorian")
+                  }
+                  isDateOfBirth={true}
+                />
+                <GregorianDateDisplayInput
+                  control={control as any}
+                  name="CMR7_fromDateGregorian"
+                  label={t("fromDateGregorian")}
+                  notRequired={false}
+                />
+              </div>
+            ),
+          },
+          {
+            type: "custom",
+            component: (
+              <div className="flex flex-col gap-2">
+                <HijriDatePickerInput
+                  control={control as any}
+                  name="CMR7_toDateHijri"
+                  label={t("toDateHijri")}
+                  rules={{ required: tHearingTopics('fieldRequired') }}
+                  notRequired={false}
+                  onChangeHandler={(date, onChange) =>
+                    handleHijriDateChange(date, onChange, "CMR7_toDateGregorian")
+                  }
+                  isDateOfBirth={true}
+                />
+                <GregorianDateDisplayInput
+                  control={control as any}
+                  name="CMR7_toDateGregorian"
+                  label={t("toDateGregorian")}
+                  notRequired={false}
+                />
+              </div>
+            ),
           },
           {
             type: "input",
-            name: "payDue",
-            label: t("payDue"),
-            inputType: "number",
-            min: 0,
-            value: isEditing ? editTopic?.payDue : watch("payDue") || "",
-            onChange: (value: string) => setValue("payDue", value),
+            name: "CMR7_durationOfLeaveDue",
+            label: t("durationOfLeaveDue"),
+            inputType: "text",
+            value: isEditing ? editTopic?.CMR7_durationOfLeaveDue : watch("CMR7_durationOfLeaveDue") || "",
+            onChange: (value: string) => setValue("CMR7_durationOfLeaveDue", value),
             validation: { required: tHearingTopics('fieldRequired') },
             notRequired: false,
+            invalidFeedback: errors?.CMR7_durationOfLeaveDue?.message,
+            control,
+          },
+          {
+            type: "input",
+            name: "CMR7_payDue",
+            label: t("payDue"),
+            inputType: "text",
+            value: isEditing ? editTopic?.CMR7_payDue : watch("CMR7_payDue") || "",
+            onChange: (value: string) => handleNumberOnlyChange(value, setValue, "CMR7_payDue"),
+            validation: createNumberOnlyValidation(true, tHearingTopics('fieldRequired')),
+            notRequired: false,
+            numberOnly: true,
+            invalidFeedback: errors?.CMR7_payDue?.message,
+            control,
           },
         ], t));
       case "LCUT-1":
         return buildForm(addNoSpacesValidationToTextInputs([
           {
             type: "input",
-            name: "amountOfCompensation",
+            name: "LCUT1_amountOfCompensation",
             label: t("amountOfCompensation"),
-            inputType: "number",
-            min: 0,
-            value: watch("amountOfCompensation") || "",
-            onChange: (value: string) => setValue("amountOfCompensation", value),
-            validation: { required: tHearingTopics('fieldRequired') },
+            inputType: "text",
+            value: watch("LCUT1_amountOfCompensation") || "",
+            onChange: (value: string) => handleNumberOnlyChange(value, setValue, "LCUT1_amountOfCompensation"),
+            validation: createNumberOnlyValidation(true, tHearingTopics('fieldRequired')),
             notRequired: false,
+            numberOnly: true,
           },
         ], t));
       case "EDO-1":
         return buildForm(addNoSpacesValidationToTextInputs([
           {
             type: "autocomplete",
-            name: "fromLocation",
+            name: "EDO1_fromLocation",
             label: t("fromLocation"),
             options: RegionOptions,
             isLoading: isRegionLoading,
             value:
-              watch("fromLocation")?.value || editTopic?.fromLocation?.value,
+              watch("EDO1_fromLocation")?.value || editTopic?.EDO1_fromLocation?.value || watch("fromLocation")?.value || editTopic?.fromLocation?.value,
             onChange: (option: Option | null) =>
-              setValue("fromLocation", option),
+              setValue("EDO1_fromLocation", option),
             validation: { required: tHearingTopics('fieldRequired') },
             notRequired: false,
           },
           {
             type: "autocomplete",
-            name: "toLocation",
+            name: "EDO1_toLocation",
             label: t("toLocation"),
             options: RegionOptions,
             isLoading: isRegionLoading,
-            value: watch("toLocation")?.value || editTopic?.toLocation?.value,
-            onChange: (option: Option | null) => setValue("toLocation", option),
+            value: watch("EDO1_toLocation")?.value || editTopic?.EDO1_toLocation?.value || watch("toLocation")?.value || editTopic?.toLocation?.value,
+            onChange: (option: Option | null) => setValue("EDO1_toLocation", option),
             validation: { required: tHearingTopics('fieldRequired') },
             notRequired: false,
           },
@@ -969,8 +1059,8 @@ export const useFormLayout = ({
             component: (
               <div className="flex flex-col gap-2">
                 <HijriDatePickerInput
-                  control={control}
-                  name="managerial_decision_date_hijri"
+                  control={control as any}
+                  name="EDO1_managerialDecisionDateHijri"
                   label={t("managerialDecisionDateHijri")}
                   rules={{ required: tHearingTopics('fieldRequired') }}
                   notRequired={false}
@@ -978,13 +1068,13 @@ export const useFormLayout = ({
                     handleHijriDateChange(
                       date,
                       onChange,
-                      "managerial_decision_date_gregorian"
+                      "EDO1_managerialDecisionDateGregorian"
                     )
                   }
                 />
                 <GregorianDateDisplayInput
-                  control={control}
-                  name="managerial_decision_date_gregorian"
+                  control={control as any}
+                  name="EDO1_managerialDecisionDateGregorian"
                   label={t("managerialDecisionDateGregorian")}
                   notRequired={false}
                 />
@@ -993,35 +1083,36 @@ export const useFormLayout = ({
           },
           {
             type: "input",
-            name: "managerialDecisionNumber",
+            name: "EDO1_managerialDecisionNumber",
             label: t("managerialDecisionNumber"),
-            inputType: "number",
-            value: watch("managerialDecisionNumber") || "",
+            inputType: "text",
+            value: watch("EDO1_managerialDecisionNumber") || watch("managerialDecisionNumber") || "",
             onChange: (value: string) =>
-              setValue("managerialDecisionNumber", value),
-            validation: { required: tHearingTopics('fieldRequired') },
+              handleNumberOnlyChange(value, setValue, "EDO1_managerialDecisionNumber"),
+            validation: createNumberOnlyValidation(true, tHearingTopics('fieldRequired')),
             notRequired: false,
+            numberOnly: true,
           },
         ], t));
       case "EDO-2":
         return buildForm(addNoSpacesValidationToTextInputs([
           {
             type: "input",
-            name: "fromJob",
+            name: "EDO2_fromJob",
             label: t("fromJob"),
             inputType: "text",
-            value: "",
-            onChange: (value: string) => setValue("fromJob", value),
+            value: watch("EDO2_fromJob") || watch("fromJob") || "",
+            onChange: (value: string) => setValue("EDO2_fromJob", value),
             validation: { required: tHearingTopics('fieldRequired') },
             notRequired: false,
           },
           {
             type: "input",
-            name: "toJob",
+            name: "EDO2_toJob",
             label: t("toJob"),
             inputType: "text",
-            value: "",
-            onChange: (value: string) => setValue("toJob", value),
+            value: watch("EDO2_toJob") || watch("toJob") || "",
+            onChange: (value: string) => setValue("EDO2_toJob", value),
             validation: { required: tHearingTopics('fieldRequired') },
             notRequired: false,
           },
@@ -1030,8 +1121,8 @@ export const useFormLayout = ({
             component: (
               <div className="flex flex-col gap-2">
                 <HijriDatePickerInput
-                  control={control}
-                  name="managerial_decision_date_hijri"
+                  control={control as any}
+                  name="EDO2_managerialDecisionDateHijri"
                   label={t("managerialDecisionDateHijri")}
                   rules={{ required: tHearingTopics('fieldRequired') }}
                   notRequired={false}
@@ -1039,13 +1130,13 @@ export const useFormLayout = ({
                     handleHijriDateChange(
                       date,
                       onChange,
-                      "managerial_decision_date_gregorian"
+                      "EDO2_managerialDecisionDateGregorian"
                     )
                   }
                 />
                 <GregorianDateDisplayInput
-                  control={control}
-                  name="managerial_decision_date_gregorian"
+                  control={control as any}
+                  name="EDO2_managerialDecisionDateGregorian"
                   label={t("managerialDecisionDateGregorian")}
                   notRequired={false}
                 />
@@ -1054,26 +1145,27 @@ export const useFormLayout = ({
           },
           {
             type: "input",
-            name: "managerialDecisionNumber",
+            name: "EDO2_managerialDecisionNumber",
             label: t("managerialDecisionNumber"),
-            inputType: "number",
-            value: watch("managerialDecisionNumber") || "",
+            inputType: "text",
+            value: watch("EDO2_managerialDecisionNumber") || watch("managerialDecisionNumber") || "",
             onChange: (value: string) =>
-              setValue("managerialDecisionNumber", value),
-            validation: { required: tHearingTopics('fieldRequired') },
+              handleNumberOnlyChange(value, setValue, "EDO2_managerialDecisionNumber"),
+            validation: createNumberOnlyValidation(true, tHearingTopics('fieldRequired')),
             notRequired: false,
+            numberOnly: true,
           },
         ], t));
       case "EDO-4":
         return buildForm(addNoSpacesValidationToTextInputs([
           {
             type: "autocomplete",
-            name: "typesOfPenalties",
+            name: "EDO4_typesOfPenalties",
             label: t("typesOfPenalties"),
             options: TypesOfPenaltiesOptions,
-            value: watch("typesOfPenalties")?.value,
+            value: watch("EDO4_typesOfPenalties")?.value || watch("typesOfPenalties")?.value,
             onChange: (option: Option | null) =>
-              setValue("typesOfPenalties", option),
+              setValue("EDO4_typesOfPenalties", option),
             validation: { required: tHearingTopics('fieldRequired') },
             notRequired: false,
           },
@@ -1082,8 +1174,8 @@ export const useFormLayout = ({
             component: (
               <div className="flex flex-col gap-2">
                 <HijriDatePickerInput
-                  control={control}
-                  name="managerial_decision_date_hijri"
+                  control={control as any}
+                  name="EDO4_managerialDecisionDateHijri"
                   label={t("managerialDecisionDateHijri")}
                   rules={{ required: tHearingTopics('fieldRequired') }}
                   notRequired={false}
@@ -1091,13 +1183,13 @@ export const useFormLayout = ({
                     handleHijriDateChange(
                       date,
                       onChange,
-                      "managerial_decision_date_gregorian"
+                      "EDO4_managerialDecisionDateGregorian"
                     )
                   }
                 />
                 <GregorianDateDisplayInput
-                  control={control}
-                  name="managerial_decision_date_gregorian"
+                  control={control as any}
+                  name="EDO4_managerialDecisionDateGregorian"
                   label={t("managerialDecisionDateGregorian")}
                   notRequired={false}
                 />
@@ -1106,36 +1198,37 @@ export const useFormLayout = ({
           },
           {
             type: "input",
-            name: "managerialDecisionNumber",
+            name: "EDO4_managerialDecisionNumber",
             label: t("managerialDecisionNumber"),
-            inputType: "number",
-            value: watch("managerialDecisionNumber") || "",
+            inputType: "text",
+            value: watch("EDO4_managerialDecisionNumber") || watch("managerialDecisionNumber") || "",
             onChange: (value: string) =>
-              setValue("managerialDecisionNumber", value),
-            validation: { required: tHearingTopics('fieldRequired') },
+              handleNumberOnlyChange(value, setValue, "EDO4_managerialDecisionNumber"),
+            validation: createNumberOnlyValidation(true, tHearingTopics('fieldRequired')),
             notRequired: false,
+            numberOnly: true,
           },
         ], t));
       case "EDO-3":
         return buildForm(addNoSpacesValidationToTextInputs([
           {
             type: "input",
-            name: "amountOfReduction",
+            name: "EDO3_amountOfReduction",
             label: t("amountOfReduction"),
-            inputType: "number",
-            min: 0,
-            value: watch("amountOfReduction") || "",
-            onChange: (value: string) => setValue("amountOfReduction", value),
-            validation: { required: tHearingTopics('fieldRequired') },
+            inputType: "text",
+            value: watch("EDO3_amountOfReduction") || watch("amountOfReduction") || "",
+            onChange: (value: string) => handleNumberOnlyChange(value, setValue, "EDO3_amountOfReduction"),
+            validation: createNumberOnlyValidation(true, tHearingTopics('fieldRequired')),
             notRequired: false,
+            numberOnly: true,
           },
           {
             type: "custom",
             component: (
               <div className="flex flex-col gap-2">
                 <HijriDatePickerInput
-                  control={control}
-                  name="managerial_decision_date_hijri"
+                  control={control as any}
+                  name="EDO3_managerialDecisionDateHijri"
                   label={t("managerialDecisionDateHijri")}
                   rules={{ required: tHearingTopics('fieldRequired') }}
                   notRequired={false}
@@ -1143,13 +1236,13 @@ export const useFormLayout = ({
                     handleHijriDateChange(
                       date,
                       onChange,
-                      "managerial_decision_date_gregorian"
+                      "EDO3_managerialDecisionDateGregorian"
                     )
                   }
                 />
                 <GregorianDateDisplayInput
-                  control={control}
-                  name="managerial_decision_date_gregorian"
+                  control={control as any}
+                  name="EDO3_managerialDecisionDateGregorian"
                   label={t("managerialDecisionDateGregorian")}
                   notRequired={false}
                 />
@@ -1158,99 +1251,75 @@ export const useFormLayout = ({
           },
           {
             type: "input",
-            name: "managerialDecisionNumber",
+            name: "EDO3_managerialDecisionNumber",
             label: t("managerialDecisionNumber"),
-            inputType: "number",
-            value: watch("managerialDecisionNumber") || "",
+            inputType: "text",
+            value: watch("EDO3_managerialDecisionNumber") || watch("managerialDecisionNumber") || "",
             onChange: (value: string) =>
-              setValue("managerialDecisionNumber", value),
-            validation: { required: tHearingTopics('fieldRequired') },
+              handleNumberOnlyChange(value, setValue, "EDO3_managerialDecisionNumber"),
+            validation: createNumberOnlyValidation(true, tHearingTopics('fieldRequired')),
             notRequired: false,
+            numberOnly: true,
           },
         ], t));
       case "HIR-1": {
-        // Determine the initial value for the radio in edit mode
-        let accommodationSourceValue = watch("accommodationSource");
-        if (isEditing && editTopic) {
-          if (editTopic.doesBylawsIncludeAddingAccommodations) {
-            accommodationSourceValue = "bylaws";
-          } else if (editTopic.doesContractIncludeAddingAccommodations) {
-            accommodationSourceValue = "contract";
-          }
-        }
-        // Prefill dependent fields in edit mode
-        const housingSpecificationInByLaws = isEditing && editTopic && editTopic.housingSpecificationInByLaws !== undefined
-          ? editTopic.housingSpecificationInByLaws
-          : watch("housingSpecificationInByLaws") || "";
-        const housingSpecificationsInContract = isEditing && editTopic && editTopic.housingSpecificationsInContract !== undefined
-          ? editTopic.housingSpecificationsInContract
-          : watch("housingSpecificationsInContract") || "";
-        const actualHousingSpecifications = isEditing && editTopic && editTopic.actualHousingSpecifications !== undefined
-          ? editTopic.actualHousingSpecifications
-          : watch("actualHousingSpecifications") || "";
-        // Only show the selected radio in edit mode
-        const radioOptions = isEditing && accommodationSourceValue
-          ? [
-            accommodationSourceValue === "bylaws"
-              ? { label: t("doesBylawsIncludeAddingAccommodations"), value: "bylaws" }
-              : { label: t("doesContractIncludeAddingAccommodations"), value: "contract" }
-          ]
-          : [
-            { label: t("doesBylawsIncludeAddingAccommodations"), value: "bylaws" },
-            { label: t("doesContractIncludeAddingAccommodations"), value: "contract" }
-          ];
         return buildForm(addNoSpacesValidationToTextInputs([
           {
             type: "radio",
-            name: "accommodationSource",
-            options: radioOptions,
-            value: accommodationSourceValue || "",
+            name: "HIR1_AccommodationSource",
+            label: t("accommodationSource"),
+            options: [
+              { label: t("doesBylawsIncludeAddingAccommodations"), value: "bylaws" },
+              { label: t("doesContractIncludeAddingAccommodations"), value: "contract" }
+            ],
+            value: watch("HIR1_AccommodationSource") || "",
             onChange: (value: string) => {
-              setValue("accommodationSource", value);
-              setValue("doesBylawsIncludeAddingAccommodations", value === "bylaws");
-              setValue("doesContractIncludeAddingAccommodations", value === "contract");
-              // Reset dependent fields
+              setValue("HIR1_AccommodationSource", value);
+              // Set the appropriate flags and clear other fields when switching between options
               if (value === "bylaws") {
-                setValue("housingSpecificationsInContract", "");
-                setValue("actualHousingSpecifications", "");
+                setValue("HIR1_IsContractIncludeAddingAccommodation", "No");
+                setValue("HIR1_HousingSpecificationsInContract", "");
+                setValue("HIR1_HousingSpecifications", "");
+                setValue("HIR1_IsBylawsIncludeAddingAccomodation", "Yes");
               } else if (value === "contract") {
-                setValue("housingSpecificationInByLaws", "");
+                setValue("HIR1_IsBylawsIncludeAddingAccomodation", "No");
+                setValue("HIR1_HousingSpecificationsInBylaws", "");
+                setValue("HIR1_IsContractIncludeAddingAccommodation", "Yes");
               }
-              if (trigger) trigger(["accommodationSource"]);
             },
             validation: { required: tHearingTopics('fieldRequired') },
             notRequired: false,
             colSpan: 2,
           },
-          (accommodationSourceValue === "bylaws") && {
+          (watch("HIR1_AccommodationSource") === "bylaws") && {
             type: "input",
-            name: "housingSpecificationInByLaws",
+            name: "HIR1_HousingSpecificationsInBylaws",
             label: t("housingSpecificationInByLaws"),
             inputType: "text",
-            value: housingSpecificationInByLaws,
-            onChange: (value: string) => setValue("housingSpecificationInByLaws", value),
+            value: watch("HIR1_HousingSpecificationsInBylaws") || "",
+            onChange: (value: string) => setValue("HIR1_HousingSpecificationsInBylaws", value),
             validation: { required: tHearingTopics('fieldRequired') },
             notRequired: false,
             colSpan: 1,
           },
-          (accommodationSourceValue === "contract") && {
+          (watch("HIR1_AccommodationSource") === "contract") && {
             type: "input",
-            name: "housingSpecificationsInContract",
+            name: "HIR1_HousingSpecificationsInContract",
             label: t("housingSpecificationsInContract"),
             inputType: "text",
-            value: housingSpecificationsInContract,
-            onChange: (value: string) => setValue("housingSpecificationsInContract", value),
+            value: watch("HIR1_HousingSpecificationsInContract") || "",
+            onChange: (value: string) => setValue("HIR1_HousingSpecificationsInContract", value),
             validation: { required: tHearingTopics('fieldRequired') },
             notRequired: false,
             colSpan: 1,
           },
-          (accommodationSourceValue === "contract") && {
+          (watch("HIR1_AccommodationSource") === "contract") && {
             type: "input",
-            name: "actualHousingSpecifications",
+            name: "HIR1_HousingSpecifications",
             label: t("actualHousingSpecifications"),
             inputType: "text",
-            value: actualHousingSpecifications,
-            onChange: (value: string) => setValue("actualHousingSpecifications", value),
+            value: watch("HIR1_HousingSpecifications") || "",
+            onChange: (value: string) => setValue("HIR1_HousingSpecifications", value),
             validation: { required: tHearingTopics('fieldRequired') },
             notRequired: false,
             colSpan: 1,
@@ -1262,53 +1331,52 @@ export const useFormLayout = ({
         return buildForm(addNoSpacesValidationToTextInputs([
           {
             type: "input",
-            name: "currentJobTitle",
+            name: "JAR2_currentJobTitle",
             label: t("currentJobTitle"),
             inputType: "text",
-            value: watch("currentJobTitle") || "",
-            onChange: (value: string) => setValue("currentJobTitle", value),
+            value: watch("JAR2_currentJobTitle") || "",
+            onChange: (value: string) => setValue("JAR2_currentJobTitle", value),
             validation: { required: tHearingTopics('fieldRequired') },
             notRequired: false,
           },
           {
             type: "input",
-            name: "requiredJobTitle",
+            name: "JAR2_requiredJobTitle",
             label: t("requiredJobTitle"),
             inputType: "text",
-            value: watch("requiredJobTitle") || "",
-            onChange: (value: string) => setValue("requiredJobTitle", value),
+            value: watch("JAR2_requiredJobTitle") || "",
+            onChange: (value: string) => setValue("JAR2_requiredJobTitle", value),
             validation: { required: tHearingTopics('fieldRequired') },
             notRequired: false,
           },
         ], t));
       case "JAR-3": {
-        // Determine the initial value for the radio in edit mode
-        let promotionSourceValue = watch("promotionSource");
-        if (isEditing && editTopic) {
-          if (editTopic.doesTheInternalRegulationIncludePromotionMechanism) {
-            promotionSourceValue = "internalRegulation";
-          } else if (editTopic.doesContractIncludeAdditionalUpgrade) {
-            promotionSourceValue = "contract";
-          }
-        }
         return buildForm(addNoSpacesValidationToTextInputs([
           {
             type: "radio",
-            name: "promotionSource",
+            name: "JAR3_promotionMechanism",
+            label: t("doesTheInternalRegulationIncludePromotionMechanism"),
             options: [
-              { label: t("doesTheInternalRegulationIncludePromotionMechanism"), value: "internalRegulation" },
-              { label: t("doesContractIncludeAdditionalUpgrade"), value: "contract" },
+              { label: t("yes"), value: "Yes" },
+              { label: t("no"), value: "No" },
             ],
-            value: promotionSourceValue || "",
-            onChange: (value: string) => {
-              setValue("promotionSource", value);
-              setValue("doesTheInternalRegulationIncludePromotionMechanism", value === "internalRegulation");
-              setValue("doesContractIncludeAdditionalUpgrade", value === "contract");
-              if (trigger) trigger(["promotionSource"]);
-            },
+            value: watch("JAR3_promotionMechanism") || "",
+            onChange: (value: string) => setValue("JAR3_promotionMechanism", value),
             validation: { required: tHearingTopics('fieldRequired') },
             notRequired: false,
-            colSpan: 2,
+          },
+          {
+            type: "radio",
+            name: "JAR3_additionalUpgrade",
+            label: t("doesContractIncludeAdditionalUpgrade"),
+            options: [
+              { label: t("yes"), value: "Yes" },
+              { label: t("no"), value: "No" },
+            ],
+            value: watch("JAR3_additionalUpgrade") || "",
+            onChange: (value: string) => setValue("JAR3_additionalUpgrade", value),
+            validation: { required: tHearingTopics('fieldRequired') },
+            notRequired: false,
           },
         ], t));
       }
@@ -1316,21 +1384,21 @@ export const useFormLayout = ({
         return buildForm(addNoSpacesValidationToTextInputs([
           {
             type: "input",
-            name: "currentPosition",
+            name: "JAR4_CurrentPosition",
             label: t("currentPosition"),
             inputType: "text",
-            value: watch("currentPosition") || "",
-            onChange: (value: string) => setValue("currentPosition", value),
+            value: watch("JAR4_CurrentPosition") || "",
+            onChange: (value: string) => setValue("JAR4_CurrentPosition", value),
             validation: { required: tHearingTopics('fieldRequired') },
             notRequired: false,
           },
           {
             type: "input",
-            name: "theWantedJob",
+            name: "JAR4_WantedJob",
             label: t("theWantedJob"),
             inputType: "text",
-            value: watch("theWantedJob") || "",
-            onChange: (value: string) => setValue("theWantedJob", value),
+            value: watch("JAR4_WantedJob") || "",
+            onChange: (value: string) => setValue("JAR4_WantedJob", value),
             validation: { required: tHearingTopics('fieldRequired') },
             notRequired: false,
           },
@@ -1339,74 +1407,26 @@ export const useFormLayout = ({
         return buildForm(addNoSpacesValidationToTextInputs([
           {
             type: "input",
-            name: "amount",
+            name: "LRESR1_Amount",
             label: t("amount"),
-            inputType: "number",
-            min: 0,
-            value: watch("amount") || "",
-            onChange: (value: string) => setValue("amount", value),
-            validation: { required: tHearingTopics('fieldRequired') },
-            notRequired: false,
-          },
-        ], t));
-      case "LRESR-2":
-        return buildForm(addNoSpacesValidationToTextInputs([
-          {
-            type: "input",
-            name: "amount",
-            label: t("amount"),
-            inputType: "number",
-            min: 0,
-            value: watch("amount") || "",
-            onChange: (value: string) => setValue("amount", value),
-            validation: { required: tHearingTopics('fieldRequired') },
-            notRequired: false,
-          },
-          {
-            type: "input",
-            name: "consideration",
-            label: t("consideration"),
             inputType: "text",
-            value: watch("consideration") || "",
-            onChange: (value: string) => setValue("consideration", value),
-            validation: { required: tHearingTopics('fieldRequired') },
+            value: watch("LRESR1_Amount") || "",
+            onChange: (value: string) => handleNumberOnlyChange(value, setValue, "LRESR1_Amount"),
+            validation: createNumberOnlyValidation(true, tHearingTopics('fieldRequired')),
             notRequired: false,
-          },
-        ], t));
-      case "LRESR-3":
-        return buildForm(addNoSpacesValidationToTextInputs([
-          {
-            type: "input",
-            name: "amount",
-            label: t("amount"),
-            inputType: "number",
-            min: 0,
-            value: watch("amount") || "",
-            onChange: (value: string) => setValue("amount", value),
-            validation: { required: tHearingTopics('fieldRequired') },
-            notRequired: false,
-          },
-          {
-            type: "input",
-            name: "rewardType",
-            label: t("rewardType"),
-            inputType: "text",
-            value: watch("rewardType") || "",
-            onChange: (value: string) => setValue("rewardType", value),
-            validation: { required: tHearingTopics('fieldRequired') },
-            notRequired: false,
+            numberOnly: true,
           },
         ], t));
       case "TTR-1":
         return buildForm(addNoSpacesValidationToTextInputs([
           {
             type: "autocomplete" as const,
-            name: "travelingWay",
+            name: "TTR1_travelingWay",
             label: t("travelingWay"),
             options: TravelingWayOptions,
-            value: travelingWay,
+            value: watch("TTR1_travelingWay") || travelingWay,
             onChange: (option: Option | null) =>
-              setValue("travelingWay", option),
+              setValue("TTR1_travelingWay", option),
             validation: { required: tHearingTopics('fieldRequired') },
             notRequired: false,
           },
@@ -1415,22 +1435,22 @@ export const useFormLayout = ({
         return buildForm(addNoSpacesValidationToTextInputs([
           {
             type: "input",
-            name: "amount",
+            name: "RFR1_Amount",
             label: t("amount"),
-            inputType: "number",
-            min: 0,
-            value: watch("amount") || "",
-            onChange: (value: string) => setValue("amount", value),
-            validation: { required: tHearingTopics('fieldRequired') },
+            inputType: "text",
+            value: watch("RFR1_Amount") || "",
+            onChange: (value: string) => handleNumberOnlyChange(value, setValue, "RFR1_Amount"),
+            validation: createNumberOnlyValidation(true, tHearingTopics('fieldRequired')),
             notRequired: false,
+            numberOnly: true,
           },
           {
             type: "input",
-            name: "consideration",
+            name: "RFR1_Consideration",
             label: t("consideration"),
             inputType: "text",
-            value: watch("consideration") || "",
-            onChange: (value: string) => setValue("consideration", value),
+            value: watch("RFR1_Consideration") || "",
+            onChange: (value: string) => setValue("RFR1_Consideration", value),
             validation: { required: tHearingTopics('fieldRequired') },
             notRequired: false,
           },
@@ -1440,18 +1460,20 @@ export const useFormLayout = ({
               <div className="flex flex-col gap-2">
                 <HijriDatePickerInput
                   control={control}
-                  name="date_hijri"
+                  name="RFR1_dateHijri"
                   label={t("dateHijri")}
                   rules={{
                     required: true,
                   }}
                   onChangeHandler={(date, onChange) =>
-                    handleHijriDateChange(date, onChange, "date_gregorian")
+                    handleHijriDateChange(date, onChange, "RFR1_dateGregorian")
                   }
+                  isDateOfBirth={true}
+
                 />
                 <GregorianDateDisplayInput
                   control={control}
-                  name="date_gregorian"
+                  name="RFR1_dateGregorian"
                   label={t("gregorianDate")}
                 />
               </div>
@@ -1462,22 +1484,22 @@ export const useFormLayout = ({
         return buildForm(addNoSpacesValidationToTextInputs([
           {
             type: "input",
-            name: "amount",
+            name: "RR1_Amount",
             label: t("amount"),
-            inputType: "number",
-            min: 0,
-            value: watch("amount") || "",
-            onChange: (value: string) => setValue("amount", value),
-            validation: { required: tHearingTopics('fieldRequired') },
+            inputType: "text",
+            value: watch("RR1_Amount") || "",
+            onChange: (value: string) => handleNumberOnlyChange(value, setValue, "RR1_Amount"),
+            validation: createNumberOnlyValidation(true, tHearingTopics('fieldRequired')),
             notRequired: false,
+            numberOnly: true,
           },
           {
             type: "input",
-            name: "rewardType",
+            name: "RR1_Type",
             label: t("rewardType"),
             inputType: "text",
-            value: watch("rewardType") || "",
-            onChange: (value: string) => setValue("rewardType", value),
+            value: watch("RR1_Type") || "",
+            onChange: (value: string) => setValue("RR1_Type", value),
             validation: { required: tHearingTopics('fieldRequired') },
             notRequired: false,
           },
@@ -1500,10 +1522,7 @@ export const useFormLayout = ({
       }
       : {
         children: [
-          {
-            type: "custom",
-            component: <></>,
-          },
+          ...getCommonElements(true),
         ],
       }),
   };

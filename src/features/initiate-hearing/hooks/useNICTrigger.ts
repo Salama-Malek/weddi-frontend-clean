@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
 import { useGetNICDetailsQuery } from '@/features/initiate-hearing/api/create-case/plaintiffDetailsApis';
 import type { NICDetailsResponse } from '@/features/initiate-hearing/api/create-case/plaintiffDetailsApis';
-import { toWesternDigits } from '@/shared/lib/helpers';
+import { toWesternDigits, isHijriDateInFuture } from '@/shared/lib/helpers';
+import { useNICServiceErrorContext } from '@/shared/context/NICServiceErrorContext';
 
 
 
@@ -29,7 +30,7 @@ export function useNICTrigger(
   onError: () => void,
   language: string = 'EN'
 ): UseNICTriggerResult {
-  const shouldSkip = !(id.length === 10 && hijriDob.length === 8);
+  const shouldSkip = !(id.length === 10 && hijriDob.length === 8) || isHijriDateInFuture(hijriDob);
 
   const { data, isFetching, isError, refetch } = useGetNICDetailsQuery(
     {
@@ -41,14 +42,32 @@ export function useNICTrigger(
     { skip: shouldSkip }
   );
 
+  // Handle service errors
+  const handleTryAgain = () => {
+    refetch();
+  };
+
+  const { handleNICResponse, setTryAgainCallback } = useNICServiceErrorContext();
+
+  // Set the try again callback when hook is used
+  useEffect(() => {
+    setTryAgainCallback(handleTryAgain);
+  }, [setTryAgainCallback, handleTryAgain]);
+
   useEffect(() => {
     if (shouldSkip) return;
+    
+    // Check for service errors first
+    if (data && handleNICResponse(data)) {
+      return; // Service error was handled
+    }
+    
     if (isError || !data?.NICDetails) {
       onError();
     } else {
       onSuccess(data.NICDetails);
     }
-  }, [data, isError, shouldSkip, onSuccess, onError]);
+  }, [data, isError, shouldSkip, onSuccess, onError, handleNICResponse]);
 
   return { refetch, isFetching };
 }

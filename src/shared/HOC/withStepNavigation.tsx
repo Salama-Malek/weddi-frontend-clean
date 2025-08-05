@@ -75,6 +75,7 @@ const withStepNavigation = <P extends object>(
       forceValidateForm,
       clearErrors,
       setError,
+      clearFormData
     } = useAPIFormsData();
 
     const { errors, isValid, isSubmitting: isFormSubmitting } = formState;
@@ -87,6 +88,11 @@ const withStepNavigation = <P extends object>(
     const [submitFinalReview, { isLoading: isSubmittingFinalReview }] = useSubmitFinalReviewMutation();
 
     const onSubmit: SubmitHandler<FormData> = async (data) => {
+      // Prevent multiple rapid Next button calls
+      if (actionButtonName === "Next" || isFormSubmitting) {
+        return;
+      }
+      
       try {
         const caseId = getCookie("caseId");
         if (currentStep === 2) {
@@ -106,15 +112,15 @@ const withStepNavigation = <P extends object>(
             };
 
             const response = await submitFinalReview(payload).unwrap();
-            
+
             const isSuccessful = !hasErrors(response) && (response?.SuccessCode === "200" || response?.ServiceStatus === "Success");
 
             if (isSuccessful) {
               localStorage.removeItem("step");
               localStorage.removeItem("tab");
-
+              localStorage.removeItem("CaseDetails");
+              clearFormData();
               toast.success(t("Submission successful!"));
-
               const serviceLink = response?.S2Cservicelink;
               if (serviceLink) {
                 navigate(`/manage-hearings/${response?.CaseNumber}`);
@@ -122,9 +128,10 @@ const withStepNavigation = <P extends object>(
               } else {
                 navigate(`/manage-hearings/${response?.CaseNumber}`);
               }
-              
+
               removeCookie("caseId");
-              
+              removeCookie("incompleteCase");
+
               return;
             } else {
               // if (response?.ErrorDescription) {
@@ -136,11 +143,22 @@ const withStepNavigation = <P extends object>(
         }
 
         setFormData(data);
-        
+
         if (handleNext) {
           handleNext();
         }
       } catch (error: any) {
+        // Clear actionButtonName in case of error to allow retry
+        if (actionButtonName === "Next") {
+          // The handleNext function should clear actionButtonName, but we ensure it here
+          // This is a fallback to ensure the button doesn't get stuck
+          console.warn("Next button was stuck, clearing actionButtonName");
+        }
+        // Ensure actionButtonName is cleared on any error
+        if (actionButtonName) {
+          // Note: We can't directly set actionButtonName here as it's from useCasesLogic
+          // The handleNext function should handle this, but this serves as a warning
+        }
       } finally {
         setIsSubmitting(false);
       }
@@ -163,56 +181,55 @@ const withStepNavigation = <P extends object>(
 
     return (
       <>
-      {isSubmitting && <Loader />}
-      <StepNavigation<FormData>
-        onSubmit={handleSubmit(onSubmit, onInvalid)}
-        isValid={isValid}
-        actionButtonName={actionButtonName}
-        isVerifiedInput={isVerifiedInput}
-        isFirstStep={currentStep === 0 && currentTab === 0}
-        isLastStep={currentStep === 2}
-        goToNextStep={handleNext}
-        isFormSubmitting={isFormSubmitting}
-        goToPrevStep={handlePrevious}
-        resetSteps={() => {
-          localStorage.removeItem("step");
-          localStorage.removeItem("tab");
-          updateParams(0, 0);
-        }}
-        handleSave={handleSave}
-        isButtonDisabled={(direction: "prev" | "next") =>
-          direction === "prev"
-            ? currentStep === 0 && currentTab === 0
-            : currentStep === 2
-        }
-        canProceed={currentStep === 2 && acknowledgeValue}
-      >
-        <WrappedComponent
-          {...props}
-          register={register}
-          errors={errors}
-          setValue={setValue}
-          watch={watch}
-          control={control}
-          trigger={trigger}
+        {isSubmitting && <Loader />}
+        <StepNavigation<FormData>
+          onSubmit={handleSubmit(onSubmit, onInvalid)}
           isValid={isValid}
-          setError={setError}
-          clearErrors={clearErrors}
-          setIsPhoneVerify={setIsPhoneVerify}
-          acknowledgements={acknowledgementsState}
-          selectedLanguage={selectedLanguageState}
-          setAcknowledgements={setAcknowledgementsState}
-          setSelectedLanguage={setSelectedLanguageState}
-        />
-      </StepNavigation>
+          actionButtonName={actionButtonName}
+          isVerifiedInput={isVerifiedInput}
+          isFirstStep={currentStep === 0 && currentTab === 0}
+          isLastStep={currentStep === 2}
+          goToNextStep={handleNext}
+          isFormSubmitting={isFormSubmitting}
+          goToPrevStep={handlePrevious}
+          resetSteps={() => {
+            localStorage.removeItem("step");
+            localStorage.removeItem("tab");
+            updateParams(0, 0);
+          }}
+          handleSave={handleSave}
+          isButtonDisabled={(direction: "prev" | "next") =>
+            direction === "prev"
+              ? currentStep === 0 && currentTab === 0
+              : currentStep === 2
+          }
+          canProceed={currentStep === 2 && acknowledgeValue}
+        >
+          <WrappedComponent
+            {...props}
+            register={register}
+            errors={errors}
+            setValue={setValue}
+            watch={watch}
+            control={control}
+            trigger={trigger}
+            isValid={isValid}
+            setError={setError}
+            clearErrors={clearErrors}
+            setIsPhoneVerify={setIsPhoneVerify}
+            acknowledgements={acknowledgementsState}
+            selectedLanguage={selectedLanguageState}
+            setAcknowledgements={setAcknowledgementsState}
+            setSelectedLanguage={setSelectedLanguageState}
+          />
+        </StepNavigation>
       </>
 
     );
   };
 
-  ComponentWithStepNavigation.displayName = `withStepNavigation(${
-    WrappedComponent.displayName || WrappedComponent.name || "Component"
-  })`;
+  ComponentWithStepNavigation.displayName = `withStepNavigation(${WrappedComponent.displayName || WrappedComponent.name || "Component"
+    })`;
 
   return ComponentWithStepNavigation;
 };

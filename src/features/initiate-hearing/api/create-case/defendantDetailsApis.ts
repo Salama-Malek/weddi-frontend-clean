@@ -49,7 +49,7 @@ export const caseApi = api.injectEndpoints({
         url: `/WeddiServices/V1/SubLookup`,
         params: {
           LookupType: "CaseElements",
-          ModuleKey: mainGovernmentSelected?.value,
+          ModuleKey: (typeof mainGovernmentSelected === "object" ? mainGovernmentSelected?.value : mainGovernmentSelected) || "",
           ModuleName: "SubgovernmentName",
           AcceptedLanguage: AcceptedLanguage,
           SourceSystem: SourceSystem

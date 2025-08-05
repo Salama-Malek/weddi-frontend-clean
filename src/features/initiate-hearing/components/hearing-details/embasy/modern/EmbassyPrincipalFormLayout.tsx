@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { TokenClaims } from "@/features/login/components/AuthProvider";
 import { SectionLayout } from "@/shared/components/form/form.types";
@@ -31,21 +31,24 @@ export function EmbassyPrincipalFormLayout({
   const idNumber = userClaims.UserID;
   const claimType = watch("claimantStatus");
 
+  // Memoize the setValue function to prevent infinite loops
+  const memoizedSetValue = useCallback(setValue, [setValue]);
+
   useEffect(() => {
     if (claimType === "principal" && getNicData?.NICDetails) {
       const nic = getNicData.NICDetails;
-      if (nic?.PlaintiffName) setValue("userName", nic.PlaintiffName);
-      if (nic?.Region_Code) setValue("region", { value: nic.Region_Code, label: nic.Region });
-      if (nic?.City_Code) setValue("city", { value: nic.City_Code, label: nic.City });
-      if (nic?.Occupation_Code) setValue("occupation", { value: nic.Occupation_Code, label: nic.Occupation });
-      if (nic?.Gender_Code) setValue("gender", { value: nic.Gender_Code, label: nic.Gender });
-      if (nic?.Nationality_Code) setValue("nationality", { value: nic.Nationality_Code, label: nic.Nationality });
-      if (nic?.DateOfBirthHijri) setValue("hijriDate", nic.DateOfBirthHijri);
-      if (nic?.DateOfBirthGregorian) setValue("gregorianDate", nic.DateOfBirthGregorian);
-      if (nic?.Applicant) setValue("applicant", nic.Applicant);
-      if (nic?.PhoneNumber) setValue("phoneNumber", nic.PhoneNumber.toString());
+      if (nic?.PlaintiffName) memoizedSetValue("userName", nic.PlaintiffName);
+      if (nic?.Region_Code) memoizedSetValue("region", { value: nic.Region_Code, label: nic.Region });
+      if (nic?.City_Code) memoizedSetValue("city", { value: nic.City_Code, label: nic.City });
+      if (nic?.Occupation_Code) memoizedSetValue("occupation", { value: nic.Occupation_Code, label: nic.Occupation });
+      if (nic?.Gender_Code) memoizedSetValue("gender", { value: nic.Gender_Code, label: nic.Gender });
+      if (nic?.Nationality_Code) memoizedSetValue("nationality", { value: nic.Nationality_Code, label: nic.Nationality });
+      if (nic?.DateOfBirthHijri) memoizedSetValue("hijriDate", nic.DateOfBirthHijri);
+      if (nic?.DateOfBirthGregorian) memoizedSetValue("gregorianDate", nic.DateOfBirthGregorian);
+      if (nic?.Applicant) memoizedSetValue("applicant", nic.Applicant);
+      if (nic?.PhoneNumber) memoizedSetValue("phoneNumber", nic.PhoneNumber.toString());
     }
-  }, [claimType, getNicData, setValue]);
+  }, [claimType, getNicData, memoizedSetValue]);
 
   return [
     {
@@ -59,7 +62,10 @@ export function EmbassyPrincipalFormLayout({
           : [{ type: "input" as const, name: "userName", inputType: "text", label: t("nicDetails.name"), value: watch("userName"), onChange: (v: string) => setValue("userName", v), validation: { required: t("nameValidation") } }]),
         ...(getNicData?.NICDetails?.Region
           ? [{ type: "readonly" as const, label: t("nicDetails.region"), value: getNicData.NICDetails.Region }]
-          : [{ type: "autocomplete" as const, name: "region", label: t("nicDetails.region"), options: RegionOptions, value: watch("region"), onChange: (v: string) => setValue("region", v), validation: { required: t("regionValidation") } }]),
+          : [{ type: "autocomplete" as const, name: "region", label: t("nicDetails.region"), options: RegionOptions, value: watch("region"), onChange: (v: string) => {
+  setValue("region", v);
+  setValue("city", null);
+}, validation: { required: t("regionValidation") } }]),
         ...(getNicData?.NICDetails?.City
           ? [{ type: "readonly" as const, label: t("nicDetails.city"), value: getNicData.NICDetails.City }]
           : [{ type: "autocomplete" as const, name: "city", label: t("nicDetails.city"), options: CityOptions, value: watch("city"), onChange: (v: string) => setValue("city", v), validation: { required: t("cityValidation") } }]),

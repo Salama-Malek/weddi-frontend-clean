@@ -84,6 +84,7 @@ const ReviewDetails = ({
   setSelectedLanguage,
 }: WithStepNavigationProps) => {
   const { t, i18n } = useTranslation("reviewdetails");
+  const { t:hearingdetails } = useTranslation("hearingdetails");
 
   const [selectedLang, setSelectedLang] = useState({
     label: i18n.language === "ar" ? "Arabic" : "English",
@@ -293,7 +294,7 @@ const ReviewDetails = ({
         name: "defendantStatus",
         label: t("Defendant's Type:"),
         options: [
-          { label: t("Non-Governmental Entities"), value: "Establishment" },
+          { label: hearingdetails("nonGovernmentalEntities"), value: "Establishment" },
           { label: t("establishments"), value: "Governmental Entities" },
         ],
         value: details?.DefendantType || "",
@@ -741,7 +742,7 @@ const ReviewDetails = ({
         name: "defendantStatus",
         label: t("Defendant's Type:"),
         options: [
-          { label: t("Non-Governmental Entities"), value: "Establishment" },
+          { label: hearingdetails("nonGovernmentalEntities"), value: "Establishment" },
           { label: t("establishments"), value: "Governmental Entities" },
         ],
         value: details?.DefendantType_Code || "",
@@ -890,7 +891,7 @@ const ReviewDetails = ({
         name: "defendantStatus",
         label: t("Defendant's Type:"),
         options: [
-          { label: t("Non-Governmental Entities"), value: "Establishment" },
+          { label: hearingdetails("nonGovernmentalEntities"), value: "Establishment" },
           { label: t("establishments"), value: "Governmental Entities" },
         ],
         value: details?.DefendantType_Code || "",
