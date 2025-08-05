@@ -1,18 +1,44 @@
-import React from "react";
+import React, { lazy } from "react";
+
+export interface WizardData {
+  claimantName?: string;
+  topics?: unknown[];
+  skipTopics?: boolean;
+  confirmed?: boolean;
+}
 
 export interface WizardStep {
   id: string;
   title: string;
   description: string;
   component: React.ComponentType;
-  validate?: (data: Record<string, any>) => boolean;
-  next?: (data: Record<string, any>) => number | undefined;
-  prev?: (data: Record<string, any>) => number | undefined;
+  validate?: (data: WizardData) => boolean;
+  next?: (data: WizardData) => number | undefined;
+  prev?: (data: WizardData) => number | undefined;
 }
 
-const HearingDetails: React.FC = () => <div>Hearing details step</div>;
-const HearingTopics: React.FC = () => <div>Hearing topics step</div>;
-const ReviewConfirm: React.FC = () => <div>Review and confirm step</div>;
+// Lazy-loaded step components
+// These components live in the feature modules and are wrapped here to be
+// consumed by the generic case wizard.
+const HearingDetails = lazy(() =>
+  import(
+    "@features/cases/initiate-hearing/steps/hearing-details/tabs/claimant/ClaimantDetails"
+  )
+);
+
+// AddHearing expects a displayFooter prop to render the create-flow footer. The
+// wrapper component ensures the wizard always passes the correct flag.
+const HearingTopics = lazy(() =>
+  import("@features/cases/initiate-hearing/steps/hearing-topics/AddHearing").then(
+    ({ default: AddHearing }) => ({
+      default: () => <AddHearing displayFooter={true} />,
+    })
+  )
+);
+
+const ReviewConfirm = lazy(() =>
+  import("@features/cases/initiate-hearing/steps/review/Review")
+);
 
 export const steps: WizardStep[] = [
   {
@@ -20,6 +46,8 @@ export const steps: WizardStep[] = [
     title: "Hearing details",
     description: "Basic information and details of the hearing",
     component: HearingDetails,
+    // Example validation – ensure claimant name exists
+    validate: (data) => Boolean(data.claimantName),
     // Example conditional logic: skip topics if data.skipTopics is true
     next: (data) => (data.skipTopics ? 2 : undefined),
   },
@@ -28,12 +56,19 @@ export const steps: WizardStep[] = [
     title: "Hearing topics",
     description: "Add topics related to the hearing",
     component: HearingTopics,
+    validate: (data) => Array.isArray(data.topics) && data.topics.length > 0,
+    // If topics were skipped, previous step should return to step 0
+    prev: (data) => (data.skipTopics ? 0 : undefined),
   },
   {
     id: "review",
     title: "Review and confirm",
     description: "Review the hearing details and confirm the acknowledgment",
     component: ReviewConfirm,
+    // Final step: ensure user has confirmed the data
+    validate: (data) => Boolean(data.confirmed),
+    // If topics were skipped, going back should return to step 0
+    prev: (data) => (data.skipTopics ? 0 : 1),
   },
 ];
 

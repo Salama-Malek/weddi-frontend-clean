@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Suspense } from "react";
 import Stepper from "./Stepper/Stepper";
 import { steps } from "./stepConfig";
 import { useCaseWizard } from "./CaseWizardContext";
@@ -32,7 +32,9 @@ const CaseWizard: React.FC = () => {
         />
       </div>
       <div className="w-full md:w-3/4 md:p-4 pt-0">
-        <StepComponent />
+        <Suspense fallback={<div>Loading...</div>}>
+          <StepComponent />
+        </Suspense>
         <div className="flex justify-between mt-6">
           <button
             type="button"
