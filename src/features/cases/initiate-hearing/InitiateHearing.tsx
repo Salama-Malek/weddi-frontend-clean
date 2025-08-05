@@ -8,7 +8,7 @@ const InitiateHearing = () => {
   
   const breadcrumbs: BreadcrumbItemType[] = [
     { label: t("home"), href: "/" },
-    { label: t("initiate_hearing"), href: "/initiate-hearing/case-creation" },
+    { label: t("initiate_hearing"), href: "/initiate-hearing/hearing-details" },
   ];
 
   return (

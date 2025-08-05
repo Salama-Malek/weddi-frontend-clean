@@ -1,38 +1,59 @@
-import React from "react";
+import React, { useEffect } from "react";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import Stepper from "./Stepper/Stepper";
 import { steps } from "./stepConfig";
 import { useCaseWizard } from "./CaseWizardContext";
 
 const CaseWizard: React.FC = () => {
-  const { state, dispatch } = useCaseWizard();
-  const { currentStep, data } = state;
+  const { state } = useCaseWizard();
+  const { data } = state;
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
 
+  const stepId = pathname.split("/").pop() || steps[0].id;
+  const currentStep = Math.max(0, steps.findIndex(s => s.id === stepId));
   const step = steps[currentStep];
-  const StepComponent = step.component;
+
+  useEffect(() => {
+    if (steps.findIndex(s => s.id === stepId) === -1) {
+      navigate(steps[0].id, { replace: true });
+    }
+  }, [stepId, navigate]);
+
+  useEffect(() => {
+    const invalidIndex = steps
+      .slice(0, currentStep)
+      .findIndex(s => s.validate && !s.validate(data));
+    if (invalidIndex !== -1) {
+      navigate(steps[invalidIndex].id, { replace: true });
+    }
+  }, [currentStep, data, navigate]);
 
   const handleNext = () => {
     if (step.validate && !step.validate(data)) return;
-    const nextIndex =
-      step.next ? step.next(data) ?? currentStep + 1 : currentStep + 1;
-    dispatch({ type: "SET_STEP", step: Math.min(nextIndex, steps.length - 1) });
+    const nextIndex = step.next
+      ? step.next(data) ?? currentStep + 1
+      : currentStep + 1;
+    navigate(steps[Math.min(nextIndex, steps.length - 1)].id);
   };
 
   const handlePrev = () => {
-    const prevIndex =
-      step.prev ? step.prev(data) ?? currentStep - 1 : currentStep - 1;
-    dispatch({ type: "SET_STEP", step: Math.max(0, prevIndex) });
+    const prevIndex = step.prev
+      ? step.prev(data) ?? currentStep - 1
+      : currentStep - 1;
+    navigate(steps[Math.max(0, prevIndex)].id);
   };
 
   return (
     <div className="flex flex-col md:flex-row h-full md:min-h-screen p-4 mb-4">
       <div className="w-full md:w-1/4 mb-6 md:mb-0">
         <Stepper
-          steps={steps.map((s) => ({ title: s.title, description: s.description }))}
+          steps={steps.map(s => ({ title: s.title, description: s.description }))}
           currentStep={currentStep}
         />
       </div>
       <div className="w-full md:w-3/4 md:p-4 pt-0">
-        <StepComponent />
+        <Outlet />
         <div className="flex justify-between mt-6">
           <button
             type="button"
