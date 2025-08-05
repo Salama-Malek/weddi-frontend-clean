@@ -1,5 +1,6 @@
-import { useGetMyCasesQuery, useGetCaseDetailsQuery } from "../api/myCasesApis";
+import { useGetMyCasesQuery } from "../api/myCasesApis";
 import type { GetMyCasesRequest, GetCaseDetailsRequest } from "../api/myCasesApis";
+import apiClient from "@services/apiClient";
 
 import { PlaintiffCasesResponse, DefendantCasesResponse, CaseRecord } from "../types/myCases";
 
@@ -64,12 +65,22 @@ export const getCaseDetailsApi = async ({
   CaseID,
   AcceptedLanguage = "EN",
   SourceSystem = "E-Services",
+  IDNumber,
   UserType,
+  FileNumber,
+  MainGovernment,
+  SubGovernment,
 }: GetCaseDetailsRequest) => {
-  const response = await fetch(`WeddiServices/V1/GetCaseDetails?CaseID=${CaseID}&AcceptedLanguage=${AcceptedLanguage}&SourceSystem=${SourceSystem}&UserType=${UserType}`);
-  if (!response.ok) {
-    throw new Error("Failed to fetch case details");
-  }
-  const data = await response.json();
+  const params: Record<string, any> = {
+    CaseID,
+    AcceptedLanguage,
+    SourceSystem,
+    IDNumber,
+    UserType,
+    FileNumber,
+    MainGovernment,
+    SubGovernment,
+  };
+  const { data } = await apiClient.get("/WeddiServices/V1/GetCaseDetails", { params });
   return data;
 };
