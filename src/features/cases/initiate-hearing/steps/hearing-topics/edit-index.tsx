@@ -57,7 +57,8 @@ import FeaturedIcon from "@/assets/Featured icon.svg";
 import { useRemoveAttachmentMutation } from "./api/apis";
 import { isOtherCommission } from "./utils/isOtherCommission";
 import { isOtherAllowance } from "./utils/isOtherAllowance";
-import { useSubTopicPrefill } from "./hooks/useSubTopicPrefill"; 
+import { useSubTopicPrefill } from "./hooks/useSubTopicPrefill";
+import useCaseSave from "../../hooks/useCaseSave";
 
 const Modal = lazy(() => import("@shared/components/modal/Modal"));
 const ReusableTable = lazy(() =>
@@ -2270,6 +2271,8 @@ function EditHearingTopicsDetails({
     }
   };
 
+  const { onSave, isSaveLoading, isSaveSuccess, isSaveError } = useCaseSave(handleSaveApi);
+
 
   const handleNext = async (): Promise<{ success: boolean; error?: any; response?: any }> => {
     // Prevent multiple calls to UpdateCaseTopics
@@ -3722,13 +3725,14 @@ function EditHearingTopicsDetails({
         goToNextStep={handleNext}
         goToPrevStep={handlePrevious}
         resetSteps={() => updateParams(0, 0)}
-        handleSave={handleSaveApi}
+        onSave={onSave}
+        isSaveLoading={isSaveLoading}
+        isSaveSuccess={isSaveSuccess}
+        isSaveError={isSaveError}
         canProceed={caseTopics.length > 0}
         isButtonDisabled={(direction) =>
           direction === "prev" ? currentStep === 0 && currentTab === 0 : false
         }
-        isLoading={addHearingLoading}
-        lastAction={lastAction}
         showFooterBtn={showFooter}
       >
         <div className="flex flex-col min-h-auto">

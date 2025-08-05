@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { SubmitHandler, useWatch } from "react-hook-form";
 import StepNavigation from "@shared/modules/case-creation/components/StepNavigation";
 import useCasesLogic from "@features/cases/initiate-hearing/hooks/useCasesLogic";
+import useCaseSave from "@features/cases/initiate-hearing/hooks/useCaseSave";
 import { FormData } from "@shared/components/form/form.types";
 import { useAPIFormsData } from "@app/providers/FormContext";
 import { useSubmitFinalReviewMutation } from "@features/cases/initiate-hearing/api/create-case/apis";
@@ -45,6 +46,8 @@ const withStepNavigation = <P extends object>(
       handleSave,
       actionButtonName = "",
     } = useCasesLogic();
+
+    const { onSave, isSaveLoading, isSaveSuccess, isSaveError } = useCaseSave(handleSave);
 
     const [isVerifiedInput, setIsPhoneVerify] = useState<boolean | undefined>();
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -197,7 +200,10 @@ const withStepNavigation = <P extends object>(
             localStorage.removeItem("tab");
             updateParams(0, 0);
           }}
-          handleSave={handleSave}
+          onSave={onSave}
+          isSaveLoading={isSaveLoading}
+          isSaveSuccess={isSaveSuccess}
+          isSaveError={isSaveError}
           isButtonDisabled={(direction: "prev" | "next") =>
             direction === "prev"
               ? currentStep === 0 && currentTab === 0
