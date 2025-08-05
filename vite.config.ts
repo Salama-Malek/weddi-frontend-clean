@@ -10,9 +10,10 @@ const __dirname = path.dirname(__filename);
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd());
 
-  return {
-    plugins: [
-      react(),
+  const plugins = [react()];
+
+  if (mode !== 'test') {
+    plugins.push(
       viteStaticCopy({
         targets: [
           {
@@ -24,8 +25,12 @@ export default defineConfig(({ mode }) => {
             dest: 'assets/fonts',
           },
         ],
-      }),
-    ],
+      })
+    );
+  }
+
+  return {
+    plugins,
     build: {
       outDir: 'dist',
       rollupOptions: {
@@ -52,5 +57,8 @@ export default defineConfig(({ mode }) => {
         '@services': path.resolve(__dirname, 'src/services'),
       },
     },
+    test: {
+      environment: 'happy-dom'
+    }
   };
 });

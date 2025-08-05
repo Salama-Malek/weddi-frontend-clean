@@ -1,4 +1,3 @@
-import { useAPIFormsData } from "@app/providers/FormContext";
 import Button from "@shared/components/button";
 import { ReactNode, useState } from "react";
 import { FieldValues, UseFormHandleSubmit } from "react-hook-form";
@@ -25,21 +24,22 @@ interface StepNavigationProps<T extends FieldValues> {
   goToNextStep?: () => void;
   goToPrevStep?: () => void;
   resetSteps?: () => void;
-  handleSave?: () => Promise<ApiResponse>;
+  onSave?: (e?: React.MouseEvent<HTMLButtonElement>) => void;
   isButtonDisabled?: (direction: "prev" | "next") => boolean;
   onSubmit?: ReturnType<UseFormHandleSubmit<T>>;
   children?: ReactNode;
   isValid?: boolean;
   currentStep?: number;
   currentTab?: number;
-  isLoading?: boolean;
-  lastAction?: "Save" | "Next" | null;
   isVerifiedInput?: boolean | Record<string, boolean>;
   isFormSubmitting?: boolean;
   actionButtonName?: string;
   showFooterBtn?: boolean;
   canProceed?: boolean;
   isSubmitButtonDisabled?: boolean;
+  isSaveLoading?: boolean;
+  isSaveSuccess?: boolean;
+  isSaveError?: boolean;
 }
 
 const StepNavigation = <T extends FieldValues>({
@@ -48,21 +48,22 @@ const StepNavigation = <T extends FieldValues>({
   goToNextStep,
   goToPrevStep,
   resetSteps,
-  handleSave,
+  onSave,
   isButtonDisabled,
   onSubmit,
   children,
   isValid,
   currentStep,
   currentTab,
-  isLoading,
-  lastAction,
   isVerifiedInput = true,
   isFormSubmitting,
   actionButtonName = "",
   showFooterBtn = true,
   canProceed,
   isSubmitButtonDisabled,
+  isSaveLoading,
+  isSaveSuccess,
+  isSaveError,
 }: StepNavigationProps<T>) => {
   const { t: tStepper, i18n } = useTranslation("stepper");
   const { t: tManageHearing } = useTranslation("manageHearingDetails");
@@ -75,8 +76,6 @@ const StepNavigation = <T extends FieldValues>({
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
   const { hasErrors } = useApiErrorHandler();
-
-  const { clearErrors: handleRemoveValidation, formState: { errors } } = useAPIFormsData();
 
   const isPassedVerifiedInput =
     typeof isVerifiedInput === "object"
@@ -106,79 +105,10 @@ const StepNavigation = <T extends FieldValues>({
   //   isLastStep
   // });
 
-  const isSaveLoading =
-    actionButtonName === "Save" && isFormSubmitting && (isLoading ?? true);
   const isNextLoading =
-    actionButtonName === "Next" && isFormSubmitting && (isLoading ?? true);
+    actionButtonName === "Next" && isFormSubmitting;
 
-  const handleSaveClick = async (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault();
-    // Prevent multiple rapid save calls
-    if (!handleSave || isFormSubmitting) return;
-
-    console.log("[🔍 STEP NAVIGATION] Save button clicked - starting save operation");
-    
-    try {
-      const response = await handleSave() as ApiResponse;
-
-      console.log("[🔍 STEP NAVIGATION] Save operation completed, response:", response);
-
-      const validErrors = response?.ErrorCodeList?.filter(
-        (element: any) => element.ErrorCode || element.ErrorDesc
-      ) || [];
-
-      if (validErrors.length > 0) {
-        // Show validation error toasts based on API response
-        validErrors.forEach((error: any) => {
-          toast.error(error.ErrorDesc || "Validation error");
-        });
-        return;
-      }
-
-                     // More robust success condition - prioritize ServiceStatus when SuccessCode is not present
-        const hasSuccessCode = response?.SuccessCode === "200";
-        const hasSuccessStatus = response?.ServiceStatus === "Success";
-        const hasNoErrors = !response?.ErrorCodeList || response.ErrorCodeList.length === 0;
-        
-        // Check if errors are just warnings (non-blocking)
-        const hasOnlyWarnings = response?.ErrorCodeList?.every((error: any) => 
-          error.ErrorCode?.startsWith('W') || error.ErrorDesc?.toLowerCase().includes('warning')
-        );
-        
-        const isSuccessful = (hasSuccessStatus && (hasNoErrors || hasOnlyWarnings)) || (hasSuccessCode && (hasNoErrors || hasOnlyWarnings));
-        
-        if (isSuccessful) {
-          console.log("[StepNavigation] API call confirmed successful, showing success toast");
-          handleRemoveValidation?.();
-          toast.success(tStepper("save_success"));
-        } else if (response?.SuccessCode === "IN_PROGRESS") {
-          console.log("[StepNavigation] Operation in progress, not showing any toast");
-          // Don't show any toast when operation is in progress
-        } else {
-          console.log("[StepNavigation] API response not successful, not showing success toast:", {
-            SuccessCode: response?.SuccessCode,
-            ServiceStatus: response?.ServiceStatus,
-            ErrorCodeList: response?.ErrorCodeList,
-            isSuccessful,
-            hasNoErrors,
-            hasOnlyWarnings
-          });
-          
-          // Log the actual error details for debugging
-          if (response?.ErrorCodeList?.length > 0) {
-            console.log("[StepNavigation] Error details:", response.ErrorCodeList);
-          }
-        }
-    } catch (error: any) {
-      console.error("[StepNavigation] Save error:", error);
-      // Show error toast based on the actual error from API
-      const errorMessage = error?.data?.ErrorDetails?.[0]?.ErrorDesc || 
-                          error?.data?.ErrorDescription || 
-                          error?.message || 
-                          tStepper("save_error");
-      toast.error(errorMessage);
-    }
-  };
+  // Save logic moved to useCaseSave hook
 
   const handleMyCases = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
@@ -286,8 +216,8 @@ const StepNavigation = <T extends FieldValues>({
                 isLoading={isSaveLoading}
                 variant={isSaveEnabled ? "secondary" : "disabled"}
                 typeVariant={isSaveEnabled ? "outline" : "freeze"}
-                onClick={handleSaveClick}
-                disabled={!isSaveEnabled || isFormSubmitting}
+                onClick={onSave}
+                disabled={!isSaveEnabled || isFormSubmitting || isSaveLoading}
               >
                 {tStepper("save")}
               </Button>
@@ -325,8 +255,8 @@ const StepNavigation = <T extends FieldValues>({
             isLoading={isSaveLoading}
             variant={isSaveEnabled ? "primary" : "disabled"}
             typeVariant={isSaveEnabled ? "outline" : "freeze"}
-            onClick={handleSaveClick}
-            disabled={!isSaveEnabled || isFormSubmitting}
+            onClick={onSave}
+            disabled={!isSaveEnabled || isFormSubmitting || isSaveLoading}
           >
             {tStepper("save")}
           </Button>
@@ -378,8 +308,8 @@ const StepNavigation = <T extends FieldValues>({
             isLoading={isSaveLoading}
             variant={isSaveEnabled ? "primary" : "disabled"}
             typeVariant={isSaveEnabled ? "outline" : "freeze"}
-            onClick={handleSaveClick}
-            disabled={!isSaveEnabled || isFormSubmitting}
+            onClick={onSave}
+            disabled={!isSaveEnabled || isFormSubmitting || isSaveLoading}
           >
             {tStepper("save")}
           </Button>
