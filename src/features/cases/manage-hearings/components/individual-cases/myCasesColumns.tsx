@@ -1,10 +1,9 @@
-import { useMemo } from "react";
+import React, { useMemo } from "react";
 import { ColumnDef } from "@tanstack/react-table";
 import { useTranslation } from "react-i18next";
 
 import { CaseRecord } from "@features/cases/manage-hearings/types/myCases";
 import StatusBadge from "../common/StatusBadge";
-import { ActionsCell } from "../ActionsCell";
 import { formatDate } from "@shared/utils/formatters";
 
 export const useMyCasesColumns = (
@@ -86,26 +85,6 @@ export const useMyCasesColumns = (
           );
         },
       },
-      {
-        id: "actions",
-        header: t("table_headers.actions"),
-        cell: ({ row }) => {
-          const original = row.original;
-      
-          return (
-            <ActionsCell
-              caseId={original.CaseID}
-              hearingStatus={original.WorkStatus_Code}
-              activeTab={role}
-              Reopen={original.Reopen === "true"}
-              DownloadPDF={original.DownloadPDF === "true"}
-              ResendAppointment={original.ResendAppointment === "true"}
-              CancelCase={original.CancelCase === "true"}
-              UpdateCase={original.UpdateCase === "true"}
-            />
-          );
-        },
-      }
       
     );
 

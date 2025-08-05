@@ -1,8 +1,7 @@
-import React, { lazy, Suspense, useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { InputField } from "@shared/components/form";
 import Button from "@shared/components/button";
-import TableLoader from "@shared/components/loader/TableLoader";
 import { CustomPagination } from "@shared/components/pagination/CustomPagination";
 import { AutoCompleteField } from "@shared/components/form/AutoComplete";
 import { Section } from "@shared/layouts/Section";
@@ -10,12 +9,9 @@ import { useMyCasesData } from "../services/myCaseService";
 import { useMyCasesColumns } from "./individual-cases/myCasesColumns";
 import { useStatusWorkLookup } from "@features/cases/manage-hearings/api/useStatusWorkLookup";
 import { useCookieState } from "@features/cases/initiate-hearing/hooks/useCookieState";
- 
-const ReusableTable = lazy(() =>
-  import("@shared/components/table/ReusableTable").then((mod) => ({
-    default: mod.ReusableTable,
-  }))
-);
+import CasesTable from "@shared/components/table/CasesTable";
+import { useNavigate } from "react-router-dom";
+import { CaseRecord } from "@features/cases/manage-hearings/types/myCases";
  
 type StatusOption = { label: string; value: string };
 type UserTypeConfig = "Worker" | "Establishment" | "Legal representative" | "Embassy User";
@@ -139,6 +135,19 @@ const HearingTabContent = ({ role, caseType }: HearingTabContentProps) => {
  
   const columns = useMyCasesColumns(data, role);
   const { options: statusOptions } = useStatusWorkLookup();
+  const navigate = useNavigate();
+
+  const handleView = (record: CaseRecord) => {
+    navigate(`/manage-hearings/${record.CaseID}`);
+  };
+
+  const handleEdit = (record: CaseRecord) => {
+    console.log("Edit", record);
+  };
+
+  const handleResend = (record: CaseRecord) => {
+    console.log("Resend", record);
+  };
  
   return (
     <div>
@@ -206,24 +215,19 @@ const HearingTabContent = ({ role, caseType }: HearingTabContentProps) => {
       </div>
  
       <div className="mt-md">
-        <Suspense fallback={<TableLoader />}>
-          {isLoading ? (
-            <TableLoader />
-          ) : filteredData.length === 0 ? (
-            <div className="text-center text-gray-500 p-6">
-              {t("no_results_found") || "No results found for your search."}
-            </div>
-          ) : (
-            <ReusableTable
-              data={filteredData}
-              columns={columns as any}
-              page={page}
-              totalPages={totalPages}
-              onPageChange={setPage}
-              PaginationComponent={CustomPagination}
-            />
-          )}
-        </Suspense>
+        <CasesTable
+          data={filteredData}
+          columns={columns as any}
+          page={page}
+          totalPages={totalPages}
+          onPageChange={setPage}
+          PaginationComponent={CustomPagination}
+          isLoading={isLoading}
+          emptyMessage={t("no_results_found") || "No results found for your search."}
+          onView={handleView}
+          onEdit={handleEdit}
+          onResend={handleResend}
+        />
       </div>
     </div>
   );
