@@ -1,4 +1,4 @@
-import HearingTopicsDetails from ".";
+import HearingTopicsDetails from "./HearingTopicsDetails";
 import EditHearingTopicsDetails from "./edit-index";
 // import HearingTopicsRefactored from "./HearingTopicsRefactored"; 
 

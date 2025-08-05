@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLazyGetCaseDetailsQuery } from "@features/cases/manage-hearings/api/myCasesApis";
-import { useCookieState } from "./useCookieState";
+import { useCookieState } from "@features/cases/initiate-hearing/hooks/useCookieState";
 
 const useEmbassyCaseDetailsPrefill = (setValue: (field: string, value: any) => void, trigger?: (name?: string | string[]) => Promise<boolean>) => {
   const [getCookie] = useCookieState();

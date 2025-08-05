@@ -10,7 +10,7 @@ import { useGetGenderLookupDataQuery, useGetNationalityLookupDataQuery, useGetNI
 import { useNICServiceErrorContext } from "@shared/context/NICServiceErrorContext";
 import { useLazyGetCaseDetailsQuery } from "@features/cases/manage-hearings/api/myCasesApis";
 import { toast } from "react-toastify";
-import useCaseDetailsPrefill from "@features/cases/initiate-hearing/hooks/useCaseDetailsPrefill";
+import { useCaseDetailsPrefill } from "@features/cases/initiate-hearing/steps/hearing-details";
 import { formatDateToYYYYMMDD } from "@shared/utils/dateUtils";
 import { toWesternDigits, isHijriDateInFuture } from '@shared/lib/helpers';
 import { HijriDatePickerInput } from "@shared/components/calanders/HijriDatePickerInput";

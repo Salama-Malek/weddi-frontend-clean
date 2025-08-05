@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLazyGetCaseDetailsQuery } from "@features/cases/manage-hearings/api/myCasesApis";
-import { useCookieState } from "./useCookieState";
+import { useCookieState } from "@features/cases/initiate-hearing/hooks/useCookieState";
 
 // دالة مساعدة لإرجاع null إذا كان الكائن فارغًا
 function nullifyIfEmpty(obj: any) {

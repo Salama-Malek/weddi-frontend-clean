@@ -1,5 +1,5 @@
 import { api } from "@services/config/api";
-import { NICDetailsParams } from "../../components/hearing-details/hearing.details.types";
+import { NICDetailsParams } from "../../steps/hearing-details";
  
 /**
  * Response shape for GetNICDetails API.
