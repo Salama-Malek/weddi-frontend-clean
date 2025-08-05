@@ -54,8 +54,7 @@ const useHearingDetail = () => {
     AcceptedLanguage: i18n.language === "ar" ? "AR" : "EN",
     SourceSystem: "E-Services",
     CaseID: caseId ?? "",
-  },
-  { skip: !caseId });
+  }, { enabled: !!caseId });
 
   // const { data, isLoading, isError, refetch } = useGetCaseDetailsQuery(
   //   {

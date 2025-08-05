@@ -9,6 +9,9 @@ import { LanguageDirectionProvider } from "@app/i18n/LanguageDirectionProvider";
 import { CookiesProvider } from "react-cookie";
 import { FormProvider } from "./FormContext";
 import { UserTypeProvider } from "./UserTypeContext";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+const queryClient = new QueryClient();
 
 type ProviderProps = {
   children: React.ReactNode;
@@ -16,26 +19,28 @@ type ProviderProps = {
 
 export const AppProvider: React.FC<ProviderProps> = ({ children }) => {
   return (
-          <Provider store={store}>
-    <Suspense fallback={<></>}>
-      <UserTypeProvider>
-        <DateProvider>
-          <ErrorBoundary
-            //@ts-ignore
-            FallbackComponent={MainErrorFallback}
-            onReset={() => window.location.reload()}
-          >
-            <LanguageDirectionProvider>
-              <FormProvider>
-                <CookiesProvider>
-                    <TabsProvider>{children}</TabsProvider>
-                </CookiesProvider>
-              </FormProvider>
-            </LanguageDirectionProvider>
-          </ErrorBoundary>
-        </DateProvider>
-      </UserTypeProvider>
-    </Suspense>
-                  </Provider>
+    <QueryClientProvider client={queryClient}>
+      <Provider store={store}>
+        <Suspense fallback={<></>}>
+          <UserTypeProvider>
+            <DateProvider>
+              <ErrorBoundary
+                //@ts-ignore
+                FallbackComponent={MainErrorFallback}
+                onReset={() => window.location.reload()}
+              >
+                <LanguageDirectionProvider>
+                  <FormProvider>
+                    <CookiesProvider>
+                      <TabsProvider>{children}</TabsProvider>
+                    </CookiesProvider>
+                  </FormProvider>
+                </LanguageDirectionProvider>
+              </ErrorBoundary>
+            </DateProvider>
+          </UserTypeProvider>
+        </Suspense>
+      </Provider>
+    </QueryClientProvider>
   );
 };

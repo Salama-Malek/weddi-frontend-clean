@@ -1,8 +1,15 @@
-import { api } from "@services/config/api";
+import { useQuery } from "@tanstack/react-query";
+import { useRef } from "react";
+import apiClient from "@services/apiClient";
 
-export type UserType = "Worker" | "Establishment" | "Legal representative" | "Agent" | "Embassy User";
+export type UserType =
+  | "Worker"
+  | "Establishment"
+  | "Legal representative"
+  | "Agent"
+  | "Embassy User";
 export type TableForType = "Plaintiff" | "Defendant";
- 
+
 export interface GetMyCasesRequest {
   UserType: UserType;
   IDNumber: string;
@@ -17,121 +24,48 @@ export interface GetMyCasesRequest {
   MainGovernment?: string;
   SubGovernment?: string;
 }
- 
+
 export interface GetCaseDetailsRequest {
   CaseID: string;
   AcceptedLanguage?: string;
   SourceSystem?: string;
   IDNumber: string;
   UserType: UserType;
-  FileNumber:string,
-  MainGovernment:string,
-  SubGovernment:string,
+  FileNumber: string;
+  MainGovernment: string;
+  SubGovernment: string;
 }
- 
-export const myCasesApi = api.injectEndpoints({
-  overrideExisting: true,  // ⬅️ allow redefinition of endpoints
-  endpoints: (builder) => ({
-    getMyCases: builder.query<any, GetMyCasesRequest>({
-      query: ({
-        UserType,
-        IDNumber,
-        PageNumber,
-        TableFor,
-        CaseStatus,
-        FileNumber,
-        MainGovernment,
-        SubGovernment,
-        SearchID,
-        Number700,
-        // Number700,
-        AcceptedLanguage,
-        SourceSystem = "E-Services",
-      }) => {
-        const params: Record<string, any> = {
-          UserType,
-          IDNumber,
-          PageNumber,
-          TableFor,
-          CaseStatus,
-          SearchID,
-          AcceptedLanguage,
-          SourceSystem,
-        };
 
-        if (Number700) {
-          params.Number700 = Number700;
-        }
+const getMyCases = async (params: GetMyCasesRequest) => {
+  const { data } = await apiClient.get("/WeddiServices/V1/MyCases", { params });
+  return data;
+};
 
- 
- 
-        if (UserType === "Establishment" && FileNumber) {
-          params.FileNumber = FileNumber;
-        }
- 
-        if (
-          UserType === "Legal representative" &&
-          MainGovernment &&
-          SubGovernment
-        ) {
-          params.MainGovernment = MainGovernment;
-          params.SubGovernment = SubGovernment;
-        }
- 
-        return { url: "/WeddiServices/V1/MyCases", params };
-      },
-    }),
- 
-    getCaseDetails: builder.query<any, GetCaseDetailsRequest>({
-      query: ({
-        CaseID,
-        AcceptedLanguage = "EN",
-        SourceSystem = "E-Services",
-        IDNumber,
-        UserType,
-        FileNumber,
-        MainGovernment,
-        SubGovernment,
-      }) => {
-        const params: Record<string, any> = {
-          UserType,
-          CaseID,
-          IDNumber,
-          FileNumber,
-          MainGovernment,
-          SubGovernment,
-          AcceptedLanguage,
-          SourceSystem,
-        };
- 
- 
- 
-        if (UserType === "Establishment" && FileNumber) {
-          params.FileNumber = FileNumber;
-        }
- 
-        if (
-          UserType === "Legal representative" &&
-          MainGovernment &&
-          SubGovernment
-        ) {
-          params.MainGovernment = MainGovernment;
-          params.SubGovernment = SubGovernment;
-        }
-       
-        params.CaseID = CaseID;
- 
-        return { url: "/WeddiServices/V1/GetCaseDetails", params };
-        // return {
-        //   url: "/WeddiServices/V1/GetCaseDetails",
-        //   params: { CaseID, AcceptedLanguage, SourceSystem, IDNumber, UserType },
-        // }
-      }
-      ,
-    }),
-  }),
-});
- 
-// Updated Exports
-export const { useGetMyCasesQuery, useGetCaseDetailsQuery, useLazyGetCaseDetailsQuery } = myCasesApi;
- 
+export const useGetMyCasesQuery = (params: GetMyCasesRequest) =>
+  useQuery({ queryKey: ["myCases", params], queryFn: () => getMyCases(params) });
+
+const getCaseDetails = async (params: GetCaseDetailsRequest) => {
+  const { data } = await apiClient.get("/WeddiServices/V1/GetCaseDetails", { params });
+  return data;
+};
+
+export const useGetCaseDetailsQuery = (params: GetCaseDetailsRequest, options?: { enabled?: boolean }) =>
+  useQuery({
+    queryKey: ["caseDetails", params],
+    queryFn: () => getCaseDetails(params),
+    ...options,
+  });
+
+export const useLazyGetCaseDetailsQuery = () => {
+  const paramsRef = useRef<GetCaseDetailsRequest>();
+  const query = useQuery({
+    queryKey: ["caseDetailsLazy"],
+    queryFn: () => getCaseDetails(paramsRef.current!),
+    enabled: false,
+  });
+  const trigger = (params: GetCaseDetailsRequest) => {
+    paramsRef.current = params;
+    return query.refetch();
+  };
+  return [trigger, query] as const;
+};
