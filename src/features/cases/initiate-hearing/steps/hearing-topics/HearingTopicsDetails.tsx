@@ -8,6 +8,7 @@ import {
   useRef,
 } from "react";
 import { useForm, useWatch, useFormContext } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import Button from "@shared/components/button";
 import TableLoader from "@shared/components/loader/TableLoader";
 import { CustomPagination } from "@shared/components/pagination/CustomPagination";
@@ -32,7 +33,8 @@ import {
 } from "../../api/create-case/apis";
 import { useCookieState } from "../../hooks/useCookieState";
 import { TableSkeletonLoader } from "@shared/components/loader/SkeletonLoader";
-import { TopicFormValues } from "./hearing.topics.types";
+import { TopicFormValues } from "./schema";
+import { topicSchema } from "./schema";
 import { getHearingTopicsColumns } from "./config/colums";
 import { useAttachments } from "./hooks/useAttachments";
 import { useFormLayout as useFormLayoutWorker } from "./config/forms.layout.worker";
@@ -142,7 +144,9 @@ function HearingTopicsDetails({
   showFooter: boolean;
   onSaveApi?: (payload: any) => Promise<any>;
 }) {
-  const methods = useForm<any>();
+  const methods = useForm<TopicFormValues>({
+    resolver: zodResolver(topicSchema),
+  });
   const {
     register,
     handleSubmit,

@@ -1,30 +1,16 @@
 import React, { useMemo } from "react";
 import { useForm, FormProvider, useWatch } from "react-hook-form";
-import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { FormBuilder, FormSection } from "@shared/modules/form-builder";
 import { claimantSection, representativeSection } from "./formConfig";
-
-const schema = z
-  .object({
-    claimantStatus: z.enum(["self", "representative"]),
-    claimantName: z.string().min(1, "Required"),
-    representativeName: z.string().optional(),
-    relationship: z.string().optional(),
-  })
-  .refine(
-    (data) => {
-      if (data.claimantStatus === "representative") {
-        return !!data.representativeName;
-      }
-      return true;
-    },
-    { path: ["representativeName"], message: "Representative name is required" }
-  );
+import {
+  hearingDetailsSchema,
+  HearingDetailsFormValues,
+} from "./schema";
 
 const HearingDetailsForm: React.FC = () => {
-  const methods = useForm({
-    resolver: zodResolver(schema),
+  const methods = useForm<HearingDetailsFormValues>({
+    resolver: zodResolver(hearingDetailsSchema),
     defaultValues: { claimantStatus: "self" },
   });
 
