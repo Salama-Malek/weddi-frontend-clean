@@ -1,4 +1,12 @@
-import { ReactNode, Suspense, useEffect, useState, useCallback } from "react";
+import {
+  ReactNode,
+  Suspense,
+  useEffect,
+  useState,
+  useCallback,
+  createContext,
+  useContext,
+} from "react";
 import { jwtDecode } from "jwt-decode";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useCookieState } from "@features/cases/initiate-hearing/hooks/useCookieState";
@@ -35,6 +43,14 @@ interface AuthProviderProps {
   setIsEstablishment: (value: boolean) => void;
   setUserTypeState: (value: string) => void;
 }
+
+interface AuthContextValue {
+  claims: TokenClaims | null;
+}
+
+const AuthContext = createContext<AuthContextValue>({ claims: null });
+
+export const useAuth = () => useContext(AuthContext);
 
 const LazyLoader = ({ children }: { children: ReactNode }) => (
   <Suspense fallback={<Loader />}>{children}</Suspense>
@@ -105,6 +121,12 @@ const AuthProvider: React.FC<AuthProviderProps> = ({
 
   const [triggerGetToken, { isFetching: isTokenFetching }] = useLazyGetUserTokenQuery();
   const [isTokenReady, setIsTokenReady] = useState(false);
+
+  // Clean up any step/tab state persisted in cookies
+  useEffect(() => {
+    removeCookie("step");
+    removeCookie("tab");
+  }, [removeCookie]);
 
   const checkAndFetchToken = useCallback(async () => {
     const tokenExpiresAt = getCookie("oauth_token_expires_at");
@@ -195,7 +217,6 @@ const AuthProvider: React.FC<AuthProviderProps> = ({
                 getNICData(claims.UserID, claims.UserDOB),
               ]);
             } else {
-              setCookie("userType", "Establishment");
               setIsEstablishment(true);
             }
           } else {
@@ -208,10 +229,7 @@ const AuthProvider: React.FC<AuthProviderProps> = ({
             if (!storedClaims.File_Number) {
               setIsEstablishment(false);
               const selectedUserType = getCookie("selectedUserType");
-              if (selectedUserType) {
-                setCookie("userType", selectedUserType);
-                setIsLegalRep(selectedUserType === "Legal representative");
-              } else {
+              if (!selectedUserType) {
                 const storedUserType = getCookie("storeAllUserTypeData");
                 if (!storedUserType) {
                   await Promise.all([
@@ -221,7 +239,6 @@ const AuthProvider: React.FC<AuthProviderProps> = ({
                 }
               }
             } else {
-              setCookie("userType", "Establishment");
               setIsEstablishment(true);
             }
           } else {
@@ -303,20 +320,12 @@ const AuthProvider: React.FC<AuthProviderProps> = ({
 
   useEffect(() => {
     if (userTypeLegalRepData) {
-      setCookie("storeAllUserTypeData", userTypeLegalRepData);
       const selectedUserType = getCookie("selectedUserType");
       if (!selectedUserType) {
         const userType = extractUserType(userTypeLegalRepData);
         if (userType) {
-          setCookie("userType", userType);
           setIsLegalRep(userType === "Legal representative");
-          setUserTypeState(userType)
-          
-          // Store the original user type for role switching logic
-          // Check both userClaims and API response to determine if user is a legal representative
-          if (userType === "Legal representative") {
-            setCookie("originalUserType", "Legal representative");
-          }
+          setUserTypeState(userType);
         }
       }
     }
@@ -327,8 +336,6 @@ const AuthProvider: React.FC<AuthProviderProps> = ({
       if ("ErrorDetails" in nicData && Array.isArray((nicData as any).ErrorDetails)) {
         handleErrorResponse(nicData);
       } else {
-        setCookie("storeAllNicData", nicData);
-        setCookie("nicDetailObject", nicData);
         setIsNICValidated(true);
       }
     }
@@ -371,14 +378,14 @@ const AuthProvider: React.FC<AuthProviderProps> = ({
   }
 
   return (
-    <>
+    <AuthContext.Provider value={{ claims: userClaims }}>
       <LazyLoader>{children}</LazyLoader>
       <NICErrorModal
         isOpen={showNICError}
         onClose={() => setShowNICError(false)}
         errorMessage={nicErrorMessage}
       />
-    </>
+    </AuthContext.Provider>
   );
 };
 

@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useGetCaseDetailsQuery } from "@features/cases/manage-hearings/api/myCasesApis";
 import { useCookieState } from "@features/cases/initiate-hearing/hooks/useCookieState";
-import { TokenClaims } from "@features/auth/components/AuthProvider";
+import { useAuth } from "@features/auth/components/AuthProvider";
 
 // Define allowed section IDs
 type SectionId = "data" | "topics" | "review";
@@ -17,13 +17,13 @@ const componentMap: Record<SectionId, () => Promise<{ default: React.ComponentTy
 const useHearingDetail = () => {
   const { caseId } = useParams<{ caseId: string }>();
   const { t, i18n } = useTranslation(["stepper", "manageHearingDetails"]);
-  const [getCookie, setCookie] = useCookieState();
-  const UserClaims: TokenClaims = getCookie("userClaims");
+  const [getCookie] = useCookieState();
+  const { claims: UserClaims } = useAuth();
   const userType = getCookie("userType");
   const mainCategory = getCookie("mainCategory")?.value;
   const subCategory = getCookie("subCategory")?.value;
-  const userID = getCookie("userClaims")?.UserID;
-  const fileNumber = getCookie("userClaims")?.File_Number;
+  const userID = UserClaims?.UserID;
+  const fileNumber = UserClaims?.File_Number;
 
   const userConfigs: any = {
     Worker: {

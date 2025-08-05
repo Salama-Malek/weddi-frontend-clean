@@ -1,10 +1,9 @@
 import BannerSkeleton from "@shared/components/loader/BannerSkeleton";
-import { lazy, Suspense, useState, useEffect } from "react";
+import { lazy, Suspense, useState } from "react";
 import TableLoader from "@shared/components/loader/TableLoader";
 import AuthProvider from "@features/auth/components/AuthProvider";
 import { useCookieState } from "@features/cases/initiate-hearing/hooks/useCookieState";
 import { useUser } from "@shared/context/userTypeContext";
-import { AuthTokenProvider } from "@app/providers/AuthTokenProvider";
 
 const Banner = lazy(() => import("./components/HearingBanner"));
 const HearingContent = lazy(() => import("./components/HearingContent"));
@@ -54,27 +53,25 @@ const Main = () => {
       setIsEstablishment={setEstablishmentState}
       setUserTypeState={setUserType}
     >
-      <AuthTokenProvider>
-        <main className="!space-y-[16px] bg-gray-100">
-          <div className="container">
-            <Suspense fallback={<BannerSkeleton />}>
-              <Banner
-                isLegalRep={isLegalRep}
-                isEstablishment={isEstablishment}
-                showInfoBanner={showInfoBanner}
-                onCloseInfoBanner={handleCloseInfoBanner}
-              />
-            </Suspense>
-          </div>
-          <Suspense fallback={<TableLoader />}>
-            <HearingContent
+      <main className="!space-y-[16px] bg-gray-100">
+        <div className="container">
+          <Suspense fallback={<BannerSkeleton />}>
+            <Banner
               isLegalRep={isLegalRep}
               isEstablishment={isEstablishment}
-              popupHandler={popupHandler}
+              showInfoBanner={showInfoBanner}
+              onCloseInfoBanner={handleCloseInfoBanner}
             />
           </Suspense>
-        </main>
-      </AuthTokenProvider>
+        </div>
+        <Suspense fallback={<TableLoader />}>
+          <HearingContent
+            isLegalRep={isLegalRep}
+            isEstablishment={isEstablishment}
+            popupHandler={popupHandler}
+          />
+        </Suspense>
+      </main>
     </AuthProvider>
   );
 };
