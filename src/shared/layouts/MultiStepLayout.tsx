@@ -1,4 +1,4 @@
-import React, { Suspense, useMemo, useEffect } from "react";
+import React, { Suspense, useMemo } from "react";
 import TableLoader from "@shared/components/loader/TableLoader";
 import { useLanguageDirection } from "@app/i18n/LanguageDirectionProvider";
 import Tabs from "../modules/case-creation/components/tabs/Tabs";
@@ -22,7 +22,6 @@ const MultiStepLayout: React.FC<MultiStepLayoutProps> = ({
 
   const handleTabChange = (tabIndex: number) => {
     if (tabIndex >= 0 && tabIndex < tabs.length) {
-      localStorage.setItem("tab", tabIndex.toString());
       updateParams(currentStep, tabIndex);
     }
   };

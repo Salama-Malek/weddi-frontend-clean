@@ -1,6 +1,7 @@
 import GenericSkeleton from "@shared/components/loader/GenericSkeleton";
 import TableLoader from "@shared/components/loader/TableLoader";
-import React, { lazy, Suspense, useEffect, useState } from "react";
+import React, { lazy, Suspense } from "react";
+import { useStepFlow } from "../StepFlowContext";
 
 const ClaimantDetails = lazy(
   () =>
@@ -28,50 +29,8 @@ const ReviewDetails = lazy(
   () => import("@features/cases/initiate-hearing/steps/review/Review")
 );
 
-interface ContentRendererProps {
-  currentStep: number;
-  currentTab: number;
-}
-
-const ContentRenderer: React.FC<ContentRendererProps> = ({
-  currentStep = 0,
-  currentTab = 0,
-}) => {
-  const [step, setStep] = useState(currentStep);
-  const [tab, setTab] = useState(currentTab);
-
-  useEffect(() => {
-    const savedStep = localStorage.getItem("step");
-    const savedTab = localStorage.getItem("tab");
-
-    if (savedStep) {
-      const newStep = parseInt(savedStep);
-      setStep(newStep);
-    }
-    if (savedTab) {
-      const newTab = parseInt(savedTab);
-      setTab(newTab);
-    }
-  }, [currentStep, currentTab]);
-
-  useEffect(() => {
-    const handleStorageChange = () => {
-      const savedStep = localStorage.getItem("step");
-      const savedTab = localStorage.getItem("tab");
-
-      if (savedStep) {
-        const newStep = parseInt(savedStep);
-        setStep(newStep);
-      }
-      if (savedTab) {
-        const newTab = parseInt(savedTab);
-        setTab(newTab);
-      }
-    };
-
-    window.addEventListener("storage", handleStorageChange);
-    return () => window.removeEventListener("storage", handleStorageChange);
-  }, []);
+const ContentRenderer: React.FC = () => {
+  const { currentStep: step, currentTab: tab } = useStepFlow();
 
   const renderContent = () => {
     if (step === 0) {
