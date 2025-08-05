@@ -27,13 +27,13 @@ import {
 import { useGetEstablishmentDetailsQuery } from "@features/cases/initiate-hearing/api/create-case/defendantDetailsApis";
 import { useGetIncompleteCaseQuery } from "@features/dashboard/api/api";
 import { useGetUserTypeLegalRepQuery } from "@features/auth/api/loginApis";
-import { useOtpVerification } from "@features/cases/initiate-hearing/hooks/useOtpVerification";
+import { useOtpVerification } from "@features/cases/initiate-hearing/steps/hearing-details";
 import { useCookieState } from "@features/cases/initiate-hearing/hooks/useCookieState";
-import useCaseDetailsPrefill from "@features/cases/initiate-hearing/hooks/useCaseDetailsPrefill";
-import useEmbassyCaseDetailsPrefill from "@features/cases/initiate-hearing/hooks/useEmbassyCaseDetailsPrefill";
+import { useCaseDetailsPrefill } from "@features/cases/initiate-hearing/steps/hearing-details";
+import { useEmbassyCaseDetailsPrefill } from "@features/cases/initiate-hearing/steps/hearing-details";
 import { useSaveClaimantDetailsMutation } from "@features/cases/initiate-hearing/api/create-case/apis";
 import { useAPIFormsData } from "@app/providers/FormContext";
-import { useIncompleteCaseHandler } from "@features/cases/initiate-hearing/hooks/useIncompleteCaseHandler";
+import { useIncompleteCaseHandler } from "@features/cases/initiate-hearing/steps/hearing-details";
 import { claimantDetailsPayload, emabsyClaimantPayload } from "@features/cases/initiate-hearing/api/create-case/payloads";
 
 import { useFormLayout } from "./claimant.forms.formLayout";

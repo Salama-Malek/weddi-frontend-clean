@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useCookieState } from "./useCookieState";
+import { useCookieState } from "@features/cases/initiate-hearing/hooks/useCookieState";
 import { useLazyGetCaseDetailsQuery, GetCaseDetailsRequest } from "@features/cases/manage-hearings/api/myCasesApis"; 
 
 export const useIncompleteCaseHandler = (setValue: (field: string, value: any) => void, trigger?: (name?: string | string[]) => Promise<boolean>) => {

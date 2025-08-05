@@ -25,7 +25,7 @@ import {
 } from "@features/cases/initiate-hearing/api/create-case/plaintiffDetailsApis";
 import { NICDetailsParams } from "../../hearing.details.types";
 import { formatHijriDate } from "@shared/lib/helpers";
-import AddAttachment from "../../../add-attachments";
+import { AddAttachment } from "../../../add-attachments";
 import { DateOfBirthField } from "@shared/components/calanders";
 import { useAPIFormsData } from "@app/providers/FormContext";
 import OTPFormLayout from "./OTP.froms.formlayout";

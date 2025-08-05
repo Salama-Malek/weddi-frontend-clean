@@ -15,7 +15,7 @@ import {
 import { FormData } from "@shared/components/form/form.types";
 import { useSelector } from "react-redux";
 import { RootState } from "@app/redux/store";
-import { Topic } from "@features/cases/initiate-hearing/components/hearing-topics/hearing.topics.types";
+import { Topic } from "@features/cases/initiate-hearing/steps/hearing-topics";
 import { FormResetProvider } from "./FormResetProvider";
 
 interface FormContextType extends UseFormReturn<FormData> {

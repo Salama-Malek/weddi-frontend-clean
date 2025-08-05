@@ -14,7 +14,7 @@ import { useCookieState } from "@features/cases/initiate-hearing/hooks/useCookie
 import { useAPIFormsData } from "@app/providers/FormContext";
 import { useFormLayout } from "./defendant.forms.formLayout";
 import { useLegelDefendantFormLayout } from "../../establishment-tabs/legal-representative/defendant/legdefendant.forms.formLayout";
-import useDefendantDetailsPrefill from "@features/cases/initiate-hearing/hooks/useDefendantDetailsPrefill";
+import { useDefendantDetailsPrefill } from "@features/cases/initiate-hearing/steps/hearing-details";
 import { Option } from "@shared/components/form/form.types";
 
 const DefendantDetailsContainer: React.FC = () => {

@@ -12,12 +12,12 @@ import {
 } from "@features/cases/initiate-hearing/api/create-case/plaintiffDetailsApis";
 import { useEffect, useMemo, useState } from "react";
 import { useCookieState } from "@features/cases/initiate-hearing/hooks/useCookieState";
-// import useCaseDetailsPrefill from "@features/cases/initiate-hearing/hooks/useCaseDetailsPrefill"; 
+// import useCaseDetailsPrefill from "@features/cases/initiate-hearing/steps/hearing-details"; 
 import { useAPIFormsData } from "@app/providers/FormContext";
 import { legRepVsWorkerUseFormLayout } from "../../establishment-tabs/legal-representative/work/legworker.forms.formLayout";
 import { useTranslation } from "react-i18next";
 import { FormResetProvider } from '@app/providers/FormResetProvider';
-import useWorkDetailsPrefill from "@features/cases/initiate-hearing/hooks/useWorkDetailsPrefill";
+import { useWorkDetailsPrefill } from "@features/cases/initiate-hearing/steps/hearing-details";
 import { SectionLayout } from "@shared/components/form/form.types";
 
 export interface WorkDetailsProps {

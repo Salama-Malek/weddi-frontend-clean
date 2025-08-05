@@ -1,4 +1,4 @@
-import AddHearing from "@features/cases/initiate-hearing/components/hearing-topics/AddHearing";
+import { AddHearing } from "@features/cases/initiate-hearing/steps/hearing-topics";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
 import { useCookieState } from "@features/cases/initiate-hearing/hooks/useCookieState";

@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { PHONE_PATTERNS } from "@services/config/general";
 import { UseFormSetValue, UseFormWatch } from "react-hook-form";
 import { useGetCountryCodeLookupDataQuery, useSendOtpMutation } from "@features/cases/initiate-hearing/api/create-case/plaintiffDetailsApis";
-import { useOtpVerification } from "@features/cases/initiate-hearing/hooks/useOtpVerification";
+import { useOtpVerification } from "@features/cases/initiate-hearing/steps/hearing-details";
 import { TokenClaims } from "@features/auth/components/AuthProvider";
 import { useCookieState } from "@features/cases/initiate-hearing/hooks/useCookieState";
 

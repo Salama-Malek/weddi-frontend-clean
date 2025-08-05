@@ -5,27 +5,27 @@ import React, { lazy, Suspense, useEffect, useState } from "react";
 const ClaimantDetails = lazy(
   () =>
     import(
-      "@features/cases/initiate-hearing/components/hearing-details/tabs/claimant/ClaimantDetails"
+      "@features/cases/initiate-hearing/steps/hearing-details/tabs/claimant/ClaimantDetails"
     )
 );
 const DefendantDetails = lazy(
   () =>
     import(
-      "@features/cases/initiate-hearing/components/hearing-details/tabs/defendant/DefendantDetails"
+      "@features/cases/initiate-hearing/steps/hearing-details/tabs/defendant/DefendantDetails"
     )
 );
 const WorkDetails = lazy(
   () =>
     import(
-      "@features/cases/initiate-hearing/components/hearing-details/tabs/work/WorkDetails"
+      "@features/cases/initiate-hearing/steps/hearing-details/tabs/work/WorkDetails"
     )
 );
 const AddHearing = lazy(
   () =>
-    import("@features/cases/initiate-hearing/components/hearing-topics/AddHearing")
+    import("@features/cases/initiate-hearing/steps/hearing-topics/AddHearing")
 );
 const ReviewDetails = lazy(
-  () => import("@features/cases/initiate-hearing/components/review")
+  () => import("@features/cases/initiate-hearing/steps/review/Review")
 );
 
 interface ContentRendererProps {

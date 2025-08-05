@@ -18,7 +18,7 @@ import {
 import Loader from "@shared/components/loader";
 import { useTranslation } from "react-i18next";
 import { useLanguageDirection } from "@shared/hooks/useLanguageDirection";
-import { NICDetailsParams } from "@features/cases/initiate-hearing/components/hearing-details/hearing.details.types";
+import { NICDetailsParams } from "@features/cases/initiate-hearing/steps/hearing-details";
 import { useLazyGetNICDetailsQuery } from "@features/cases/initiate-hearing/api/create-case/plaintiffDetailsApis";
 import { toHijri_YYYYMMDD } from "@shared/lib/helpers";
 import NICErrorModal from "@shared/components/modal/NICErrorModal";

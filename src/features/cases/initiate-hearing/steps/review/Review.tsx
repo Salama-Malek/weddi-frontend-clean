@@ -20,7 +20,7 @@ import { useGetCaseDetailsQuery } from "@features/cases/manage-hearings/api/myCa
 import { useCookieState } from "../../hooks/useCookieState";
 import { skipToken } from "@reduxjs/toolkit/query";
 import Modal from "@shared/components/modal/Modal";
-import { Topic } from "../hearing-topics/hearing.topics.types";
+import { Topic } from "../hearing-topics";
 import { TokenClaims } from "@features/auth/components/AuthProvider";
 import { formatDate } from "@shared/utils/formatters";
 

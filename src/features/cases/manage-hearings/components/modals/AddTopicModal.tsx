@@ -3,7 +3,7 @@
 // import Modal from "@shared/components/modal/Modal";
 // import Button from "@shared/components/button";
 // import { useForm } from "react-hook-form";
-// import { useFormLayout } from "@features/cases/initiate-hearing/components/hearing-topics/config/forms.layout.establishment";
+// import { useFormLayout } from "@features/cases/initiate-hearing/steps/hearing-topics/config/forms.layout.establishment";
 // import { Option } from "@shared/components/form/form.types";
 // import {
 //   useMainCategoryLookupQuery,
