@@ -1,9 +1,9 @@
-import { useUser } from "@/shared/context/userTypeContext";
+import { useUser } from "@shared/context/userTypeContext";
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useLazyGetCaseCountQuery } from "../api/api";
-import { useCookieState } from "@/features/initiate-hearing/hooks/useCookieState";
-import CaseRecordsSkeleton from "@/shared/components/loader/CaseRecordsSkeleton";
+import { useCookieState } from "@features/cases/initiate-hearing/hooks/useCookieState";
+import CaseRecordsSkeleton from "@shared/components/loader/CaseRecordsSkeleton";
 
 const Statistics = () => {
   const { t, i18n } = useTranslation();

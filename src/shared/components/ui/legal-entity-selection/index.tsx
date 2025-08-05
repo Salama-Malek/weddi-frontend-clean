@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { AutoCompleteField } from "@/shared/components/form/AutoComplete";
-import { useCookieState } from "@/features/initiate-hearing/hooks/useCookieState";
+import { AutoCompleteField } from "@shared/components/form/AutoComplete";
+import { useCookieState } from "@features/cases/initiate-hearing/hooks/useCookieState";
 
 interface GovRepDetail {
   GovernmentName: string;

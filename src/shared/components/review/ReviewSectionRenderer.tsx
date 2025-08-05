@@ -1,6 +1,6 @@
 import React from "react";
-import { Section } from "@/shared/layouts/Section";
-import { ReadOnlyField } from "@/shared/components/ui/read-only-view";
+import { Section } from "@shared/layouts/Section";
+import { ReadOnlyField } from "@shared/components/ui/read-only-view";
 
 export interface ReviewField {
   label: string;

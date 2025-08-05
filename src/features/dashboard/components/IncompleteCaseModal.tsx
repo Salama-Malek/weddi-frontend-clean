@@ -1,9 +1,9 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import Modal from "@/shared/components/modal/Modal";
-import Button from "@/shared/components/button";
+import Modal from "@shared/components/modal/Modal";
+import Button from "@shared/components/button";
 import { useNavigate } from "react-router-dom";
-import { useCookieState } from "@/features/initiate-hearing/hooks/useCookieState";
+import { useCookieState } from "@features/cases/initiate-hearing/hooks/useCookieState";
 
 interface CaseInfoItem {
   RequestDate: string;

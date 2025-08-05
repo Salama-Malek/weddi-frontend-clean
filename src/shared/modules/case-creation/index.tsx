@@ -2,9 +2,9 @@ import React, { Suspense, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 const MultiStepForm = React.lazy(() => import("./MultiStepForm/MultiStepForm"));
 
-import StepperSkeleton from "@/shared/components/loader/StepperSkeleton";
-import useCasesLogic from "@/features/initiate-hearing/hooks/useCasesLogic";
-import { useCookieState } from "@/features/initiate-hearing/hooks/useCookieState";
+import StepperSkeleton from "@shared/components/loader/StepperSkeleton";
+import useCasesLogic from "@features/cases/initiate-hearing/hooks/useCasesLogic";
+import { useCookieState } from "@features/cases/initiate-hearing/hooks/useCookieState";
 const ContentRenderer = React.lazy(
   () => import("./components/ContentRenderer")
 );

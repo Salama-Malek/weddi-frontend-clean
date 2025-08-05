@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { DatePickerField } from "@/shared/components/calanders/DatePickerField";
+import { DatePickerField } from "@shared/components/calanders/DatePickerField";
 import { ConvertedDateDisplay } from "./ConvertedDateDisplay";
 import { Control, UseFormSetValue } from "react-hook-form";
 

@@ -1,4 +1,4 @@
-import { MyDropdownContext, MyDropdownItemsProps } from "@/providers";
+import { MyDropdownContext, MyDropdownItemsProps } from "@app/providers";
 import { useContext } from "react";
 import { useTranslation } from "react-i18next";
  

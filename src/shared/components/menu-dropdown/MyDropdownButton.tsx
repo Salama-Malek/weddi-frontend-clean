@@ -1,8 +1,8 @@
-import { MyDropdownContext } from "@/providers";
+import { MyDropdownContext } from "@app/providers";
 import { ReactNode, useContext } from "react";
 import Button from "../button";
 import { GoChevronDown } from "react-icons/go";
-import { ApplyStyle } from "@/features/dashboard/components/home.styles";
+import { ApplyStyle } from "@features/dashboard/components/home.styles";
 import { ArrowDown01Icon } from "hugeicons-react";
 
 export const MyDropdownButton: React.FC<{ children: ReactNode,applyStyle?:ApplyStyle,className?:string }> = ({

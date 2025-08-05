@@ -1,7 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { useCookieState } from '@/features/initiate-hearing/hooks/useCookieState';
+import { useCookieState } from '@features/cases/initiate-hearing/hooks/useCookieState';
 
 interface NICErrorModalProps {
   isOpen: boolean;

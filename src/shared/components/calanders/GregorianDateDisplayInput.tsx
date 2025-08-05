@@ -1,7 +1,7 @@
 import React from "react";
 import { Control, Controller } from "react-hook-form";
-import { FieldWrapper } from "@/shared/components/form";
-import { FormData } from "@/shared/components/form/form.types";
+import { FieldWrapper } from "@shared/components/form";
+import { FormData } from "@shared/components/form/form.types";
 import { Calculator01Icon } from "hugeicons-react";
 import { useTranslation } from "react-i18next";
 

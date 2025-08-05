@@ -3,9 +3,9 @@ import { Control, Controller } from "react-hook-form";
 import DatePicker, { DateObject } from "react-multi-date-picker";
 import hijriCalendar from "react-date-object/calendars/arabic";
 import hijriLocale from "react-date-object/locales/arabic_en";
-import { FieldWrapper } from "@/shared/components/form";
+import { FieldWrapper } from "@shared/components/form";
 import { Calculator01Icon } from "hugeicons-react";
-import { FormData } from "@/shared/components/form/form.types";
+import { FormData } from "@shared/components/form/form.types";
 import { useTranslation } from "react-i18next";
 
 interface NewDatePickerProps {

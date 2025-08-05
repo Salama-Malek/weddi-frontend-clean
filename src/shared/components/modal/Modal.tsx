@@ -1,8 +1,8 @@
 import React, { useRef } from "react";
 import clsx from "clsx";
-import { classes } from "@/shared/lib/clsx";
+import { classes } from "@shared/lib/clsx";
 import { MultiplicationSignIcon } from "hugeicons-react";
-import useOutsideClick from "@/shared/hooks/useOutsideClick";
+import useOutsideClick from "@shared/hooks/useOutsideClick";
 
 /**
  *

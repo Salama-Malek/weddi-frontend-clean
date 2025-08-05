@@ -1,14 +1,14 @@
-import { useAPIFormsData } from "@/providers/FormContext";
-import Button from "@/shared/components/button";
+import { useAPIFormsData } from "@app/providers/FormContext";
+import Button from "@shared/components/button";
 import { ReactNode, useState } from "react";
 import { FieldValues, UseFormHandleSubmit } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useResolveCaseMutation } from "@/features/manage-hearings/services/hearingActionsService";
-import { useCookieState } from "@/features/initiate-hearing/hooks/useCookieState";
+import { useResolveCaseMutation } from "@features/cases/manage-hearings/services/hearingActionsService";
+import { useCookieState } from "@features/cases/initiate-hearing/hooks/useCookieState";
 import { toast } from "react-toastify";
-import Modal from "@/shared/components/modal/Modal";
-import { useApiErrorHandler } from "@/shared/hooks/useApiErrorHandler";
+import Modal from "@shared/components/modal/Modal";
+import { useApiErrorHandler } from "@shared/hooks/useApiErrorHandler";
 
 export interface ApiResponse {
   ServiceStatus: string;

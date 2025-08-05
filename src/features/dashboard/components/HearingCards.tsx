@@ -1,5 +1,5 @@
 import React, { useCallback, memo } from 'react';
-import Button from '@/shared/components/button';
+import Button from '@shared/components/button';
 
 interface Card {
   id: number;

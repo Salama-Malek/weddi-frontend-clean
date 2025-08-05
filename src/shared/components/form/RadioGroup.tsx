@@ -1,8 +1,8 @@
 import React, { useCallback, useMemo } from "react";
 import { FieldWrapper } from "./FieldWrapper";
-import { useLanguageClass } from "@/shared/hooks/useLanguageClass";
+import { useLanguageClass } from "@shared/hooks/useLanguageClass";
 import radioIcon from "@/assets/icon-radio.svg";
-import { classes } from "@/shared/lib/clsx";
+import { classes } from "@shared/lib/clsx";
 import { Controller } from "react-hook-form";
 
 // Define a base RadioOption type that can handle both string and object values

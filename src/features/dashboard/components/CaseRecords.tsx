@@ -1,21 +1,21 @@
-import Button from "@/shared/components/button";
+import Button from "@shared/components/button";
 import { ArrowLeft01Icon, ArrowRight01Icon } from "hugeicons-react";
 import React, { useState, lazy, Suspense, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import TableLoader from "@/shared/components/loader/TableLoader";
+import TableLoader from "@shared/components/loader/TableLoader";
 import { useGetCaseAuditQuery } from "../api/api";
 import { ICaseStatusAudit } from "../types/caseRecord.model";
-import { useLanguageDirection } from "@/i18n/LanguageDirectionProvider";
-import StepperSkeleton from "@/shared/components/loader/StepperSkeleton";
-import CaseRecordsSkeleton from "@/shared/components/loader/CaseRecordsSkeleton";
+import { useLanguageDirection } from "@app/i18n/LanguageDirectionProvider";
+import StepperSkeleton from "@shared/components/loader/StepperSkeleton";
+import CaseRecordsSkeleton from "@shared/components/loader/CaseRecordsSkeleton";
 import { useNavigate } from "react-router-dom";
-import { TokenClaims } from "@/features/login/components/AuthProvider";
-import { useCookieState } from "@/features/initiate-hearing/hooks/useCookieState";
+import { TokenClaims } from "@features/auth/components/AuthProvider";
+import { useCookieState } from "@features/cases/initiate-hearing/hooks/useCookieState";
 
 const CaseRecordsModal = lazy(
-  () => import("@/features/login/components/LoginAccountSelect")
+  () => import("@features/auth/components/LoginAccountSelect")
 );
-const Modal = lazy(() => import("@/shared/components/modal/Modal"));
+const Modal = lazy(() => import("@shared/components/modal/Modal"));
 
 interface CaseRecordsProps {
   isLegalRep?: boolean;

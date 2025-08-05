@@ -1,6 +1,6 @@
 export const formatDateToYYYYMMDD = (dateStr: string | undefined): string | undefined => {
   if (!dateStr) return undefined;
-  return dateStr.replace(/[\/\-]/g, '');
+  return dateStr.replace(/[/-]/g, '');
 };
 
 export const formatDateFromYYYYMMDD = (dateStr: string | undefined, separator: string = "/"): string | undefined => {
