@@ -41,3 +41,7 @@ The application relies on the following environment variables:
 - `VITE_OAUTH_GRANT_TYPE` – OAuth grant type
 
 Ensure these variables are defined in a `.env` file before running the application.
+
+## Case creation module
+
+- [Case creation module documentation](docs/case-creation.md)
