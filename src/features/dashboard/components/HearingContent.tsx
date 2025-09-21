@@ -7,35 +7,35 @@ import fileMe from "@/assets/files/Mehri.pdf";
 import filePhi from "@/assets/files/Phlilipino.pdf";
 import fileSri from "@/assets/files/Sri Lankan.pdf";
 import fileUr from "@/assets/files/Urdu.pdf";
-import fileUserGuideAr from "@/assets/files/userGuide_ar.pdf";
 import { AuctionIcon, LegalDocument02Icon } from "hugeicons-react";
 import { lazy, Suspense, useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import useToast from "@shared/hooks/useToast";
-import HelpCenterSkeleton from "@shared/components/loader/HelpCenterSkeleton";
-import HearingCardSkeleton from "@shared/components/loader/HearingCardSkeleton";
-import CaseRecordsSkeleton from "@shared/components/loader/CaseRecordsSkeleton";
+import { toast } from "react-toastify";
+import HelpCenterSkeleton from "@/shared/components/loader/HelpCenterSkeleton";
+import HearingCardSkeleton from "@/shared/components/loader/HearingCardSkeleton";
+import CaseRecordsSkeleton from "@/shared/components/loader/CaseRecordsSkeleton";
 import { useLazyGetIncompleteCaseQuery } from "../api/api";
-import { useCookieState } from "@features/cases/initiate-hearing/hooks/useCookieState";
+import { useCookieState } from "@/features/initiate-hearing/hooks/useCookieState";
 import IncompleteCaseModal from "./IncompleteCaseModal";
-import TableLoader from "@shared/components/loader/TableLoader";
-import { useUser } from "@shared/context/userTypeContext";
-import CaseRecordsModal from "@features/auth/components/LoginAccountSelect";
-import StepperSkeleton from "@shared/components/loader/StepperSkeleton";
-import Modal from "@shared/components/modal/Modal";
- 
+import TableLoader from "@/shared/components/loader/TableLoader";
+import { useUser } from "@/shared/context/userTypeContext";
+import CaseRecordsModal from "@/features/login/components/LoginAccountSelect";
+import StepperSkeleton from "@/shared/components/loader/StepperSkeleton";
+import Modal from "@/shared/components/modal/Modal";
+import { useClearCaseData } from "@/shared/hooks/useClearCaseData";
+
 const HearingCards = lazy(() => import("./HearingCards"));
 const HelpCenter = lazy(() => import("./HelpCenter"));
 const CaseRecords = lazy(() => import("./CaseRecords"));
 const Statistics = lazy(() => import("./Statistics"));
- 
+
 interface HearingContentProps {
   isEstablishment?: boolean;
   isLegalRep?: boolean;
   popupHandler: () => void;
 }
- 
+
 export const languageOptions = [
   { value: "en", label: "English" },
   { value: "ar", label: "العربية" },
@@ -47,60 +47,52 @@ export const languageOptions = [
   { value: "sri", label: "Sri Lankan" },
   { value: "ur", label: "Urdu" },
 ];
- 
+
 const HearingContent = ({
   isEstablishment,
   isLegalRep,
   popupHandler,
 }: HearingContentProps) => {
   const { t, i18n } = useTranslation();
+  const { t: homeErrors } = useTranslation("hearingdetails");
   const currentLanguage =
     i18n.language === "ar"
       ? { label: "Arabic", value: "ar" }
       : { label: "English", value: "en" };
- 
+
   const [selectedOption, setSelectedOption] = useState(currentLanguage);
   const [hasActivityAlerts] = useState(false);
   const navigate = useNavigate();
   const [getCookie, setCookie] = useCookieState();
   const userClaims = getCookie("userClaims");
   const userType = getCookie("userType");
-  const storeAllUserTypeData = getCookie("storeAllUserTypeData");
   const [showIncompleteModal, setShowIncompleteModal] = useState(false);
-  const [incompleteCaseNumber, setIncompleteCaseNumber] = useState("");
-  const [incompleteCaseMessage, setIncompleteCaseMessage] = useState("");
   const [isCheckingIncomplete, setIsCheckingIncomplete] = useState(false);
   const { selected: selectedUser } = useUser();
   const [isUserClaimsReady, setIsUserClaimsReady] = useState(false);
-  const { error } = useToast();
   const mainCategory = getCookie("mainCategory")?.value;
   const subCategory = getCookie("subCategory")?.value;
   const hasSeenModal = getCookie("hasSeenLegalRepModal");
- 
-  // Wait for userClaims to be available
+  const { resetCaseDataClearedFlag } = useClearCaseData();
+
   useEffect(() => {
     if (userClaims?.UserID) {
       setIsUserClaimsReady(true);
     }
   }, [userClaims]);
- 
- 
-  const [triggerIncompleteCase, { data: incompleteCase }] =
+
+  const [triggerIncompleteCase, { data: incompleteCase, isFetching }] =
     useLazyGetIncompleteCaseQuery();
- 
+
   useEffect(() => {
+    if (isFetching) return;
     if (incompleteCase?.CaseInfo?.length) {
       const caseInfo = incompleteCase.CaseInfo[0];
-      setIncompleteCaseNumber(caseInfo.CaseNumber);
-      setIncompleteCaseMessage(caseInfo.pyMessage || "");
- 
-      // ✅ Save both the case ID and full CaseInfo for future usage
       setCookie("caseId", caseInfo.CaseNumber);
-      setCookie("incompleteCase", caseInfo); // ← Add this line
+      setCookie("incompleteCase", caseInfo);
     }
-  }, [incompleteCase, setCookie]);
- 
- 
+  }, [incompleteCase, isFetching]);
+
   const fileData = {
     duties: {
       en: {
@@ -167,22 +159,6 @@ const HearingContent = ({
         lang: "Urdu",
       },
     },
-    // userGuide: {
-    //   en: {
-    //     name: "User Guide",
-    //     size: "2.25 MB",
-    //     date: "10 Mar 2024",
-    //     url: fileUserGuideAr,
-    //     lang: "English",
-    //   },
-    //   ar: {
-    //     name: "دليل المستخدم",
-    //     size: "2.33 MB",
-    //     date: "10 Mar 2024",
-    //     url: fileUserGuideAr,
-    //     lang: "Arabic",
-    //   },
-    // },
   };
   const cardData = [
     {
@@ -210,38 +186,39 @@ const HearingContent = ({
   const handleRedirect = (isHearing?: string, isHearingManage?: string) => {
     if (isHearing === "hearing") {
       if (!isUserClaimsReady) {
-        error(t("error.userClaimsNotAvailable"));
+        toast.error(t("error.userClaimsNotAvailable"));
         return;
       }
       setIsCheckingIncomplete(true);
-      // Check for incomplete case only when starting a new hearing
-      const govRepDetails = storeAllUserTypeData?.GovRepDetails?.[0];
+
       const selectedUserType = getCookie("selectedUserType");
 
-      // For Legal representative users, check if they have made their selections
       if (userType === "Legal representative") {
-        // If user hasn't selected their role yet, show error
         if (!selectedUserType) {
-          error(t("error.pleaseSelectUserType"));
+          toast.error(homeErrors("error.pleaseSelectUserType"));
           setIsCheckingIncomplete(false);
           return;
         }
-        
-        // If user selected Legal representative but hasn't selected main/sub categories, show error
-        if (selectedUserType === "Legal representative" && (!mainCategory || !subCategory)) {
-          error(t("error.pleaseSelectCategories"));
+
+        if (
+          selectedUserType === "Legal representative" &&
+          (!mainCategory || !subCategory)
+        ) {
+          toast.error(t("error.pleaseSelectCategories"));
           setIsCheckingIncomplete(false);
           return;
         }
-        
-        // If user selected Worker, use Worker configuration
+
         if (selectedUserType === "Worker") {
-          triggerIncompleteCase({
-            UserType: "Worker",
-            IDNumber: userClaims?.UserID,
-            SourceSystem: "E-Services",
-            AcceptedLanguage: i18n.language.toUpperCase(),
-          }).then(handleIncompleteCaseResponse);
+          triggerIncompleteCase(
+            {
+              UserType: "Worker",
+              IDNumber: userClaims?.UserID,
+              SourceSystem: "E-Services",
+              AcceptedLanguage: i18n.language.toUpperCase(),
+            },
+            true
+          ).then(handleIncompleteCaseResponse);
           return;
         }
       }
@@ -266,7 +243,7 @@ const HearingContent = ({
           SubGovernment: subCategory || "",
         },
       };
- 
+
       triggerIncompleteCase({
         ...userConfigs[userType],
         SourceSystem: "E-Services",
@@ -286,45 +263,28 @@ const HearingContent = ({
     if (result.data?.CaseInfo?.length) {
       setShowIncompleteModal(true);
     } else {
-      // Initialize local storage before navigation
+      resetCaseDataClearedFlag();
+
       localStorage.setItem("step", "0");
       localStorage.setItem("tab", "0");
       navigate("/initiate-hearing/case-creation", { replace: true });
     }
   };
- 
-  const handleProceedToCase = () => {
-    setShowIncompleteModal(false);
-    navigate(`/manage-hearings/${incompleteCaseNumber}`);
-  };
- 
+
   const handleCloseModal = () => {
     setShowIncompleteModal(false);
   };
- 
+
   const [isModalOpen, setIsModalOpen] = useState(true);
   const [selected, setSelected] = useState<string | null>(null);
-  const [selectedOptionMenu, setSelectedOptionMenu] = useState<
-    { value: string; label: string } | null | string
-  >(null);
-  const handleChange = (
-    selectedOption: { value: string; label: string } | null | string
-  ) => {
-    setSelectedOptionMenu(selectedOption);
-  };
-  // Modify the modal condition to check the cookie
- 
- 
+
   const handleCloseModalMenu = () => {
-    setCookie("hasSeenLegalRepModal", "true");
-    setIsModalOpen(false)
+    setIsModalOpen(false);
   };
- 
-  // علشان لو فيه حد من الموجودين يفتح المودال للمرة الاولى
-  const shouldShowModal = userType === "Legal representative" &&
-    isModalOpen &&
-    !hasSeenModal;
- 
+
+  const shouldShowModal =
+    userType === "Legal representative" && isModalOpen && !hasSeenModal;
+
   return (
     <main className=" w-full container">
       <section className="dashboard-grid">
@@ -338,11 +298,14 @@ const HearingContent = ({
             </Suspense>
           </div>
         </div>
- 
+
         <div style={{ gridArea: "asid" }}>
           <div>
             <Suspense fallback={<CaseRecordsSkeleton />}>
-              {userType === "Establishment" || userType === "Legal representative" || isEstablishment || selectedUser === "legal_representative" ? (
+              {userType === "Establishment" ||
+              userType === "Legal representative" ||
+              isEstablishment ||
+              selectedUser === "legal_representative" ? (
                 <Statistics />
               ) : (
                 <CaseRecords
@@ -353,9 +316,9 @@ const HearingContent = ({
             </Suspense>
           </div>
         </div>
- 
+
         <div style={{ gridArea: "table" }}>
-          <div>
+          <div className="my-3">
             <Suspense fallback={<HelpCenterSkeleton />}>
               <HelpCenter
                 languageOptions={languageOptions}
@@ -368,7 +331,7 @@ const HearingContent = ({
           </div>
         </div>
       </section>
- 
+
       {showIncompleteModal && (
         <IncompleteCaseModal
           isOpen={showIncompleteModal}
@@ -381,7 +344,7 @@ const HearingContent = ({
           <TableLoader />
         </div>
       )}
-      {/* {isModalOpen && ( */}
+      {}
       {shouldShowModal && (
         <Suspense fallback={<StepperSkeleton />}>
           <Modal
@@ -389,6 +352,7 @@ const HearingContent = ({
             close={handleCloseModalMenu}
             modalWidth={600}
             preventOutsideClick={true}
+            showCloseButton={false}
           >
             <Suspense fallback={<StepperSkeleton />}>
               <CaseRecordsModal
@@ -407,5 +371,5 @@ const HearingContent = ({
     </main>
   );
 };
- 
+
 export default HearingContent;

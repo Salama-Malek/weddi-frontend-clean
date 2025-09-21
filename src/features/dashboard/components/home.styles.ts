@@ -1,4 +1,4 @@
-import { ButtonTypeVariant, ButtonVariant } from "@shared/components/button";
+import { ButtonTypeVariant, ButtonVariant } from "@/shared/components/button";
 
 export interface ApplyStyle {
      variant: ButtonVariant;

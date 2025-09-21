@@ -1,6 +1,6 @@
 import { Tick02Icon } from "hugeicons-react";
 import { StepperProps } from "./stepper.types";
-import HearingSideHeader from "@shared/components/ui/hearing-side-header/HearingSideHeader";
+import HearingSideHeader from "@/shared/components/ui/hearing-side-header/HearingSideHeader";
 
 const Stepper: React.FC<StepperProps> = ({ steps, currentStep }) => {
   return (

@@ -1,16 +1,16 @@
 import React, { lazy, Suspense, useEffect, useState } from "react";
 import BannerBg from "@/assets/images/banner/banner-bg.png";
-import Button from "@shared/components/button";
+import Button from "@/shared/components/button";
 import { useTranslation } from "react-i18next";
-import { useCookieState } from "@features/cases/initiate-hearing/hooks/useCookieState";
+import { useCookieState } from "@/features/initiate-hearing/hooks/useCookieState";
 const InfoBanner = lazy(
-  () => import("@shared/components/ui/account-warning-header")
+  () => import("@/shared/components/ui/account-warning-header")
 );
-import TableLoader from "@shared/components/loader/TableLoader";
-import { useGetMySchedulesQuery, useLazyGetMySchedulesQuery } from "../api/api";
-import { TokenClaims } from "@features/auth/components/AuthProvider";
-import { useUser } from "@shared/context/userTypeContext";
-import { useGetEstablishmentDetailsQuery } from "@features/cases/initiate-hearing/api/create-case/defendantDetailsApis";
+import TableLoader from "@/shared/components/loader/TableLoader";
+import { useLazyGetMySchedulesQuery } from "../api/api";
+import { TokenClaims } from "@/features/login/components/AuthProvider";
+import { useUser } from "@/shared/context/userTypeContext";
+import { useGetEstablishmentDetailsQuery } from "@/features/initiate-hearing/api/create-case/defendantDetailsApis";
 
 interface BannerProps {
   isEstablishment?: boolean;
@@ -22,20 +22,16 @@ interface BannerProps {
 const Banner: React.FC<BannerProps> = ({
   isEstablishment,
   isLegalRep,
-  showInfoBanner = false,
-  onCloseInfoBanner,
 }) => {
   const { t, i18n } = useTranslation();
   const isRTL = i18n.language === "ar";
-  const [hasHearing, setHasHearing] = useState(false);
-  const [hasLegalRepresentative, setHasLegalRepresentative] = useState(true);
   const [getCookie, setCookie] = useCookieState({});
   const userClaims: TokenClaims = getCookie("userClaims");
   const uerType = getCookie("userType");
   const [isInfoBannerVisible, setIsInfoBannerVisible] = useState(true);
   const { selected: selectedUser, isMenueCahngeFlag } = useUser();
 
-  // Get establishment details to get CR number
+  
   const { data: establishmentDetails } = useGetEstablishmentDetailsQuery(
     {
       AcceptedLanguage: i18n.language.toUpperCase(),
@@ -47,7 +43,7 @@ const Banner: React.FC<BannerProps> = ({
     }
   );
 
-  // Store CR number in cookie when we get it
+  
   useEffect(() => {
     if (establishmentDetails?.EstablishmentInfo?.[0]?.CRNumber) {
       setCookie(
@@ -63,7 +59,6 @@ const Banner: React.FC<BannerProps> = ({
   }>(null);
   const [
     triggerGetMySchedules,
-    { data: mySchedualData, isLoading: mySchedualLoading },
   ] = useLazyGetMySchedulesQuery();
   const [timeLeft, setTimeLeft] = useState<number>(-1);
 
@@ -87,7 +82,7 @@ const Banner: React.FC<BannerProps> = ({
         return;
       }
 
-      // If user selected Worker, use Worker configuration
+      
       if (selectedUserType === "Worker") {
         const result = await triggerGetMySchedules({
           UserType: "Worker",
@@ -173,7 +168,7 @@ const Banner: React.FC<BannerProps> = ({
       getMySchedualDataFun();
       return;
     }
-    // Cleanup
+    
     return () => {
       if (timer) clearInterval(timer);
     };
@@ -238,7 +233,7 @@ const Banner: React.FC<BannerProps> = ({
           {nearestSession && (
             <div className="mb-4 bg-primary-960 rounded-md text-gray-100 p-4 flex justify-between items-center">
               {timeLeft > 1500 ? (
-                <p className="text-1822">
+                <p className="text-xs sm:text-1822">
                   <b>
                     {t("time_desc_start")} {":  "}
                   </b>
@@ -246,7 +241,7 @@ const Banner: React.FC<BannerProps> = ({
                 </p>
               ) : (
                 <>
-                  <p className="text-1822">{t("session_expired_or_ended")}</p>
+                  <p className="text-xs sm:text-1822">{t("session_expired_or_ended")}</p>
                 </>
               )}
               <Button

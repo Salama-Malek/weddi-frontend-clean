@@ -1,6 +1,6 @@
-import { api } from "@services/config/api";
+import { api } from "@/config/api";
 import { ICaseRecord } from "../types/caseRecord.model";
- 
+
 export const caseApi = api.injectEndpoints({
   endpoints: (builder) => ({
     getCaseAudit: builder.query<ICaseRecord, any>({
@@ -35,7 +35,9 @@ export const caseApi = api.injectEndpoints({
           AcceptedLanguage,
           SourceSystem
         },
+
       }),
+      keepUnusedDataFor: 0,
     }),
     saveUINotification: builder.query({
       query: (data) => ({
@@ -50,10 +52,10 @@ export const caseApi = api.injectEndpoints({
         params,
       }),
     }),
- 
+
   }),
 });
- 
+
 export const { useGetCaseAuditQuery,
   useLazySaveUINotificationQuery,
   useGetIncompleteCaseQuery,

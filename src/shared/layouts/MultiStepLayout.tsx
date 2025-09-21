@@ -1,6 +1,6 @@
 import React, { Suspense, useMemo } from "react";
-import TableLoader from "@shared/components/loader/TableLoader";
-import { useLanguageDirection } from "@app/i18n/LanguageDirectionProvider";
+import TableLoader from "@/shared/components/loader/TableLoader";
+import { useLanguageDirection } from "@/i18n/LanguageDirectionProvider";
 import Tabs from "../modules/case-creation/components/tabs/Tabs";
 import { useTabs } from "../modules/case-creation/components/tabs/tabsConfig";
 
@@ -22,6 +22,7 @@ const MultiStepLayout: React.FC<MultiStepLayoutProps> = ({
 
   const handleTabChange = (tabIndex: number) => {
     if (tabIndex >= 0 && tabIndex < tabs.length) {
+      localStorage.setItem("tab", tabIndex.toString());
       updateParams(currentStep, tabIndex);
     }
   };
@@ -40,9 +41,9 @@ const MultiStepLayout: React.FC<MultiStepLayoutProps> = ({
 
   const getLayoutClasses = () => {
     if (isRTL) {
-      return "pr-3xl";
+      return "lg:pr-3xl";
     }
-    return `pl-3xl ${currentStep === 1 ? "!pl-0" : ""}`;
+    return `lg:pl-3xl ${currentStep === 1 ? "lg:!pl-0" : ""}`;
   };
 
   return (

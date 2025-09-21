@@ -1,13 +1,17 @@
-import Button from "@shared/components/button";
+import { useCookieState } from "@/features/initiate-hearing/hooks/useCookieState";
+import { useResolveCaseMutation } from "@/features/manage-hearings/services/hearingActionsService";
+import { useAPIFormsData } from "@/providers/FormContext";
+import Button from "@/shared/components/button";
+import Modal from "@/shared/components/modal/Modal";
+import { useHomeNavigator } from "@/shared/components/navigation/HomeNavigator";
+import { useApiErrorHandler } from "@/shared/hooks/useApiErrorHandler";
+import { useClearCaseData } from "@/shared/hooks/useClearCaseData";
+import { handleApiErrors } from "@/shared/lib/api/errorHandler";
 import { ReactNode, useState } from "react";
 import { FieldValues, UseFormHandleSubmit } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { useNavigate, useLocation } from "react-router-dom";
-import { useResolveCaseMutation } from "@features/cases/manage-hearings/services/hearingActionsService";
-import { useCookieState } from "@features/cases/initiate-hearing/hooks/useCookieState";
+import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import Modal from "@shared/components/modal/Modal";
-import { useApiErrorHandler } from "@shared/hooks/useApiErrorHandler";
 
 export interface ApiResponse {
   ServiceStatus: string;
@@ -24,46 +28,41 @@ interface StepNavigationProps<T extends FieldValues> {
   goToNextStep?: () => void;
   goToPrevStep?: () => void;
   resetSteps?: () => void;
-  onSave?: (e?: React.MouseEvent<HTMLButtonElement>) => void;
+  handleSave?: () => Promise<ApiResponse>;
   isButtonDisabled?: (direction: "prev" | "next") => boolean;
   onSubmit?: ReturnType<UseFormHandleSubmit<T>>;
   children?: ReactNode;
   isValid?: boolean;
   currentStep?: number;
   currentTab?: number;
+  isLoading?: boolean;
+  lastAction?: "Save" | "Next" | "Previous" | "MyCases" | null;
   isVerifiedInput?: boolean | Record<string, boolean>;
   isFormSubmitting?: boolean;
   actionButtonName?: string;
   showFooterBtn?: boolean;
   canProceed?: boolean;
   isSubmitButtonDisabled?: boolean;
-  isSaveLoading?: boolean;
-  isSaveSuccess?: boolean;
-  isSaveError?: boolean;
 }
 
 const StepNavigation = <T extends FieldValues>({
   isFirstStep,
   isLastStep,
-  goToNextStep,
   goToPrevStep,
-  resetSteps,
-  onSave,
+  handleSave,
   isButtonDisabled,
   onSubmit,
   children,
   isValid,
   currentStep,
   currentTab,
+  isLoading,
+  lastAction,
   isVerifiedInput = true,
   isFormSubmitting,
   actionButtonName = "",
   showFooterBtn = true,
   canProceed,
-  isSubmitButtonDisabled,
-  isSaveLoading,
-  isSaveSuccess,
-  isSaveError,
 }: StepNavigationProps<T>) => {
   const { t: tStepper, i18n } = useTranslation("stepper");
   const { t: tManageHearing } = useTranslation("manageHearingDetails");
@@ -72,61 +71,85 @@ const StepNavigation = <T extends FieldValues>({
   const query = new URLSearchParams(search);
   const caseId = query.get("caseId");
   const [resolveCase] = useResolveCaseMutation();
-  const [getCookie, setCookie, removeCookie] = useCookieState();
+  const [getCookie] = useCookieState();
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
   const { hasErrors } = useApiErrorHandler();
+  const navigateToHome = useHomeNavigator();
+
+  const { clearErrors: handleRemoveValidation, formState } = useAPIFormsData();
 
   const isPassedVerifiedInput =
     typeof isVerifiedInput === "object"
       ? Object.values(isVerifiedInput).every(Boolean)
       : isVerifiedInput;
 
-  const isNextEnabled =
-    isLastStep
-      ? canProceed && isValid
-      : isValid && isPassedVerifiedInput && !isButtonDisabled?.("next") && !isFormSubmitting;
+  const isNextEnabled = isLastStep
+    ? canProceed && isValid
+    : isValid &&
+      isPassedVerifiedInput &&
+      !isButtonDisabled?.("next") &&
+      !isFormSubmitting;
 
-  // Save button should be disabled when there are no case topics (canProceed is false)
-  // But only for edit cases (when showFooterBtn is false), not for case creation
-  const isSaveEnabled = showFooterBtn 
-    ? isNextEnabled // Case creation: use normal logic
-    : (canProceed !== false ? isNextEnabled : false); // Edit case: check canProceed
-
-  // console.log("[🔍 STEP NAVIGATION] Save button logic:", {
-  //   showFooterBtn,
-  //   canProceed,
-  //   isNextEnabled,
-  //   isSaveEnabled,
-  //   isEditCase: !showFooterBtn,
-  //   isValid,
-  //   isPassedVerifiedInput,
-  //   isFormSubmitting,
-  //   isLastStep
-  // });
-
+  const isSaveLoading =
+    actionButtonName === "Save" && isFormSubmitting && (isLoading ?? true);
   const isNextLoading =
-    actionButtonName === "Next" && isFormSubmitting;
+    actionButtonName === "Next" && isFormSubmitting && (isLoading ?? true);
 
-  // Save logic moved to useCaseSave hook
-
-  const handleMyCases = (e: React.MouseEvent<HTMLButtonElement>) => {
+  const handleSaveClick = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
-    e.stopPropagation();
-    console.log("[🔍 GO TO MY CASES] Navigating to manage-hearings, caseId:", caseId);
+
+    if (!handleSave || isFormSubmitting) return;
+
+    try {
+      const response = (await handleSave()) as ApiResponse;
+
+      const hasSuccessCode = response?.SuccessCode === "200";
+      const hasSuccessStatus = response?.ServiceStatus === "Success";
+      const hasNoErrors =
+        !response?.ErrorCodeList ||
+        response.ErrorCodeList.every(
+          (error) => !error.ErrorCode && !error.ErrorDesc
+        );
+      const isSuccessful = (hasSuccessStatus || hasSuccessCode) && hasNoErrors;
+
+      if (isSuccessful) {
+        formState.errors && handleRemoveValidation?.();
+        const caseNumber = response?.CaseNumber || caseId;
+        toast.success(tStepper("case_update_success", { caseNumber }));
+      } else if (response?.SuccessCode === "IN_PROGRESS") {
+      }
+    } catch (error: any) {
+      const errorMessage =
+        error?.data?.ErrorDetails?.[0]?.ErrorDesc ||
+        error?.data?.ErrorDescription ||
+        error?.message ||
+        tStepper("save_error");
+      toast.error(errorMessage);
+    }
+  };
+
+  const handleMyCases = () => {
     navigate(`/manage-hearings/${caseId}`);
   };
 
   const handleCancel = async () => {
     const caseIdToCancel = caseId || getCookie("caseId");
-    
-    if (!caseIdToCancel || (currentStep === 0 && currentTab === 0)) {
-      navigate("/");
+
+    if (!caseIdToCancel) {
+      navigateToHome();
+      return;
+    }
+
+    if (currentStep === 0 && currentTab === 0) {
+      handleConfirmCancel();
       return;
     }
 
     setShowCancelModal(true);
   };
+
+  const { clearCaseData } = useClearCaseData();
 
   const handleConfirmCancel = async () => {
     setIsCancelling(true);
@@ -134,27 +157,32 @@ const StepNavigation = <T extends FieldValues>({
       const caseIdToCancel = caseId || getCookie("caseId");
 
       if (!caseIdToCancel) {
-        navigate("/");
+        navigateToHome();
         return;
       }
 
-      const response = await resolveCase({
+      const response = (await resolveCase({
         CaseID: caseIdToCancel,
         AcceptedLanguage: i18n.language.toUpperCase(),
         SourceSystem: "E-services",
         ResolveStatus: "Resolved-Request Cancelled",
-      }).unwrap() as ApiResponse;
+      }).unwrap()) as ApiResponse;
 
-      const isSuccessful = !hasErrors(response) && (response?.SuccessCode === "200" || response?.ServiceStatus === "Success");
+      const isSuccessful =
+        !hasErrors(response) &&
+        (response?.SuccessCode === "200" ||
+          response?.ServiceStatus === "Success");
 
       if (isSuccessful) {
-        removeCookie("caseId");
-        removeCookie("incompleteCaseMessage");
-        removeCookie("incompleteCaseNumber");
-        removeCookie("incompleteCase");
+        clearCaseData();
 
         toast.success(tManageHearing("cancel_success"));
-        navigate("/");
+
+        setTimeout(() => {
+          navigateToHome();
+        }, 100);
+      } else {
+        handleApiErrors(response);
       }
     } catch (error) {
       toast.error(tManageHearing("cancel_error"));
@@ -164,14 +192,11 @@ const StepNavigation = <T extends FieldValues>({
     }
   };
 
-  // console.log("[🔍 STEP NAVIGATION] Rendering with showFooterBtn:", showFooterBtn, "currentStep:", currentStep);
   return (
     <form onSubmit={onSubmit} className="space-y-6">
       {currentStep === 0 && (
         <p className="text-secondary-700 semibold">
-          {showFooterBtn && (
-            <span>{tStepper("formWrapper.description")}{" "}</span>
-          )}
+          {showFooterBtn && <span>{tStepper("formWrapper.description")} </span>}
 
           {!showFooterBtn && (
             <span className="text-primary-700">({caseId})</span>
@@ -181,11 +206,8 @@ const StepNavigation = <T extends FieldValues>({
 
       {children}
 
-      {/* Footer Buttons */}
-      {(() => {
-        // console.log("[🔍 STEP NAVIGATION] Main footer condition:", { showFooterBtn, currentStep, shouldShow: showFooterBtn && currentStep !== 2 });
-        return showFooterBtn && currentStep !== 2;
-      })() && (
+      {}
+      {showFooterBtn && currentStep !== 2 && (
         <div className="flex flex-wrap justify-between gap-4 mt-4 border-t pb-6 pt-4 border-t-gray-300 w-full">
           <Button
             type="button"
@@ -205,8 +227,11 @@ const StepNavigation = <T extends FieldValues>({
                 typeVariant={isButtonDisabled?.("prev") ? "freeze" : "outline"}
                 onClick={goToPrevStep}
                 disabled={isButtonDisabled?.("prev") || isFormSubmitting}
+                isLoading={isFormSubmitting && lastAction === "Previous"}
               >
-                {tStepper("previous")}
+                {isFormSubmitting && lastAction === "Previous"
+                  ? tStepper("loading_previous")
+                  : tStepper("previous")}
               </Button>
             )}
 
@@ -214,10 +239,10 @@ const StepNavigation = <T extends FieldValues>({
               <Button
                 type="button"
                 isLoading={isSaveLoading}
-                variant={isSaveEnabled ? "secondary" : "disabled"}
-                typeVariant={isSaveEnabled ? "outline" : "freeze"}
-                onClick={onSave}
-                disabled={!isSaveEnabled || isFormSubmitting || isSaveLoading}
+                variant={isNextEnabled ? "secondary" : "disabled"}
+                typeVariant={isNextEnabled ? "outline" : "freeze"}
+                onClick={handleSaveClick}
+                disabled={!isNextEnabled || isFormSubmitting}
               >
                 {tStepper("save")}
               </Button>
@@ -225,55 +250,64 @@ const StepNavigation = <T extends FieldValues>({
 
             <Button
               type="submit"
-              isLoading={isNextLoading}
+              isLoading={
+                isNextLoading || (isFormSubmitting && lastAction === "Next")
+              }
               variant={isNextEnabled ? "primary" : "disabled"}
               typeVariant={isNextEnabled ? "solid" : "freeze"}
               disabled={!isNextEnabled || isFormSubmitting}
             >
-              {isLastStep ? tStepper("submit") : tStepper("next")}
+              {isFormSubmitting && lastAction === "Next"
+                ? tStepper("loading_next")
+                : isLastStep
+                ? tStepper("submit")
+                : tStepper("next")}
             </Button>
           </div>
         </div>
       )}
 
-      {(() => {
-        // console.log("[🔍 STEP NAVIGATION] Step 2 footer condition:", { currentStep, shouldShow: currentStep === 2 });
-        return currentStep === 2;
-      })() && (
+      {currentStep === 2 && (
         <div className="flex justify-between mt-4 border-t pb-6 pt-4 border-t-gray-300 w-full">
           <Button
             type="button"
             variant="secondary"
             typeVariant="outline"
-            onClick={(e) => handleMyCases(e)}
+            onClick={handleMyCases}
+            disabled={isFormSubmitting}
+            isLoading={isFormSubmitting && lastAction === "MyCases"}
           >
-            {tStepper("go_to_my_case")}
+            {isFormSubmitting && lastAction === "MyCases"
+              ? tStepper("loading_my_cases")
+              : tStepper("go_to_my_case")}
           </Button>
 
           <Button
             type="button"
             isLoading={isSaveLoading}
-            variant={isSaveEnabled ? "primary" : "disabled"}
-            typeVariant={isSaveEnabled ? "outline" : "freeze"}
-            onClick={onSave}
-            disabled={!isSaveEnabled || isFormSubmitting || isSaveLoading}
+            variant={isNextEnabled ? "primary" : "disabled"}
+            typeVariant={isNextEnabled ? "outline" : "freeze"}
+            onClick={handleSaveClick}
+            disabled={!isNextEnabled || isFormSubmitting}
           >
             {tStepper("save")}
           </Button>
         </div>
       )}
 
-      {/* Cancel Confirmation Modal */}
+      {}
       {showCancelModal && (
         <Modal
           close={() => setShowCancelModal(false)}
           header={tManageHearing("cancel_the_case")}
           modalWidth={500}
         >
-          <p className="text-sm text-gray-700">{tManageHearing("confirm_cancel_desc")}</p>
+          <p className="text-sm text-gray-700">
+            {tManageHearing("confirm_cancel_desc")}
+          </p>
           <div className="flex justify-end gap-3 mt-6">
-            <Button 
-              variant="secondary" 
+            <Button
+              variant="secondary"
               onClick={() => setShowCancelModal(false)}
               disabled={isCancelling}
             >
@@ -284,32 +318,35 @@ const StepNavigation = <T extends FieldValues>({
               onClick={handleConfirmCancel}
               disabled={isCancelling}
             >
-              {isCancelling ? tManageHearing("loading_spinner") : tManageHearing("yes")}
+              {isCancelling
+                ? tManageHearing("loading_spinner")
+                : tManageHearing("yes")}
             </Button>
           </div>
         </Modal>
       )}
 
-
       {!showFooterBtn && currentStep !== 2 && (
         <div className="flex justify-between mt-4 border-t pb-6 pt-4 border-t-gray-300 w-full">
           <Button
-            type="button"
             variant="secondary"
             typeVariant="outline"
-            onClick={(e) => handleMyCases(e)}
+            onClick={handleMyCases}
+            disabled={isFormSubmitting}
+            isLoading={isFormSubmitting && lastAction === "MyCases"}
           >
-            {tStepper("go_to_my_case")}
+            {isFormSubmitting && lastAction === "MyCases"
+              ? tStepper("loading_my_cases")
+              : tStepper("go_to_my_case")}
           </Button>
-
 
           <Button
             type="button"
             isLoading={isSaveLoading}
-            variant={isSaveEnabled ? "primary" : "disabled"}
-            typeVariant={isSaveEnabled ? "outline" : "freeze"}
-            onClick={onSave}
-            disabled={!isSaveEnabled || isFormSubmitting || isSaveLoading}
+            variant={isNextEnabled ? "primary" : "disabled"}
+            typeVariant={isNextEnabled ? "outline" : "freeze"}
+            onClick={handleSaveClick}
+            disabled={!isNextEnabled || isFormSubmitting}
           >
             {tStepper("save")}
           </Button>

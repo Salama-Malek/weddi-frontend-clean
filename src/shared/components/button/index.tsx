@@ -1,4 +1,4 @@
-import { classes } from "@shared/lib/clsx";
+import { classes } from "@/shared/lib/clsx";
 import { Tick02Icon } from "hugeicons-react";
 import React from "react";
 import TableLoader from "../loader/TableLoader";
@@ -12,7 +12,7 @@ const buttonVariants: Record<string, Record<string, string>> = {
     solid: "bg-white text-default-color hover:bg-gray-100",
     outline: "border-[1px] border-gray-300 text-black hover:bg-gray-50",
     gray: "bg-gray-100 text-black hover:bg-gray-50",
-    black: "bg-black text-white hover:bg-gray-900", // <-- Add this
+    black: "bg-black text-white hover:bg-gray-900",
   },
   medium: {
     subtle: "text-black hover:bg-gray-100",
@@ -34,6 +34,12 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   typeVariant?: ButtonTypeVariant;
   icon?: boolean | React.ReactNode;
   size?: "xs" | "xs20" | "md" | "sl" | "lg" | "sm";
+  responsiveSize?: {
+    sm?: "xs" | "xs20" | "md" | "sl" | "lg" | "sm";
+    md?: "xs" | "xs20" | "md" | "sl" | "lg" | "sm";
+    lg?: "xs" | "xs20" | "md" | "sl" | "lg" | "sm";
+    xl?: "xs" | "xs20" | "md" | "sl" | "lg" | "sm";
+  };
   disabled?: boolean;
   isLoading?: boolean;
 }
@@ -43,21 +49,37 @@ const Button: React.FC<ButtonProps> = ({
   variant = "primary",
   typeVariant = "brand",
   size = "md",
+  responsiveSize,
   icon,
   children,
   className = "",
   isLoading = false,
   ...props
 }) => {
-  const baseStyles = `flex items-center justify-center gap-2 medium rounded-xs transition whitespace-nowrap ${className}`;
+  const baseStyles = `flex items-center justify-center gap-2 medium rounded-sm transition whitespace-nowrap ${className}`;
 
   const sizeStyles: Record<string, string> = {
-    xs: "px-4 py-1 text-md",
-    xs20: "px-4 py-1 text-sm20",
-    md: "px-5 h-10 py-2 text-sm",
-    sl: "px-6 py-2 text-base",
-    lg: "px-8 py-3 text-md",
-    sm: "px-4 h-8 py-0 text-sm",
+    xs: "px-4 py-1 text-md min-h-[32px] max-h-[34px]",
+    xs20: "px-4 py-1 text-sm20 min-h-[32px] max-h-[34px]",
+    md: "px-5 py-2 text-sm min-h-[32px] max-h-[34px]",
+    sl: "px-6 py-2 text-base min-h-[32px] max-h-[34px]",
+    lg: "px-8 py-3 text-md min-h-[32px] max-h-[34px]",
+    sm: "px-2 py-1 text-sm min-h-[32px] max-h-[34px]",
+  };
+
+  const getResponsiveSizeClasses = () => {
+    if (!responsiveSize) return sizeStyles[size];
+
+    const classes = [];
+    if (responsiveSize.sm) classes.push(`sm:${sizeStyles[responsiveSize.sm]}`);
+    if (responsiveSize.md) classes.push(`md:${sizeStyles[responsiveSize.md]}`);
+    if (responsiveSize.lg) classes.push(`lg:${sizeStyles[responsiveSize.lg]}`);
+    if (responsiveSize.xl) classes.push(`xl:${sizeStyles[responsiveSize.xl]}`);
+
+    const defaultSize = responsiveSize.sm || size;
+    classes.unshift(sizeStyles[defaultSize]);
+
+    return classes.join(" ");
   };
 
   const appliedVariant = disabled
@@ -77,7 +99,7 @@ const Button: React.FC<ButtonProps> = ({
 
   return (
     <button
-      className={classes(baseStyles, sizeStyles[size], variantStyles)}
+      className={classes(baseStyles, getResponsiveSizeClasses(), variantStyles)}
       disabled={disabled || isLoading}
       aria-busy={isLoading}
       {...props}

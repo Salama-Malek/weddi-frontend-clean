@@ -15,7 +15,6 @@ export const ReadOnlyField: FC<ReadOnlyFieldProps> = ({
   value,
   className,
   notRequired,
-  removeMargin,
   isLoading,
 
 }) => {

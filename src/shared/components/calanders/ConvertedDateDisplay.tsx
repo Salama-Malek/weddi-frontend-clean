@@ -12,7 +12,6 @@ export const ConvertedDateDisplay = ({
   gregorianDate,
   notRequired = true,
   label,
-  showDateGregorian
 }: ConvertedDateDisplayProps) => {
   const formatDate = (dateStr: string | null | undefined) => {
     if (dateStr === null || dateStr === undefined || dateStr.trim() === "") {

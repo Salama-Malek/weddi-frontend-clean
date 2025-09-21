@@ -1,5 +1,10 @@
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  ReactNode,
+} from "react";
 
 interface NICServiceErrorContextType {
   showServiceErrorModal: boolean;
@@ -10,33 +15,40 @@ interface NICServiceErrorContextType {
   setTryAgainCallback: (callback: () => void) => void;
 }
 
-const NICServiceErrorContext = createContext<NICServiceErrorContextType | undefined>(undefined);
+const NICServiceErrorContext = createContext<
+  NICServiceErrorContextType | undefined
+>(undefined);
 
 interface NICServiceErrorProviderProps {
   children: ReactNode;
 }
 
-export const NICServiceErrorProvider: React.FC<NICServiceErrorProviderProps> = ({ children }) => {
+export const NICServiceErrorProvider: React.FC<
+  NICServiceErrorProviderProps
+> = ({ children }) => {
   const [showServiceErrorModal, setShowServiceErrorModal] = useState(false);
-  const [serviceErrorMessage, setServiceErrorMessage] = useState('');
-  const [tryAgainCallback, setTryAgainCallback] = useState<(() => void) | null>(null);
-  const navigate = useNavigate();
+  const [serviceErrorMessage, setServiceErrorMessage] = useState("");
+  const [tryAgainCallback, setTryAgainCallback] = useState<(() => void) | null>(
+    null
+  );
 
   const handleNICResponse = useCallback((response: any): boolean => {
-    // Check if response has the specific error structure
     if (response?.ErrorDetails && Array.isArray(response.ErrorDetails)) {
       const errorDetail = response.ErrorDetails.find(
-        (detail: any) => detail.ErrorCode === 'ER4054'
+        (detail: any) => detail.ErrorCode === "ER4054"
       );
-      
+
       if (errorDetail) {
-        setServiceErrorMessage(errorDetail.ErrorDesc || 'The service is not working / The entered ID does not match the date of birth');
+        setServiceErrorMessage(
+          errorDetail.ErrorDesc ||
+            "The service is not working / The entered ID does not match the date of birth"
+        );
         setShowServiceErrorModal(true);
-        return true; // Error was handled
+        return true;
       }
     }
-    
-    return false; // No error or different error
+
+    return false;
   }, []);
 
   const handleTryAgain = useCallback(() => {
@@ -73,7 +85,9 @@ export const NICServiceErrorProvider: React.FC<NICServiceErrorProviderProps> = (
 export const useNICServiceErrorContext = (): NICServiceErrorContextType => {
   const context = useContext(NICServiceErrorContext);
   if (context === undefined) {
-    throw new Error('useNICServiceErrorContext must be used within a NICServiceErrorProvider');
+    throw new Error(
+      "useNICServiceErrorContext must be used within a NICServiceErrorProvider"
+    );
   }
   return context;
-}; 
+};

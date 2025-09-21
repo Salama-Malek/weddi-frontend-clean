@@ -1,9 +1,9 @@
 import React from "react";
 import { Control, Controller } from "react-hook-form";
 import DatePicker, { DateObject } from "react-multi-date-picker";
-import { FieldWrapper } from "@shared/components/form";
+import { FieldWrapper } from "@/shared/components/form";
 import { Calculator01Icon } from "hugeicons-react";
-import { FormData } from "@shared/components/form/form.types";
+import { FormData } from "@/shared/components/form/form.types";
 import { useTranslation } from "react-i18next";
 
 interface GregorianDatePickerInputProps {
@@ -25,7 +25,7 @@ export const GregorianDatePickerInput: React.FC<GregorianDatePickerInputProps> =
   notRequired,
   isDateOfBirth,
 }) => {
-  const { t, i18n } = useTranslation('hearingdetails');
+  const { i18n } = useTranslation('hearingdetails');
 
   const formatDateForDisplay = (date: string) => {
     if (!date || date.length !== 8) return date;
@@ -39,8 +39,8 @@ export const GregorianDatePickerInput: React.FC<GregorianDatePickerInputProps> =
     }
 
     const gregorian = date.format("YYYY/MM/DD");
-    // Convert to YYYYMMDD format for storage
-    const gregorianStorage = gregorian.replace(/\//g, '');
+    
+    const gregorianStorage = gregorian.replace(/\//g, "");
 
     onChange(gregorianStorage);
     if (onChangeHandler) {
@@ -48,7 +48,7 @@ export const GregorianDatePickerInput: React.FC<GregorianDatePickerInputProps> =
     }
   };
 
-  // Set maxDate to today if isDateOfBirth is true
+  
   const maxDate = isDateOfBirth ? new DateObject() : undefined;
 
   return (

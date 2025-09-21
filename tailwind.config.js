@@ -10,10 +10,10 @@ module.exports = {
   content: ["./src/**/*.{js,jsx,ts,tsx}"],
   safelist: [
     {
-      pattern: /grid-cols-(1|2|3|4|5|6)/, 
+      pattern: /grid-cols-(1|2|3|4|5|6)/,
     },
     {
-      pattern: /col-span-(1|2|3|4|5|6)/, 
+      pattern: /col-span-(1|2|3|4|5|6)/,
     },
     {
       pattern: /gap-(3xl|6)/,
@@ -22,8 +22,8 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-				primary: ["IBM Plex Sans Arabic", "sans-serif"],
-			},
+        primary: ["IBM Plex Sans Arabic", "sans-serif"],
+      },
       screens: {
         xs: "480px",
         sm: "640px",
@@ -31,12 +31,12 @@ module.exports = {
         lg: "1024px",
         xl: "1280px",
         "2xl": "1536px",
-        "3xl": "1920px", // Full HD (1080p)
-        "4xl": "2560px", // 2K resolution
-        "5xl": "3200px", // High-end ultra-wide
-        "6xl": "3840px", // 4K resolution
-        "7xl": "5120px", // 5K resolution
-        "8xl": "7680px", // 8K resolution
+        "3xl": "1920px", 
+        "4xl": "2560px", 
+        "5xl": "3200px", 
+        "6xl": "3840px", 
+        "7xl": "5120px", 
+        "8xl": "7680px", 
       },
       container: {
         center: true,
@@ -175,12 +175,12 @@ module.exports = {
             lineHeight: "36px",
           },
         ],
-        "2436":[{
-          lineHeight:'24px',
+        "2436": [{
+          lineHeight: '24px',
           letterSpacing: "36px",
         }],
-        "1438":[{
-          lineHeight:'12px',
+        "1438": [{
+          lineHeight: '12px',
           letterSpacing: "37px",
         }],
         "2lg": [
@@ -189,23 +189,23 @@ module.exports = {
             lineHeight: "100%",
           },
         ],
-        sm:[
+        sm: [
           "14px",
           {
-            lineHeight:'16px',
+            lineHeight: '16px',
             letterSpacing: "0%",
           }
         ],
-        sm8:[
+        sm8: [
           "14px",
           {
-            lineHeight:'24px',
+            lineHeight: '24px',
           }
         ],
-        sm28:[
+        sm28: [
           "14px",
           {
-            lineHeight:'28px',
+            lineHeight: '28px',
             letterSpacing: "0%",
           }
         ],
@@ -213,7 +213,7 @@ module.exports = {
           "14px",
           {
             lineHeight: "20px",
-            letterSpacing: "0%", 
+            letterSpacing: "0%",
           },
         ],
         xl: [
@@ -222,15 +222,15 @@ module.exports = {
             lineHeight: "30px",
           },
         ],
-        
+
         lg: [
           "18px",
           {
             lineHeight: "24px",
           },
         ],
-        "1822":[
-          "18px",{
+        "1822": [
+          "18px", {
             lineHeight: "22px",
           }
         ],
@@ -299,7 +299,7 @@ module.exports = {
           970: "#717171",
           980: "#F3F4F699",
           990: "#6C737F",
-          1000:"#858585"
+          1000: "#858585"
         },
         primary: {
           25: "#F7FDF9",
@@ -405,7 +405,7 @@ module.exports = {
           800: "#085D3A",
           900: "#074D31",
           950: "#053321",
-          1000:"#ABEFC6"
+          1000: "#ABEFC6"
         },
         sa: {
           500: "#25935F",
@@ -510,18 +510,49 @@ module.exports = {
         },
         ".d-center": {
           display: "flex",
-          justifyContent: "center", 
+          justifyContent: "center",
           alignItems: "center",
         },
         ".d-left": {
           display: "flex",
-          justifyContent: "flex-start", 
+          justifyContent: "flex-start",
           alignItems: "center",
         },
         ".d-right": {
           display: "flex",
           justifyContent: "flex-end",
           alignItems: "center",
+        },
+        
+        ".mobile-only": {
+          display: "block",
+        },
+        ".tablet-up": {
+          display: "none",
+        },
+        "@media (min-width: 768px)": {
+          ".mobile-only": {
+            display: "none",
+          },
+          ".tablet-up": {
+            display: "block",
+          },
+        },
+        ".tablet-only": {
+          display: "none",
+        },
+        "@media (min-width: 768px) and (max-width: 1023px)": {
+          ".tablet-only": {
+            display: "block",
+          },
+        },
+        ".desktop-only": {
+          display: "none",
+        },
+        "@media (min-width: 1024px)": {
+          ".desktop-only": {
+            display: "block",
+          },
         },
       }),
         addComponents({

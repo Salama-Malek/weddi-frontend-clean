@@ -1,8 +1,8 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { Section } from "@shared/layouts/Section";
-import { AutoCompleteField } from "@shared/components/form/AutoComplete";
-import { CheckboxField } from "@shared/components/form/Checkbox";
+import { Section } from "@/shared/layouts/Section";
+import { AutoCompleteField } from "@/shared/components/form/AutoComplete";
+import { CheckboxField } from "@/shared/components/form/Checkbox";
 
 interface AcknowledgmentSectionProps {
   selectedLang: { label: string; value: string };

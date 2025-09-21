@@ -1,7 +1,7 @@
 import { forwardRef, useId, useState, useEffect } from "react";
 import { FieldWrapper } from "./FieldWrapper";
 import { Controller } from "react-hook-form";
-import { classes } from "@shared/lib/clsx";
+import { classes } from "@/shared/lib/clsx";
 import { useTranslation } from "react-i18next";
 
 type NumberOnlyInputProps = {
@@ -25,7 +25,10 @@ type NumberOnlyInputProps = {
   preventEnterSubmit?: boolean;
 };
 
-export const NumberOnlyInput = forwardRef<HTMLInputElement, NumberOnlyInputProps>(
+export const NumberOnlyInput = forwardRef<
+  HTMLInputElement,
+  NumberOnlyInputProps
+>(
   (
     {
       onChange,
@@ -55,13 +58,12 @@ export const NumberOnlyInput = forwardRef<HTMLInputElement, NumberOnlyInputProps
     const errorMessage = invalidFeedback?.message || invalidFeedback;
     const hasError = !!errorMessage;
 
-    // Sync with external value
     useEffect(() => {
       setInputValue(propValue);
     }, [propValue]);
 
-    // RTL placeholder alignment for Arabic
-    const placeholderStyle = i18n.language === "ar" ? { textAlign: "right" } : {};
+    const placeholderStyle =
+      i18n.language === "ar" ? { textAlign: "right" } : {};
 
     const commonProps: Record<string, unknown> = {
       id,
@@ -82,58 +84,61 @@ export const NumberOnlyInput = forwardRef<HTMLInputElement, NumberOnlyInputProps
       ...inputProps,
     };
 
-    // Filter out non-numeric characters
     const formatNumberInput = (value: string): string => {
-      return value.replace(/[^\d]/g, '');
+      return value.replace(/[^\d]/g, "");
     };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const rawValue = e.target.value;
       const formattedValue = formatNumberInput(rawValue);
-      
+
       setInputValue(formattedValue);
-      
+
       if (onChange) {
         onChange(formattedValue);
       }
     };
-    
+
     const handleBlur = () => {
       onBlur?.();
     };
 
-    // Handle keyboard events to prevent unwanted form submissions and non-numeric input
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-      // Prevent Enter key from submitting forms unless explicitly allowed
       if (preventEnterSubmit && e.key === "Enter") {
         e.preventDefault();
         e.stopPropagation();
         return;
       }
 
-      // Allow only numeric keys and navigation keys
-      const allowedKeys = ["Backspace", "Delete", "Tab", "ArrowLeft", "ArrowRight", "Home", "End"];
+      const allowedKeys = [
+        "Backspace",
+        "Delete",
+        "Tab",
+        "ArrowLeft",
+        "ArrowRight",
+        "Home",
+        "End",
+      ];
       const isNumeric = /^\d$/.test(e.key);
       const isAllowedKey = allowedKeys.includes(e.key);
-      const isPaste = (e.ctrlKey || e.metaKey) && (e.key === "v" || e.key === "V");
-      
+      const isPaste =
+        (e.ctrlKey || e.metaKey) && (e.key === "v" || e.key === "V");
+
       if (!isNumeric && !isAllowedKey && !isPaste) {
         e.preventDefault();
         return;
       }
 
-      // Call the original onKeyDown if provided
       if (inputProps.onKeyDown) {
         inputProps.onKeyDown(e);
       }
     };
 
-    // Handle paste events to filter non-numeric content
     const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
       e.preventDefault();
-      const pastedText = e.clipboardData.getData('text/plain');
+      const pastedText = e.clipboardData.getData("text/plain");
       const numericOnly = formatNumberInput(pastedText);
-      
+
       if (numericOnly) {
         const newValue = inputValue + numericOnly;
         setInputValue(newValue);
@@ -143,7 +148,10 @@ export const NumberOnlyInput = forwardRef<HTMLInputElement, NumberOnlyInputProps
       }
     };
 
-    const renderInput = (field?: { value?: string; onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void }) => {
+    const renderInput = (field?: {
+      value?: string;
+      onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    }) => {
       const valueToUse = field?.value ?? inputValue;
       const inputOnChange = field?.onChange ?? handleChange;
 
@@ -202,4 +210,4 @@ export const NumberOnlyInput = forwardRef<HTMLInputElement, NumberOnlyInputProps
   }
 );
 
-NumberOnlyInput.displayName = "NumberOnlyInput"; 
+NumberOnlyInput.displayName = "NumberOnlyInput";

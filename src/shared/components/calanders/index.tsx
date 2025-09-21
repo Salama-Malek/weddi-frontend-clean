@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { DatePickerField } from "@shared/components/calanders/DatePickerField";
-import { ConvertedDateDisplay } from "./ConvertedDateDisplay";
+import { DatePickerField } from "@/shared/components/calanders/DatePickerField";
 import { Control, UseFormSetValue } from "react-hook-form";
 
 export type DateOfBirthFieldProps = {
@@ -21,7 +20,6 @@ export const DateOfBirthField: React.FC<DateOfBirthFieldProps> = ({
   setValue,
   hijriFieldName = "hijriDate",
   gregorianFieldName = "gregorianDate",
-  value,
   control,
 }) => {
   const [dateInfo, setDateInfo] = useState<{
@@ -30,7 +28,6 @@ export const DateOfBirthField: React.FC<DateOfBirthFieldProps> = ({
     dateObject: any;
   }>({ hijri: "", gregorian: "", dateObject: null });
 
-  // whenever dateObject changes, write back the eight-digit strings
   useEffect(() => {
     if (!setValue) return;
 
@@ -52,10 +49,8 @@ export const DateOfBirthField: React.FC<DateOfBirthFieldProps> = ({
     }
   }, [dateInfo, setValue, hijriFieldName, gregorianFieldName, control]);
 
-  // Get gregorian value from form if available
   let gregorianValue = dateInfo.gregorian;
   if (control && gregorianFieldName) {
-    // Try to get value from form state if possible
     // @ts-ignore
     const formValue = control._formValues?.[gregorianFieldName];
     if (formValue) gregorianValue = formValue;
@@ -72,7 +67,7 @@ export const DateOfBirthField: React.FC<DateOfBirthFieldProps> = ({
         name={hijriFieldName as any}
         rules={notRequired ? {} : { required: true }}
         onDateChange={(info) => setDateInfo(info)}
-        isDateOfBirth={true} // Enable future date validation for date of birth fields
+        isDateOfBirth={true}
       />
       <div className="mt-2">
         <label className="text-sm !leading-5 normal block mb-1">

@@ -1,6 +1,6 @@
-import React from 'react';
-import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
+import React from "react";
+import { useTranslation } from "react-i18next";
+import { useHomeNavigator } from "@/shared/components/navigation/HomeNavigator";
 
 interface NICServiceErrorModalProps {
   isOpen: boolean;
@@ -8,17 +8,18 @@ interface NICServiceErrorModalProps {
   errorMessage: string;
 }
 
-const NICServiceErrorModal: React.FC<NICServiceErrorModalProps> = ({ 
-  isOpen, 
-  onClose, 
-  errorMessage
+const NICServiceErrorModal: React.FC<NICServiceErrorModalProps> = ({
+  isOpen,
+  onClose,
+  errorMessage,
 }) => {
   const { t } = useTranslation("common");
-  const navigate = useNavigate();
+
+  const navigateToHome = useHomeNavigator();
 
   const handleHomePage = () => {
     onClose();
-    navigate('/');
+    navigateToHome();
   };
 
   const handleTryAgain = () => {
@@ -29,7 +30,7 @@ const NICServiceErrorModal: React.FC<NICServiceErrorModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div 
+    <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
       onClick={(e) => e.stopPropagation()}
     >
@@ -75,4 +76,4 @@ const NICServiceErrorModal: React.FC<NICServiceErrorModalProps> = ({
   );
 };
 
-export default NICServiceErrorModal; 
+export default NICServiceErrorModal;

@@ -1,52 +1,38 @@
-import Button from "@shared/components/button";
+import Button from "@/shared/components/button";
 import { ArrowLeft01Icon, ArrowRight01Icon } from "hugeicons-react";
-import React, { useState, lazy, Suspense, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import TableLoader from "@shared/components/loader/TableLoader";
 import { useGetCaseAuditQuery } from "../api/api";
 import { ICaseStatusAudit } from "../types/caseRecord.model";
-import { useLanguageDirection } from "@app/i18n/LanguageDirectionProvider";
-import StepperSkeleton from "@shared/components/loader/StepperSkeleton";
-import CaseRecordsSkeleton from "@shared/components/loader/CaseRecordsSkeleton";
+import CaseRecordsSkeleton from "@/shared/components/loader/CaseRecordsSkeleton";
 import { useNavigate } from "react-router-dom";
-import { TokenClaims } from "@features/auth/components/AuthProvider";
-import { useCookieState } from "@features/cases/initiate-hearing/hooks/useCookieState";
-
-const CaseRecordsModal = lazy(
-  () => import("@features/auth/components/LoginAccountSelect")
-);
-const Modal = lazy(() => import("@shared/components/modal/Modal"));
+import { useCookieState } from "@/features/initiate-hearing/hooks/useCookieState";
 
 interface CaseRecordsProps {
   isLegalRep?: boolean;
   popupHandler: () => void;
 }
 
-const CaseRecords: React.FC<CaseRecordsProps> = ({ isLegalRep, popupHandler }) => {
+const CaseRecords: React.FC<CaseRecordsProps> = ({}) => {
   const { t } = useTranslation("login");
-  const { isRTL } = useLanguageDirection();
   const navigate = useNavigate();
   const [getCookie, setCookie] = useCookieState();
   const userClaims = getCookie("userClaims");
   const userType = getCookie("userType");
   const popupShown = getCookie("popupShown") || false;
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentCaseIndex, setCurrentCaseIndex] = useState(0);
-  const [selected, setSelected] = useState<string | null>(null);
 
-  // Only fetch cases if we have user type data
   const { data, isError, isFetching } = useGetCaseAuditQuery(
     {
       IDNumber: userClaims?.UserID || "",
-      // SourceSystem: "E-Services",
-      // AcceptedLanguage: isRTL ? "AR" : "EN",
+
       PageNumber: 1,
       PageSize: 3,
       UserType: userType,
     },
     {
-      skip: !userType, // Skip if we don't have user type
+      skip: !userType,
     }
   );
 
@@ -55,24 +41,19 @@ const CaseRecords: React.FC<CaseRecordsProps> = ({ isLegalRep, popupHandler }) =
     CaseStatusAudit: [] as ICaseStatusAudit[],
   };
 
-  // 1) One-time: clear out the old caseId cookie on mount
   useEffect(() => {
     setCookie("caseId", "");
   }, [setCookie]);
 
-  // 2) Popup logic: only open once for a true legal rep who hasn't seen it yet
   useEffect(() => {
     if (
       userClaims?.UserType === "2" &&
       userType === "Legal representative" &&
       !popupShown
     ) {
-      setIsModalOpen(true);
       setCookie("popupShown", true);
     }
   }, [userClaims, userType, popupShown, setCookie]);
-
-  const handleCloseModal = () => setIsModalOpen(false);
 
   const handleNext = () => {
     if (currentCaseIndex < cases.length - 1) {
@@ -88,14 +69,6 @@ const CaseRecords: React.FC<CaseRecordsProps> = ({ isLegalRep, popupHandler }) =
     const caseId = current.CaseID;
     navigate(`/manage-hearings/${caseId}`);
   };
-  const [selectedOption, setSelectedOption] = useState<
-    { value: string; label: string } | null | string
-  >(null);
-  const handleChange = (
-    selectedOption: { value: string; label: string } | null | string
-  ) => {
-    setSelectedOption(selectedOption);
-  };
 
   const statusColors = {
     New: {
@@ -104,7 +77,6 @@ const CaseRecords: React.FC<CaseRecordsProps> = ({ isLegalRep, popupHandler }) =
       withDate: {
         variant: "success" as const,
         typeVariant: "subtle" as const,
-        // You can add additional className if needed
         className:
           "!bg-success-100 !text-success-900 semibold border-success-1000",
       },
@@ -171,7 +143,7 @@ const CaseRecords: React.FC<CaseRecordsProps> = ({ isLegalRep, popupHandler }) =
       ) : (
         <aside
           dir={t("dir")}
-          className={`w-[100%] min-w-[350px] bg-light-alpha-white rounded-md shadow-md p-4 max-h-[582px] overflow-y-auto ${
+          className={`w-[100%] min-w-[310px] bg-light-alpha-white rounded-md shadow-md p-4 max-h-[582px] overflow-y-auto ${
             t("dir") === "rtl" ? "text-right" : "text-left"
           }`}
         >
@@ -216,7 +188,6 @@ const CaseRecords: React.FC<CaseRecordsProps> = ({ isLegalRep, popupHandler }) =
           <div className="ml-6">
             {(() => {
               if (isError || !cases.length) {
-                // Render fallback UI
                 const dummySteps = Array.from({ length: 4 });
 
                 return dummySteps.map((_, index) => (
@@ -255,7 +226,6 @@ const CaseRecords: React.FC<CaseRecordsProps> = ({ isLegalRep, popupHandler }) =
                 ));
               }
 
-              // Render normal timeline
               const grouped: { [status: string]: ICaseStatusAudit[] } = {};
               current?.CaseStatusAudit?.forEach((item) => {
                 const key = item.WorkStatus || "Unknown";
@@ -352,6 +322,11 @@ const CaseRecords: React.FC<CaseRecordsProps> = ({ isLegalRep, popupHandler }) =
                   variant="secondary"
                   typeVariant="solid"
                   size="xs"
+                  responsiveSize={{
+                    sm: "xs",
+                    md: "sm",
+                    lg: "md",
+                  }}
                   className="border border-gray-300"
                   onClick={() => handleViewDetails()}
                 >
@@ -360,31 +335,8 @@ const CaseRecords: React.FC<CaseRecordsProps> = ({ isLegalRep, popupHandler }) =
               </div>
             </div>
           </div>
-          {/* </div> */}
-
-          {/* {isModalOpen && ( */}
-          {/* {userType === "Legal representative" && isModalOpen && (
-            <Suspense fallback={<StepperSkeleton />}>
-              <Modal
-                className="!max-h-none !h-auto !overflow-visible"
-                close={handleCloseModal}
-                modalWidth={600}
-                preventOutsideClick={true}
-              >
-                <Suspense fallback={<StepperSkeleton />}>
-                  <CaseRecordsModal
-                    isLegalRep={isLegalRep}
-                    selected={selected}
-                    setSelected={setSelected}
-                    handleChange={(opt) => setSelected(opt as any)}
-                    handleCloseModal={handleCloseModal}
-                    selectedOption={null}
-                    popupHandler={popupHandler}
-                  />
-                </Suspense>
-              </Modal>
-            </Suspense>
-          )} */}
+          
+          
         </aside>
       )}
     </>

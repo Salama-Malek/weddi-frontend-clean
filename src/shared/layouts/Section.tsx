@@ -23,20 +23,56 @@ export const Section = ({
   gridCols = 3,
   removeMargin,
   requiredText,
-  isHidden = false
+  isHidden = false,
 }: SectionProps) => {
-  const computedGridClass = isRadio
-    ? "grid-cols-1 gap-x-6 gap-y-6"
-    : `grid-cols-1 md:grid-cols-2  lg:grid-cols-${gridCols} gap-x-6 gap-y-6`;
+  const getFlexClass = () => {
+    if (isRadio) {
+      return "grid grid-cols-1 gap-6";
+    }
 
-  const finalClassName = className || computedGridClass;
+    
+    switch (gridCols) {
+      case 1:
+        return "grid grid-cols-1 gap-6";
+      case 2:
+        return "grid grid-cols-2 lg:grid-cols-3 gap-6";
+      case 3:
+        return "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6";
+      case 4:
+        return "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6";
+      case 5:
+        
+        return "grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-[375px] sm:max-w-none";
+      case 6:
+        
+        return "grid grid-cols-2 max-w-[375px] sm:grid-cols-3 sm:max-w-none gap-6";
+      case 7:
+        
+        return "grid grid-cols-1 lg:grid-cols-2 gap-6";
+      default:
+        return "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6";
+    }
+  };
+
+  const computedFlexClass = getFlexClass();
 
   const widthClass = isManageHearing ? "max-w-[50rem] min-w-auto" : "w-full";
 
   return (
-    <div className={`${widthClass} ${removeMargin && "!mt-0 !mb-3"} ${isHidden && "hidden"} space-y-${isAdd ? "3" : "6"} mb-6`}>
-      {title && <h2 className="text-md text-primary-600 semibold">{title} <span className="text-secondary-700">{requiredText && requiredText}</span></h2>}
-      <div className={`grid ${finalClassName}`}>{children}</div>
+    <div
+      className={`${widthClass} ${removeMargin && "!mt-0 !mb-3"} ${
+        isHidden && "hidden"
+      } space-y-${isAdd ? "3" : "6"} mb-6`}
+    >
+      {title && (
+        <h2 className="text-sm md:text-md text-primary-600 semibold">
+          {title}
+          <span className="text-secondary-700">
+            {requiredText && requiredText}
+          </span>
+        </h2>
+      )}
+      <div className={className || computedFlexClass}>{children}</div>
     </div>
   );
 };

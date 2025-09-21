@@ -1,6 +1,5 @@
 import { useState, useLayoutEffect } from "react";
 import { useTranslation } from "react-i18next";
-import clsx from "clsx";
 
 export const useLanguageClass = (rtlClass: string, ltrClass: string) => {
   const { i18n } = useTranslation();

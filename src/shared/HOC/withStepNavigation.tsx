@@ -1,19 +1,16 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { SubmitHandler, useWatch } from "react-hook-form";
-import StepNavigation from "@shared/modules/case-creation/components/StepNavigation";
-import useCasesLogic from "@features/cases/initiate-hearing/hooks/useCasesLogic";
-import useCaseSave from "@features/cases/initiate-hearing/hooks/useCaseSave";
-import { FormData } from "@shared/components/form/form.types";
-import { useAPIFormsData } from "@app/providers/FormContext";
-import { useSubmitFinalReviewMutation } from "@features/cases/initiate-hearing/api/create-case/apis";
-import { useCookieState } from "@features/cases/initiate-hearing/hooks/useCookieState";
+import StepNavigation from "@/shared/modules/case-creation/components/StepNavigation";
+import useCasesLogic from "@/features/initiate-hearing/hooks/useCasesLogic";
+import { FormData } from "@/shared/components/form/form.types";
+import { useAPIFormsData } from "@/providers/FormContext";
+import { useSubmitFinalReviewMutation } from "@/features/initiate-hearing/api/create-case/apis";
+import { useCookieState } from "@/features/initiate-hearing/hooks/useCookieState";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
-import Loader from "@shared/components/loader";
-import Modal from "@shared/components/modal/Modal";
-import Button from "@shared/components/button";
+import Loader from "@/shared/components/loader";
 import { useNavigate } from "react-router-dom";
-import { useApiErrorHandler } from "@shared/hooks/useApiErrorHandler";
+import { useApiErrorHandler } from "@/shared/hooks/useApiErrorHandler";
 
 export interface WithStepNavigationProps {
   register: any;
@@ -30,11 +27,16 @@ export interface WithStepNavigationProps {
   setAcknowledgements?: (acks: any[]) => void;
   setSelectedLanguage?: (lang: string) => void;
   setIsPhoneVerify?: React.Dispatch<React.SetStateAction<any>>;
+  isOnlyFileNumberFilled?: () => boolean;
 }
 
 const withStepNavigation = <P extends object>(
   WrappedComponent: React.ComponentType<P & WithStepNavigationProps>,
-  p0?: { acknowledgements: any; selectedLanguage: any }
+  p0?: {
+    acknowledgements?: any;
+    selectedLanguage?: any;
+    isOnlyFileNumberFilled?: () => boolean;
+  }
 ) => {
   const ComponentWithStepNavigation = (props: P & any) => {
     const {
@@ -45,14 +47,12 @@ const withStepNavigation = <P extends object>(
       handlePrevious,
       handleSave,
       actionButtonName = "",
-    } = useCasesLogic();
-
-    const { onSave, isSaveLoading, isSaveSuccess, isSaveError } = useCaseSave(handleSave);
+    } = useCasesLogic({ enableNICCalls: true });
 
     const [isVerifiedInput, setIsPhoneVerify] = useState<boolean | undefined>();
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [getCookie, setCookie, removeCookie, removeAll] = useCookieState();
-    const { t, i18n } = useTranslation('translation');
+    const [getCookie, , removeCookie] = useCookieState();
+    const { t, i18n } = useTranslation("translation");
     const language = i18n.language === "ar" ? "AR" : "EN";
     const { hasErrors } = useApiErrorHandler();
 
@@ -65,7 +65,6 @@ const withStepNavigation = <P extends object>(
       useState<string>(language);
 
     const {
-      formData,
       getValues,
       setFormData,
       register,
@@ -75,10 +74,9 @@ const withStepNavigation = <P extends object>(
       watch,
       control,
       trigger,
-      forceValidateForm,
       clearErrors,
       setError,
-      clearFormData
+      clearFormData,
     } = useAPIFormsData();
 
     const { errors, isValid, isSubmitting: isFormSubmitting } = formState;
@@ -88,18 +86,17 @@ const withStepNavigation = <P extends object>(
       defaultValue: false,
     });
 
-    const [submitFinalReview, { isLoading: isSubmittingFinalReview }] = useSubmitFinalReviewMutation();
+    const [submitFinalReview] = useSubmitFinalReviewMutation();
 
     const onSubmit: SubmitHandler<FormData> = async (data) => {
-      // Prevent multiple rapid Next button calls
       if (actionButtonName === "Next" || isFormSubmitting) {
         return;
       }
-      
+
       try {
+        setIsSubmitting(true);
         const caseId = getCookie("caseId");
         if (currentStep === 2) {
-          setIsSubmitting(true);
           const ackList = acknowledgementsState.map((item: any) => ({
             ElementKey: selectedLanguageState === "EN" ? "English" : "Arabic",
             ElementValue: item.ElementValue,
@@ -116,7 +113,10 @@ const withStepNavigation = <P extends object>(
 
             const response = await submitFinalReview(payload).unwrap();
 
-            const isSuccessful = !hasErrors(response) && (response?.SuccessCode === "200" || response?.ServiceStatus === "Success");
+            const isSuccessful =
+              !hasErrors(response) &&
+              (response?.SuccessCode === "200" ||
+                response?.ServiceStatus === "Success");
 
             if (isSuccessful) {
               localStorage.removeItem("step");
@@ -127,7 +127,7 @@ const withStepNavigation = <P extends object>(
               const serviceLink = response?.S2Cservicelink;
               if (serviceLink) {
                 navigate(`/manage-hearings/${response?.CaseNumber}`);
-                window.open(serviceLink, '_blank');
+                window.open(serviceLink, "_blank");
               } else {
                 navigate(`/manage-hearings/${response?.CaseNumber}`);
               }
@@ -137,10 +137,9 @@ const withStepNavigation = <P extends object>(
 
               return;
             } else {
-              // if (response?.ErrorDescription) {
-              //   toast.error(response.ErrorDescription);
-              // }
-              throw new Error(response?.ErrorDescription || "Submission failed");
+              throw new Error(
+                response?.ErrorDescription || "Submission failed"
+              );
             }
           }
         }
@@ -151,16 +150,9 @@ const withStepNavigation = <P extends object>(
           handleNext();
         }
       } catch (error: any) {
-        // Clear actionButtonName in case of error to allow retry
         if (actionButtonName === "Next") {
-          // The handleNext function should clear actionButtonName, but we ensure it here
-          // This is a fallback to ensure the button doesn't get stuck
-          console.warn("Next button was stuck, clearing actionButtonName");
         }
-        // Ensure actionButtonName is cleared on any error
         if (actionButtonName) {
-          // Note: We can't directly set actionButtonName here as it's from useCasesLogic
-          // The handleNext function should handle this, but this serves as a warning
         }
       } finally {
         setIsSubmitting(false);
@@ -176,7 +168,6 @@ const withStepNavigation = <P extends object>(
         }
       }
       if (firstErrorMsg) {
-        // toast.error(firstErrorMsg);
       } else {
         toast.error("Form validation failed. Please check your input.");
       }
@@ -184,7 +175,7 @@ const withStepNavigation = <P extends object>(
 
     return (
       <>
-        {isSubmitting && <Loader />}
+        {isSubmitting && <Loader force />}
         <StepNavigation<FormData>
           onSubmit={handleSubmit(onSubmit, onInvalid)}
           isValid={isValid}
@@ -200,15 +191,115 @@ const withStepNavigation = <P extends object>(
             localStorage.removeItem("tab");
             updateParams(0, 0);
           }}
-          onSave={onSave}
-          isSaveLoading={isSaveLoading}
-          isSaveSuccess={isSaveSuccess}
-          isSaveError={isSaveError}
-          isButtonDisabled={(direction: "prev" | "next") =>
-            direction === "prev"
-              ? currentStep === 0 && currentTab === 0
-              : currentStep === 2
-          }
+          handleSave={handleSave}
+          isButtonDisabled={(direction: "prev" | "next") => {
+            if (direction === "prev") {
+              return currentStep === 0 && currentTab === 0;
+            } else {
+              const isLastStep = currentStep === 2;
+              const isOnlyFileNumberFilledResult = p0?.isOnlyFileNumberFilled
+                ? p0.isOnlyFileNumberFilled()
+                : false;
+
+              let hasFormContent = true;
+              if (currentStep === 0 && currentTab === 1) {
+                const formValues: any = getValues();
+                const defendantStatus = formValues.defendantStatus;
+                const userTypeFromCookie = (
+                  getCookie("userType") || ""
+                ).toString();
+
+                if (
+                  ["Legal representative", "Establishment"].includes(
+                    userTypeFromCookie
+                  )
+                ) {
+                  const hasNationalId =
+                    !!formValues.nationalIdNumber &&
+                    formValues.nationalIdNumber?.length === 10;
+                  const hasDob =
+                    !!formValues["def_date_hijri"] ||
+                    !!formValues["def_date_gregorian"];
+                  const hasName =
+                    !!formValues["DefendantsEstablishmentPrisonerName"];
+                  const hasPhone =
+                    !!formValues.mobileNumber &&
+                    /^05\d{8}$/.test(formValues.mobileNumber);
+                  const hasRegion = !!(
+                    formValues.region && formValues.region.value
+                  );
+                  const hasCity = !!(formValues.city && formValues.city.value);
+                  const hasOccupation = !!(
+                    formValues.occupation && formValues.occupation.value
+                  );
+                  const hasGender = !!(
+                    formValues.gender && formValues.gender.value
+                  );
+                  const hasNationality = !!(
+                    formValues.nationality && formValues.nationality.value
+                  );
+
+                  hasFormContent =
+                    hasName &&
+                    hasPhone &&
+                    hasRegion &&
+                    hasCity &&
+                    hasOccupation &&
+                    hasGender &&
+                    hasNationality &&
+                    hasDob &&
+                    hasNationalId;
+                } else if (defendantStatus === "Government") {
+                  const mainCat =
+                    formValues.main_category_of_the_government_entity;
+                  const subCat =
+                    formValues.subcategory_of_the_government_entity;
+                  const mainCategoryValue =
+                    mainCat && typeof mainCat === "object" && "value" in mainCat
+                      ? (mainCat as any).value
+                      : mainCat;
+                  const subCategoryValue =
+                    subCat && typeof subCat === "object" && "value" in subCat
+                      ? (subCat as any).value
+                      : subCat;
+                  const hasMainCategory = !!mainCategoryValue;
+                  const hasSubCategory = !!subCategoryValue;
+
+                  hasFormContent = hasMainCategory && hasSubCategory;
+                } else {
+                  const hasSelectedEstablishment =
+                    !!formValues.Defendant_Establishment_data;
+
+                  if (hasSelectedEstablishment) {
+                    hasFormContent = true;
+                  } else {
+                    const hasFileNumber = !!formValues.DefendantFileNumber;
+                    const hasCRNumber = !!formValues.DefendantCRNumber;
+                    const hasRegion = !!formValues.defendantRegion;
+                    const hasCity = !!formValues.defendantCity;
+                    const hasPhoneNumber =
+                      !!formValues.establishment_phoneNumber;
+                    const hasEstablishmentName =
+                      !!formValues.DefendantEstablishmentName;
+
+                    const hasRequiredFileInfo = hasFileNumber || hasCRNumber;
+                    hasFormContent =
+                      hasRequiredFileInfo &&
+                      hasRegion &&
+                      hasCity &&
+                      hasPhoneNumber &&
+                      hasEstablishmentName;
+                  }
+                }
+              }
+
+              const finalResult =
+                isLastStep || isOnlyFileNumberFilledResult || !hasFormContent;
+              try {
+              } catch {}
+              return finalResult;
+            }
+          }}
           canProceed={currentStep === 2 && acknowledgeValue}
         >
           <WrappedComponent
@@ -230,12 +321,12 @@ const withStepNavigation = <P extends object>(
           />
         </StepNavigation>
       </>
-
     );
   };
 
-  ComponentWithStepNavigation.displayName = `withStepNavigation(${WrappedComponent.displayName || WrappedComponent.name || "Component"
-    })`;
+  ComponentWithStepNavigation.displayName = `withStepNavigation(${
+    WrappedComponent.displayName || WrappedComponent.name || "Component"
+  })`;
 
   return ComponentWithStepNavigation;
 };

@@ -1,29 +1,18 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import Modal from "@shared/components/modal/Modal";
-import Button from "@shared/components/button";
+import Modal from "@/shared/components/modal/Modal";
+import Button from "@/shared/components/button";
 import { useNavigate } from "react-router-dom";
-import { useCookieState } from "@features/cases/initiate-hearing/hooks/useCookieState";
+import { useCookieState } from "@/features/initiate-hearing/hooks/useCookieState";
+import { useClearCaseData } from "@/shared/hooks/useClearCaseData";
 
-interface CaseInfoItem {
-  RequestDate: string;
-  PlaintiffName: string;
-  CaseNumber: string;
-  pyMessage: string;
-  PlaintiffId: string;
-}
-
-interface IncompleteCaseData {
-  CaseInfo: CaseInfoItem[];
-  ServiceStatus: string;
-  SuccessCode: string;
-  ErrorCodeList: unknown[];
-}
 
 interface IncompleteCaseModalProps {
   isOpen: boolean;
   onClose: () => void;
-  incompleteCaseData: IncompleteCaseData;
+  incompleteCaseData: {
+    CaseInfo: Array<{ CaseNumber: string; pyMessage?: string }>;
+  };
 }
 
 const IncompleteCaseModal: React.FC<IncompleteCaseModalProps> = ({
@@ -33,20 +22,18 @@ const IncompleteCaseModal: React.FC<IncompleteCaseModalProps> = ({
 }) => {
   const { t } = useTranslation("common");
   const navigate = useNavigate();
-  const [getCookie, setCookie] = useCookieState();
+  const [, setCookie] = useCookieState();
+  const { resetCaseDataClearedFlag } = useClearCaseData();
 
-  // Grab the first CaseInfo entry (if it exists)
   const firstCase = incompleteCaseData.CaseInfo[0];
   const caseNumber = firstCase?.CaseNumber || "";
   const rawMessage = firstCase?.pyMessage || "";
 
-  // Render the API‐provided message, but split out the caseNumber to be clickable
   const renderMessage = () => {
     if (!rawMessage || !caseNumber || !rawMessage.includes(caseNumber)) {
       return <span>{rawMessage}</span>;
     }
 
-    // Split on the first occurrence of caseNumber
     const [before, after] = rawMessage.split(caseNumber);
     return (
       <>
@@ -66,23 +53,23 @@ const IncompleteCaseModal: React.FC<IncompleteCaseModalProps> = ({
     );
   };
 
-  // "No" simply closes the modal
   const handleNo = () => {
     onClose();
   };
 
-  // "Yes" navigates to complete‐case then closes
   const handleYes = () => {
     if (!caseNumber) {
       onClose();
       return;
     }
-    // Store the case ID in cookies for the case creation flow to use
+
+    resetCaseDataClearedFlag();
+
     setCookie("caseId", caseNumber);
-    // Reset navigation to the first step and tab
+
     localStorage.setItem("step", "0");
     localStorage.setItem("tab", "0");
-    // Navigate to the case creation flow
+
     navigate("/initiate-hearing/case-creation");
     onClose();
   };

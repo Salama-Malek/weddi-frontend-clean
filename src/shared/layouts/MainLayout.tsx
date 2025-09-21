@@ -2,10 +2,11 @@ import { Outlet } from "react-router-dom";
 import Header from "../components/layouts/header";
 import { UserProvider } from "../context/userTypeContext";
 import { useState, useEffect } from "react";
-import { useCookieState } from "@features/cases/initiate-hearing/hooks/useCookieState";
+import { useCookieState } from "@/features/initiate-hearing/hooks/useCookieState";
 import { NICServiceErrorProvider, useNICServiceErrorContext } from "../context/NICServiceErrorContext";
 import NICServiceErrorModal from "../components/modal/NICServiceErrorModal";
 import { useKeyboardPrevention } from "../hooks/useKeyboardPrevention";
+import { useNavigationLoading } from "../hooks/useNavigationLoading";
  
 const NICServiceErrorModalWrapper = () => {
   const { showServiceErrorModal, serviceErrorMessage, closeServiceErrorModal } = useNICServiceErrorContext();
@@ -49,23 +50,25 @@ const MainLayout = () => {
     return getCookie("isMenueCahngeFlag") || false;
   });
 
-  // Global keyboard prevention - prevents unwanted form submissions and keyboard actions
+  
   useKeyboardPrevention({
-    preventEnterSubmit: true, // Prevent Enter from submitting forms
-    preventCtrlS: true, // Prevent Ctrl+S (save)
-    preventCtrlEnter: true, // Prevent Ctrl+Enter
-    preventF5: false, // Allow F5 refresh
-    preventEscape: false, // Allow Escape key
-    preventTab: false, // Allow Tab navigation
+    preventEnterSubmit: true, 
+    preventCtrlS: true, 
+    preventCtrlEnter: true, 
+    preventF5: false, 
+    preventEscape: false, 
+    preventTab: false, 
   });
 
-  // Ensure original user type is set for legal representatives
+  
+  useNavigationLoading();
+
+  
   useEffect(() => {
-    const userClaims = getCookie("userClaims");
     const originalUserType = getCookie("originalUserType");
     const storedUserTypeData = getCookie("storeAllUserTypeData");
     
-    // Check if user has legal representative capabilities from API response
+    
     const hasLegalRepCapability = storedUserTypeData?.UserTypeList?.some(
       (userType: any) => userType.UserType === "Legal representative"
     );

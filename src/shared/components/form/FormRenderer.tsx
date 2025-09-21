@@ -1,8 +1,6 @@
-// src/shared/components/form/FormRenderer.tsx
 import React from "react";
 import { useFormContext, Controller } from "react-hook-form";
 import { SectionLayout } from "./form.types";
-import Button from "../button";
 import { AutoCompleteField } from "./AutoComplete";
 import { DateOfBirthField } from "../calanders";
 
@@ -18,7 +16,6 @@ export default function FormRenderer({ sections }: Props) {
   return (
     <>
       {sections.map((sec, i) => {
-        // Skip entire section if its condition is explicitly false
         if (sec.condition === false) return null;
 
         return (
@@ -125,12 +122,13 @@ export default function FormRenderer({ sections }: Props) {
                       gregorianLabel={field.gregorianLabel}
                       hijriFieldName={field.hijriFieldName!}
                       gregorianFieldName={field.gregorianFieldName!}
-                    //   validation={field.validation}
                     />
                   );
 
                 case "custom":
-                  return <React.Fragment key={j}>{field.component}</React.Fragment>;
+                  return (
+                    <React.Fragment key={j}>{field.component}</React.Fragment>
+                  );
 
                 default:
                   return null;

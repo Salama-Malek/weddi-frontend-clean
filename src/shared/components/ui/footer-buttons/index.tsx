@@ -1,5 +1,5 @@
 import React from "react";
-import Button from "@shared/components/button";
+import Button from "@/shared/components/button";
 import { useTranslation } from "react-i18next";
 
 interface FormActionButtonsProps {

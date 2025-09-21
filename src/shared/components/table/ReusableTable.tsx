@@ -6,13 +6,13 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { useTranslation } from "react-i18next";
- 
+
 export interface PaginationProps {
   page: number;
   totalPages: number;
   onPageChange: (newPage: number) => void;
 }
- 
+
 interface ReusableTableProps<TData extends object> {
   data: TData[];
   columns: ColumnDef<TData, any>[];
@@ -24,14 +24,14 @@ interface ReusableTableProps<TData extends object> {
   hidePagination?: boolean;
   showEdit?: boolean;
 }
- 
+
 function DefaultPagination({
   page,
   totalPages,
   onPageChange,
 }: PaginationProps) {
   const { t } = useTranslation("managehearings");
- 
+
   return (
     <div className="flex justify-end items-center space-x-4 px-4 mt-2 mb-4">
       <button
@@ -56,7 +56,7 @@ function DefaultPagination({
     </div>
   );
 }
- 
+
 export function ReusableTable<TData extends object>({
   data,
   columns,
@@ -69,20 +69,20 @@ export function ReusableTable<TData extends object>({
   showEdit = false,
 }: ReusableTableProps<TData>) {
   const { t } = useTranslation("managehearings");
- 
+
   const filteredColumns = React.useMemo(() => {
     if (!showEdit) {
       return columns.filter((column) => column.id !== "edit");
     }
     return columns;
   }, [columns, showEdit]);
- 
+
   const table = useReactTable({
     data,
     columns: filteredColumns,
     getCoreRowModel: getCoreRowModel(),
   });
- 
+
   return (
     <div className={`w-full bg-white  ${className}`}>
       <div className="rounded-md border border-gray-300 overflow-auto">
@@ -102,7 +102,7 @@ export function ReusableTable<TData extends object>({
                     <th
                       key={header.id}
                       className="p-3 text-start border-r border-gray-300 last:border-r-0
-                      th-min-screen-width"
+                      th-min-screen-width text-xs sm:text-sm md:text-md font-bold"
                     >
                       {headerContent}
                     </th>
@@ -120,7 +120,10 @@ export function ReusableTable<TData extends object>({
                 }`}
               >
                 {row.getVisibleCells().map((cell) => (
-                  <td key={cell.id} className="p-3">
+                  <td
+                    key={cell.id}
+                    className="p-3 text-xs sm:text-sm md:text-md font-normal"
+                  >
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </td>
                 ))}
@@ -129,7 +132,7 @@ export function ReusableTable<TData extends object>({
           </tbody>
         </table>
       </div>
- 
+
       {!hidePagination && PaginationComponent && (
         <PaginationComponent
           page={page}

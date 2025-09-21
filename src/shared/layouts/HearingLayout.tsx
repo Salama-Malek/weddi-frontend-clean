@@ -5,26 +5,22 @@ interface HearingLayoutProps {
   breadcrumbs?: ReactNode;
   containerClass?: string;
   contentClass?: string;
-  children?: ReactNode; 
+  children?: ReactNode;
 }
 
 const HearingLayout = ({
   breadcrumbs,
   containerClass = "",
   contentClass = "",
-  children, 
+  children,
 }: HearingLayoutProps) => {
   return (
     <main className="bg-gray-100 min-h-screen flex flex-col">
-      {breadcrumbs && (
-        <nav className="container">
-            {breadcrumbs}
-        </nav>
-      )}
+      {breadcrumbs && <nav className="container">{breadcrumbs}</nav>}
 
-      <div className={`container flex-1 ${containerClass}`}>
-        <div className={`bg-white rounded-md ${contentClass}`}>
-          {children || <Outlet />} 
+      <div className={`container flex-1 px-0 sm:px-4 ${containerClass}`}>
+        <div className={`bg-white rounded-md px-0 sm:px-4 ${contentClass}`}>
+          {children || <Outlet />}
         </div>
       </div>
     </main>

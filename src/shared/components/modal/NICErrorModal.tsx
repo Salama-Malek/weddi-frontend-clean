@@ -1,19 +1,17 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
-import { useCookieState } from '@features/cases/initiate-hearing/hooks/useCookieState';
+import { useCookieState } from '@/features/initiate-hearing/hooks/useCookieState';
 
 interface NICErrorModalProps {
   isOpen: boolean;
-  onClose: () => void;
   errorMessage: string;
+  onClose?: () => void;
 }
 
-const NICErrorModal: React.FC<NICErrorModalProps> = ({ isOpen, onClose, errorMessage }) => {
+const NICErrorModal: React.FC<NICErrorModalProps> = ({ isOpen, errorMessage }) => {
   const { t } = useTranslation("common");
 
-  const navigate = useNavigate();
-  const [, , removeCookie, removeAll] = useCookieState({}, { path: "/" });
+  const [, , , removeAll] = useCookieState({}, { path: "/" });
 
   const handleSignOut = () => {
     removeAll();
@@ -26,7 +24,7 @@ const NICErrorModal: React.FC<NICErrorModalProps> = ({ isOpen, onClose, errorMes
 
   if (!isOpen) return null;
 
-  // Determine if it's an authentication error
+  
   const isAuthError = errorMessage.toLowerCase().includes("unauthorized") || 
                      errorMessage.toLowerCase().includes("sign in");
 

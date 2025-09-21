@@ -1,8 +1,9 @@
 import React from "react";
-import { Section } from "@shared/layouts/Section";
+import { Section } from "@/shared/layouts/Section";
 import { RadioGroup } from "./RadioGroup";
 import { InputField } from "./InputField";
 import { NumberOnlyInput } from "./NumberOnlyInput";
+import { DecimalNumberInput } from "./DecimalNumberInput";
 import { FileNumberInput } from "./FileNumberInput";
 import { AutoCompleteField } from "./AutoComplete";
 import { CheckboxField } from "./Checkbox";
@@ -31,7 +32,6 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
   control,
   isLoading,
 }) => {
-  // Helper function to check if a field is a file number field
   const isFileNumberField = (name: string): boolean => {
     const fileNumberPatterns = [
       /File.*Number/i,
@@ -39,9 +39,9 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
       /FileNumber/i,
       /DefendantFileNumber/i,
       /PlaintiffFileNumber/i,
-      /EstablishmentFileNumber/i
+      /EstablishmentFileNumber/i,
     ];
-    return fileNumberPatterns.some(pattern => pattern.test(name));
+    return fileNumberPatterns.some((pattern) => pattern.test(name));
   };
 
   return (
@@ -63,15 +63,32 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
             {section.children?.map((child, childIndex) => {
               const colSpan = child?.colSpan || 1;
               if (!child) return null;
-              if (child.condition !== undefined && !child.condition) return null;
+              if (child.condition !== undefined && !child.condition)
+                return null;
 
-              const childKey = `${sectionKey}-${"name" in child ? child.name : childIndex
-                }-${child.type}`;
+              const childKey = `${sectionKey}-${
+                "name" in child ? child.name : childIndex
+              }-${child.type}`;
+
+              const getGridSpanClass = (span: number) => {
+                switch (span) {
+                  case 1:
+                    return "col-span-1";
+                  case 2:
+                    return "col-span-1 sm:col-span-2";
+                  case 3:
+                    return "col-span-1 sm:col-span-2 lg:col-span-3";
+                  case 4:
+                    return "col-span-1 sm:col-span-2 lg:col-span-4";
+                  default:
+                    return "col-span-1";
+                }
+              };
 
               switch (child.type) {
                 case "radio":
                   return (
-                    <div key={childKey} className={`col-span-${colSpan}`}>
+                    <div key={childKey} className={getGridSpanClass(colSpan)}>
                       <RadioGroup
                         hasIcon={child.hasIcon}
                         name={child.name}
@@ -88,10 +105,9 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
                   );
 
                 case "input":
-                  // Use FileNumberInput for file number fields
                   if (child.name && isFileNumberField(child.name)) {
                     return (
-                      <div key={childKey} className={`col-span-${colSpan}`}>
+                      <div key={childKey} className={getGridSpanClass(colSpan)}>
                         <FileNumberInput
                           isLoading={child.isLoading}
                           {...register(child.name, child.validation)}
@@ -105,9 +121,17 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
                           notRequired={child.notRequired}
                           placeholder={child.placeholder}
                           onBlur={child.onBlur}
+                          onChangeHandler={child.onChange}
+                          onChange={(e) => {
+                            if (typeof e === "string") {
+                              child.onChange?.(e);
+                            } else {
+                              const value: string = e.target.value;
+                              child.onChange?.(value);
+                            }
+                          }}
                           disabled={child.disabled}
-                          onFileNumberSubmit={(value) => {
-                            // Optional: Trigger the onBlur function when Enter is pressed
+                          onFileNumberSubmit={(_value) => {
                             if (child.onBlur) {
                               child.onBlur();
                             }
@@ -117,18 +141,18 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
                     );
                   }
 
-                  // Use NumberOnlyInput for text fields that should only accept numbers
                   if (child.inputType === "text" && (child as any).numberOnly) {
                     return (
-                      <div key={childKey} className={`col-span-${colSpan}`}>
+                      <div key={childKey} className={getGridSpanClass(colSpan)}>
                         <NumberOnlyInput
                           isLoading={child.isLoading}
-                          {...register(child.name, child.validation)}
                           name={child.name}
                           invalidFeedback={errors[child.name]?.message}
                           maxLength={child.maxLength}
                           label={child.label}
                           control={control}
+                          rules={child.validation}
+                          defaultValue={child.value}
                           notRequired={child.notRequired}
                           placeholder={child.placeholder}
                           onBlur={child.onBlur}
@@ -139,12 +163,62 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
                     );
                   }
 
-                  // Use regular InputField for other input fields
+                  if (
+                    child.inputType === "text" &&
+                    (child as any).numericType === "integer"
+                  ) {
+                    return (
+                      <div key={childKey} className={getGridSpanClass(colSpan)}>
+                        <NumberOnlyInput
+                          isLoading={child.isLoading}
+                          name={child.name}
+                          invalidFeedback={errors[child.name]?.message}
+                          maxLength={child.maxLength}
+                          label={child.label}
+                          control={control}
+                          rules={child.validation}
+                          defaultValue={child.value}
+                          notRequired={child.notRequired}
+                          placeholder={child.placeholder}
+                          onBlur={child.onBlur}
+                          disabled={child.disabled}
+                          onChange={child.onChange}
+                        />
+                      </div>
+                    );
+                  }
+
+                  if (
+                    child.inputType === "text" &&
+                    (child as any).numericType === "decimal"
+                  ) {
+                    return (
+                      <div key={childKey} className={getGridSpanClass(colSpan)}>
+                        <DecimalNumberInput
+                          isLoading={child.isLoading}
+                          name={child.name}
+                          invalidFeedback={errors[child.name]?.message}
+                          maxLength={child.maxLength}
+                          label={child.label}
+                          control={control}
+                          rules={child.validation}
+                          defaultValue={child.value}
+                          notRequired={child.notRequired}
+                          placeholder={child.placeholder}
+                          onBlur={child.onBlur}
+                          disabled={child.disabled}
+                          onChange={child.onChange}
+                          decimalSeparators={child.decimalSeparators}
+                          allowPercent={(child as any).allowPercent}
+                        />
+                      </div>
+                    );
+                  }
+
                   return (
-                    <div key={childKey} className={`col-span-${colSpan}`}>
+                    <div key={childKey} className={getGridSpanClass(colSpan)}>
                       <InputField
                         isLoading={child.isLoading}
-                        {...register(child.name, child.validation)}
                         name={child.name}
                         invalidFeedback={errors[child.name]?.message}
                         type={child.inputType}
@@ -152,17 +226,28 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
                         min={child.min}
                         label={child.label}
                         control={control}
+                        rules={child.validation}
+                        defaultValue={child.value}
                         notRequired={child.notRequired}
                         placeholder={child.placeholder}
                         onBlur={child.onBlur}
                         disabled={child.disabled}
+                        onChangeHandler={child.onChange}
+                        onChange={(e) => {
+                          if (typeof e === "string") {
+                            child.onChange?.(e);
+                          } else {
+                            const value: string = e.target.value;
+                            child.onChange?.(value);
+                          }
+                        }}
                       />
                     </div>
                   );
 
                 case "autocomplete":
                   return (
-                    <div key={childKey} className={`col-span-${colSpan}`}>
+                    <div key={childKey} className={getGridSpanClass(colSpan)}>
                       <AutoCompleteField
                         isLoading={child.isLoading}
                         name={child.name}
@@ -177,7 +262,6 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
                         value={child.value}
                         onChange={child.onChange}
                         autoSelectValue={child.autoSelectValue}
-
                       />
                     </div>
                   );
@@ -186,7 +270,9 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
                   return (
                     <div
                       key={childKey}
-                      className={`col-span-${colSpan} flex items-center`}
+                      className={`${getGridSpanClass(
+                        colSpan
+                      )} flex items-center`}
                     >
                       <CheckboxField
                         name={child.name}
@@ -203,10 +289,9 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
                   );
 
                 case "dateOfBirth": {
-                  // pull current hijri string so picker reflects form state
                   const currentHijri = watch(child.hijriFieldName);
                   return (
-                    <div key={childKey} className={`col-span-${colSpan}`}>
+                    <div key={childKey} className={getGridSpanClass(colSpan)}>
                       <DateOfBirthField
                         control={control}
                         setValue={setValue}
@@ -225,7 +310,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
 
                 case "readonly":
                   return (
-                    <div key={childKey} className={`col-span-${colSpan}`}>
+                    <div key={childKey} className={getGridSpanClass(colSpan)}>
                       <ReadOnlyField
                         isLoading={child.isLoading}
                         label={child.label}
@@ -237,7 +322,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
 
                 case "button":
                   return (
-                    <div key={childKey} className={`col-span-${colSpan}`}>
+                    <div key={childKey} className={getGridSpanClass(colSpan)}>
                       <Button
                         disabled={child.disabled}
                         type="button"
@@ -253,7 +338,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
 
                 case "custom":
                   return (
-                    <div key={childKey} className={`col-span-${colSpan}`}>
+                    <div key={childKey} className={getGridSpanClass(colSpan)}>
                       {child.component}
                     </div>
                   );

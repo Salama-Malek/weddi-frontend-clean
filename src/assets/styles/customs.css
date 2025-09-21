@@ -1,45 +1,59 @@
-/*#region This is my custom  css  :Dy Hassan Ali */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: auto auto auto;
+  grid-template-areas:
+    "card"
+    "asid"
+    "table";
+  gap: 1rem;
+}
 
+@media (min-width: 768px) {
+  .dashboard-grid {
+    gap: 1.25rem;
+  }
+}
 
- /*#region HearingContent Grid system*/
-
- .dashboard-grid {
-    display: grid;
-    grid-template-columns: 1fr; 
-    grid-template-rows: auto auto auto;
+@media (min-width: 980px) {
+  .dashboard-grid {
+    grid-template-columns: 3fr 1fr;
+    grid-template-rows: auto auto;
     grid-template-areas:
-      "card"
-      "asid"
-      "table";
+      "card asid"
+      "table asid";
     gap: 1.5rem;
   }
-  
-  @media (min-width: 980px) {
-    .dashboard-grid {
-      grid-template-columns: 4fr 1fr; 
-      grid-template-rows: auto auto auto;
-      grid-template-areas:
-        "card asid"
-        "table asid"
-        "null asid";
-    }
+}
+
+@media (min-width: 1200px) {
+  .dashboard-grid {
+    grid-template-columns: 2.5fr 1fr;
+    gap: 2rem;
   }
- /*#endregion HearingContent Grid system*/
+}
 
+@media (min-width: 1400px) {
+  .dashboard-grid {
+    grid-template-columns: 2fr 1fr;
+    gap: 2.5rem;
+  }
+}
 
+@media (max-width: 980px) {
+  .th-min-screen-width {
+    min-width: 10rem !important;
+  }
+}
 
- /*#region ReusableTable for min screen*/
+@media (max-width: 768px) {
+  .th-min-screen-width {
+    min-width: 8rem !important;
+  }
+}
 
- @media (max-width:980px) {
-     .th-min-screen-width{
-        min-width: 10rem !important;
-     }
- }
- /*#region ReusableTable for min screen */
-  
-
-
-
-
-
-/*#endregion This is my custom  css  :Dy Hassan Ali */
+@media (max-width: 480px) {
+  .th-min-screen-width {
+    min-width: 6rem !important;
+  }
+}

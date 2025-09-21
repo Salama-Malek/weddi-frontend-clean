@@ -1,5 +1,3 @@
-// Utility functions for form handling
-
 /**
  * Validates that a string contains only numbers
  * @param value - The string value to validate

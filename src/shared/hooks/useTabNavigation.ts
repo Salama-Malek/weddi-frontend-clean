@@ -1,4 +1,4 @@
-import { useTabs } from "@shared/components/tabs/TabsContext";
+import { useTabs } from "@/shared/components/tabs/TabsContext";
 
 export const useTabNavigation = (tabIds: string[], goToNextStep: () => void) => {
   const { activeTab, setActiveTab } = useTabs();

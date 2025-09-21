@@ -10,10 +10,9 @@ const __dirname = path.dirname(__filename);
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd());
 
-  const plugins = [react()];
-
-  if (mode !== 'test') {
-    plugins.push(
+  return {
+    plugins: [
+      react(),
       viteStaticCopy({
         targets: [
           {
@@ -25,12 +24,8 @@ export default defineConfig(({ mode }) => {
             dest: 'assets/fonts',
           },
         ],
-      })
-    );
-  }
-
-  return {
-    plugins,
+      }),
+    ],
     build: {
       outDir: 'dist',
       rollupOptions: {
@@ -51,14 +46,7 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: {
         '@': path.resolve(__dirname, 'src'),
-        '@app': path.resolve(__dirname, 'src/app'),
-        '@features': path.resolve(__dirname, 'src/features'),
-        '@shared': path.resolve(__dirname, 'src/shared'),
-        '@services': path.resolve(__dirname, 'src/services'),
       },
     },
-    test: {
-      environment: 'happy-dom'
-    }
   };
 });

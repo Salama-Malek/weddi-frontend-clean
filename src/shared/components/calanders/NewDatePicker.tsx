@@ -3,9 +3,9 @@ import { Control, Controller } from "react-hook-form";
 import DatePicker, { DateObject } from "react-multi-date-picker";
 import hijriCalendar from "react-date-object/calendars/arabic";
 import hijriLocale from "react-date-object/locales/arabic_en";
-import { FieldWrapper } from "@shared/components/form";
+import { FieldWrapper } from "@/shared/components/form";
 import { Calculator01Icon } from "hugeicons-react";
-import { FormData } from "@shared/components/form/form.types";
+import { FormData } from "@/shared/components/form/form.types";
 import { useTranslation } from "react-i18next";
 
 interface NewDatePickerProps {
@@ -16,7 +16,7 @@ interface NewDatePickerProps {
   notRequired?: boolean;
   type?: "contract-start" | "contract-end" | "dob" | "last-working-date";
   invalidFeedback?: string;
-  isDateOfBirth?: boolean; // New prop to identify date of birth fields
+  isDateOfBirth?: boolean;
 }
 
 export const NewDatePicker: React.FC<NewDatePickerProps> = ({
@@ -25,16 +25,14 @@ export const NewDatePicker: React.FC<NewDatePickerProps> = ({
   label,
   rules,
   notRequired,
-  type = "contract-start",
   invalidFeedback,
-  isDateOfBirth = false, // Default to false
+  isDateOfBirth = false,
 }) => {
-  const { t } = useTranslation('hearingdetails');
+  const { t } = useTranslation("hearingdetails");
 
-  // Function to validate if date is not in the future (for date of birth fields)
   const validateFutureDate = (value: string) => {
     if (!isDateOfBirth || !value || value.length !== 8) return true;
-    
+
     try {
       const date = new DateObject({
         date: `${value.slice(0, 4)}/${value.slice(4, 6)}/${value.slice(6)}`,
@@ -42,54 +40,49 @@ export const NewDatePicker: React.FC<NewDatePickerProps> = ({
         locale: hijriLocale,
         format: "YYYY/MM/DD",
       });
-      
+
       const today = new DateObject({
         calendar: hijriCalendar,
         locale: hijriLocale,
       });
-      
-      // Compare dates
+
       if (date.toDate() > today.toDate()) {
         return t("futureDateValidation");
       }
-      
+
       return true;
     } catch (error) {
-      return true; // If there's an error parsing the date, let other validations handle it
+      return true;
     }
   };
 
-  // Function to validate date format and range
   const validateDateFormat = (value: string) => {
     if (!value) return true;
-    
-    // Check if it's in YYYYMMDD format (8 digits)
+
     if (value.length !== 8 || !/^\d{8}$/.test(value)) {
       return t("dateFormatValidation");
     }
-    
+
     const year = parseInt(value.substring(0, 4));
     const month = parseInt(value.substring(4, 6));
     const day = parseInt(value.substring(6, 8));
-    
-    // Validate year range (reasonable Hijri years: 1300-1500)
+
     if (year < 1300 || year > 1500) {
       return t("yearRangeValidation");
     }
-    
-    // Validate month range
+
     if (month < 1 || month > 12) {
       return t("monthRangeValidation");
     }
-    
-    // Validate day range (basic check, actual days per month vary in Hijri calendar)
+
     if (day < 1 || day > 30) {
       return t("dayRangeValidation");
     }
-    
-    // Try to create a valid date object
+
     try {
-      const dateStr = `${year}/${month.toString().padStart(2, '0')}/${day.toString().padStart(2, '0')}`;
+      const dateStr = `${year}/${month.toString().padStart(2, "0")}/${day
+        .toString()
+        .padStart(2, "0")}`;
       new DateObject({
         date: dateStr,
         calendar: hijriCalendar,
@@ -99,11 +92,10 @@ export const NewDatePicker: React.FC<NewDatePickerProps> = ({
     } catch (error) {
       return t("invalidDateValidation");
     }
-    
+
     return true;
   };
 
-  // Enhanced rules with comprehensive validation
   const enhancedRules = {
     ...rules,
     validate: {
@@ -113,20 +105,22 @@ export const NewDatePicker: React.FC<NewDatePickerProps> = ({
     },
   };
 
-  const handleDateChange = (date: DateObject | DateObject[] | null, onChange: (value: string) => void) => {
+  const handleDateChange = (
+    date: DateObject | DateObject[] | null,
+    onChange: (value: string) => void
+  ) => {
     if (!date || Array.isArray(date)) {
       onChange("");
       return;
     }
 
     const hijri = date.format("YYYY/MM/DD");
-    // Convert to YYYYMMDD format for storage
-    const hijriStorage = hijri.replace(/\//g, '');
-    
+
+    const hijriStorage = hijri.replace(/\//g, "");
+
     onChange(hijriStorage);
   };
 
-  // Get today's date in Hijri calendar for maxDate prop
   const today = new DateObject({
     calendar: hijriCalendar,
     locale: hijriLocale,
@@ -139,14 +133,18 @@ export const NewDatePicker: React.FC<NewDatePickerProps> = ({
       control={control}
       rules={enhancedRules}
       render={({ field: { onChange, value }, fieldState: { error } }) => (
-        <FieldWrapper label={label} invalidFeedback={error?.message || invalidFeedback} notRequired={notRequired}>
+        <FieldWrapper
+          label={label}
+          invalidFeedback={error?.message || invalidFeedback}
+          notRequired={notRequired}
+        >
           <div className="relative">
             <DatePicker
               placeholder="YYYY/MM/DD"
               calendar={hijriCalendar}
               locale={hijriLocale}
               format="YYYY/MM/DD"
-              maxDate={isDateOfBirth ? today : undefined} // Prevent future dates for DOB fields
+              maxDate={isDateOfBirth ? today : undefined}
               value={
                 value && /^\d{4}\/\d{2}\/\d{2}$/.test(value)
                   ? new DateObject({

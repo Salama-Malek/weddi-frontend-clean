@@ -1,7 +1,7 @@
 import { forwardRef, useId } from "react";
 import { FieldWrapper } from "./FieldWrapper";
 import { Tick02Icon } from "hugeicons-react";
-import { classes } from "@shared/lib/clsx";
+import { classes } from "@/shared/lib/clsx";
 import { Controller, useFormContext } from "react-hook-form";
 
 export type CheckboxFieldProps = {
@@ -58,14 +58,21 @@ export const CheckboxField = forwardRef<HTMLInputElement, CheckboxFieldProps>(
         defaultValue={defaultValue}
         render={({ field, fieldState }) => {
           const isControlled = propChecked !== undefined;
-          const checked = isControlled ? propChecked : field.value;
-          const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+          const checked = isControlled ? !!propChecked : !!field.value;
+
+          const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
             const newValue = e.target.checked;
             field.onChange(newValue);
             if (propOnChange) {
               propOnChange(newValue);
             }
           };
+
+          const {
+            value: _omitValue,
+            defaultValue: _omitDefaultValue,
+            ...safeRest
+          } = (rest || {}) as any;
 
           return (
             <FieldWrapper
@@ -78,7 +85,8 @@ export const CheckboxField = forwardRef<HTMLInputElement, CheckboxFieldProps>(
               <div className={`${className} flex items-center gap-4`}>
                 <div className="relative">
                   <input
-                    {...field}
+                    name={field.name}
+                    onBlur={field.onBlur}
                     ref={(e) => {
                       field.ref(e);
                       if (typeof ref === "function") ref(e);
@@ -87,10 +95,10 @@ export const CheckboxField = forwardRef<HTMLInputElement, CheckboxFieldProps>(
                     id={inputId}
                     type="checkbox"
                     checked={checked}
-                    onChange={onChange}
+                    onChange={handleChange}
                     disabled={disabled}
                     className="hidden"
-                    {...rest}
+                    {...safeRest}
                   />
                   <div
                     className={classes(
@@ -100,7 +108,10 @@ export const CheckboxField = forwardRef<HTMLInputElement, CheckboxFieldProps>(
                         : "bg-white border-gray-400",
                       disabled && "opacity-50 cursor-not-allowed"
                     )}
-                    onClick={() => !disabled && onChange({ target: { checked: !checked } } as any)}
+                    onClick={() =>
+                      !disabled &&
+                      handleChange({ target: { checked: !checked } } as any)
+                    }
                   >
                     {checked && (
                       <Tick02Icon color="white" strokeWidth={3} size={16} />

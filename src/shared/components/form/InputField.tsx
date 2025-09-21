@@ -1,8 +1,8 @@
 import { forwardRef, useId, useState, useEffect } from "react";
 import { FieldWrapper } from "./FieldWrapper";
-import { useDebouncedCallback } from "@shared/hooks/use-debounced-callback";
+import { useDebouncedCallback } from "@/shared/hooks/use-debounced-callback";
 import { Controller } from "react-hook-form";
-import { classes } from "@shared/lib/clsx";
+import { classes } from "@/shared/lib/clsx";
 import { useTranslation } from "react-i18next";
 
 type InputOrTextareaProps = React.InputHTMLAttributes<HTMLInputElement> &
@@ -11,7 +11,10 @@ type InputOrTextareaProps = React.InputHTMLAttributes<HTMLInputElement> &
 export type InputFieldProps = InputOrTextareaProps & {
   name?: string;
   value?: string;
-  onChange?: (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
+  onChange?: (
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => void;
+  onChangeHandler?: (value: string) => void;
   onBlur?: () => void;
   type?: string;
   id?: string;
@@ -26,10 +29,13 @@ export type InputFieldProps = InputOrTextareaProps & {
   control?: any;
   rules?: any;
   defaultValue?: string;
-  preventEnterSubmit?: boolean; // New prop to control Enter key behavior
+  preventEnterSubmit?: boolean;
 };
 
-export const InputField = forwardRef<HTMLInputElement | HTMLTextAreaElement, InputFieldProps>(
+export const InputField = forwardRef<
+  HTMLInputElement | HTMLTextAreaElement,
+  InputFieldProps
+>(
   (
     {
       isSearch = false,
@@ -48,7 +54,8 @@ export const InputField = forwardRef<HTMLInputElement | HTMLTextAreaElement, Inp
       name,
       rules,
       defaultValue = "",
-      preventEnterSubmit = true, // Default to preventing Enter submission
+      preventEnterSubmit = true,
+      onChangeHandler,
       ...inputProps
     },
     ref
@@ -61,13 +68,12 @@ export const InputField = forwardRef<HTMLInputElement | HTMLTextAreaElement, Inp
     const errorMessage = invalidFeedback?.message || invalidFeedback;
     const hasError = !!errorMessage;
 
-    // Sync with external value
     useEffect(() => {
       setInputValue(propValue);
     }, [propValue]);
 
-    // RTL placeholder alignment for Arabic
-    const placeholderStyle = i18n.language === "ar" ? { textAlign: "right" } : {};
+    const placeholderStyle =
+      i18n.language === "ar" ? { textAlign: "right" } : {};
 
     const commonProps: Record<string, unknown> = {
       id,
@@ -86,25 +92,27 @@ export const InputField = forwardRef<HTMLInputElement | HTMLTextAreaElement, Inp
       ...inputProps,
     };
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const handleChange = (
+      e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    ) => {
       setInputValue(e.target.value);
       onChange?.(e);
+      onChangeHandler?.(e.target.value);
     };
-    
+
     const handleBlur = () => {
       onBlur?.();
     };
 
-    // Handle keyboard events to prevent unwanted form submissions
-    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-      // Prevent Enter key from submitting forms unless explicitly allowed
+    const handleKeyDown = (
+      e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>
+    ) => {
       if (preventEnterSubmit && e.key === "Enter") {
         e.preventDefault();
         e.stopPropagation();
         return;
       }
 
-      // Call the original onKeyDown if provided
       if (inputProps.onKeyDown) {
         inputProps.onKeyDown(e as React.KeyboardEvent<HTMLInputElement>);
       }
@@ -123,7 +131,12 @@ export const InputField = forwardRef<HTMLInputElement | HTMLTextAreaElement, Inp
       debouncedOnChange(e);
     };
 
-    const renderInput = (field?: { value?: string; onChange?: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void }) => {
+    const renderInput = (field?: {
+      value?: string;
+      onChange?: (
+        e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+      ) => void;
+    }) => {
       const valueToUse = field?.value ?? inputValue;
       const inputOnChange = field?.onChange ?? handleChange;
 
@@ -141,6 +154,7 @@ export const InputField = forwardRef<HTMLInputElement | HTMLTextAreaElement, Inp
             value={valueToUse}
             onChange={inputOnChange}
             onKeyDown={handleKeyDown}
+            title=""
           />
         );
       }
@@ -155,6 +169,7 @@ export const InputField = forwardRef<HTMLInputElement | HTMLTextAreaElement, Inp
             onChange={handleSearchChange}
             onBlur={handleBlur}
             onKeyDown={handleKeyDown}
+            title=""
           />
         );
       }
@@ -170,6 +185,7 @@ export const InputField = forwardRef<HTMLInputElement | HTMLTextAreaElement, Inp
           onChange={inputOnChange}
           onBlur={handleBlur}
           onKeyDown={handleKeyDown}
+          title=""
         />
       );
     };
@@ -188,7 +204,16 @@ export const InputField = forwardRef<HTMLInputElement | HTMLTextAreaElement, Inp
               label={label}
               invalidFeedback={fieldState.error?.message || errorMessage}
             >
-              {renderInput(field)}
+              {renderInput({
+                ...field,
+                onChange: (
+                  e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+                ) => {
+                  field.onChange(e);
+
+                  onChange?.(e);
+                },
+              })}
             </FieldWrapper>
           )}
         />
@@ -210,68 +235,86 @@ export const InputField = forwardRef<HTMLInputElement | HTMLTextAreaElement, Inp
 
 InputField.displayName = "InputField";
 
-// --- DigitOnlyInput: reusable input for digits only (max 9) ---
 import React from "react";
 
-export const DigitOnlyInput = React.forwardRef<HTMLInputElement, InputFieldProps>(
-  (props, ref) => {
-    const {
-      maxLength = 9,
-      onChange,
-      onKeyDown,
-      onPaste,
-      onBlur,
-      value,
-      ...rest
-    } = props;
+export const DigitOnlyInput = React.forwardRef<
+  HTMLInputElement,
+  InputFieldProps
+>((props, ref) => {
+  const {
+    maxLength = 9,
+    onChange,
+    onKeyDown,
+    onPaste,
+    onBlur,
+    value,
+    ...rest
+  } = props;
 
-    // Handler to allow only digits and max 9 (for input only)
-    const handleChangeUniversal: React.ChangeEventHandler<HTMLInputElement | HTMLTextAreaElement> = (e) => {
-      if (e.target instanceof HTMLInputElement) {
-        const digitsOnly = e.target.value.replace(/\D/g, "").slice(0, maxLength);
-        if (onChange) {
-          const inputEvent: React.ChangeEvent<HTMLInputElement> = e as React.ChangeEvent<HTMLInputElement>;
-          onChange({ ...inputEvent, target: { ...inputEvent.target, value: digitsOnly } });
-        }
-      } else if (onChange) {
-        onChange(e as React.ChangeEvent<HTMLTextAreaElement>);
+  const handleChangeUniversal: React.ChangeEventHandler<
+    HTMLInputElement | HTMLTextAreaElement
+  > = (e) => {
+    if (e.target instanceof HTMLInputElement) {
+      const digitsOnly = e.target.value.replace(/\D/g, "").slice(0, maxLength);
+      if (onChange) {
+        const inputEvent: React.ChangeEvent<HTMLInputElement> =
+          e as React.ChangeEvent<HTMLInputElement>;
+        onChange({
+          ...inputEvent,
+          target: { ...inputEvent.target, value: digitsOnly },
+        });
       }
-    };
+    } else if (onChange) {
+      onChange(e as React.ChangeEvent<HTMLTextAreaElement>);
+    }
+  };
 
-    const handleKeyDownUniversal: React.KeyboardEventHandler<HTMLInputElement | HTMLTextAreaElement> = (e) => {
-      if (e.target instanceof HTMLInputElement) {
-        const allowedKeys = ["Backspace", "Delete", "Tab", "ArrowLeft", "ArrowRight"];
-        // Allow Ctrl+V (Windows/Linux) and Cmd+V (Mac) for paste
-        if (
-          (!/^\d$/.test(e.key) && !allowedKeys.includes(e.key)) &&
-          !(e.ctrlKey && (e.key === "v" || e.key === "V")) &&
-          !(e.metaKey && (e.key === "v" || e.key === "V"))
-        ) {
-          e.preventDefault();
-        }
-        if (onKeyDown) {
-          onKeyDown(e as React.KeyboardEvent<HTMLInputElement>);
-        }
-      } else if (onKeyDown) {
-        onKeyDown(e as React.KeyboardEvent<HTMLTextAreaElement>);
+  const handleKeyDownUniversal: React.KeyboardEventHandler<
+    HTMLInputElement | HTMLTextAreaElement
+  > = (e) => {
+    if (e.target instanceof HTMLInputElement) {
+      const allowedKeys = [
+        "Backspace",
+        "Delete",
+        "Tab",
+        "ArrowLeft",
+        "ArrowRight",
+      ];
+
+      if (
+        !/^\d$/.test(e.key) &&
+        !allowedKeys.includes(e.key) &&
+        !(e.ctrlKey && (e.key === "v" || e.key === "V")) &&
+        !(e.metaKey && (e.key === "v" || e.key === "V"))
+      ) {
+        e.preventDefault();
       }
-    };
+      if (onKeyDown) {
+        onKeyDown(e as React.KeyboardEvent<HTMLInputElement>);
+      }
+    } else if (onKeyDown) {
+      onKeyDown(e as React.KeyboardEvent<HTMLTextAreaElement>);
+    }
+  };
 
-    return (
-      <InputField
-        {...rest}
-        ref={ref}
-        type="tel"
-        inputMode="numeric"
-        pattern="[0-9]*"
-        maxLength={maxLength}
-        value={typeof value === "string" ? value.replace(/\D/g, "").slice(0, maxLength) : value}
-        onChange={handleChangeUniversal}
-        onKeyDown={handleKeyDownUniversal}
-        onPaste={onPaste}
-        onBlur={onBlur}
-      />
-    );
-  }
-);
+  return (
+    <InputField
+      {...rest}
+      ref={ref}
+      type="tel"
+      inputMode="numeric"
+      pattern="[0-9]*"
+      maxLength={maxLength}
+      value={
+        typeof value === "string"
+          ? value.replace(/\D/g, "").slice(0, maxLength)
+          : value
+      }
+      onChange={handleChangeUniversal}
+      onKeyDown={handleKeyDownUniversal}
+      onPaste={onPaste}
+      onBlur={onBlur}
+    />
+  );
+});
 DigitOnlyInput.displayName = "DigitOnlyInput";

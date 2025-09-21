@@ -10,6 +10,7 @@ export interface ApiResponseWithErrors {
   ErrorDetails?: ApiErrorItem[];
   SuccessCode?: string;
   ServiceStatus?: string;
+  errors?: Array<{ ID: string; message: string }>; 
   [key: string]: any;
 }
 
@@ -17,12 +18,13 @@ export const SPECIAL_ERROR_CODES = {
   TOKEN_EXPIRED: 'ERR001',
   SESSION_EXPIRED: 'ERR002',
   UNAUTHORIZED: 'ERR003',
+  INVALID_TOKEN: 'invalid_token', 
 } as const;
 
 export const SUPPRESSED_ERROR_CODES = [
   "ERR001", "ERR002", "ER3103", "ER3104", "ER1032", "ER1033", "ER1034", "ER1035",
   "ER1037", "ER1036", "ER1038", "ER1040", "ER1039", "ER1069", "ER1070", "ER1071",
-  "ER1072", "ER1073", "ER1074", "ER1076", "ER1077", "ER4020", "ER4021", "ER4023",
+  "ER1072", "ER1073", "ER1074", "ER1076", "ER1077", "ER4020", "ER4021",
   "ER4024", "ER4025", "ER4026", "ER4027", "ER1144", "ER4028", "ER1016", "ER4029",
   "ER4030", "ER4032", "ER4033", "ER4034", "ER1058", "ER4035", "ER4036", "ER4037",
   "ER4039", "ER4040", "ER1089", "ER1091", "ER1116", "ER1119", "ER1122", "ER1124",
@@ -95,6 +97,18 @@ export function extractApiErrors(response: ApiResponseWithErrors): ApiErrorItem[
     ));
   }
 
+  
+  if (response?.errors && Array.isArray(response.errors)) {
+    errors.push(...response.errors.map(error => ({
+      ErrorCode: error.ID || "",
+      ErrorDesc: error.message || ""
+    })).filter(error =>
+      error &&
+      (error.ErrorCode || error.ErrorDesc) &&
+      !(error.ErrorCode === "" && error.ErrorDesc === "")
+    ));
+  }
+
   return errors;
 }
 
@@ -119,7 +133,7 @@ export function handleApiErrors(
     return;
   }
 
-  // Deduplicate error messages by ErrorDesc (and ErrorCode for safety)
+  
   const shownMessages = new Set<string>();
   errors.forEach((error) => {
     const { ErrorCode, ErrorDesc } = error;
@@ -127,9 +141,16 @@ export function handleApiErrors(
     const isSuppressed = SUPPRESSED_ERROR_CODES.includes(ErrorCode as any) ||
       suppressErrorCodes.includes(ErrorCode);
 
-    if (ErrorCode === SPECIAL_ERROR_CODES.TOKEN_EXPIRED && redirectOnTokenExpired) {
+    
+    if ((ErrorCode === SPECIAL_ERROR_CODES.TOKEN_EXPIRED || ErrorCode === SPECIAL_ERROR_CODES.INVALID_TOKEN) && redirectOnTokenExpired) {
+      
+      
+      if (ErrorCode === SPECIAL_ERROR_CODES.INVALID_TOKEN) {
+        return; 
+      }
+      
+      
       if (showToasts && !isSuppressed && !shownMessages.has("TOKEN_EXPIRED")) {
-        console.log("[handleApiErrors] Showing toast for TOKEN_EXPIRED");
         toast.error("The Token Is Expired");
         shownMessages.add("TOKEN_EXPIRED");
       }
@@ -146,7 +167,6 @@ export function handleApiErrors(
     const errorMessage = customErrorMessages[ErrorCode] || ErrorDesc;
     const dedupKey = (errorMessage || "") + "::" + (ErrorCode || "");
     if (errorMessage && showToasts && !isSuppressed && !shownMessages.has(dedupKey)) {
-      console.log(`[handleApiErrors] Showing toast for error:`, { errorMessage, ErrorCode });
       toast.error(errorMessage);
       shownMessages.add(dedupKey);
     }
@@ -176,6 +196,14 @@ export function createErrorResponse(
     }],
     ...additionalData
   };
+}
+
+export function hasInvalidTokenError(response: ApiResponseWithErrors): boolean {
+  const errors = extractApiErrors(response);
+ 
+  const hasInvalidToken = errors.some(error => error.ErrorCode === SPECIAL_ERROR_CODES.INVALID_TOKEN);
+  
+  return hasInvalidToken;
 }
 
 export function handleApiResponse(
