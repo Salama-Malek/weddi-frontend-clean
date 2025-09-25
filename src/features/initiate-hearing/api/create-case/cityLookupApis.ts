@@ -32,4 +32,4 @@ export const cityLookupApi = api.injectEndpoints({
   }),
 });
 
-export const { useGetCityLookupQuery } = cityLookupApi; 
+export const { useGetCityLookupQuery } = cityLookupApi;

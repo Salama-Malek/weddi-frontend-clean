@@ -230,8 +230,6 @@ const EstablishmentSectionOrderAsDef: SectionOrder = {
   },
 };
 
-
-
 const embasyAsAgentVsGovSectionOrder: SectionOrder = {
   agent: {
     title: "AgentInformation",
@@ -449,8 +447,6 @@ const plaintiffAsWorkerFelids = () => ({
   },
 });
 
-
-
 const plaintiffAsAgentWorkerFelids = () => ({
   plaintiff: {
     title: "plaintiff_details",
@@ -602,7 +598,6 @@ const WorkerViewAsAgentVsGovernment: SectionOrder = {
   ...workDetailsFelids("Plaintiff"),
 };
 
-
 const EstablishmentViewAsPalintiff: SectionOrder = {
   ...plaintiffAsEstablishmentFelids(),
   ...defendentAsWorkerFelids(),
@@ -633,60 +628,45 @@ const filterAndOrderData = (data: any, userType?: string, t?: any) => {
     }
   }
   if (userType?.toLowerCase() === "embassy user") {
-
-    if (data["RepresentativeType_Code"] && data["RepresentativeType_Code"] === "Legal representative") {
-
-      selected_Section = LegelRepViewAsPalintiff
-    }
-    else if (data["ApplicantType_Code"] === "Establishment") {
-
+    if (
+      data["RepresentativeType_Code"] &&
+      data["RepresentativeType_Code"] === "Legal representative"
+    ) {
+      selected_Section = LegelRepViewAsPalintiff;
+    } else if (data["ApplicantType_Code"] === "Establishment") {
       selected_Section = EstablishmentViewAsPalintiff;
     } else if (data["PlaintiffType_Code"].toLowerCase() === "agent") {
-
       if (data["DefendantType_Code"] === "Government") {
-
         selected_Section = embasyAsAgentVsGovSectionOrder;
       } else {
-
         selected_Section = embasyAsAgentVsEstSectionOrder;
       }
     } else {
-
       if (data["DefendantType_Code"] === "Government") {
-
         selected_Section = embasyAsSelfVsGovSectionOrder;
       } else {
-
         selected_Section = embasyAsSelfVsEstSectionOrder;
       }
     }
   }
   if (userType?.toLowerCase() === "worker") {
-    if (data["RepresentativeType_Code"] && data["RepresentativeType_Code"].toLowerCase() === "legal representative") {
-
-      selected_Section = LegelRepViewAsPalintiff
-    }
-    else if (data["ApplicantType_Code"].toLowerCase() === "establishment") {
-
+    if (
+      data["RepresentativeType_Code"] &&
+      data["RepresentativeType_Code"].toLowerCase() === "legal representative"
+    ) {
+      selected_Section = LegelRepViewAsPalintiff;
+    } else if (data["ApplicantType_Code"].toLowerCase() === "establishment") {
       selected_Section = EstablishmentViewAsPalintiff;
     } else if (data["PlaintiffType_Code"].toLowerCase() === "agent") {
-
       if (data["DefendantType_Code"] === "Government") {
-
         selected_Section = WorkerViewAsAgentVsGovernment;
       } else {
         selected_Section = WorkerViewAsAgentVsEstablishemtn;
-       
-
       }
     } else {
       if (data["DefendantType_Code"] === "Government") {
-       
-
         selected_Section = WorkerViewAsPalintiffVsGovernment;
       } else {
-       
-
         selected_Section = WorkerViewAsPalintiffVsEstablishemtn;
       }
     }
@@ -724,7 +704,7 @@ const filterAndOrderData = (data: any, userType?: string, t?: any) => {
         title: section.title,
         fields: filteredFields,
       };
-    }
+    },
   );
 
   return orderedSections;
@@ -745,7 +725,7 @@ const DataDetails: React.FC<DataDetailsProps> = ({ hearing }) => {
 
   const renderSection = (title: string, fields: [string, any][]) => {
     const filter_include_Data = fields.filter(
-      (item) => !item[0].toLowerCase().includes("code") && item
+      (item) => !item[0].toLowerCase().includes("code") && item,
     );
     const filter_format_date = filter_include_Data.filter((item) => {
       if (
@@ -788,8 +768,8 @@ const DataDetails: React.FC<DataDetailsProps> = ({ hearing }) => {
   const defendantFields = filterFields("defendant");
   const workFields = entries?.filter(([key]) =>
     ["contract", "salary", "stillworking"].some((prefix) =>
-      key.toLowerCase().includes(prefix)
-    )
+      key.toLowerCase().includes(prefix),
+    ),
   );
   const workLocationFields = entries?.filter(
     ([key]) =>
@@ -797,12 +777,12 @@ const DataDetails: React.FC<DataDetailsProps> = ({ hearing }) => {
       key === "PlaintiffJobCity" ||
       key === "Defendant_JobLocation" ||
       key === "DefendantJobCity" ||
-      key === "OfficeName"
+      key === "OfficeName",
   );
   const representativeFields = entries.filter(
     ([key]) =>
       key.toLowerCase().startsWith("rep") ||
-      key.toLowerCase().startsWith("representative")
+      key.toLowerCase().startsWith("representative"),
   );
 
   const additionalRepFields = (
@@ -820,8 +800,6 @@ const DataDetails: React.FC<DataDetailsProps> = ({ hearing }) => {
   ]);
   const mergedRepFields: [string, any][] = Array.from(mergedRepMap.entries());
 
-
-
   return (
     <div className="space-y-6">
       {userType?.toLowerCase() === "legal representative" ||
@@ -832,28 +810,28 @@ const DataDetails: React.FC<DataDetailsProps> = ({ hearing }) => {
         newCaseDetailsView?.map((item) =>
           item?.fields
             ? renderSection(t(`${item?.title}`), item?.fields as any[])
-            : null
+            : null,
         )
       ) : (
         <>
           {renderSection(
             t("plaintiff_details") || "Plaintiff's Details",
-            plaintiffFields
+            plaintiffFields,
           )}
           {isGovernmentUser &&
             mergedRepFields.length > 0 &&
             renderSection(
               t("representative_details") || "Legal Representative's Details",
-              mergedRepFields
+              mergedRepFields,
             )}
           {renderSection(
             t("defendant_details") || "Defendant Details",
-            defendantFields
+            defendantFields,
           )}
           {renderSection(t("work_details") || "Work Details", workFields)}
           {renderSection(
             t("work_location_details") || "Work Location Details",
-            workLocationFields
+            workLocationFields,
           )}
         </>
       )}

@@ -16,26 +16,26 @@ type ProviderProps = {
 
 export const AppProvider: React.FC<ProviderProps> = ({ children }) => {
   return (
-          <Provider store={store}>
-    <Suspense fallback={<></>}>
-      <UserTypeProvider>
-        <DateProvider>
-          <ErrorBoundary
-            //@ts-ignore
-            FallbackComponent={MainErrorFallback}
-            onReset={() => window.location.reload()}
-          >
-            <LanguageDirectionProvider>
-              <FormProvider>
-                <CookiesProvider>
+    <Provider store={store}>
+      <Suspense fallback={<></>}>
+        <UserTypeProvider>
+          <DateProvider>
+            <ErrorBoundary
+              //@ts-ignore
+              FallbackComponent={MainErrorFallback}
+              onReset={() => window.location.reload()}
+            >
+              <LanguageDirectionProvider>
+                <FormProvider>
+                  <CookiesProvider>
                     <TabsProvider>{children}</TabsProvider>
-                </CookiesProvider>
-              </FormProvider>
-            </LanguageDirectionProvider>
-          </ErrorBoundary>
-        </DateProvider>
-      </UserTypeProvider>
-    </Suspense>
-                  </Provider>
+                  </CookiesProvider>
+                </FormProvider>
+              </LanguageDirectionProvider>
+            </ErrorBoundary>
+          </DateProvider>
+        </UserTypeProvider>
+      </Suspense>
+    </Provider>
   );
 };

@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback } from "react";
 
 interface ResetConfig {
   field: string;
@@ -9,102 +9,101 @@ interface ResetConfig {
 export const useFormReset = (setValue: any, clearErrors?: any) => {
   const fieldDependencies: Record<string, ResetConfig> = {
     mainCategory: {
-      field: 'mainCategory',
+      field: "mainCategory",
       dependentFields: [
-        'subCategory',
-        'acknowledged',
-        'regulatoryText',
-        'showLegalSection',
-        'showTopicData'
+        "subCategory",
+        "acknowledged",
+        "regulatoryText",
+        "showLegalSection",
+        "showTopicData",
       ],
-      resetValue: null
+      resetValue: null,
     },
     claimantStatus: {
-      field: 'claimantStatus',
+      field: "claimantStatus",
       dependentFields: [
-        'userName',
-        'region',
-        'city',
-        'occupation',
-        'gender',
-        'nationality',
-        'hijriDate',
-        'gregorianDate',
-        'applicant',
-        'phoneNumber'
+        "userName",
+        "region",
+        "city",
+        "occupation",
+        "gender",
+        "nationality",
+        "hijriDate",
+        "gregorianDate",
+        "applicant",
+        "phoneNumber",
       ],
-      resetValue: ''
+      resetValue: "",
     },
     nationalId: {
-      field: 'nationalId',
+      field: "nationalId",
       dependentFields: [
-        'DefendantsEstablishmentPrisonerName',
-        'mobileNumber',
-        'region',
-        'city',
-        'occupation',
-        'gender',
-        'nationality',
-        'DefendantsEstablishmentPrisonerId'
+        "DefendantsEstablishmentPrisonerName",
+        "mobileNumber",
+        "region",
+        "city",
+        "occupation",
+        "gender",
+        "nationality",
+        "DefendantsEstablishmentPrisonerId",
       ],
-      resetValue: ''
+      resetValue: "",
     },
     typeOfRequest: {
-      field: 'typeOfRequest',
+      field: "typeOfRequest",
       dependentFields: [
-        'requiredDegreeOfInsurance',
-        'currentInsuranceLevel',
-        'theReason'
+        "requiredDegreeOfInsurance",
+        "currentInsuranceLevel",
+        "theReason",
       ],
-      resetValue: null
+      resetValue: null,
     },
     commissionType: {
-      field: 'commissionType',
-      dependentFields: [
-        'otherCommission'
-      ],
-      resetValue: null
+      field: "commissionType",
+      dependentFields: ["otherCommission"],
+      resetValue: null,
     },
     main_category_of_the_government_entity: {
-      field: 'main_category_of_the_government_entity',
-      dependentFields: [
-        'subcategory_of_the_government_entity'
-      ],
-      resetValue: null
+      field: "main_category_of_the_government_entity",
+      dependentFields: ["subcategory_of_the_government_entity"],
+      resetValue: null,
     },
     region: {
-      field: 'region',
-      dependentFields: [
-        'city',
-        'laborOffice'
-      ],
-      resetValue: null
-    }
+      field: "region",
+      dependentFields: ["city", "laborOffice"],
+      resetValue: null,
+    },
   };
 
-  const resetField = useCallback((fieldName: string) => {
-    const config = fieldDependencies[fieldName];
-    if (config) {
-      setValue(config.field, config.resetValue);
-      config.dependentFields.forEach(depField => {
-        setValue(depField, config.resetValue);
-      });
-      clearErrors?.();
-    }
-  }, [setValue, clearErrors]);
+  const resetField = useCallback(
+    (fieldName: string) => {
+      const config = fieldDependencies[fieldName];
+      if (config) {
+        setValue(config.field, config.resetValue);
+        config.dependentFields.forEach((depField) => {
+          setValue(depField, config.resetValue);
+        });
+        clearErrors?.();
+      }
+    },
+    [setValue, clearErrors],
+  );
 
-  const resetFields = useCallback((fields: string[]) => {
-    fields.forEach(field => resetField(field));
-  }, [resetField]);
+  const resetFields = useCallback(
+    (fields: string[]) => {
+      fields.forEach((field) => resetField(field));
+    },
+    [resetField],
+  );
 
   const resetAll = useCallback(() => {
-    Object.keys(fieldDependencies).forEach(field => resetField(field));
+    Object.keys(fieldDependencies).forEach((field) => resetField(field));
   }, [resetField]);
 
   return {
     resetField,
     resetFields,
     resetAll,
-    fieldDependencies
+    fieldDependencies,
   };
-}; 
+};

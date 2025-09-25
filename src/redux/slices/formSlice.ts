@@ -1,4 +1,4 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 interface FormState<T> {
   formData: Partial<T>;
@@ -9,17 +9,18 @@ const initialState: FormState<any> = {
 };
 
 const formSlice = createSlice({
-  name: 'form',
+  name: "form",
   initialState,
   reducers: {
-    setFormData: <T>(state: FormState<T>, action: PayloadAction<Partial<T>>) => {
+    setFormData: <T>(
+      state: FormState<T>,
+      action: PayloadAction<Partial<T>>,
+    ) => {
       state.formData = action.payload;
     },
   },
 });
 
-export const {
-  setFormData,
-} = formSlice.actions;
+export const { setFormData } = formSlice.actions;
 
 export default formSlice.reducer;

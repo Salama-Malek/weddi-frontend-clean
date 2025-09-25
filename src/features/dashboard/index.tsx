@@ -15,7 +15,6 @@ const Main = () => {
   const [getCookie] = useCookieState({});
   const { clearCaseData } = useClearCaseData();
 
-  
   useEffect(() => {
     clearCaseData();
   }, []);
@@ -25,18 +24,12 @@ const Main = () => {
 
     setLegelRepState,
     setEstablishmentState,
-    setUserType
+    setUserType,
   } = useUser();
-
-
-
-
 
   const popupHandler = () => {
     const selectedUserType = getCookie("selectedUserType");
 
-
-    
     if (selectedUserType === "Legal representative") {
       setShowInfoBanner(true);
       setLegelRepState(true);
@@ -45,9 +38,6 @@ const Main = () => {
       setLegelRepState(false);
     }
   };
-
-
-
 
   const handleCloseInfoBanner = () => {
     setShowInfoBanner(false);

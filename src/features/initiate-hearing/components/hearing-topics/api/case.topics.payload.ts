@@ -2,17 +2,17 @@ import { Option } from "@/shared/components/form/form.types";
 import { formatDateToYYYYMMDD } from "@/shared/utils/dateUtils";
 
 interface getPayloadBySubTopicIDInterface {
-  caseTopics: any[],
-  lastAction: "Save" | "Next",
-  caseId: string
-  subCategory?: Option,
+  caseTopics: any[];
+  lastAction: "Save" | "Next";
+  caseId: string;
+  subCategory?: Option;
 }
 
 export function getPayloadBySubTopicID({
   caseTopics,
   lastAction = "Next",
-  caseId }: getPayloadBySubTopicIDInterface
-) {
+  caseId,
+}: getPayloadBySubTopicIDInterface) {
   const structuredTopics: any[] = [];
 
   try {
@@ -272,13 +272,13 @@ export function getPayloadBySubTopicID({
               topic?.ToLocation,
             Date_New: formatDateToYYYYMMDD(
               topic?.EDO1_managerialDecisionDateHijri ||
-              topic?.managerial_decision_date_hijri ||
-              topic?.Date_New
+                topic?.managerial_decision_date_hijri ||
+                topic?.Date_New,
             ),
             ManDecsDate: formatDateToYYYYMMDD(
               topic?.EDO1_managerialDecisionDateGregorian ||
-              topic?.managerial_decision_date_gregorian ||
-              topic?.ManDecsDate
+                topic?.managerial_decision_date_gregorian ||
+                topic?.ManDecsDate,
             ),
           };
           break;
@@ -305,13 +305,13 @@ export function getPayloadBySubTopicID({
             ToJob: topic?.EDO2_toJob || topic?.toJob || topic?.ToJob,
             Date_New: formatDateToYYYYMMDD(
               topic?.EDO2_managerialDecisionDateHijri ||
-              topic?.managerial_decision_date_hijri ||
-              topic?.Date_New
+                topic?.managerial_decision_date_hijri ||
+                topic?.Date_New,
             ),
             ManDecsDate: formatDateToYYYYMMDD(
               topic?.EDO2_managerialDecisionDateGregorian ||
-              topic?.managerial_decision_date_gregorian ||
-              topic?.ManDecsDate
+                topic?.managerial_decision_date_gregorian ||
+                topic?.ManDecsDate,
             ),
           };
           break;
@@ -340,13 +340,13 @@ export function getPayloadBySubTopicID({
               topic?.AmountOfReduction,
             pyTempDate: formatDateToYYYYMMDD(
               topic?.EDO3_managerialDecisionDateHijri ||
-              topic?.managerial_decision_date_hijri ||
-              topic?.pyTempDate
+                topic?.managerial_decision_date_hijri ||
+                topic?.pyTempDate,
             ),
             ManagerialDecisionDate_New: formatDateToYYYYMMDD(
               topic?.EDO3_managerialDecisionDateGregorian ||
-              topic?.managerial_decision_date_gregorian ||
-              topic?.ManagerialDecisionDate_New
+                topic?.managerial_decision_date_gregorian ||
+                topic?.ManagerialDecisionDate_New,
             ),
           };
           break;
@@ -381,13 +381,13 @@ export function getPayloadBySubTopicID({
               topic?.PenalityTypeLabel,
             Date_New: formatDateToYYYYMMDD(
               topic?.EDO4_managerialDecisionDateHijri ||
-              topic?.managerial_decision_date_hijri ||
-              topic?.Date_New
+                topic?.managerial_decision_date_hijri ||
+                topic?.Date_New,
             ),
             ManDecsDate: formatDateToYYYYMMDD(
               topic?.EDO4_managerialDecisionDateGregorian ||
-              topic?.managerial_decision_date_gregorian ||
-              topic?.ManDecsDate
+                topic?.managerial_decision_date_gregorian ||
+                topic?.ManDecsDate,
             ),
           };
           break;
@@ -512,21 +512,21 @@ export function getPayloadBySubTopicID({
               topic?.Amount,
             pyTempDate: formatDateToYYYYMMDD(
               topic?.WR1_fromDateHijri ||
-              topic?.from_date_hijri ||
-              topic?.pyTempDate
+                topic?.from_date_hijri ||
+                topic?.pyTempDate,
             ),
             FromDate_New: formatDateToYYYYMMDD(
               topic?.WR1_fromDateGregorian ||
-              topic?.from_date_gregorian ||
-              topic?.FromDate_New
+                topic?.from_date_gregorian ||
+                topic?.FromDate_New,
             ),
             Date_New: formatDateToYYYYMMDD(
-              topic?.WR1_toDateHijri || topic?.to_date_hijri || topic?.Date_New
+              topic?.WR1_toDateHijri || topic?.to_date_hijri || topic?.Date_New,
             ),
             ToDate_New: formatDateToYYYYMMDD(
               topic?.WR1_toDateGregorian ||
-              topic?.to_date_gregorian ||
-              topic?.ToDate_New
+                topic?.to_date_gregorian ||
+                topic?.ToDate_New,
             ),
             ForAllowance:
               topic?.WR1_forAllowance?.value ||
@@ -543,7 +543,7 @@ export function getPayloadBySubTopicID({
                 forAllowance &&
                 ((forAllowance.value &&
                   ["FA11", "OTHER", "3"].includes(
-                    String(forAllowance.value)
+                    String(forAllowance.value),
                   )) ||
                   (forAllowance.label &&
                     forAllowance.label.toLowerCase().includes("other")) ||
@@ -552,9 +552,9 @@ export function getPayloadBySubTopicID({
 
               const result = isOther
                 ? topic?.WR1_otherAllowance ||
-                topic?.otherAllowance ||
-                topic?.OtherAllowance ||
-                ""
+                  topic?.otherAllowance ||
+                  topic?.OtherAllowance ||
+                  ""
                 : "";
               return result;
             })(),
@@ -577,21 +577,21 @@ export function getPayloadBySubTopicID({
               topic?.OverdueWagesAmount,
             pyTempDate: formatDateToYYYYMMDD(
               topic?.WR2_fromDateHijri ||
-              topic?.from_date_hijri ||
-              topic?.pyTempDate
+                topic?.from_date_hijri ||
+                topic?.pyTempDate,
             ),
             FromDate_New: formatDateToYYYYMMDD(
               topic?.WR2_fromDateGregorian ||
-              topic?.from_date_gregorian ||
-              topic?.FromDate_New
+                topic?.from_date_gregorian ||
+                topic?.FromDate_New,
             ),
             Date_New: formatDateToYYYYMMDD(
-              topic?.WR2_toDateHijri || topic?.to_date_hijri || topic?.Date_New
+              topic?.WR2_toDateHijri || topic?.to_date_hijri || topic?.Date_New,
             ),
             ToDate_New: formatDateToYYYYMMDD(
               topic?.WR2_toDateGregorian ||
-              topic?.to_date_gregorian ||
-              topic?.ToDate_New
+                topic?.to_date_gregorian ||
+                topic?.ToDate_New,
             ),
           };
           break;
@@ -621,12 +621,12 @@ export function getPayloadBySubTopicID({
               topic?.Premium ||
               "",
             pyTempDate: formatDateToYYYYMMDD(
-              topic?.BR1_dateHijri || topic?.date_hijri || topic?.pyTempDate
+              topic?.BR1_dateHijri || topic?.date_hijri || topic?.pyTempDate,
             ),
             Date_New: formatDateToYYYYMMDD(
               topic?.BR1_dateGregorian ||
-              topic?.date_gregorian ||
-              topic?.Date_New
+                topic?.date_gregorian ||
+                topic?.Date_New,
             ),
           };
           break;
@@ -756,21 +756,21 @@ export function getPayloadBySubTopicID({
         case "CMR-6":
           const pyTempDate = formatDateToYYYYMMDD(
             topic?.CMR6_fromDateHijri ||
-            topic?.from_date_hijri ||
-            topic?.pyTempDate
+              topic?.from_date_hijri ||
+              topic?.pyTempDate,
           );
           const FromDate_New = formatDateToYYYYMMDD(
             topic?.CMR6_fromDateGregorian ||
-            topic?.from_date_gregorian ||
-            topic?.FromDate_New
+              topic?.from_date_gregorian ||
+              topic?.FromDate_New,
           );
           const Date_New = formatDateToYYYYMMDD(
-            topic?.CMR6_toDateHijri || topic?.to_date_hijri || topic?.Date_New
+            topic?.CMR6_toDateHijri || topic?.to_date_hijri || topic?.Date_New,
           );
           const ToDate_New = formatDateToYYYYMMDD(
             topic?.CMR6_toDateGregorian ||
-            topic?.to_date_gregorian ||
-            topic?.ToDate_New
+              topic?.to_date_gregorian ||
+              topic?.ToDate_New,
           );
 
           topicPayload = {
@@ -803,21 +803,21 @@ export function getPayloadBySubTopicID({
         case "CMR-7":
           const cmr7_pyTempDate = formatDateToYYYYMMDD(
             topic?.CMR7_fromDateHijri ||
-            topic?.from_date_hijri ||
-            topic?.pyTempDate
+              topic?.from_date_hijri ||
+              topic?.pyTempDate,
           );
           const cmr7_FromDate_New = formatDateToYYYYMMDD(
             topic?.CMR7_fromDateGregorian ||
-            topic?.from_date_gregorian ||
-            topic?.FromDate_New
+              topic?.from_date_gregorian ||
+              topic?.FromDate_New,
           );
           const cmr7_Date_New = formatDateToYYYYMMDD(
-            topic?.CMR7_toDateHijri || topic?.to_date_hijri || topic?.Date_New
+            topic?.CMR7_toDateHijri || topic?.to_date_hijri || topic?.Date_New,
           );
           const cmr7_ToDate_New = formatDateToYYYYMMDD(
             topic?.CMR7_toDateGregorian ||
-            topic?.to_date_gregorian ||
-            topic?.ToDate_New
+              topic?.to_date_gregorian ||
+              topic?.ToDate_New,
           );
 
           topicPayload = {
@@ -843,21 +843,21 @@ export function getPayloadBySubTopicID({
         case "CMR-8":
           const cmr8_pyTempDate = formatDateToYYYYMMDD(
             topic?.CMR8_fromDateHijri ||
-            topic?.from_date_hijri ||
-            topic?.pyTempDate
+              topic?.from_date_hijri ||
+              topic?.pyTempDate,
           );
           const cmr8_FromDate_New = formatDateToYYYYMMDD(
             topic?.CMR8_fromDateGregorian ||
-            topic?.from_date_gregorian ||
-            topic?.FromDate_New
+              topic?.from_date_gregorian ||
+              topic?.FromDate_New,
           );
           const cmr8_Date_New = formatDateToYYYYMMDD(
-            topic?.CMR8_toDateHijri || topic?.to_date_hijri || topic?.Date_New
+            topic?.CMR8_toDateHijri || topic?.to_date_hijri || topic?.Date_New,
           );
           const cmr8_ToDate_New = formatDateToYYYYMMDD(
             topic?.CMR8_toDateGregorian ||
-            topic?.to_date_gregorian ||
-            topic?.ToDate_New
+              topic?.to_date_gregorian ||
+              topic?.ToDate_New,
           );
 
           topicPayload = {
@@ -899,23 +899,23 @@ export function getPayloadBySubTopicID({
               topic?.AmountRatio,
             pyTempDate: formatDateToYYYYMMDD(
               topic?.BPSR1_fromDateHijri ||
-              topic?.from_date_hijri ||
-              topic?.pyTempDate
+                topic?.from_date_hijri ||
+                topic?.pyTempDate,
             ),
             ToDate_New: formatDateToYYYYMMDD(
               topic?.BPSR1_toDateGregorian ||
-              topic?.to_date_gregorian ||
-              topic?.ToDate_New
+                topic?.to_date_gregorian ||
+                topic?.ToDate_New,
             ),
             Date_New: formatDateToYYYYMMDD(
               topic?.BPSR1_toDateHijri ||
-              topic?.to_date_hijri ||
-              topic?.Date_New
+                topic?.to_date_hijri ||
+                topic?.Date_New,
             ),
             FromDate_New: formatDateToYYYYMMDD(
               topic?.BPSR1_fromDateGregorian ||
-              topic?.from_date_gregorian ||
-              topic?.FromDate_New
+                topic?.from_date_gregorian ||
+                topic?.FromDate_New,
             ),
             CommissionType:
               topic?.BPSR1_commissionType?.value ||
@@ -932,20 +932,20 @@ export function getPayloadBySubTopicID({
                 commissionType &&
                 ((commissionType.value &&
                   ["CT4", "OTHER", "3"].includes(
-                    String(commissionType.value)
+                    String(commissionType.value),
                   )) ||
                   (commissionType.label &&
                     commissionType.label.toLowerCase().includes("other")) ||
                   (typeof commissionType === "string" &&
                     ["CT4", "OTHER", "3"].includes(
-                      commissionType.toUpperCase()
+                      commissionType.toUpperCase(),
                     )));
 
               const result = isOther
                 ? topic?.BPSR1_otherCommission ||
-                topic?.otherCommission ||
-                topic?.OtherCommission ||
-                ""
+                  topic?.otherCommission ||
+                  topic?.OtherCommission ||
+                  ""
                 : "";
 
               return result;
@@ -998,12 +998,12 @@ export function getPayloadBySubTopicID({
               topic?.consideration ||
               topic?.Consideration,
             pyTempDate: formatDateToYYYYMMDD(
-              topic?.RFR1_dateHijri || topic?.date_hijri || topic?.pyTempDate
+              topic?.RFR1_dateHijri || topic?.date_hijri || topic?.pyTempDate,
             ),
             Date_New: formatDateToYYYYMMDD(
               topic?.RFR1_dateGregorian ||
-              topic?.date_gregorian ||
-              topic?.Date_New
+                topic?.date_gregorian ||
+                topic?.Date_New,
             ),
           };
           break;
@@ -1033,7 +1033,7 @@ export function getPayloadBySubTopicID({
         structuredTopics.push(topicPayload);
       }
     });
-  } catch (err) { }
+  } catch (err) {}
 
   const payload = {
     CaseID: caseId,

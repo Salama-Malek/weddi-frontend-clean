@@ -22,7 +22,10 @@ export interface GetEstablishmentCityLookupResponse {
 
 export const establishmentCityLookupApi = api.injectEndpoints({
   endpoints: (builder) => ({
-    getEstablishmentCityLookup: builder.query<GetEstablishmentCityLookupResponse, GetEstablishmentCityLookupRequest>({
+    getEstablishmentCityLookup: builder.query<
+      GetEstablishmentCityLookupResponse,
+      GetEstablishmentCityLookupRequest
+    >({
       query: (params) => ({
         url: "/WeddiServices/V1/SubLookup",
         method: "GET",
@@ -32,4 +35,5 @@ export const establishmentCityLookupApi = api.injectEndpoints({
   }),
 });
 
-export const { useGetEstablishmentCityLookupQuery } = establishmentCityLookupApi; 
+export const { useGetEstablishmentCityLookupQuery } =
+  establishmentCityLookupApi;

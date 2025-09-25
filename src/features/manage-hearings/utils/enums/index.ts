@@ -1,12 +1,10 @@
 export enum CaseParty {
-    PLAINTIFF = "Plaintiff",
-    DEFENDANT = "Defendant",
-  }
-  
+  PLAINTIFF = "Plaintiff",
+  DEFENDANT = "Defendant",
+}
 
-  export enum CaseCreation {
-    CLAIMANT = "claimant",
-    DEFENDANT = "Defendant",
-    WORK_DETAIL = "Work detail",
-  }
-  
+export enum CaseCreation {
+  CLAIMANT = "claimant",
+  DEFENDANT = "Defendant",
+  WORK_DETAIL = "Work detail",
+}

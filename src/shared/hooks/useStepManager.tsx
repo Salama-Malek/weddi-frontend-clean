@@ -13,15 +13,15 @@ export const useStepManager = (stepsLength: number, tabsLength: number = 3) => {
 
   const isFirstStep = useMemo(
     () => currentStep === 0 && currentTab === 0,
-    [currentStep, currentTab]
+    [currentStep, currentTab],
   );
   const isLastStep = useMemo(
     () => currentStep === stepsLength - 1,
-    [currentStep, stepsLength]
+    [currentStep, stepsLength],
   );
   const isLastTab = useMemo(
     () => currentTab === tabsLength - 1,
-    [currentTab, tabsLength]
+    [currentTab, tabsLength],
   );
 
   const goToNextStep = useCallback(() => {
@@ -73,7 +73,7 @@ export const useStepManager = (stepsLength: number, tabsLength: number = 3) => {
   const isButtonDisabled = useCallback(
     (direction: "prev" | "next") =>
       direction === "prev" ? isFirstStep : isLastStep,
-    [isFirstStep, isLastStep]
+    [isFirstStep, isLastStep],
   );
 
   useEffect(() => {

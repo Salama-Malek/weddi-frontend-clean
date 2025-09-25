@@ -1,8 +1,8 @@
-import React from 'react';
-import { useBreadcrumbsContext } from './BreadcrumbsContext';
+import React from "react";
+import { useBreadcrumbsContext } from "./BreadcrumbsContext";
 
 const BreadcrumbSeparator: React.FC = () => {
-  const { separator } = useBreadcrumbsContext(); 
+  const { separator } = useBreadcrumbsContext();
 
   return <span className="mx-sm text-gray-500">{separator}</span>;
 };

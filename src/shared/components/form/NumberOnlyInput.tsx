@@ -49,7 +49,7 @@ export const NumberOnlyInput = forwardRef<
       preventEnterSubmit = true,
       ...inputProps
     },
-    ref
+    ref,
   ) => {
     const { i18n } = useTranslation();
     const uniqueId = useId();
@@ -74,7 +74,7 @@ export const NumberOnlyInput = forwardRef<
         hasError
           ? "border-red-500 focus:ring-red-200 focus:border-red-500"
           : "border-gray-400 focus:ring-blue-200 focus:border-blue-500",
-        className
+        className,
       ),
       "aria-invalid": hasError ? "true" : "false",
       style: placeholderStyle,
@@ -207,7 +207,7 @@ export const NumberOnlyInput = forwardRef<
         {renderInput()}
       </FieldWrapper>
     );
-  }
+  },
 );
 
 NumberOnlyInput.displayName = "NumberOnlyInput";

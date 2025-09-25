@@ -38,7 +38,7 @@ export const LanguageDirectionProvider = ({
 
     document.documentElement.setAttribute(
       "dir",
-      i18n.language === "ar" ? "rtl" : "ltr"
+      i18n.language === "ar" ? "rtl" : "ltr",
     );
   }, [i18n.language]);
 
@@ -53,7 +53,7 @@ export const useLanguageDirection = () => {
   const context = useContext(LanguageDirectionContext);
   if (!context) {
     throw new Error(
-      "useLanguageDirection must be used within a LanguageDirectionProvider"
+      "useLanguageDirection must be used within a LanguageDirectionProvider",
     );
   }
   return context;

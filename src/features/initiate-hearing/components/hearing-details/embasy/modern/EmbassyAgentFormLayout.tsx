@@ -11,7 +11,7 @@ import gregorianLocaleEn from "react-date-object/locales/gregorian_en";
 import { useCallback } from "react";
 
 export function EmbassyAgentFormLayout(
-  props: EmbassyAgentFormProps
+  props: EmbassyAgentFormProps,
 ): SectionLayout[] {
   const { t } = useTranslation("hearingdetails");
   const {
@@ -34,30 +34,30 @@ export function EmbassyAgentFormLayout(
   const idNumber = userClaims?.UserID || "";
   const nic = nicAgent;
 
-  
-  const handleDateChange = useCallback((date: any) => {
-    if (date && !Array.isArray(date)) {
-      
-      const gregorianDate = date.convert(gregorianCalendar, gregorianLocaleEn);
-      const gregorian = gregorianDate.format("YYYYMMDD");
+  const handleDateChange = useCallback(
+    (date: any) => {
+      if (date && !Array.isArray(date)) {
+        const gregorianDate = date.convert(
+          gregorianCalendar,
+          gregorianLocaleEn,
+        );
+        const gregorian = gregorianDate.format("YYYYMMDD");
 
-      
-      
-      const currentGregorian = watch("embassyAgent_gregorianDate");
-      
-      if (currentGregorian !== gregorian) {
-        setValue("embassyAgent_gregorianDate" as any, gregorian);
+        const currentGregorian = watch("embassyAgent_gregorianDate");
 
+        if (currentGregorian !== gregorian) {
+          setValue("embassyAgent_gregorianDate" as any, gregorian);
+        } else {
+        }
       } else {
+        const currentGregorian = watch("embassyAgent_gregorianDate");
+        if (currentGregorian) {
+          setValue("embassyAgent_gregorianDate" as any, "");
+        }
       }
-    } else {
-      
-      const currentGregorian = watch("embassyAgent_gregorianDate");
-      if (currentGregorian) {
-        setValue("embassyAgent_gregorianDate" as any, "");
-      }
-    }
-  }, [setValue, watch]);
+    },
+    [setValue, watch],
+  );
 
   return [
     {

@@ -19,7 +19,9 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
   className,
 }) => {
   return (
-    <div className={`flex gap-2 ${isClaimant && "mt-7"} items-center w-80 bg-gray-100 h-auto p-2 border border-gray-300 rounded-sm max-w-md ${className}`}>
+    <div
+      className={`flex gap-2 ${isClaimant && "mt-7"} items-center w-80 bg-gray-100 h-auto p-2 border border-gray-300 rounded-sm max-w-md ${className}`}
+    >
       <svg
         width="20"
         height="20"
@@ -42,14 +44,12 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
       </svg>
 
       <div className="flex-1 truncate">
-        <p className="medium text-gray-900 truncate">
-          {fileName}
-        </p>
+        <p className="medium text-gray-900 truncate">{fileName}</p>
         {fileSize && (
           <p className="text-xs text-gray-500">
-            {typeof fileSize === 'number' 
-              ? fileSize > 1024 * 1024 
-                ? `${(fileSize / (1024 * 1024)).toFixed(2)} MB` 
+            {typeof fileSize === "number"
+              ? fileSize > 1024 * 1024
+                ? `${(fileSize / (1024 * 1024)).toFixed(2)} MB`
                 : `${(fileSize / 1024).toFixed(2)} KB`
               : fileSize}
           </p>
@@ -87,11 +87,7 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
         </svg>
       </button>
 
-      <button
-        type="button"
-        onClick={onRemove}
-        className="hover:text-gray-600"
-      >
+      <button type="button" onClick={onRemove} className="hover:text-gray-600">
         <MultiplicationSignIcon size={16} />
       </button>
     </div>

@@ -8,12 +8,12 @@ import {
   reviewPayload,
 } from "../api/create-case/payloads";
 interface usePayloadServiceInterface {
-  isDomestic?: any,
-  userType?: any,
-  GetCookieEstablishmentData?: any,
-  getNicDetailObject?: any,
-  defendantStatus?: any,
-  defendantDetails?: any,
+  isDomestic?: any;
+  userType?: any;
+  GetCookieEstablishmentData?: any;
+  getNicDetailObject?: any;
+  defendantStatus?: any;
+  defendantDetails?: any;
 }
 
 export const usePayloadService = ({
@@ -32,9 +32,8 @@ export const usePayloadService = ({
     _unused1?: any,
     _unused2?: any,
     caseTopics?: any,
-    _unused3?: any
+    _unused3?: any,
   ) => {
-
     if (!formData) return null;
 
     const lowUserType = userType?.toLowerCase();
@@ -60,7 +59,6 @@ export const usePayloadService = ({
               userType,
               getCaseId,
               language,
-              
             );
 
           case 1:
@@ -69,7 +67,7 @@ export const usePayloadService = ({
                 buttonName,
                 formData,
                 getCaseId,
-                language
+                language,
               );
             }
             return defendantDetailsPayload(
@@ -88,7 +86,7 @@ export const usePayloadService = ({
               getCaseId,
               userClaims,
               userType,
-              language
+              language,
             );
 
           default:
@@ -98,13 +96,12 @@ export const usePayloadService = ({
 
       if (currentStep === 1) {
         return hearingTopicsPayload(
-
           buttonName,
           getCaseId,
           caseTopics,
           userClaims,
           language,
-          userType
+          userType,
         );
       }
 
@@ -115,7 +112,7 @@ export const usePayloadService = ({
           getCaseId,
           userClaims,
           userType,
-          language
+          language,
         );
       }
 

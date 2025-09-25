@@ -16,16 +16,20 @@ interface DateContextType {
 
 const DateContext = createContext<DateContextType | undefined>(undefined);
 
-export const DateProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [calendarType, setCalendarType] = useState<"hijri" | "gregorian">("hijri");
+export const DateProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
+  const [calendarType, setCalendarType] = useState<"hijri" | "gregorian">(
+    "hijri",
+  );
   const [dateInfo, setDateInfo] = useState<IDateInfo>({
     hijri: "",
     gregorian: "",
-    dateObject: null
+    dateObject: null,
   });
 
   const setDate = useCallback((info: Partial<IDateInfo>) => {
-    setDateInfo(prev => ({ ...prev, ...info }));
+    setDateInfo((prev) => ({ ...prev, ...info }));
   }, []);
 
   return (
@@ -34,7 +38,7 @@ export const DateProvider: React.FC<{ children: React.ReactNode }> = ({ children
         calendarType,
         setCalendarType,
         dateInfo,
-        setDate
+        setDate,
       }}
     >
       {children}

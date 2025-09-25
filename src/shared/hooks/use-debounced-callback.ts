@@ -11,7 +11,7 @@ import { useTimeout } from "./use-timeout";
 export const useDebouncedCallback = <TCallback extends (...args: any[]) => any>(
   fn: TCallback,
   dependencies: DependencyList,
-  delay: number
+  delay: number,
 ): ((...args: Parameters<TCallback>) => Promise<void>) => {
   const timeout = useTimeout();
 
@@ -24,6 +24,6 @@ export const useDebouncedCallback = <TCallback extends (...args: any[]) => any>(
         }, delay);
       });
     },
-    [fn, delay, ...dependencies] 
+    [fn, delay, ...dependencies],
   );
 };

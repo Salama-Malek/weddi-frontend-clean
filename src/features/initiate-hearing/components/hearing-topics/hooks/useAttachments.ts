@@ -101,10 +101,10 @@ export function useAttachments(params: UseAttachmentsParams = {}) {
   };
 
   const handleViewAttachment = (attachment: any) => {
-    const key = attachment.FileKey || attachment.fileKey || attachment.attachmentKey;
+    const key =
+      attachment.FileKey || attachment.fileKey || attachment.attachmentKey;
 
     if (key && params.triggerFileDetails) {
-       
       params.triggerFileDetails({
         AttachmentKey: key,
         AcceptedLanguage: (attachment.AcceptedLanguage || "EN").toUpperCase(),

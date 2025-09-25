@@ -65,7 +65,10 @@ export function buildReviewSections(details: Details): ReviewSection[] {
       title: t("agentInformation"),
       fields: [
         { label: t("phoneNumber"), value: details.Agent_PhoneNumber },
-        { label: t("plaintiffNativeLanguage"), value: details.Plaintiff_FirstLanguage },
+        {
+          label: t("plaintiffNativeLanguage"),
+          value: details.Plaintiff_FirstLanguage,
+        },
         { label: t("E-mail"), value: details.Agent_EmailAddress },
       ],
     },
@@ -85,14 +88,20 @@ export function buildReviewSections(details: Details): ReviewSection[] {
         { label: t("currentSalary"), value: details.Plaintiff_Salary },
         { label: t("contractType"), value: details.Plaintiff_ContractType },
         { label: t("contractNumber"), value: details.Plaintiff_ContractNumber },
-        { label: t("contractHijriDate"), value: details.Plaintiff_JobStartDate },
-        { label: t("contractGregorianDate"), value: details.Plaintiff_JobEndDate },
+        {
+          label: t("contractHijriDate"),
+          value: details.Plaintiff_JobStartDate,
+        },
+        {
+          label: t("contractGregorianDate"),
+          value: details.Plaintiff_JobEndDate,
+        },
         { label: t("stillEmployed"), value: details.Plaintiff_StillWorking },
       ],
     },
     {
       title: t("attachedFiles"),
-      fields: (details.RegionalAttachments || []).map(att => ({
+      fields: (details.RegionalAttachments || []).map((att) => ({
         label: att.FileName || "",
         value: att.FileKey || "",
       })),

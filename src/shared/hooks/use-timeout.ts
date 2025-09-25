@@ -5,14 +5,17 @@ const MAX_DELAY_MS = 2 ** 31 - 1;
 const setChainedTimeout = (
   handleRef: MutableRefObject<any>,
   fn: () => void,
-  timeoutAtMs: number
+  timeoutAtMs: number,
 ) => {
   const delayMs = timeoutAtMs - Date.now();
 
   handleRef.current =
     delayMs <= MAX_DELAY_MS
       ? setTimeout(fn, delayMs)
-      : setTimeout(() => setChainedTimeout(handleRef, fn, timeoutAtMs), MAX_DELAY_MS);
+      : setTimeout(
+          () => setChainedTimeout(handleRef, fn, timeoutAtMs),
+          MAX_DELAY_MS,
+        );
 };
 
 export const useTimeout = () => {
@@ -39,7 +42,7 @@ export const useTimeout = () => {
 
     return {
       set,
-      clear
+      clear,
     };
   }, []);
 };

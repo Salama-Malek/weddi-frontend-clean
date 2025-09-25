@@ -1,4 +1,5 @@
 import { ColumnDef, createColumnHelper } from "@tanstack/react-table";
+import { ActionsCell } from "../components/ActionsCell";
 import { truncateText } from "../utils/tables/tableUtils";
 
 export interface Hearing {

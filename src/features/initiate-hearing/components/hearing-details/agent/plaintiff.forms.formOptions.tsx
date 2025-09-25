@@ -25,7 +25,7 @@ interface DataElement {
 export const useAgentFormOptions = () => {
   const { t, i18n } = useTranslation("hearingdetails");
   const lang = i18n.language === "ar" ? "AR" : "EN";
-  const [getCookie, ] = useCookieState();
+  const [getCookie] = useCookieState();
 
   const userType = getCookie("userType") || "";
 
@@ -56,7 +56,7 @@ export const useAgentFormOptions = () => {
         ? "EstablishmentCity"
         : "WorkerCity",
     },
-    { skip: !(selectedRegion as { value: string } | null)?.value }
+    { skip: !(selectedRegion as { value: string } | null)?.value },
   );
   const cityOptions: Option[] =
     cityResponse?.DataElements?.map((item: DataElement) => ({
@@ -117,7 +117,7 @@ export const useAgentFormOptions = () => {
   const agentParams: AgentParams | null = null;
   const { data: agentInfo } = useGetAgentInfoDataQuery(
     agentParams || ({} as AgentParams),
-    { skip: !agentParams }
+    { skip: !agentParams },
   );
 
   return {

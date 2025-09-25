@@ -271,7 +271,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
                     <div
                       key={childKey}
                       className={`${getGridSpanClass(
-                        colSpan
+                        colSpan,
                       )} flex items-center`}
                     >
                       <CheckboxField

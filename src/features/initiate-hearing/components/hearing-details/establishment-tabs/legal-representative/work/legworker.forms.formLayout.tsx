@@ -35,9 +35,7 @@ import { DateObject } from "react-multi-date-picker";
 import { formatDateString } from "@/shared/lib/helpers";
 import hijriLocale from "react-date-object/locales/arabic_ar";
 import { GregorianDatePickerInput } from "@/shared/components/calanders/GregorianDatePickerInput";
-import {
-  validateDateRange,
-} from "@/shared/lib/dateValidationUtils";
+import { validateDateRange } from "@/shared/lib/dateValidationUtils";
 
 function toWesternDigits(str: string): string {
   return str.replace(/[٠-٩]/g, (d) => "٠١٢٣٤٥٦٧٨٩".indexOf(d).toString());
@@ -49,7 +47,7 @@ export const legRepVsWorkerUseFormLayout = (
   watch: UseFormWatch<FormData>,
   trigger: UseFormTrigger<FormData>,
   caseDetailsLoading?: boolean,
-  workData?: any
+  workData?: any,
 ): SectionLayout[] => {
   const isStillEmployed: any = watch("isStillEmployed" as any);
   const { t, i18n } = useTranslation("hearingdetails");
@@ -72,7 +70,7 @@ export const legRepVsWorkerUseFormLayout = (
 
   function setFormFieldsFromWorkData(
     setValue: UseFormSetValue<FormData>,
-    workData: any
+    workData: any,
   ) {
     if (!workData) return;
 
@@ -125,7 +123,7 @@ export const legRepVsWorkerUseFormLayout = (
       setValue(
         "contractExpiryDateGregorian",
         workData?.contractEnd?.gregorian,
-        { shouldValidate: true }
+        { shouldValidate: true },
       );
     }
 
@@ -149,7 +147,7 @@ export const legRepVsWorkerUseFormLayout = (
       setValue(
         "dateOfFirstWorkingDayGregorian",
         workData?.jobStart?.gregorian,
-        { shouldValidate: true }
+        { shouldValidate: true },
       );
     }
 
@@ -180,10 +178,8 @@ export const legRepVsWorkerUseFormLayout = (
   const userType = getCookie("userType") || "";
   const legalRepType = getCookie("legalRepType");
 
-  const [
-    triggerContractType,
-    { data: contractTypeData },
-  ] = useLazyGetContractTypeLookupQuery();
+  const [triggerContractType, { data: contractTypeData }] =
+    useLazyGetContractTypeLookupQuery();
 
   useEffect(() => {
     triggerContractType({
@@ -239,7 +235,7 @@ export const legRepVsWorkerUseFormLayout = (
         refetchOnMountOrArgChange: false,
         refetchOnFocus: false,
         refetchOnReconnect: false,
-      }
+      },
     );
 
   const { data: cityData, isFetching: isCityLoading } =
@@ -261,7 +257,7 @@ export const legRepVsWorkerUseFormLayout = (
         refetchOnMountOrArgChange: false,
         refetchOnFocus: false,
         refetchOnReconnect: false,
-      }
+      },
     );
 
   const { data: laborOfficeData, isFetching: isLaborLoading } =
@@ -282,7 +278,7 @@ export const legRepVsWorkerUseFormLayout = (
         refetchOnMountOrArgChange: false,
         refetchOnFocus: false,
         refetchOnReconnect: false,
-      }
+      },
     );
 
   useEffect(() => {
@@ -342,9 +338,6 @@ export const legRepVsWorkerUseFormLayout = (
   }, [cityData]);
 
   const contractDateHijri = watch("contractDateHijri");
-
-
- 
 
   const getGregorianFromHijri = (dateStr: string | undefined): Date => {
     if (!dateStr) return new Date(0);
@@ -423,7 +416,7 @@ export const legRepVsWorkerUseFormLayout = (
   useEffect(() => {
     if (caseDetailsLoading) {
       const id = JSON.parse(
-        localStorage.getItem("CaseDetails") || ""
+        localStorage.getItem("CaseDetails") || "",
       )?.PlaintiffId;
       const fileNumberEstData =
         JSON.parse(localStorage.getItem("CaseDetails") || "")
@@ -435,14 +428,12 @@ export const legRepVsWorkerUseFormLayout = (
       setFileNumberEst(fileNumberEstData);
       setDeffendentTypCode(
         JSON.parse(localStorage.getItem("CaseDetails") || "")
-          ?.DefendantType_Code
+          ?.DefendantType_Code,
       );
     }
   }, [caseDetailsLoading]);
-  const [
-    triggerExtractData,
-    { data: extractedData },
-  ] = useLazyGetExtractEstablishmentDataQuery();
+  const [triggerExtractData, { data: extractedData }] =
+    useLazyGetExtractEstablishmentDataQuery();
   useEffect(() => {
     if (idNumberPlainteff !== "" && fileNumberEst !== "") {
       triggerExtractData({
@@ -462,17 +453,17 @@ export const legRepVsWorkerUseFormLayout = (
     ) {
       setValue(
         "dateOfFirstWorkingDayGregorian",
-        extractedData?.EstablishmentData?.[0]?.ServiceStartDate.substring(0, 8)
+        extractedData?.EstablishmentData?.[0]?.ServiceStartDate.substring(0, 8),
       );
       setValue(
         "dateOfLastWorkingDayGregorian",
-        extractedData?.EstablishmentData?.[0]?.ServiceEndDate.substring(0, 8)
+        extractedData?.EstablishmentData?.[0]?.ServiceEndDate.substring(0, 8),
       );
       setValue(
         "isStillEmployed",
         extractedData?.EstablishmentData?.[0]?.StillWorking === "Y"
           ? true
-          : false
+          : false,
       );
     }
   }, [extractedData]);
@@ -485,7 +476,7 @@ export const legRepVsWorkerUseFormLayout = (
       CityOptions.length > 0
     ) {
       const found = CityOptions.find(
-        (opt: any) => opt?.value === workData?.jobCity?.value
+        (opt: any) => opt?.value === workData?.jobCity?.value,
       );
       if (found) {
         setValue("jobLocationCity", found, { shouldValidate: true });
@@ -571,12 +562,7 @@ export const legRepVsWorkerUseFormLayout = (
               rules={{
                 required: t("fieldRequired"),
                 validate: (value: string) =>
-                  validateDate(
-                    value,
-                    "contract-start",
-                    contractDateHijri,
-                    
-                  ),
+                  validateDate(value, "contract-start", contractDateHijri),
               }}
               onChangeHandler={(date, onChange) => {
                 if (!date || Array.isArray(date)) {
@@ -639,7 +625,7 @@ export const legRepVsWorkerUseFormLayout = (
                               fromDate,
                               toDate,
                               "hijri",
-                              "hijri"
+                              "hijri",
                             );
 
                             if (result !== true) {
@@ -698,8 +684,8 @@ export const legRepVsWorkerUseFormLayout = (
                 value: formatDateString(
                   extractedData?.EstablishmentData?.[0]?.ServiceStartDate?.slice(
                     0,
-                    8
-                  )
+                    8,
+                  ),
                 ),
               },
 
@@ -711,8 +697,8 @@ export const legRepVsWorkerUseFormLayout = (
                       value: formatDateString(
                         extractedData?.EstablishmentData?.[0]?.ServiceEndDate?.slice(
                           0,
-                          8
-                        )
+                          8,
+                        ),
                       ),
                     },
                   ]
@@ -777,17 +763,17 @@ export const legRepVsWorkerUseFormLayout = (
                       if (typeof trigger === "function") {
                         setTimeout(
                           () => trigger("dateOfFirstWorkingDayGregorian"),
-                          100
+                          100,
                         );
                       }
 
                       const endDateValue = watch(
-                        "dateOfLastWorkingDayGregorian"
+                        "dateOfLastWorkingDayGregorian",
                       );
                       if (endDateValue && typeof trigger === "function") {
                         setTimeout(
                           () => trigger("dateOfLastWorkingDayGregorian"),
-                          100
+                          100,
                         );
                       }
                     }}
@@ -817,36 +803,36 @@ export const legRepVsWorkerUseFormLayout = (
 
                                 if (fromDate && toDate) {
                                   const fromYear = parseInt(
-                                    fromDate.substring(0, 4)
+                                    fromDate.substring(0, 4),
                                   );
                                   const fromMonth =
                                     parseInt(fromDate.substring(4, 6)) - 1;
                                   const fromDay = parseInt(
-                                    fromDate.substring(6, 8)
+                                    fromDate.substring(6, 8),
                                   );
                                   const fromDateObj = new Date(
                                     fromYear,
                                     fromMonth,
-                                    fromDay
+                                    fromDay,
                                   );
 
                                   const toYear = parseInt(
-                                    toDate.substring(0, 4)
+                                    toDate.substring(0, 4),
                                   );
                                   const toMonth =
                                     parseInt(toDate.substring(4, 6)) - 1;
                                   const toDay = parseInt(
-                                    toDate.substring(6, 8)
+                                    toDate.substring(6, 8),
                                   );
                                   const toDateObj = new Date(
                                     toYear,
                                     toMonth,
-                                    toDay
+                                    toDay,
                                   );
 
                                   if (toDateObj < fromDateObj) {
                                     return t(
-                                      "workDateValidation.endBeforeStart"
+                                      "workDateValidation.endBeforeStart",
                                     );
                                   }
 
@@ -874,7 +860,7 @@ export const legRepVsWorkerUseFormLayout = (
                             if (typeof trigger === "function") {
                               setTimeout(
                                 () => trigger("dateOfLastWorkingDayGregorian"),
-                                100
+                                100,
                               );
                             }
                           }}

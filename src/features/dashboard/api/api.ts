@@ -10,7 +10,15 @@ export const caseApi = api.injectEndpoints({
       }),
     }),
     getCaseCount: builder.query<any, any>({
-      query: ({ UserType, IDNumber, FileNumber, MainGovernment, SubGovernment, AcceptedLanguage, SourceSystem }) => ({
+      query: ({
+        UserType,
+        IDNumber,
+        FileNumber,
+        MainGovernment,
+        SubGovernment,
+        AcceptedLanguage,
+        SourceSystem,
+      }) => ({
         url: `/WeddiServices/V1/GetCaseCount`,
         params: {
           UserType,
@@ -19,12 +27,20 @@ export const caseApi = api.injectEndpoints({
           ...(MainGovernment && { MainGovernment }),
           ...(SubGovernment && { SubGovernment }),
           AcceptedLanguage,
-          SourceSystem
+          SourceSystem,
         },
       }),
     }),
     getIncompleteCase: builder.query<any, any>({
-      query: ({ UserType, IDNumber, FileNumber, MainGovernment, SubGovernment, AcceptedLanguage, SourceSystem }) => ({
+      query: ({
+        UserType,
+        IDNumber,
+        FileNumber,
+        MainGovernment,
+        SubGovernment,
+        AcceptedLanguage,
+        SourceSystem,
+      }) => ({
         url: `/WeddiCreateCaseServices/V1/GetIncompleteCase`,
         params: {
           UserType,
@@ -33,9 +49,8 @@ export const caseApi = api.injectEndpoints({
           ...(MainGovernment && { MainGovernment }),
           ...(SubGovernment && { SubGovernment }),
           AcceptedLanguage,
-          SourceSystem
+          SourceSystem,
         },
-
       }),
       keepUnusedDataFor: 0,
     }),
@@ -52,16 +67,16 @@ export const caseApi = api.injectEndpoints({
         params,
       }),
     }),
-
   }),
 });
 
-export const { useGetCaseAuditQuery,
+export const {
+  useGetCaseAuditQuery,
   useLazySaveUINotificationQuery,
   useGetIncompleteCaseQuery,
   useLazyGetIncompleteCaseQuery,
   useGetMySchedulesQuery,
   useLazyGetMySchedulesQuery,
   useGetCaseCountQuery,
-  useLazyGetCaseCountQuery
+  useLazyGetCaseCountQuery,
 } = caseApi;

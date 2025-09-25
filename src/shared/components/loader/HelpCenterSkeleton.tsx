@@ -1,4 +1,3 @@
-
 const HelpCenterSkeleton = () => {
   return (
     <section className=" w-full h-[288px] my-[16px] p-4xl  bg-gradient-to-r from-gray-200 animate-pulse to-gray-200 opacity-50 flex flex-col shadow-md rounded-md">

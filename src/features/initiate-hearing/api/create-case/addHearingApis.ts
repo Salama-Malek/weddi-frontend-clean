@@ -29,5 +29,5 @@ export const caseApi = api.injectEndpoints({
 export const {
   useGenericLookupQuery,
   useSubLookupQuery,
-  useSubTopicsSubLookupQuery
+  useSubTopicsSubLookupQuery,
 } = caseApi;

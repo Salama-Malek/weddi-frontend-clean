@@ -20,17 +20,17 @@ export const useFormOptions = ({ EstablishmentData = [] }: any) => {
     IsEstablishmentRadioOptions: [
       ...(EstablishmentData && EstablishmentData.length > 0
         ? EstablishmentData.map((establishment: any) => ({
-          label: establishment.EstablishmentName,
-          value: {
-            EstablishmentFileNumber: establishment.EstablishmentFileNumber,
-            ServiceEndDate: establishment.ServiceEndDate,
-            ServiceStartDate: establishment.ServiceStartDate,
-            EstablishmentName: establishment.EstablishmentName,
-            StillWorking: establishment.StillWorking,
-            OtherFlag: "Others",
-          },
-          description: t(" "),
-        }))
+            label: establishment.EstablishmentName,
+            value: {
+              EstablishmentFileNumber: establishment.EstablishmentFileNumber,
+              ServiceEndDate: establishment.ServiceEndDate,
+              ServiceStartDate: establishment.ServiceStartDate,
+              EstablishmentName: establishment.EstablishmentName,
+              StillWorking: establishment.StillWorking,
+              OtherFlag: "Others",
+            },
+            description: t(" "),
+          }))
         : []),
       {
         label: t("others"),

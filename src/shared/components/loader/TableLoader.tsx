@@ -8,7 +8,9 @@ interface TableLoaderProps {
 
 const TableLoader: React.FC<TableLoaderProps> = ({ className }) => {
   return (
-    <div className={clsx("flex items-center justify-start gap-2 py-6", className)}>
+    <div
+      className={clsx("flex items-center justify-start gap-2 py-6", className)}
+    >
       <div className={styles.loader}></div>
     </div>
   );

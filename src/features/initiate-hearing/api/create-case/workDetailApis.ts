@@ -81,8 +81,8 @@ export const workDetailApi = api.injectEndpoints({
           context === "worker"
             ? "WorkerRegion"
             : context === "establishment"
-            ? "EstablishmentRegion"
-            : "RegionName";
+              ? "EstablishmentRegion"
+              : "RegionName";
         return {
           url: `/WeddiServices/V1/MainLookUp`,
           params: {

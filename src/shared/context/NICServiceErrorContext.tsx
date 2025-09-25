@@ -29,19 +29,19 @@ export const NICServiceErrorProvider: React.FC<
   const [showServiceErrorModal, setShowServiceErrorModal] = useState(false);
   const [serviceErrorMessage, setServiceErrorMessage] = useState("");
   const [tryAgainCallback, setTryAgainCallback] = useState<(() => void) | null>(
-    null
+    null,
   );
 
   const handleNICResponse = useCallback((response: any): boolean => {
     if (response?.ErrorDetails && Array.isArray(response.ErrorDetails)) {
       const errorDetail = response.ErrorDetails.find(
-        (detail: any) => detail.ErrorCode === "ER4054"
+        (detail: any) => detail.ErrorCode === "ER4054",
       );
 
       if (errorDetail) {
         setServiceErrorMessage(
           errorDetail.ErrorDesc ||
-            "The service is not working / The entered ID does not match the date of birth"
+            "The service is not working / The entered ID does not match the date of birth",
         );
         setShowServiceErrorModal(true);
         return true;
@@ -86,7 +86,7 @@ export const useNICServiceErrorContext = (): NICServiceErrorContextType => {
   const context = useContext(NICServiceErrorContext);
   if (context === undefined) {
     throw new Error(
-      "useNICServiceErrorContext must be used within a NICServiceErrorProvider"
+      "useNICServiceErrorContext must be used within a NICServiceErrorProvider",
     );
   }
   return context;

@@ -12,24 +12,36 @@ interface DateContextType {
   setCalendarType: (type: "hijri" | "gregorian") => void;
   dateInfo: IDateInfo;
   setDate: (info: Partial<IDateInfo>) => void;
-  registerDateField: (name: string, onChange: (value: string) => void) => () => void;
+  registerDateField: (
+    name: string,
+    onChange: (value: string) => void,
+  ) => () => void;
 }
 
 const DateContext = createContext<DateContextType | undefined>(undefined);
 
-export const DateProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [calendarType, setCalendarType] = useState<"hijri" | "gregorian">("hijri");
+export const DateProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
+  const [calendarType, setCalendarType] = useState<"hijri" | "gregorian">(
+    "hijri",
+  );
   const [dateInfo, setDateInfo] = useState<IDateInfo>({
     hijri: "",
     gregorian: "",
-    dateObject: null
+    dateObject: null,
   });
-  const [fieldCallbacks, setFieldCallbacks] = useState<Record<string, (value: string) => void>>({});
+  const [fieldCallbacks, setFieldCallbacks] = useState<
+    Record<string, (value: string) => void>
+  >({});
 
-  const registerDateField = (name: string, onChange: (value: string) => void) => {
-    setFieldCallbacks(prev => ({ ...prev, [name]: onChange }));
+  const registerDateField = (
+    name: string,
+    onChange: (value: string) => void,
+  ) => {
+    setFieldCallbacks((prev) => ({ ...prev, [name]: onChange }));
     return () => {
-      setFieldCallbacks(prev => {
+      setFieldCallbacks((prev) => {
         const { [name]: _, ...rest } = prev;
         return rest;
       });
@@ -37,14 +49,14 @@ export const DateProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const setDate = (info: Partial<IDateInfo>) => {
-    setDateInfo(prev => {
+    setDateInfo((prev) => {
       const newInfo = { ...prev, ...info };
-      
-      Object.values(fieldCallbacks).forEach(callback => {
+
+      Object.values(fieldCallbacks).forEach((callback) => {
         if (info.hijri) callback(info.hijri);
         if (info.gregorian) callback(info.gregorian);
       });
-      
+
       return newInfo;
     });
   };
@@ -56,7 +68,7 @@ export const DateProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setCalendarType,
         dateInfo,
         setDate,
-        registerDateField
+        registerDateField,
       }}
     >
       {children}

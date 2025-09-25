@@ -2,8 +2,6 @@ import { FormElement } from "@/shared/components/form/form.types";
 import { TextAreaField } from "@/shared/components/form/TextArea";
 import { ReactNode } from "react";
 
-
-
 interface Step2FormProps {
   t: (key: string) => string;
   isEditing: boolean;

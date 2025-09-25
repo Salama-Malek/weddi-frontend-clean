@@ -8,11 +8,10 @@ import CaseRecordsSkeleton from "@/shared/components/loader/CaseRecordsSkeleton"
 const Statistics = () => {
   const { t, i18n } = useTranslation();
   const isRTL = i18n.language === "ar";
-  const [getCookie,] = useCookieState();
+  const [getCookie] = useCookieState();
   const [statData, setStatData] = useState<StatData[]>([]);
 
-  const { selected, userType, isMenueCahngeFlag } =
-    useUser();
+  const { selected, userType, isMenueCahngeFlag } = useUser();
   const [triggerGetCaseCount, { data: caseCount, isFetching }] =
     useLazyGetCaseCountQuery();
 

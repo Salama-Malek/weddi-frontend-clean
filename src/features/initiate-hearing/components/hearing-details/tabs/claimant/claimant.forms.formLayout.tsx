@@ -4,29 +4,17 @@ import {
   UseFormWatch,
   useWatch,
 } from "react-hook-form";
-import {
-  SectionLayout,
-  FormData,
-} from "@/shared/components/form/form.types";
+import { SectionLayout, FormData } from "@/shared/components/form/form.types";
 import { useFormOptions } from "./claimant.forms.formOptions";
-import React, {
-  useState,
-  useMemo,
-  useEffect,
-} from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useLegalRepFormOptions } from "../../establishment-tabs/legal-representative/claimant.forms.formOptions";
 import { useCookieState } from "@/features/initiate-hearing/hooks/useCookieState";
 import { TokenClaims } from "@/features/login/components/AuthProvider";
-import {
-  NICDetailsResponse,
-} from "@/features/initiate-hearing/api/create-case/plaintiffDetailsApis";
+import { NICDetailsResponse } from "@/features/initiate-hearing/api/create-case/plaintiffDetailsApis";
 import AddAttachment from "../../../add-attachments";
 import OTPFormLayout from "./OTP.froms.formlayout";
-import {
-  formatDateString,
-  formatDateToYYYYMMDD,
-} from "@/shared/lib/helpers";
+import { formatDateString, formatDateToYYYYMMDD } from "@/shared/lib/helpers";
 import { toast } from "react-toastify";
 import { DigitOnlyInput } from "@/shared/components/form/InputField";
 import { FieldWrapper } from "@/shared/components/form/FieldWrapper";
@@ -123,8 +111,7 @@ export const useFormLayout = ({
 }: FormLayoutProps): SectionLayout[] => {
   const safeAllowedIds = allowedIds || [];
 
-  const [unprofessionalLetterAttachments] =
-    useState<any[]>([]);
+  const [unprofessionalLetterAttachments] = useState<any[]>([]);
 
   const userPickedDateRef = React.useRef(false);
 
@@ -146,7 +133,6 @@ export const useFormLayout = ({
   const claimantStatus =
     watch("claimantStatus") || enforcedStatus || "principal";
 
-
   const hasMountedRef = React.useRef(false);
 
   useEffect(() => {
@@ -160,7 +146,6 @@ export const useFormLayout = ({
       }
     }
   }, [enforcedStatus, currentClaimantStatus, setValue]);
-
 
   useEffect(() => {
     register("userName");
@@ -242,15 +227,13 @@ export const useFormLayout = ({
   const userClaims = getCookie("userClaims") as TokenClaims;
   const idNumber = userClaims?.UserID || "";
   const userType = getCookie("userType");
-  const { ClaimantStatusRadioOptions } =
-    useFormOptions();
+  const { ClaimantStatusRadioOptions } = useFormOptions();
   const { plaintiffTypeOptions, AgentTypeOptions } = useLegalRepFormOptions();
 
   const workerAgentIdNumber = watch("workerAgentIdNumber") || "";
   const workerAgentHijriDob = watch("workerAgentDateOfBirthHijri") || "";
   const formattedWorkerAgentHijriDob =
     formatDateToYYYYMMDD(workerAgentHijriDob);
-  
 
   const agentType = watch("agentType");
 
@@ -258,19 +241,19 @@ export const useFormLayout = ({
     agentType === "local_agency"
       ? watch("localAgent_agencyNumber") || ""
       : agentType === "external_agency"
-      ? watch("externalAgent_agencyNumber") || ""
-      : watch("agencyNumber") || "";
+        ? watch("externalAgent_agencyNumber") || ""
+        : watch("agencyNumber") || "";
 
   const hasValidAgency = useMemo(() => {
     if (agentType === "local_agency") {
       return Boolean(
-        agencyNumber && agentInfoData?.Agent?.ErrorDescription === "Success"
+        agencyNumber && agentInfoData?.Agent?.ErrorDescription === "Success",
       );
     }
     if (agentType === "external_agency") {
       const externalAgencyNumber = watch("externalAgent_agencyNumber");
       return Boolean(
-        externalAgencyNumber && String(externalAgencyNumber).length > 0
+        externalAgencyNumber && String(externalAgencyNumber).length > 0,
       );
     }
     return false;
@@ -282,7 +265,7 @@ export const useFormLayout = ({
     } else if (agentType === "external_agency") {
       const externalAgencyNumber = watch("externalAgent_agencyNumber");
       return Boolean(
-        externalAgencyNumber && String(externalAgencyNumber).length > 0
+        externalAgencyNumber && String(externalAgencyNumber).length > 0,
       );
     }
     return false;
@@ -301,7 +284,7 @@ export const useFormLayout = ({
         return true;
       }
       return agentInfoData.PartyList.some(
-        (party) => party?.ID === workerAgentIdNumber
+        (party) => party?.ID === workerAgentIdNumber,
       );
     } catch (error) {
       return true;
@@ -321,12 +304,11 @@ export const useFormLayout = ({
     agentType === "local_agency"
       ? localAgentNICResponse
       : agentType === "external_agency"
-      ? externalAgentNICResponse
-      : representativeNICResponse;
+        ? externalAgentNICResponse
+        : representativeNICResponse;
   const nicAgentLoading = false;
   const nicAgentError = false;
   const refetchNICAgent = () => {};
-
 
   useEffect(() => {
     if (!shouldFetchNic) {
@@ -344,7 +326,7 @@ export const useFormLayout = ({
         Array.isArray(nicAgent.ErrorDetails)
       ) {
         const errorDetail = nicAgent.ErrorDetails.find(
-          (detail: any) => detail.ErrorDesc
+          (detail: any) => detail.ErrorDesc,
         );
         if (errorDetail && errorDetail.ErrorDesc) {
           errorMessage = errorDetail.ErrorDesc;
@@ -373,7 +355,7 @@ export const useFormLayout = ({
           },
           {
             shouldValidate: false,
-          }
+          },
         );
       }
 
@@ -386,7 +368,7 @@ export const useFormLayout = ({
           },
           {
             shouldValidate: false,
-          }
+          },
         );
       }
 
@@ -399,7 +381,7 @@ export const useFormLayout = ({
           },
           {
             shouldValidate: false,
-          }
+          },
         );
       }
 
@@ -412,7 +394,7 @@ export const useFormLayout = ({
           },
           {
             shouldValidate: false,
-          }
+          },
         );
       }
 
@@ -425,7 +407,7 @@ export const useFormLayout = ({
           },
           {
             shouldValidate: false,
-          }
+          },
         );
       }
 
@@ -467,15 +449,15 @@ export const useFormLayout = ({
   const selectedSubCategory = getCookie("subCategory");
 
   const govRepDetail = userTypeLegalRepData?.GovRepDetails?.find(
-    (item: any) => item.GOVTID === selectedMainCategory?.value
+    (item: any) => item.GOVTID === selectedMainCategory?.value,
   );
 
   const [attachment, setAttachment] = useState<FormData["attachment"] | null>(
-    null
+    null,
   );
 
   const watchedClaimantStatus = useWatch({ name: "claimantStatus", control });
-  
+
   useEffect(() => {
     if (
       principalNICResponse?.NICDetails &&
@@ -498,7 +480,7 @@ export const useFormLayout = ({
           },
           {
             shouldValidate: false,
-          }
+          },
         );
       }
 
@@ -508,7 +490,7 @@ export const useFormLayout = ({
           { value: nic.City_Code || "", label: nic.City || "" },
           {
             shouldValidate: false,
-          }
+          },
         );
       }
 
@@ -521,7 +503,7 @@ export const useFormLayout = ({
           },
           {
             shouldValidate: false,
-          }
+          },
         );
       }
 
@@ -534,7 +516,7 @@ export const useFormLayout = ({
           },
           {
             shouldValidate: false,
-          }
+          },
         );
       }
 
@@ -547,7 +529,7 @@ export const useFormLayout = ({
           },
           {
             shouldValidate: false,
-          }
+          },
         );
       }
 
@@ -597,7 +579,7 @@ export const useFormLayout = ({
           },
           {
             shouldValidate: false,
-          }
+          },
         );
       }
       if (nic.City_Code) {
@@ -609,7 +591,7 @@ export const useFormLayout = ({
           },
           {
             shouldValidate: false,
-          }
+          },
         );
       }
       if (nic.Occupation_Code) {
@@ -621,7 +603,7 @@ export const useFormLayout = ({
           },
           {
             shouldValidate: false,
-          }
+          },
         );
       }
       if (nic.Gender_Code) {
@@ -633,7 +615,7 @@ export const useFormLayout = ({
           },
           {
             shouldValidate: false,
-          }
+          },
         );
       }
       if (nic.Nationality_Code) {
@@ -645,7 +627,7 @@ export const useFormLayout = ({
           },
           {
             shouldValidate: false,
-          }
+          },
         );
       }
 
@@ -689,31 +671,31 @@ export const useFormLayout = ({
       setValue("localAgent_userName", d.PlaintiffName || "");
       setValue(
         "localAgent_region",
-        d.Region_Code ? { value: d.Region_Code, label: d.Region || "" } : null
+        d.Region_Code ? { value: d.Region_Code, label: d.Region || "" } : null,
       );
       setValue(
         "localAgent_city",
-        d.City_Code ? { value: d.City_Code, label: d.City || "" } : null
+        d.City_Code ? { value: d.City_Code, label: d.City || "" } : null,
       );
       setValue(
         "localAgent_occupation",
         d.Occupation_Code
           ? { value: d.Occupation_Code, label: d.Occupation || "" }
-          : null
+          : null,
       );
       setValue(
         "localAgent_gender",
-        d.Gender_Code ? { value: d.Gender_Code, label: d.Gender || "" } : null
+        d.Gender_Code ? { value: d.Gender_Code, label: d.Gender || "" } : null,
       );
       setValue(
         "localAgent_nationality",
         d.Nationality_Code
           ? { value: d.Nationality_Code, label: d.Nationality || "" }
-          : null
+          : null,
       );
       setValue(
         "localAgent_phoneNumber",
-        d.PhoneNumber ? d.PhoneNumber.toString() : ""
+        d.PhoneNumber ? d.PhoneNumber.toString() : "",
       );
     }
   }, [localAgentNICResponse, claimantStatus, agentType, setValue]);
@@ -728,31 +710,31 @@ export const useFormLayout = ({
       setValue("externalAgent_userName", d.PlaintiffName || "");
       setValue(
         "externalAgent_region",
-        d.Region_Code ? { value: d.Region_Code, label: d.Region ?? "" } : null
+        d.Region_Code ? { value: d.Region_Code, label: d.Region ?? "" } : null,
       );
       setValue(
         "externalAgent_city",
-        d.City_Code ? { value: d.City_Code, label: d.City ?? "" } : null
+        d.City_Code ? { value: d.City_Code, label: d.City ?? "" } : null,
       );
       setValue(
         "externalAgent_occupation",
         d.Occupation_Code
           ? { value: d.Occupation_Code, label: d.Occupation ?? "" }
-          : null
+          : null,
       );
       setValue(
         "externalAgent_gender",
-        d.Gender_Code ? { value: d.Gender_Code, label: d.Gender ?? "" } : null
+        d.Gender_Code ? { value: d.Gender_Code, label: d.Gender ?? "" } : null,
       );
       setValue(
         "externalAgent_nationality",
         d.Nationality_Code
           ? { value: d.Nationality_Code, label: d.Nationality ?? "" }
-          : null
+          : null,
       );
       setValue(
         "externalAgent_phoneNumber",
-        d.PhoneNumber ? d.PhoneNumber.toString() : ""
+        d.PhoneNumber ? d.PhoneNumber.toString() : "",
       );
     }
   }, [representativeNICResponse, claimantStatus, agentType, setValue]);
@@ -763,7 +745,7 @@ export const useFormLayout = ({
         value: item.ElementKey,
         label: item.ElementValue,
       })) || [],
-    [plaintiffRegionData]
+    [plaintiffRegionData],
   );
 
   const CityOptions = useMemo(
@@ -772,7 +754,7 @@ export const useFormLayout = ({
         value: item.ElementKey,
         label: item.ElementValue,
       })) || [],
-    [plaintiffCityData]
+    [plaintiffCityData],
   );
 
   const OccupationOptions = useMemo(
@@ -781,7 +763,7 @@ export const useFormLayout = ({
         value: item.ElementKey,
         label: item.ElementValue,
       })) || [],
-    [occupationData]
+    [occupationData],
   );
 
   const GenderOptions = useMemo(
@@ -790,7 +772,7 @@ export const useFormLayout = ({
         value: item.ElementKey,
         label: item.ElementValue,
       })) || [],
-    [genderData]
+    [genderData],
   );
 
   const NationalityOptions = useMemo(
@@ -799,7 +781,7 @@ export const useFormLayout = ({
         value: item.ElementKey,
         label: item.ElementValue,
       })) || [],
-    [nationalityData]
+    [nationalityData],
   );
 
   const handleFileSelect = (fileData: FormData["attachment"]) => {
@@ -921,12 +903,12 @@ export const useFormLayout = ({
 
       const validateFields = async () => {
         const fieldsToValidate = requiredFields.filter((field) =>
-          userInteractedFields.has(field)
+          userInteractedFields.has(field),
         );
 
         if (fieldsToValidate.length > 0) {
           for (const field of fieldsToValidate) {
-             await trigger(field);
+            await trigger(field);
           }
         } else {
         }
@@ -978,7 +960,7 @@ export const useFormLayout = ({
               onChange: (v: string) => {
                 setValue("principal_userName", v);
                 setUserInteractedFields(
-                  (prev) => new Set([...prev, "principal_userName"])
+                  (prev) => new Set([...prev, "principal_userName"]),
                 );
               },
             }),
@@ -1006,7 +988,7 @@ export const useFormLayout = ({
                 setValue("principal_region", value);
                 setValue("principal_city", null);
                 setUserInteractedFields(
-                  (prev) => new Set([...prev, "principal_region"])
+                  (prev) => new Set([...prev, "principal_region"]),
                 );
               },
             }),
@@ -1032,7 +1014,7 @@ export const useFormLayout = ({
               onChange: (value: any) => {
                 setValue("principal_city", value);
                 setUserInteractedFields(
-                  (prev) => new Set([...prev, "principal_city"])
+                  (prev) => new Set([...prev, "principal_city"]),
                 );
               },
             }),
@@ -1066,7 +1048,7 @@ export const useFormLayout = ({
               onChange: (v: string) => {
                 setValue("principal_phoneNumber", v);
                 setUserInteractedFields(
-                  (prev) => new Set([...prev, "principal_phoneNumber"])
+                  (prev) => new Set([...prev, "principal_phoneNumber"]),
                 );
               },
               validation: {
@@ -1092,7 +1074,7 @@ export const useFormLayout = ({
               onChange: (value: any) => {
                 setValue("principal_occupation", value);
                 setUserInteractedFields(
-                  (prev) => new Set([...prev, "principal_occupation"])
+                  (prev) => new Set([...prev, "principal_occupation"]),
                 );
               },
               validation: {
@@ -1118,7 +1100,7 @@ export const useFormLayout = ({
               onChange: (value: any) => {
                 setValue("principal_gender", value);
                 setUserInteractedFields(
-                  (prev) => new Set([...prev, "principal_gender"])
+                  (prev) => new Set([...prev, "principal_gender"]),
                 );
               },
               validation: {
@@ -1146,7 +1128,7 @@ export const useFormLayout = ({
               onChange: (value: any) => {
                 setValue("principal_nationality", value);
                 setUserInteractedFields(
-                  (prev) => new Set([...prev, "principal_nationality"])
+                  (prev) => new Set([...prev, "principal_nationality"]),
                 );
               },
               validation: {
@@ -1247,7 +1229,7 @@ export const useFormLayout = ({
                       onChange={(e) =>
                         setValue(
                           "localAgent_agencyNumber",
-                          typeof e === "string" ? e : e.target.value
+                          typeof e === "string" ? e : e.target.value,
                         )
                       }
                       onBlur={() => {
@@ -1345,7 +1327,7 @@ export const useFormLayout = ({
                           if (shouldClear) {
                             setValue(
                               "localAgent_workerAgentDateOfBirthHijri",
-                              ""
+                              "",
                             );
                             setValue("localAgent_gregorianDate", "");
                             setValue("localAgent_userName", "");
@@ -1373,7 +1355,7 @@ export const useFormLayout = ({
                     (watch("localAgent_workerAgentIdNumber") || "").length !==
                       10 ||
                     !safeAllowedIds.includes(
-                      watch("localAgent_workerAgentIdNumber") || ""
+                      watch("localAgent_workerAgentIdNumber") || "",
                     ) ? (
                       <div style={{ pointerEvents: "none", opacity: 0.5 }}>
                         <HijriDatePickerInput
@@ -1392,7 +1374,7 @@ export const useFormLayout = ({
                               .format("YYYY/MM/DD");
                             const gregorianStorage = gregorianStr.replace(
                               /\//g,
-                              ""
+                              "",
                             );
                             if (
                               watch("localAgent_gregorianDate") !==
@@ -1400,7 +1382,7 @@ export const useFormLayout = ({
                             ) {
                               setValue(
                                 "localAgent_gregorianDate",
-                                gregorianStorage
+                                gregorianStorage,
                               );
                             }
                           }}
@@ -1425,7 +1407,7 @@ export const useFormLayout = ({
                             .format("YYYY/MM/DD");
                           const gregorianStorage = gregorianStr.replace(
                             /\//g,
-                            ""
+                            "",
                           );
                           if (
                             watch("localAgent_gregorianDate") !==
@@ -1433,7 +1415,7 @@ export const useFormLayout = ({
                           ) {
                             setValue(
                               "localAgent_gregorianDate",
-                              gregorianStorage
+                              gregorianStorage,
                             );
                           }
 
@@ -1442,7 +1424,7 @@ export const useFormLayout = ({
                             (watch("localAgent_workerAgentIdNumber") || "")
                               .length === 10 &&
                             safeAllowedIds.includes(
-                              watch("localAgent_workerAgentIdNumber") || ""
+                              watch("localAgent_workerAgentIdNumber") || "",
                             )
                           ) {
                             if (shouldFetchNic) refetchNICAgent();
@@ -1485,7 +1467,7 @@ export const useFormLayout = ({
                   (watch("localAgent_workerAgentIdNumber") || "").length ===
                     10 &&
                   safeAllowedIds.includes(
-                    watch("localAgent_workerAgentIdNumber") || ""
+                    watch("localAgent_workerAgentIdNumber") || "",
                   ) &&
                   !!watch("localAgent_workerAgentDateOfBirthHijri")
                 ),
@@ -1510,7 +1492,7 @@ export const useFormLayout = ({
                   (watch("localAgent_workerAgentIdNumber") || "").length ===
                     10 &&
                   safeAllowedIds.includes(
-                    watch("localAgent_workerAgentIdNumber") || ""
+                    watch("localAgent_workerAgentIdNumber") || "",
                   ) &&
                   !!watch("localAgent_workerAgentDateOfBirthHijri")
                 ),
@@ -1532,7 +1514,7 @@ export const useFormLayout = ({
                   (watch("localAgent_workerAgentIdNumber") || "").length ===
                     10 &&
                   safeAllowedIds.includes(
-                    watch("localAgent_workerAgentIdNumber") || ""
+                    watch("localAgent_workerAgentIdNumber") || "",
                   ) &&
                   !!watch("localAgent_workerAgentDateOfBirthHijri")
                 ),
@@ -1550,7 +1532,7 @@ export const useFormLayout = ({
                   (watch("localAgent_workerAgentIdNumber") || "").length ===
                     10 &&
                   safeAllowedIds.includes(
-                    watch("localAgent_workerAgentIdNumber") || ""
+                    watch("localAgent_workerAgentIdNumber") || "",
                   ) &&
                   !!watch("localAgent_workerAgentDateOfBirthHijri")
                 ),
@@ -1568,7 +1550,7 @@ export const useFormLayout = ({
                   (watch("localAgent_workerAgentIdNumber") || "").length ===
                     10 &&
                   safeAllowedIds.includes(
-                    watch("localAgent_workerAgentIdNumber") || ""
+                    watch("localAgent_workerAgentIdNumber") || "",
                   ) &&
                   !!watch("localAgent_workerAgentDateOfBirthHijri")
                 ),
@@ -1586,7 +1568,7 @@ export const useFormLayout = ({
                   (watch("localAgent_workerAgentIdNumber") || "").length ===
                     10 &&
                   safeAllowedIds.includes(
-                    watch("localAgent_workerAgentIdNumber") || ""
+                    watch("localAgent_workerAgentIdNumber") || "",
                   ) &&
                   !!watch("localAgent_workerAgentDateOfBirthHijri")
                 ),
@@ -1604,7 +1586,7 @@ export const useFormLayout = ({
                   (watch("localAgent_workerAgentIdNumber") || "").length ===
                     10 &&
                   safeAllowedIds.includes(
-                    watch("localAgent_workerAgentIdNumber") || ""
+                    watch("localAgent_workerAgentIdNumber") || "",
                   ) &&
                   !!watch("localAgent_workerAgentDateOfBirthHijri")
                 ),
@@ -1632,7 +1614,7 @@ export const useFormLayout = ({
                 onChange: (v: string) => {
                   setValue("externalAgent_agentName", v);
                   setUserInteractedFields(
-                    (prev) => new Set([...prev, "externalAgent_agentName"])
+                    (prev) => new Set([...prev, "externalAgent_agentName"]),
                   );
                 },
                 validation: { required: t("agentNameValidation") },
@@ -1653,11 +1635,11 @@ export const useFormLayout = ({
                       onChange={(e) => {
                         setValue(
                           "externalAgent_agencyNumber",
-                          typeof e === "string" ? e : e.target.value
+                          typeof e === "string" ? e : e.target.value,
                         );
                         setUserInteractedFields(
                           (prev) =>
-                            new Set([...prev, "externalAgent_agencyNumber"])
+                            new Set([...prev, "externalAgent_agencyNumber"]),
                         );
                       }}
                       maxLength={10}
@@ -1675,7 +1657,7 @@ export const useFormLayout = ({
                 onChange: (v: string) => {
                   setValue("externalAgent_agencyStatus", v);
                   setUserInteractedFields(
-                    (prev) => new Set([...prev, "externalAgent_agencyStatus"])
+                    (prev) => new Set([...prev, "externalAgent_agencyStatus"]),
                   );
                 },
                 validation: { required: t("agencyStatusValidation") },
@@ -1688,7 +1670,7 @@ export const useFormLayout = ({
                 onChange: (v: string) => {
                   setValue("externalAgent_agencySource", v);
                   setUserInteractedFields(
-                    (prev) => new Set([...prev, "externalAgent_agencySource"])
+                    (prev) => new Set([...prev, "externalAgent_agencySource"]),
                   );
                 },
                 validation: { required: t("agencySourceValidation") },
@@ -1703,7 +1685,7 @@ export const useFormLayout = ({
                   setValue("externalAgent_currentPlaceOfWork", v);
                   setUserInteractedFields(
                     (prev) =>
-                      new Set([...prev, "externalAgent_currentPlaceOfWork"])
+                      new Set([...prev, "externalAgent_currentPlaceOfWork"]),
                   );
                 },
                 validation: { required: t("workplaceValidation") },
@@ -1718,7 +1700,7 @@ export const useFormLayout = ({
                   setValue("externalAgent_residencyAddress", v);
                   setUserInteractedFields(
                     (prev) =>
-                      new Set([...prev, "externalAgent_residencyAddress"])
+                      new Set([...prev, "externalAgent_residencyAddress"]),
                   );
                 },
                 validation: { required: t("residenceAddressValidation") },
@@ -1734,7 +1716,7 @@ export const useFormLayout = ({
                   setValue("externalAgent_agentPhoneNumber", v);
                   setUserInteractedFields(
                     (prev) =>
-                      new Set([...prev, "externalAgent_agentPhoneNumber"])
+                      new Set([...prev, "externalAgent_agentPhoneNumber"]),
                   );
                 },
                 validation: {
@@ -1768,19 +1750,19 @@ export const useFormLayout = ({
                       name="externalAgent_workerAgentIdNumber"
                       placeholder="10xxxxxxxx"
                       value={String(
-                        watch("externalAgent_workerAgentIdNumber") || ""
+                        watch("externalAgent_workerAgentIdNumber") || "",
                       )}
                       onChange={(e) => {
                         setValue(
                           "externalAgent_workerAgentIdNumber",
-                          typeof e === "string" ? e : e.target.value
+                          typeof e === "string" ? e : e.target.value,
                         );
                         setUserInteractedFields(
                           (prev) =>
                             new Set([
                               ...prev,
                               "externalAgent_workerAgentIdNumber",
-                            ])
+                            ]),
                         );
                       }}
                       maxLength={10}
@@ -1806,7 +1788,7 @@ export const useFormLayout = ({
                             new Set([
                               ...prev,
                               "externalAgent_workerAgentDateOfBirthHijri",
-                            ])
+                            ]),
                         );
                         if (!date || Array.isArray(date)) {
                           setValue("externalAgent_gregorianDate", "");
@@ -1817,7 +1799,7 @@ export const useFormLayout = ({
                           .format("YYYY/MM/DD");
                         const gregorianStorage = gregorianStr.replace(
                           /\//g,
-                          ""
+                          "",
                         );
                         if (
                           watch("externalAgent_gregorianDate") !==
@@ -1825,7 +1807,7 @@ export const useFormLayout = ({
                         ) {
                           setValue(
                             "externalAgent_gregorianDate",
-                            gregorianStorage
+                            gregorianStorage,
                           );
                         }
                       }}
@@ -1860,7 +1842,8 @@ export const useFormLayout = ({
                       onChange: (v: string) => {
                         setValue("externalAgent_userName", v);
                         setUserInteractedFields(
-                          (prev) => new Set([...prev, "externalAgent_userName"])
+                          (prev) =>
+                            new Set([...prev, "externalAgent_userName"]),
                         );
                       },
                     }),
@@ -1876,7 +1859,7 @@ export const useFormLayout = ({
                 onChange: (v: string) => {
                   setValue("externalAgent_phoneNumber", v);
                   setUserInteractedFields(
-                    (prev) => new Set([...prev, "externalAgent_phoneNumber"])
+                    (prev) => new Set([...prev, "externalAgent_phoneNumber"]),
                   );
                 },
                 validation: {
@@ -1899,7 +1882,7 @@ export const useFormLayout = ({
                   setValue("externalAgent_region", value);
                   setValue("externalAgent_city", null);
                   setUserInteractedFields(
-                    (prev) => new Set([...prev, "externalAgent_region"])
+                    (prev) => new Set([...prev, "externalAgent_region"]),
                   );
                 },
               },
@@ -1914,7 +1897,7 @@ export const useFormLayout = ({
                 onChange: (value: any) => {
                   setValue("externalAgent_city", value);
                   setUserInteractedFields(
-                    (prev) => new Set([...prev, "externalAgent_city"])
+                    (prev) => new Set([...prev, "externalAgent_city"]),
                   );
                 },
               },
@@ -1929,7 +1912,7 @@ export const useFormLayout = ({
                 onChange: (value: any) => {
                   setValue("externalAgent_occupation", value);
                   setUserInteractedFields(
-                    (prev) => new Set([...prev, "externalAgent_occupation"])
+                    (prev) => new Set([...prev, "externalAgent_occupation"]),
                   );
                 },
               },
@@ -1944,7 +1927,7 @@ export const useFormLayout = ({
                 onChange: (value: any) => {
                   setValue("externalAgent_gender", value);
                   setUserInteractedFields(
-                    (prev) => new Set([...prev, "externalAgent_gender"])
+                    (prev) => new Set([...prev, "externalAgent_gender"]),
                   );
                 },
               },
@@ -1959,7 +1942,7 @@ export const useFormLayout = ({
                 onChange: (value: any) => {
                   setValue("externalAgent_nationality", value);
                   setUserInteractedFields(
-                    (prev) => new Set([...prev, "externalAgent_nationality"])
+                    (prev) => new Set([...prev, "externalAgent_nationality"]),
                   );
                 },
               },
@@ -2201,7 +2184,7 @@ export const useFormLayout = ({
         sections.push({
           title: t(
             "unprofessionalLetterAttachments.title",
-            "Unprofessional Letter Attachments"
+            "Unprofessional Letter Attachments",
           ),
           className: "attachment-section",
           gridCols: 1,
@@ -2218,14 +2201,14 @@ export const useFormLayout = ({
                   onView={() => {
                     window.open(
                       `/api/file/download?key=${encodeURIComponent(
-                        file.FileKey
-                      )}`
+                        file.FileKey,
+                      )}`,
                     );
                   }}
                   className="w-full"
                 />
               ),
-            })
+            }),
           ),
         });
       }
@@ -2281,13 +2264,13 @@ export const useFormLayout = ({
           fields: [
             {
               label: LegalRep(
-                "LegalRepresentativeDetails.LegalRepresentativeName"
+                "LegalRepresentativeDetails.LegalRepresentativeName",
               ),
               value: govRepDetail?.RepName,
             },
             {
               label: LegalRep(
-                "LegalRepresentativeDetails.LegalRepresentativeID"
+                "LegalRepresentativeDetails.LegalRepresentativeID",
               ),
               value: govRepDetail?.RepNationalid,
             },
@@ -2301,7 +2284,7 @@ export const useFormLayout = ({
             },
           ],
         },
-      }
+      },
     );
   }
 
@@ -2333,7 +2316,7 @@ export const useFormLayout = ({
           data?.PlaintiffName || data?.name || "",
           {
             shouldValidate: false,
-          }
+          },
         );
 
         clearErrors("userName");
@@ -2508,7 +2491,7 @@ export const useFormLayout = ({
             "",
           {
             shouldValidate: false,
-          }
+          },
         );
 
         setValue(
@@ -2519,7 +2502,7 @@ export const useFormLayout = ({
             "",
           {
             shouldValidate: false,
-          }
+          },
         );
       }
 
@@ -2536,7 +2519,7 @@ export const useFormLayout = ({
             "",
           {
             shouldValidate: false,
-          }
+          },
         );
 
         setValue(
@@ -2547,7 +2530,7 @@ export const useFormLayout = ({
             "",
           {
             shouldValidate: false,
-          }
+          },
         );
       }
 
@@ -2581,7 +2564,7 @@ export const useFormLayout = ({
           (data?.Agent_PhoneNumber || data?.agentPhoneNumber).toString(),
           {
             shouldValidate: false,
-          }
+          },
         );
       }
     };
@@ -2662,12 +2645,12 @@ export const useFormLayout = ({
           if (data.CertifiedBy_Code === "CB1") {
             setValue(
               "localAgent_residencyAddress",
-              data.Agent_ResidencyAddress
+              data.Agent_ResidencyAddress,
             );
           } else if (data.CertifiedBy_Code === "CB2") {
             setValue(
               "externalAgent_residencyAddress",
-              data.Agent_ResidencyAddress
+              data.Agent_ResidencyAddress,
             );
           }
         }
@@ -2676,12 +2659,12 @@ export const useFormLayout = ({
           if (data.CertifiedBy_Code === "CB1") {
             setValue(
               "localAgent_currentPlaceOfWork",
-              data.Agent_CurrentPlaceOfWork
+              data.Agent_CurrentPlaceOfWork,
             );
           } else if (data.CertifiedBy_Code === "CB2") {
             setValue(
               "externalAgent_currentPlaceOfWork",
-              data.Agent_CurrentPlaceOfWork
+              data.Agent_CurrentPlaceOfWork,
             );
           }
         }
@@ -2706,12 +2689,12 @@ export const useFormLayout = ({
           if (data.CertifiedBy_Code === "CB1") {
             setValue(
               "localAgent_workerAgentDateOfBirthHijri",
-              data.PlaintiffHijiriDOB
+              data.PlaintiffHijiriDOB,
             );
           } else if (data.CertifiedBy_Code === "CB2") {
             setValue(
               "externalAgent_workerAgentDateOfBirthHijri",
-              data.PlaintiffHijiriDOB
+              data.PlaintiffHijiriDOB,
             );
           }
         }
@@ -2720,12 +2703,12 @@ export const useFormLayout = ({
           if (data.CertifiedBy_Code === "CB1") {
             setValue(
               "localAgent_gregorianDate",
-              data.Plaintiff_ApplicantBirthDate
+              data.Plaintiff_ApplicantBirthDate,
             );
           } else if (data.CertifiedBy_Code === "CB2") {
             setValue(
               "externalAgent_gregorianDate",
-              data.Plaintiff_ApplicantBirthDate
+              data.Plaintiff_ApplicantBirthDate,
             );
           }
         }
@@ -2908,8 +2891,6 @@ export const useFormLayout = ({
 
   return formLayout;
 };
-
-
 
 export const useClaimantFormLayout = () => {
   const { i18n } = useTranslation();

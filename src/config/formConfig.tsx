@@ -16,7 +16,7 @@ export const initFormConfig = (config: FormConfig) => {
 };
 
 export const getCommonElements = (
-  isValid: boolean | undefined
+  isValid: boolean | undefined,
 ): (FormElement | false)[] => {
   if (!formConfig) throw new Error("Form config not initialized!");
 
@@ -48,7 +48,7 @@ export const buildForm = (elements: (FormElement | false)[]) => [...elements];
 export const dateFieldConfigs = (
   t: any,
   control?: any,
-  handleHijriDateChange?: any
+  handleHijriDateChange?: any,
 ) =>
   ({
     fromDate: {
@@ -59,13 +59,9 @@ export const dateFieldConfigs = (
             control={control}
             name="from_date_hijri"
             label={t("fromDateHijri")}
-            rules={{required: true}}
+            rules={{ required: true }}
             onChangeHandler={(date, onChange) =>
-              handleHijriDateChange(
-                date,
-                onChange,
-                "from_date_gregorian"
-              )
+              handleHijriDateChange(date, onChange, "from_date_gregorian")
             }
           />
           <GregorianDateDisplayInput
@@ -86,14 +82,15 @@ export const dateFieldConfigs = (
             label={t("toDateHijri")}
             rules={{
               required: true,
-              ...createDateRangeValidation("from_date_hijri", "to_date_hijri", "hijri", "hijri")
+              ...createDateRangeValidation(
+                "from_date_hijri",
+                "to_date_hijri",
+                "hijri",
+                "hijri",
+              ),
             }}
             onChangeHandler={(date, onChange) =>
-              handleHijriDateChange(
-                date,
-                onChange,
-                "to_date_gregorian"
-              )
+              handleHijriDateChange(date, onChange, "to_date_gregorian")
             }
           />
           <GregorianDateDisplayInput
@@ -104,13 +101,18 @@ export const dateFieldConfigs = (
         </div>
       ),
     },
-  } as const);
+  }) as const;
 
 export type DateFieldKey = keyof typeof dateFieldConfigs;
 
-export const managerialDateConfigs = (t: any, setValue?: any, watch?: any, control?: any, handleHijriDateChange?: any) => {
-  
-  return ({
+export const managerialDateConfigs = (
+  t: any,
+  setValue?: any,
+  watch?: any,
+  control?: any,
+  handleHijriDateChange?: any,
+) => {
+  return {
     managerialDate: {
       type: "custom" as const,
       component: (
@@ -119,12 +121,12 @@ export const managerialDateConfigs = (t: any, setValue?: any, watch?: any, contr
             control={control}
             name="managerial_decision_date_hijri"
             label={t("managerialDecisionDateHijri")}
-            rules={{required: true}}
+            rules={{ required: true }}
             onChangeHandler={(date, onChange) =>
               handleHijriDateChange(
                 date,
                 onChange,
-                "managerial_decision_date_gregorian"
+                "managerial_decision_date_gregorian",
               )
             }
           />
@@ -145,7 +147,7 @@ export const managerialDateConfigs = (t: any, setValue?: any, watch?: any, contr
       value: watch ? watch("managerialDecisionNumber") || "" : "",
       onChange: (value: string) => setValue("managerialDecisionNumber", value),
     },
-  } as const);
+  } as const;
 };
 
 interface InputFieldProps {

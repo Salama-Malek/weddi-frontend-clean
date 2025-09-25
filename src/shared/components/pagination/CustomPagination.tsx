@@ -39,8 +39,8 @@ export const CustomPagination: React.FC<IPaginationProps> = ({
         disabled={page === 1}
       >
         <img
-        className={`${isRTL ? "!ml-6":""}`}
-          src={isRTL ? RArrow : LArrow} 
+          className={`${isRTL ? "!ml-6" : ""}`}
+          src={isRTL ? RArrow : LArrow}
           alt="Previous"
         />
       </button>
@@ -82,10 +82,7 @@ export const CustomPagination: React.FC<IPaginationProps> = ({
         type="button"
         disabled={page === totalPages}
       >
-        <img
-          src={isRTL ? LArrow : RArrow}
-          alt="Next"
-        />
+        <img src={isRTL ? LArrow : RArrow} alt="Next" />
       </button>
     </div>
   );

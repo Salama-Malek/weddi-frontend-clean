@@ -47,7 +47,13 @@ export const hearingTopicsApi = api.injectEndpoints({
     }),
 
     mainCategoryLookup: builder.query({
-      query: ({ LookupType, ModuleKey, ModuleName, ApplicantType, AcceptedLanguage }) => ({
+      query: ({
+        LookupType,
+        ModuleKey,
+        ModuleName,
+        ApplicantType,
+        AcceptedLanguage,
+      }) => ({
         url: "/WeddiServices/V1/MainLookUp",
         method: "GET",
         params: {

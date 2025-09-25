@@ -4,7 +4,7 @@ import { useCookieState } from "./useCookieState";
 
 const useEmbassyCaseDetailsPrefill = (
   setValue: (field: string, value: any) => void,
-  trigger?: (name?: string | string[]) => Promise<boolean>
+  trigger?: (name?: string | string[]) => Promise<boolean>,
 ) => {
   const [getCookie] = useCookieState();
   const [triggerCaseDetailsQuery, { isLoading: apiIsLoading }] =
@@ -45,31 +45,31 @@ const useEmbassyCaseDetailsPrefill = (
           if (parsedCaseDetails.PlaintiffId) {
             setValue(
               "embassyPrincipal_idNumber",
-              parsedCaseDetails.PlaintiffId
+              parsedCaseDetails.PlaintiffId,
             );
           }
           if (parsedCaseDetails.PlaintiffHijiriDOB) {
             setValue(
               "embassyPrincipal_hijriDate",
-              parsedCaseDetails.PlaintiffHijiriDOB
+              parsedCaseDetails.PlaintiffHijiriDOB,
             );
           }
           if (parsedCaseDetails.PlaintiffName) {
             setValue(
               "embassyPrincipal_userName",
-              parsedCaseDetails.PlaintiffName
+              parsedCaseDetails.PlaintiffName,
             );
           }
           if (parsedCaseDetails.Plaintiff_PhoneNumber) {
             setValue(
               "embassyPrincipal_phoneNumber",
-              parsedCaseDetails.Plaintiff_PhoneNumber
+              parsedCaseDetails.Plaintiff_PhoneNumber,
             );
           }
           if (parsedCaseDetails.Plaintiff_ApplicantBirthDate) {
             setValue(
               "embassyPrincipal_gregorianDate",
-              parsedCaseDetails.Plaintiff_ApplicantBirthDate
+              parsedCaseDetails.Plaintiff_ApplicantBirthDate,
             );
           }
 
@@ -131,65 +131,65 @@ const useEmbassyCaseDetailsPrefill = (
               "embassyAgent_agentType",
               parsedCaseDetails.CertifiedBy === "CB1"
                 ? "local_agency"
-                : "external_agency"
+                : "external_agency",
             );
             setValue(
               "embassyAgent_agencyNumber",
-              parsedCaseDetails.Agent_MandateNumber || ""
+              parsedCaseDetails.Agent_MandateNumber || "",
             );
             setValue(
               "embassyAgent_mobileNumber",
-              parsedCaseDetails.Plaintiff_MobileNumber || ""
+              parsedCaseDetails.Plaintiff_MobileNumber || "",
             );
             setValue(
               "embassyAgent_agentName",
-              parsedCaseDetails.PlaintiffName || ""
+              parsedCaseDetails.PlaintiffName || "",
             );
             setValue(
               "embassyAgent_agencyStatus",
-              parsedCaseDetails.Agent_MandateStatus || ""
+              parsedCaseDetails.Agent_MandateStatus || "",
             );
             setValue(
               "embassyAgent_agencySource",
-              parsedCaseDetails.Agent_MandateSource || ""
+              parsedCaseDetails.Agent_MandateSource || "",
             );
             setValue(
               "embassyAgent_Agent_ResidencyAddress",
-              parsedCaseDetails.Agent_ResidencyAddress || ""
+              parsedCaseDetails.Agent_ResidencyAddress || "",
             );
             setValue(
               "embassyAgent_Agent_CurrentPlaceOfWork",
-              parsedCaseDetails.Agent_CurrentPlaceOfWork || ""
+              parsedCaseDetails.Agent_CurrentPlaceOfWork || "",
             );
 
             if (parsedCaseDetails.PlaintiffId) {
               setValue(
                 "embassyAgent_workerAgentIdNumber",
-                parsedCaseDetails.PlaintiffId
+                parsedCaseDetails.PlaintiffId,
               );
             }
             if (parsedCaseDetails.PlaintiffHijiriDOB) {
               setValue(
                 "embassyAgent_workerAgentDateOfBirthHijri",
-                parsedCaseDetails.PlaintiffHijiriDOB
+                parsedCaseDetails.PlaintiffHijiriDOB,
               );
             }
             if (parsedCaseDetails.PlaintiffName) {
               setValue(
                 "embassyAgent_userName",
-                parsedCaseDetails.PlaintiffName
+                parsedCaseDetails.PlaintiffName,
               );
             }
             if (parsedCaseDetails.Plaintiff_ApplicantBirthDate) {
               setValue(
                 "embassyAgent_gregorianDate",
-                parsedCaseDetails.Plaintiff_ApplicantBirthDate
+                parsedCaseDetails.Plaintiff_ApplicantBirthDate,
               );
             }
             if (parsedCaseDetails.Plaintiff_PhoneNumber) {
               setValue(
                 "embassyAgent_phoneNumber",
-                parsedCaseDetails.Plaintiff_PhoneNumber
+                parsedCaseDetails.Plaintiff_PhoneNumber,
               );
             }
 
@@ -242,45 +242,45 @@ const useEmbassyCaseDetailsPrefill = (
             if (parsedCaseDetails.Plaintiff_Nationality_Code) {
               setValue(
                 "embassyAgent_Nationality_Code",
-                parsedCaseDetails.Plaintiff_Nationality_Code
+                parsedCaseDetails.Plaintiff_Nationality_Code,
               );
             }
 
             if (parsedCaseDetails.EmbassyName) {
               setValue(
                 "embassyAgent_Agent_EmbassyName",
-                parsedCaseDetails.EmbassyName
+                parsedCaseDetails.EmbassyName,
               );
             }
             if (parsedCaseDetails.EmbassyPhone) {
               setValue(
                 "embassyAgent_Agent_EmbassyPhone",
-                parsedCaseDetails.EmbassyPhone
+                parsedCaseDetails.EmbassyPhone,
               );
             }
             if (parsedCaseDetails.EmbassyNationality) {
               setValue(
                 "embassyAgent_Agent_EmbassyNationality",
-                parsedCaseDetails.EmbassyNationality
+                parsedCaseDetails.EmbassyNationality,
               );
             }
             if (parsedCaseDetails.EmbassyEmailAddress) {
               setValue(
                 "embassyAgent_Agent_EmbassyEmailAddress",
-                parsedCaseDetails.EmbassyEmailAddress
+                parsedCaseDetails.EmbassyEmailAddress,
               );
             }
             if (parsedCaseDetails.EmbassyFirstLanguage) {
               setValue(
                 "embassyAgent_Agent_EmbassyFirstLanguage",
-                parsedCaseDetails.EmbassyFirstLanguage
+                parsedCaseDetails.EmbassyFirstLanguage,
               );
             }
 
             if (parsedCaseDetails.ApplicantType) {
               setValue(
                 "embassyAgent_applicant",
-                parsedCaseDetails.ApplicantType
+                parsedCaseDetails.ApplicantType,
               );
             }
           }
@@ -368,7 +368,7 @@ const useEmbassyCaseDetailsPrefill = (
         ) {
           setValue(
             "embassyPrincipal_phoneNumber",
-            details.Plaintiff_PhoneNumber
+            details.Plaintiff_PhoneNumber,
           );
         }
 
@@ -379,7 +379,7 @@ const useEmbassyCaseDetailsPrefill = (
         ) {
           setValue(
             "embassyPrincipal_gregorianDate",
-            details.Plaintiff_ApplicantBirthDate
+            details.Plaintiff_ApplicantBirthDate,
           );
         }
 
@@ -390,7 +390,7 @@ const useEmbassyCaseDetailsPrefill = (
         ) {
           setValue(
             "embassyPrincipal_emailAddress",
-            details.Plaintiff_EmailAddress
+            details.Plaintiff_EmailAddress,
           );
         }
 
@@ -401,7 +401,7 @@ const useEmbassyCaseDetailsPrefill = (
         ) {
           setValue(
             "embassyPrincipal_mobileNumber",
-            details.Plaintiff_MobileNumber
+            details.Plaintiff_MobileNumber,
           );
         }
 
@@ -412,7 +412,7 @@ const useEmbassyCaseDetailsPrefill = (
         ) {
           setValue(
             "embassyPrincipal_firstLanguage",
-            details.Plaintiff_FirstLanguage
+            details.Plaintiff_FirstLanguage,
           );
         }
 
@@ -511,32 +511,32 @@ const useEmbassyCaseDetailsPrefill = (
         ) {
           setValue(
             "embassyAgent_agentType",
-            details.CertifiedBy === "CB1" ? "local_agency" : "external_agency"
+            details.CertifiedBy === "CB1" ? "local_agency" : "external_agency",
           );
           setValue(
             "embassyAgent_agencyNumber",
-            details.Agent_MandateNumber || ""
+            details.Agent_MandateNumber || "",
           );
           setValue(
             "embassyAgent_mobileNumber",
-            details.Plaintiff_MobileNumber || ""
+            details.Plaintiff_MobileNumber || "",
           );
           setValue("embassyAgent_agentName", details.PlaintiffName || "");
           setValue(
             "embassyAgent_agencyStatus",
-            details.Agent_MandateStatus || ""
+            details.Agent_MandateStatus || "",
           );
           setValue(
             "embassyAgent_agencySource",
-            details.Agent_MandateSource || ""
+            details.Agent_MandateSource || "",
           );
           setValue(
             "embassyAgent_Agent_ResidencyAddress",
-            details.Agent_ResidencyAddress || ""
+            details.Agent_ResidencyAddress || "",
           );
           setValue(
             "embassyAgent_Agent_CurrentPlaceOfWork",
-            details.Agent_CurrentPlaceOfWork || ""
+            details.Agent_CurrentPlaceOfWork || "",
           );
 
           if (details.PlaintiffId) {
@@ -546,7 +546,7 @@ const useEmbassyCaseDetailsPrefill = (
           if (details.PlaintiffHijiriDOB) {
             setValue(
               "embassyAgent_workerAgentDateOfBirthHijri",
-              details.PlaintiffHijiriDOB
+              details.PlaintiffHijiriDOB,
             );
           }
 
@@ -557,7 +557,7 @@ const useEmbassyCaseDetailsPrefill = (
           if (details.Plaintiff_ApplicantBirthDate) {
             setValue(
               "embassyAgent_gregorianDate",
-              details.Plaintiff_ApplicantBirthDate
+              details.Plaintiff_ApplicantBirthDate,
             );
           }
 
@@ -576,21 +576,21 @@ const useEmbassyCaseDetailsPrefill = (
           if (details.EmbassyNationality) {
             setValue(
               "embassyAgent_Agent_EmbassyNationality",
-              details.EmbassyNationality
+              details.EmbassyNationality,
             );
           }
 
           if (details.EmbassyEmailAddress) {
             setValue(
               "embassyAgent_Agent_EmbassyEmailAddress",
-              details.EmbassyEmailAddress
+              details.EmbassyEmailAddress,
             );
           }
 
           if (details.EmbassyFirstLanguage) {
             setValue(
               "embassyAgent_Agent_EmbassyFirstLanguage",
-              details.EmbassyFirstLanguage
+              details.EmbassyFirstLanguage,
             );
           }
 
@@ -672,7 +672,7 @@ const useEmbassyCaseDetailsPrefill = (
           if (details.Plaintiff_Nationality_Code) {
             setValue(
               "embassyAgent_Nationality_Code",
-              details.Plaintiff_Nationality_Code
+              details.Plaintiff_Nationality_Code,
             );
           }
 

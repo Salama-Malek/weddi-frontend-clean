@@ -78,7 +78,7 @@ export const useSubTopicPrefill = ({
         editTopic.FromDateHijri ||
         editTopic.from_date_hijri ||
         editTopic.pyTempDate ||
-        ""
+        "",
     );
     setValueOnly(
       "WR1_fromDateGregorian",
@@ -86,7 +86,7 @@ export const useSubTopicPrefill = ({
         editTopic.FromDateGregorian ||
         editTopic.from_date_gregorian ||
         editTopic.FromDate_New ||
-        ""
+        "",
     );
     setValueOnly(
       "WR1_toDateHijri",
@@ -94,7 +94,7 @@ export const useSubTopicPrefill = ({
         editTopic.ToDateHijri ||
         editTopic.to_date_hijri ||
         editTopic.Date_New ||
-        ""
+        "",
     );
     setValueOnly(
       "WR1_toDateGregorian",
@@ -102,7 +102,7 @@ export const useSubTopicPrefill = ({
         editTopic.ToDateGregorian ||
         editTopic.to_date_gregorian ||
         editTopic.ToDate_New ||
-        ""
+        "",
     );
     setValueOnly(
       "WR1_wageAmount",
@@ -110,7 +110,7 @@ export const useSubTopicPrefill = ({
         editTopic.wageAmount ||
         editTopic.amount ||
         editTopic.Amount ||
-        ""
+        "",
     );
 
     setValueOnly(
@@ -118,43 +118,43 @@ export const useSubTopicPrefill = ({
       editTopic.forAllowance ||
         (forAllowanceValue && forAllowanceLabel
           ? { value: forAllowanceValue, label: forAllowanceLabel }
-          : null)
+          : null),
     );
     setValueOnly(
       "otherAllowance",
-      editTopic.otherAllowance || otherAllowanceValue || ""
+      editTopic.otherAllowance || otherAllowanceValue || "",
     );
     setValueOnly(
       "from_date_hijri",
       editTopic.from_date_hijri ||
         editTopic.FromDateHijri ||
         editTopic.pyTempDate ||
-        ""
+        "",
     );
     setValueOnly(
       "from_date_gregorian",
       editTopic.from_date_gregorian ||
         editTopic.FromDateGregorian ||
         editTopic.FromDate_New ||
-        ""
+        "",
     );
     setValueOnly(
       "to_date_hijri",
       editTopic.to_date_hijri ||
         editTopic.ToDateHijri ||
         editTopic.Date_New ||
-        ""
+        "",
     );
     setValueOnly(
       "to_date_gregorian",
       editTopic.to_date_gregorian ||
         editTopic.ToDateGregorian ||
         editTopic.ToDate_New ||
-        ""
+        "",
     );
     setValueOnly(
       "wageAmount",
-      editTopic.wageAmount || editTopic.amount || editTopic.Amount || ""
+      editTopic.wageAmount || editTopic.amount || editTopic.Amount || "",
     );
   }, [isEditing, editTopic, setValueOnly]);
 
@@ -168,7 +168,7 @@ export const useSubTopicPrefill = ({
         editTopic.amount ||
         editTopic.Amount ||
         editTopic.OverdueWagesAmount ||
-        ""
+        "",
     );
     setValueOnly(
       "WR2_fromDateHijri",
@@ -176,7 +176,7 @@ export const useSubTopicPrefill = ({
         editTopic.FromDateHijri ||
         editTopic.from_date_hijri ||
         editTopic.pyTempDate ||
-        ""
+        "",
     );
     setValueOnly(
       "WR2_fromDateGregorian",
@@ -184,7 +184,7 @@ export const useSubTopicPrefill = ({
         editTopic.FromDateGregorian ||
         editTopic.from_date_gregorian ||
         editTopic.FromDate_New ||
-        ""
+        "",
     );
     setValueOnly(
       "WR2_toDateHijri",
@@ -192,7 +192,7 @@ export const useSubTopicPrefill = ({
         editTopic.ToDateHijri ||
         editTopic.to_date_hijri ||
         editTopic.Date_New ||
-        ""
+        "",
     );
     setValueOnly(
       "WR2_toDateGregorian",
@@ -200,7 +200,7 @@ export const useSubTopicPrefill = ({
         editTopic.ToDateGregorian ||
         editTopic.to_date_gregorian ||
         editTopic.ToDate_New ||
-        ""
+        "",
     );
 
     setValueOnly(
@@ -209,23 +209,23 @@ export const useSubTopicPrefill = ({
         editTopic.amount ||
         editTopic.Amount ||
         editTopic.OverdueWagesAmount ||
-        ""
+        "",
     );
     setValueOnly(
       "from_date_hijri",
-      editTopic.from_date_hijri || editTopic.pyTempDate || ""
+      editTopic.from_date_hijri || editTopic.pyTempDate || "",
     );
     setValueOnly(
       "from_date_gregorian",
-      editTopic.from_date_gregorian || editTopic.FromDate_New || ""
+      editTopic.from_date_gregorian || editTopic.FromDate_New || "",
     );
     setValueOnly(
       "to_date_hijri",
-      editTopic.to_date_hijri || editTopic.Date_New || ""
+      editTopic.to_date_hijri || editTopic.Date_New || "",
     );
     setValueOnly(
       "to_date_gregorian",
-      editTopic.to_date_gregorian || editTopic.ToDate_New || ""
+      editTopic.to_date_gregorian || editTopic.ToDate_New || "",
     );
   }, [isEditing, editTopic, setValueOnly]);
 
@@ -275,7 +275,7 @@ export const useSubTopicPrefill = ({
         editTopic.Amount ||
         editTopic.amount ||
         "",
-      { shouldValidate: true }
+      { shouldValidate: true },
     );
     setValueOnly(
       "BPSR1_amountRatio",
@@ -283,7 +283,7 @@ export const useSubTopicPrefill = ({
         editTopic.amountRatio ||
         editTopic.AmountRatio ||
         "",
-      { shouldValidate: true }
+      { shouldValidate: true },
     );
     setValueOnly(
       "BPSR1_fromDateHijri",
@@ -291,7 +291,7 @@ export const useSubTopicPrefill = ({
         editTopic.from_date_hijri ||
         editTopic.pyTempDate ||
         "",
-      { shouldValidate: true }
+      { shouldValidate: true },
     );
     setValueOnly(
       "BPSR1_fromDateGregorian",
@@ -299,7 +299,7 @@ export const useSubTopicPrefill = ({
         editTopic.from_date_gregorian ||
         editTopic.FromDate_New ||
         "",
-      { shouldValidate: true }
+      { shouldValidate: true },
     );
     setValueOnly(
       "BPSR1_toDateHijri",
@@ -307,7 +307,7 @@ export const useSubTopicPrefill = ({
         editTopic.to_date_hijri ||
         editTopic.Date_New ||
         "",
-      { shouldValidate: true }
+      { shouldValidate: true },
     );
     setValueOnly(
       "BPSR1_toDateGregorian",
@@ -315,7 +315,7 @@ export const useSubTopicPrefill = ({
         editTopic.to_date_gregorian ||
         editTopic.ToDate_New ||
         "",
-      { shouldValidate: true }
+      { shouldValidate: true },
     );
     setValueOnly(
       "BPSR1_otherCommission",
@@ -323,7 +323,7 @@ export const useSubTopicPrefill = ({
         editTopic.otherCommission ||
         editTopic.OtherCommission ||
         "",
-      { shouldValidate: true }
+      { shouldValidate: true },
     );
 
     setValueOnly(
@@ -331,43 +331,43 @@ export const useSubTopicPrefill = ({
       editTopic.commissionType ||
         (commissionCode && commissionLabel
           ? { value: commissionCode, label: commissionLabel }
-          : null)
+          : null),
     );
     setValueOnly(
       "accordingToAgreement",
       editTopic.accordingToAgreement ||
-        (agrCode && agrLabel ? { value: agrCode, label: agrLabel } : null)
+        (agrCode && agrLabel ? { value: agrCode, label: agrLabel } : null),
     );
     setValueOnly(
       "bonusProfitShareAmount",
       editTopic.bonusProfitShareAmount ||
         editTopic.Amount ||
         editTopic.amount ||
-        ""
+        "",
     );
     setValueOnly(
       "amountRatio",
-      editTopic.amountRatio || editTopic.AmountRatio || ""
+      editTopic.amountRatio || editTopic.AmountRatio || "",
     );
     setValueOnly(
       "from_date_hijri",
-      editTopic.from_date_hijri || editTopic.pyTempDate || ""
+      editTopic.from_date_hijri || editTopic.pyTempDate || "",
     );
     setValueOnly(
       "from_date_gregorian",
-      editTopic.from_date_gregorian || editTopic.FromDate_New || ""
+      editTopic.from_date_gregorian || editTopic.FromDate_New || "",
     );
     setValueOnly(
       "to_date_hijri",
-      editTopic.to_date_hijri || editTopic.Date_New || ""
+      editTopic.to_date_hijri || editTopic.Date_New || "",
     );
     setValueOnly(
       "to_date_gregorian",
-      editTopic.to_date_gregorian || editTopic.ToDate_New || ""
+      editTopic.to_date_gregorian || editTopic.ToDate_New || "",
     );
     setValueOnly(
       "otherCommission",
-      editTopic.otherCommission || editTopic.OtherCommission || ""
+      editTopic.otherCommission || editTopic.OtherCommission || "",
     );
 
     try {
@@ -412,18 +412,18 @@ export const useSubTopicPrefill = ({
       editTopic.MIR1_requiredDegreeOfInsurance ||
         editTopic.RequiredDegreeInsurance ||
         editTopic.requiredDegreeOfInsurance ||
-        ""
+        "",
     );
     setValueOnly(
       "MIR1_theReason",
-      editTopic.MIR1_theReason || editTopic.Reason || editTopic.theReason || ""
+      editTopic.MIR1_theReason || editTopic.Reason || editTopic.theReason || "",
     );
     setValueOnly(
       "MIR1_currentInsuranceLevel",
       editTopic.MIR1_currentInsuranceLevel ||
         editTopic.CurrentInsuranceLevel ||
         editTopic.currentInsuranceLevel ||
-        ""
+        "",
     );
 
     setValueOnly(
@@ -431,18 +431,18 @@ export const useSubTopicPrefill = ({
       editTopic.typeOfRequest ||
         (requestTypeValue && requestTypeLabel
           ? { value: requestTypeValue, label: requestTypeLabel }
-          : null)
+          : null),
     );
     setValueOnly(
       "requiredDegreeOfInsurance",
       editTopic.requiredDegreeOfInsurance ||
         editTopic.RequiredDegreeInsurance ||
-        ""
+        "",
     );
     setValueOnly("theReason", editTopic.theReason || editTopic.Reason || "");
     setValueOnly(
       "currentInsuranceLevel",
-      editTopic.currentInsuranceLevel || editTopic.CurrentInsuranceLevel || ""
+      editTopic.currentInsuranceLevel || editTopic.CurrentInsuranceLevel || "",
     );
   }, [isEditing, editTopic, setValueOnly]);
 
@@ -470,17 +470,17 @@ export const useSubTopicPrefill = ({
       editTopic.CMR1_theAmountRequired ||
         editTopic.theAmountRequired ||
         editTopic.AmountRequired ||
-        ""
+        "",
     );
 
     const legacyAmountsPaidForOption = ensureOption(
       lookupData.amountPaidData?.DataElements,
-      amountsPaidForValue
+      amountsPaidForValue,
     );
     setValueOnly("amountsPaidFor", legacyAmountsPaidForOption);
     setValueOnly(
       "theAmountRequired",
-      editTopic.theAmountRequired || editTopic.AmountRequired || ""
+      editTopic.theAmountRequired || editTopic.AmountRequired || "",
     );
   }, [isEditing, editTopic, lookupData, setValueOnly]);
 
@@ -492,7 +492,7 @@ export const useSubTopicPrefill = ({
       editTopic.CMR3_compensationAmount ||
         editTopic.compensationAmount ||
         editTopic.Amount ||
-        ""
+        "",
     );
     setValueOnly(
       "CMR3_injuryDateHijri",
@@ -500,7 +500,7 @@ export const useSubTopicPrefill = ({
         editTopic.InjuryDateHijri ||
         editTopic.injury_date_hijri ||
         editTopic.pyTempText ||
-        ""
+        "",
     );
     setValueOnly(
       "CMR3_injuryDateGregorian",
@@ -508,37 +508,37 @@ export const useSubTopicPrefill = ({
         editTopic.InjuryDateGregorian ||
         editTopic.injury_date_gregorian ||
         editTopic.InjuryDate_New ||
-        ""
+        "",
     );
     setValueOnly(
       "CMR3_injuryType",
       editTopic.CMR3_injuryType ||
         editTopic.TypeOfWorkInjury ||
         editTopic.injuryType ||
-        ""
+        "",
     );
 
     setValueOnly(
       "compensationAmount",
-      editTopic.compensationAmount || editTopic.Amount || ""
+      editTopic.compensationAmount || editTopic.Amount || "",
     );
     setValueOnly(
       "injury_date_hijri",
       editTopic.injury_date_hijri ||
         editTopic.InjuryDateHijri ||
         editTopic.pyTempText ||
-        ""
+        "",
     );
     setValueOnly(
       "injury_date_gregorian",
       editTopic.injury_date_gregorian ||
         editTopic.InjuryDateGregorian ||
         editTopic.InjuryDate_New ||
-        ""
+        "",
     );
     setValueOnly(
       "injuryType",
-      editTopic.injuryType || editTopic.TypeOfWorkInjury || ""
+      editTopic.injuryType || editTopic.TypeOfWorkInjury || "",
     );
   }, [isEditing, editTopic, setValueOnly]);
 
@@ -551,7 +551,7 @@ export const useSubTopicPrefill = ({
         editTopic.noticeCompensationAmount ||
         editTopic.Amount ||
         editTopic.amount ||
-        ""
+        "",
     );
 
     setValueOnly(
@@ -559,7 +559,7 @@ export const useSubTopicPrefill = ({
       editTopic.noticeCompensationAmount ||
         editTopic.Amount ||
         editTopic.amount ||
-        ""
+        "",
     );
   }, [isEditing, editTopic, setValueOnly]);
 
@@ -585,11 +585,11 @@ export const useSubTopicPrefill = ({
     } else if (leaveTypeCode) {
       leaveTypeOption = ensureOption(
         lookupData.leaveTypeData?.DataElements,
-        leaveTypeCode
+        leaveTypeCode,
       );
     } else if (leaveTypeLabel) {
       const matchingElement = lookupData.leaveTypeData?.DataElements?.find(
-        (element: any) => element.ElementValue === leaveTypeLabel
+        (element: any) => element.ElementValue === leaveTypeLabel,
       );
       if (matchingElement) {
         leaveTypeOption = {
@@ -601,7 +601,7 @@ export const useSubTopicPrefill = ({
 
     setValueOnly(
       "CMR5_kindOfHoliday",
-      prefilledLeaveTypeOption || leaveTypeOption
+      prefilledLeaveTypeOption || leaveTypeOption,
     );
     setValueOnly(
       "CMR5_totalAmount",
@@ -609,7 +609,7 @@ export const useSubTopicPrefill = ({
         editTopic.TotalAmountRequired ||
         editTopic.totalAmount ||
         editTopic.TotalAmount ||
-        ""
+        "",
     );
     setValueOnly(
       "CMR5_workingHours",
@@ -617,14 +617,14 @@ export const useSubTopicPrefill = ({
         editTopic.WorkingHoursCount ||
         editTopic.workingHours ||
         editTopic.WorkingHours ||
-        ""
+        "",
     );
     setValueOnly(
       "CMR5_additionalDetails",
       editTopic.CMR5_additionalDetails ||
         editTopic.AdditionalDetails ||
         editTopic.additionalDetails ||
-        ""
+        "",
     );
 
     setValueOnly("kindOfHoliday", leaveTypeOption);
@@ -633,18 +633,18 @@ export const useSubTopicPrefill = ({
       editTopic.TotalAmountRequired ||
         editTopic.totalAmount ||
         editTopic.TotalAmount ||
-        ""
+        "",
     );
     setValueOnly(
       "workingHours",
       editTopic.WorkingHoursCount ||
         editTopic.workingHours ||
         editTopic.WorkingHours ||
-        ""
+        "",
     );
     setValueOnly(
       "additionalDetails",
-      editTopic.AdditionalDetails || editTopic.additionalDetails || ""
+      editTopic.AdditionalDetails || editTopic.additionalDetails || "",
     );
   }, [isEditing, editTopic, lookupData, setValueOnly]);
 
@@ -657,14 +657,14 @@ export const useSubTopicPrefill = ({
         editTopic.FromDateHijri ||
         editTopic.from_date_hijri ||
         editTopic.pyTempDate ||
-        ""
+        "",
     );
     setValueOnly(
       "CMR6_fromDateGregorian",
       editTopic.CMR6_fromDateGregorian ||
         editTopic.FromDate_New ||
         editTopic.from_date_gregorian ||
-        ""
+        "",
     );
     setValueOnly(
       "CMR6_toDateHijri",
@@ -672,21 +672,21 @@ export const useSubTopicPrefill = ({
         editTopic.ToDateHijri ||
         editTopic.to_date_hijri ||
         editTopic.Date_New ||
-        ""
+        "",
     );
     setValueOnly(
       "CMR6_toDateGregorian",
       editTopic.CMR6_toDateGregorian ||
         editTopic.ToDate_New ||
         editTopic.to_date_gregorian ||
-        ""
+        "",
     );
     setValueOnly(
       "CMR6_newPayAmount",
       editTopic.CMR6_newPayAmount ||
         editTopic.NewPayAmount ||
         editTopic.newPayAmount ||
-        ""
+        "",
     );
 
     const payIncreaseTypePrefilled = editTopic.CMR6_payIncreaseType;
@@ -713,12 +713,12 @@ export const useSubTopicPrefill = ({
     } else if (payIncreaseTypeCode) {
       payIncreaseTypeOption = ensureOption(
         lookupData.payIncreaseTypeData?.DataElements,
-        payIncreaseTypeCode
+        payIncreaseTypeCode,
       );
     } else if (payIncreaseTypeLabel) {
       const matchingElement =
         lookupData.payIncreaseTypeData?.DataElements?.find(
-          (element: any) => element.ElementValue === payIncreaseTypeLabel
+          (element: any) => element.ElementValue === payIncreaseTypeLabel,
         );
       if (matchingElement) {
         payIncreaseTypeOption = {
@@ -730,14 +730,14 @@ export const useSubTopicPrefill = ({
 
     setValueOnly(
       "CMR6_payIncreaseType",
-      payIncreaseTypePrefilled || payIncreaseTypeOption
+      payIncreaseTypePrefilled || payIncreaseTypeOption,
     );
     setValueOnly(
       "CMR6_wageDifference",
       editTopic.CMR6_wageDifference ||
         editTopic.WageDifference ||
         editTopic.wageDifference ||
-        ""
+        "",
     );
 
     setValueOnly(
@@ -745,31 +745,31 @@ export const useSubTopicPrefill = ({
       editTopic.FromDateHijri ||
         editTopic.from_date_hijri ||
         editTopic.pyTempDate ||
-        ""
+        "",
     );
     setValueOnly(
       "from_date_gregorian",
-      editTopic.FromDate_New || editTopic.from_date_gregorian || ""
+      editTopic.FromDate_New || editTopic.from_date_gregorian || "",
     );
     setValueOnly(
       "to_date_hijri",
       editTopic.ToDateHijri ||
         editTopic.to_date_hijri ||
         editTopic.Date_New ||
-        ""
+        "",
     );
     setValueOnly(
       "to_date_gregorian",
-      editTopic.ToDate_New || editTopic.to_date_gregorian || ""
+      editTopic.ToDate_New || editTopic.to_date_gregorian || "",
     );
     setValueOnly(
       "newPayAmount",
-      editTopic.NewPayAmount || editTopic.newPayAmount || ""
+      editTopic.NewPayAmount || editTopic.newPayAmount || "",
     );
     setValueOnly("payIncreaseType", payIncreaseTypeOption);
     setValueOnly(
       "wageDifference",
-      editTopic.WageDifference || editTopic.wageDifference || ""
+      editTopic.WageDifference || editTopic.wageDifference || "",
     );
   }, [isEditing, editTopic, lookupData, setValueOnly]);
 
@@ -782,14 +782,14 @@ export const useSubTopicPrefill = ({
         editTopic.FromDateHijri ||
         editTopic.from_date_hijri ||
         editTopic.pyTempDate ||
-        ""
+        "",
     );
     setValueOnly(
       "CMR7_fromDateGregorian",
       editTopic.CMR7_fromDateGregorian ||
         editTopic.FromDate_New ||
         editTopic.from_date_gregorian ||
-        ""
+        "",
     );
     setValueOnly(
       "CMR7_toDateHijri",
@@ -797,25 +797,25 @@ export const useSubTopicPrefill = ({
         editTopic.ToDateHijri ||
         editTopic.to_date_hijri ||
         editTopic.Date_New ||
-        ""
+        "",
     );
     setValueOnly(
       "CMR7_toDateGregorian",
       editTopic.CMR7_toDateGregorian ||
         editTopic.ToDate_New ||
         editTopic.to_date_gregorian ||
-        ""
+        "",
     );
     setValueOnly(
       "CMR7_durationOfLeaveDue",
       editTopic.CMR7_durationOfLeaveDue ||
         editTopic.DurationOfLeaveDue ||
         editTopic.durationOfLeaveDue ||
-        ""
+        "",
     );
     setValueOnly(
       "CMR7_payDue",
-      editTopic.CMR7_payDue || editTopic.PayDue || editTopic.payDue || ""
+      editTopic.CMR7_payDue || editTopic.PayDue || editTopic.payDue || "",
     );
 
     setValueOnly(
@@ -823,26 +823,26 @@ export const useSubTopicPrefill = ({
       editTopic.FromDateHijri ||
         editTopic.from_date_hijri ||
         editTopic.pyTempDate ||
-        ""
+        "",
     );
     setValueOnly(
       "from_date_gregorian",
-      editTopic.FromDate_New || editTopic.from_date_gregorian || ""
+      editTopic.FromDate_New || editTopic.from_date_gregorian || "",
     );
     setValueOnly(
       "to_date_hijri",
       editTopic.ToDateHijri ||
         editTopic.to_date_hijri ||
         editTopic.Date_New ||
-        ""
+        "",
     );
     setValueOnly(
       "to_date_gregorian",
-      editTopic.ToDate_New || editTopic.to_date_gregorian || ""
+      editTopic.ToDate_New || editTopic.to_date_gregorian || "",
     );
     setValueOnly(
       "durationOfLeaveDue",
-      editTopic.DurationOfLeaveDue || editTopic.durationOfLeaveDue || ""
+      editTopic.DurationOfLeaveDue || editTopic.durationOfLeaveDue || "",
     );
     setValueOnly("payDue", editTopic.PayDue || editTopic.payDue || "");
   }, [isEditing, editTopic, setValueOnly]);
@@ -856,14 +856,14 @@ export const useSubTopicPrefill = ({
         editTopic.FromDateHijri ||
         editTopic.from_date_hijri ||
         editTopic.pyTempDate ||
-        ""
+        "",
     );
     setValueOnly(
       "CMR8_fromDateGregorian",
       editTopic.CMR8_fromDateGregorian ||
         editTopic.FromDate_New ||
         editTopic.from_date_gregorian ||
-        ""
+        "",
     );
     setValueOnly(
       "CMR8_toDateHijri",
@@ -871,21 +871,21 @@ export const useSubTopicPrefill = ({
         editTopic.ToDateHijri ||
         editTopic.to_date_hijri ||
         editTopic.Date_New ||
-        ""
+        "",
     );
     setValueOnly(
       "CMR8_toDateGregorian",
       editTopic.CMR8_toDateGregorian ||
         editTopic.ToDate_New ||
         editTopic.to_date_gregorian ||
-        ""
+        "",
     );
     setValueOnly(
       "CMR8_wagesAmount",
       editTopic.CMR8_wagesAmount ||
         editTopic.WagesAmount ||
         editTopic.wagesAmount ||
-        ""
+        "",
     );
 
     setValueOnly(
@@ -893,26 +893,26 @@ export const useSubTopicPrefill = ({
       editTopic.FromDateHijri ||
         editTopic.from_date_hijri ||
         editTopic.pyTempDate ||
-        ""
+        "",
     );
     setValueOnly(
       "from_date_gregorian",
-      editTopic.FromDate_New || editTopic.from_date_gregorian || ""
+      editTopic.FromDate_New || editTopic.from_date_gregorian || "",
     );
     setValueOnly(
       "to_date_hijri",
       editTopic.ToDateHijri ||
         editTopic.to_date_hijri ||
         editTopic.Date_New ||
-        ""
+        "",
     );
     setValueOnly(
       "to_date_gregorian",
-      editTopic.ToDate_New || editTopic.to_date_gregorian || ""
+      editTopic.ToDate_New || editTopic.to_date_gregorian || "",
     );
     setValueOnly(
       "wagesAmount",
-      editTopic.WagesAmount || editTopic.wagesAmount || ""
+      editTopic.WagesAmount || editTopic.wagesAmount || "",
     );
   }, [isEditing, editTopic, setValueOnly]);
 
@@ -943,12 +943,12 @@ export const useSubTopicPrefill = ({
     } else if (accordingToAgreementCode) {
       accordingToAgreementOption = ensureOption(
         lookupData.accordingToAgreementLookupData?.DataElements,
-        accordingToAgreementCode
+        accordingToAgreementCode,
       );
     } else if (accordingToAgreementLabel) {
       const matchingElement =
         lookupData.accordingToAgreementLookupData?.DataElements?.find(
-          (element: any) => element.ElementValue === accordingToAgreementLabel
+          (element: any) => element.ElementValue === accordingToAgreementLabel,
         );
       if (matchingElement) {
         accordingToAgreementOption = {
@@ -968,21 +968,21 @@ export const useSubTopicPrefill = ({
         editTopic.BonusAmount ||
         editTopic.Amount ||
         editTopic.Premium ||
-        ""
+        "",
     );
     setValueOnly(
       "BR1_dateHijri",
       editTopic.BR1_dateHijri ||
         editTopic.date_hijri ||
         editTopic.pyTempDate ||
-        ""
+        "",
     );
     setValueOnly(
       "BR1_dateGregorian",
       editTopic.BR1_dateGregorian ||
         editTopic.date_gregorian ||
         editTopic.Date_New ||
-        ""
+        "",
     );
 
     setLegacyIfValue("accordingToAgreement", accordingToAgreementOption);
@@ -993,21 +993,21 @@ export const useSubTopicPrefill = ({
         editTopic.Amount ||
         editTopic.Premium ||
         editTopic.BR1_bonusAmount ||
-        ""
+        "",
     );
     setLegacyIfValue(
       "date_hijri",
       editTopic.date_hijri ||
         editTopic.BR1_dateHijri ||
         editTopic.pyTempDate ||
-        ""
+        "",
     );
     setLegacyIfValue(
       "date_gregorian",
       editTopic.date_gregorian ||
         editTopic.BR1_dateGregorian ||
         editTopic.Date_New ||
-        ""
+        "",
     );
   }, [isEditing, editTopic, lookupData, setValueOnly]);
 
@@ -1053,20 +1053,20 @@ export const useSubTopicPrefill = ({
       editTopic.EDO1_managerialDecisionDateHijri ||
         editTopic.managerial_decision_date_hijri ||
         editTopic.Date_New ||
-        ""
+        "",
     );
     setValueOnly(
       "EDO1_managerialDecisionDateGregorian",
       editTopic.EDO1_managerialDecisionDateGregorian ||
         editTopic.managerial_decision_date_gregorian ||
         editTopic.ManDecsDate ||
-        ""
+        "",
     );
     setValueOnly(
       "EDO1_managerialDecisionNumber",
       editTopic.EDO1_managerialDecisionNumber ||
         editTopic.managerialDecisionNumber ||
-        ""
+        "",
     );
 
     setValueOnly(
@@ -1074,28 +1074,28 @@ export const useSubTopicPrefill = ({
       editTopic.fromLocation ||
         (fromLocationCode && fromLocationLabel
           ? { value: fromLocationCode, label: fromLocationLabel }
-          : null)
+          : null),
     );
     setValueOnly(
       "toLocation",
       editTopic.toLocation ||
         (toLocationCode && toLocationLabel
           ? { value: toLocationCode, label: toLocationLabel }
-          : null)
+          : null),
     );
     setValueOnly(
       "managerial_decision_date_hijri",
-      editTopic.managerial_decision_date_hijri || editTopic.Date_New || ""
+      editTopic.managerial_decision_date_hijri || editTopic.Date_New || "",
     );
     setValueOnly(
       "managerial_decision_date_gregorian",
       editTopic.managerial_decision_date_gregorian ||
         editTopic.ManDecsDate ||
-        ""
+        "",
     );
     setValueOnly(
       "managerialDecisionNumber",
-      editTopic.managerialDecisionNumber || ""
+      editTopic.managerialDecisionNumber || "",
     );
   }, [isEditing, editTopic, setValueOnly]);
 
@@ -1104,7 +1104,7 @@ export const useSubTopicPrefill = ({
 
     setValueOnly(
       "EDO2_fromJob",
-      editTopic.EDO2_fromJob || editTopic.fromJob || ""
+      editTopic.EDO2_fromJob || editTopic.fromJob || "",
     );
     setValueOnly("EDO2_toJob", editTopic.EDO2_toJob || editTopic.toJob || "");
     setValueOnly(
@@ -1112,37 +1112,37 @@ export const useSubTopicPrefill = ({
       editTopic.EDO2_managerialDecisionDateHijri ||
         editTopic.managerial_decision_date_hijri ||
         editTopic.Date_New ||
-        ""
+        "",
     );
     setValueOnly(
       "EDO2_managerialDecisionDateGregorian",
       editTopic.EDO2_managerialDecisionDateGregorian ||
         editTopic.managerial_decision_date_gregorian ||
         editTopic.ManDecsDate ||
-        ""
+        "",
     );
     setValueOnly(
       "EDO2_managerialDecisionNumber",
       editTopic.EDO2_managerialDecisionNumber ||
         editTopic.managerialDecisionNumber ||
-        ""
+        "",
     );
 
     setValueOnly("fromJob", editTopic.fromJob || "");
     setValueOnly("toJob", editTopic.toJob || "");
     setValueOnly(
       "managerial_decision_date_hijri",
-      editTopic.managerial_decision_date_hijri || editTopic.Date_New || ""
+      editTopic.managerial_decision_date_hijri || editTopic.Date_New || "",
     );
     setValueOnly(
       "managerial_decision_date_gregorian",
       editTopic.managerial_decision_date_gregorian ||
         editTopic.ManDecsDate ||
-        ""
+        "",
     );
     setValueOnly(
       "managerialDecisionNumber",
-      editTopic.managerialDecisionNumber || ""
+      editTopic.managerialDecisionNumber || "",
     );
   }, [isEditing, editTopic, setValueOnly]);
 
@@ -1154,46 +1154,46 @@ export const useSubTopicPrefill = ({
       editTopic.EDO3_amountOfReduction ||
         editTopic.amountOfReduction ||
         editTopic.AmountOfReduction ||
-        ""
+        "",
     );
     setValueOnly(
       "EDO3_managerialDecisionDateHijri",
       editTopic.EDO3_managerialDecisionDateHijri ||
         editTopic.managerial_decision_date_hijri ||
         editTopic.pyTempDate ||
-        ""
+        "",
     );
     setValueOnly(
       "EDO3_managerialDecisionDateGregorian",
       editTopic.EDO3_managerialDecisionDateGregorian ||
         editTopic.managerial_decision_date_gregorian ||
         editTopic.ManagerialDecisionDate_New ||
-        ""
+        "",
     );
     setValueOnly(
       "EDO3_managerialDecisionNumber",
       editTopic.EDO3_managerialDecisionNumber ||
         editTopic.managerialDecisionNumber ||
-        ""
+        "",
     );
 
     setValueOnly(
       "amountOfReduction",
-      editTopic.amountOfReduction || editTopic.AmountOfReduction || ""
+      editTopic.amountOfReduction || editTopic.AmountOfReduction || "",
     );
     setValueOnly(
       "managerial_decision_date_hijri",
-      editTopic.managerial_decision_date_hijri || editTopic.pyTempDate || ""
+      editTopic.managerial_decision_date_hijri || editTopic.pyTempDate || "",
     );
     setValueOnly(
       "managerial_decision_date_gregorian",
       editTopic.managerial_decision_date_gregorian ||
         editTopic.ManagerialDecisionDate_New ||
-        ""
+        "",
     );
     setValueOnly(
       "managerialDecisionNumber",
-      editTopic.managerialDecisionNumber || ""
+      editTopic.managerialDecisionNumber || "",
     );
   }, [isEditing, editTopic, setValueOnly]);
 
@@ -1218,12 +1218,12 @@ export const useSubTopicPrefill = ({
     } else if (penaltyCode) {
       penaltyOption = ensureOption(
         lookupData.typesOfPenaltiesData?.DataElements,
-        penaltyCode
+        penaltyCode,
       );
     } else if (penaltyLabel) {
       const matchingElement =
         lookupData.typesOfPenaltiesData?.DataElements?.find(
-          (element: any) => element.ElementValue === penaltyLabel
+          (element: any) => element.ElementValue === penaltyLabel,
         );
       if (matchingElement) {
         penaltyOption = {
@@ -1241,7 +1241,7 @@ export const useSubTopicPrefill = ({
         editTopic.ManagerialDecisionDateHijri ||
         editTopic.managerial_decision_date_hijri ||
         editTopic.Date_New ||
-        ""
+        "",
     );
     setValueOnly(
       "EDO4_managerialDecisionDateGregorian",
@@ -1249,36 +1249,36 @@ export const useSubTopicPrefill = ({
         editTopic.ManagerialDecisionDateGregorian ||
         editTopic.managerial_decision_date_gregorian ||
         editTopic.ManDecsDate ||
-        ""
+        "",
     );
     setValueOnly(
       "EDO4_managerialDecisionNumber",
       editTopic.EDO4_managerialDecisionNumber ||
         editTopic.managerialDecisionNumber ||
-        ""
+        "",
     );
 
     setValueOnly(
       "typesOfPenalties",
-      editTopic.typesOfPenalties || penaltyOption
+      editTopic.typesOfPenalties || penaltyOption,
     );
     setValueOnly(
       "managerial_decision_date_hijri",
       editTopic.ManagerialDecisionDateHijri ||
         editTopic.managerial_decision_date_hijri ||
         editTopic.Date_New ||
-        ""
+        "",
     );
     setValueOnly(
       "managerial_decision_date_gregorian",
       editTopic.ManagerialDecisionDateGregorian ||
         editTopic.managerial_decision_date_gregorian ||
         editTopic.ManDecsDate ||
-        ""
+        "",
     );
     setValueOnly(
       "managerialDecisionNumber",
-      editTopic.managerialDecisionNumber || ""
+      editTopic.managerialDecisionNumber || "",
     );
   }, [isEditing, editTopic, lookupData, setValueOnly]);
 
@@ -1306,12 +1306,12 @@ export const useSubTopicPrefill = ({
     const sourceChoice = bylawsYes
       ? "bylaws"
       : contractYes
-      ? "contract"
-      : hasBylawsSpecs
-      ? "bylaws"
-      : hasContractSpecs
-      ? "contract"
-      : undefined;
+        ? "contract"
+        : hasBylawsSpecs
+          ? "bylaws"
+          : hasContractSpecs
+            ? "contract"
+            : undefined;
 
     if (sourceChoice) {
       setValueOnly("HIR1_AccommodationSource", sourceChoice, {
@@ -1326,13 +1326,13 @@ export const useSubTopicPrefill = ({
       const bylawsFlag =
         bylawsA === "Yes" || bylawsB === "Yes"
           ? "Yes"
-          : bylawsA ?? bylawsB ?? "";
+          : (bylawsA ?? bylawsB ?? "");
       const contractA = editTopic.IsContractIncludeAddingAccommodation;
       const contractB = editTopic.IsContractIncludeAddingAccommodiation;
       const contractFlag =
         contractA === "Yes" || contractB === "Yes"
           ? "Yes"
-          : contractA ?? contractB ?? "";
+          : (contractA ?? contractB ?? "");
       setValueOnly("HIR1_IsBylawsIncludeAddingAccommodation", bylawsFlag, {
         shouldValidate: false,
         shouldDirty: false,
@@ -1406,14 +1406,14 @@ export const useSubTopicPrefill = ({
       editTopic.JAR2_currentJobTitle ||
         editTopic.CurrentJobTitle ||
         editTopic.currentJobTitle ||
-        ""
+        "",
     );
     setValueOnly(
       "JAR2_requiredJobTitle",
       editTopic.JAR2_requiredJobTitle ||
         editTopic.RequiredJobTitle ||
         editTopic.requiredJobTitle ||
-        ""
+        "",
     );
 
     setValueOnly(
@@ -1421,14 +1421,14 @@ export const useSubTopicPrefill = ({
       editTopic.currentJobTitle ||
         editTopic.CurrentJobTitle ||
         editTopic.JAR2_currentJobTitle ||
-        ""
+        "",
     );
     setValueOnly(
       "requiredJobTitle",
       editTopic.requiredJobTitle ||
         editTopic.RequiredJobTitle ||
         editTopic.JAR2_requiredJobTitle ||
-        ""
+        "",
     );
   }, [isEditing, editTopic, setValueOnly]);
 
@@ -1440,23 +1440,23 @@ export const useSubTopicPrefill = ({
       editTopic.JAR3_promotionMechanism ||
         editTopic.PromotionMechanism ||
         editTopic.promotionMechanism ||
-        ""
+        "",
     );
     setValueOnly(
       "JAR3_additionalUpgrade",
       editTopic.JAR3_additionalUpgrade ||
         editTopic.AdditionalUpgrade ||
         editTopic.additionalUpgrade ||
-        ""
+        "",
     );
 
     setValueOnly(
       "promotionMechanism",
-      editTopic.promotionMechanism || editTopic.PromotionMechanism || ""
+      editTopic.promotionMechanism || editTopic.PromotionMechanism || "",
     );
     setValueOnly(
       "additionalUpgrade",
-      editTopic.additionalUpgrade || editTopic.AdditionalUpgrade || ""
+      editTopic.additionalUpgrade || editTopic.AdditionalUpgrade || "",
     );
 
     const explicitChoice = editTopic.JAR3_JobApplicationRequest;
@@ -1480,7 +1480,6 @@ export const useSubTopicPrefill = ({
       } else if (hasAdditionalUpgrade) {
         setValueOnly("JAR3_JobApplicationRequest", "contractUpgrade");
       } else {
-  
         setValueOnly("JAR3_JobApplicationRequest", "promotionMechanism");
       }
     }
@@ -1494,23 +1493,23 @@ export const useSubTopicPrefill = ({
       editTopic.JAR4_CurrentPosition ||
         editTopic.CurrentPosition ||
         editTopic.currentPosition ||
-        ""
+        "",
     );
     setValueOnly(
       "JAR4_WantedJob",
       editTopic.JAR4_WantedJob ||
         editTopic.WantedJob ||
         editTopic.theWantedJob ||
-        ""
+        "",
     );
 
     setValueOnly(
       "currentPosition",
-      editTopic.currentPosition || editTopic.CurrentPosition || ""
+      editTopic.currentPosition || editTopic.CurrentPosition || "",
     );
     setValueOnly(
       "theWantedJob",
-      editTopic.theWantedJob || editTopic.WantedJob || ""
+      editTopic.theWantedJob || editTopic.WantedJob || "",
     );
   }, [isEditing, editTopic, setValueOnly]);
 
@@ -1519,7 +1518,7 @@ export const useSubTopicPrefill = ({
 
     setValueOnly(
       "LRESR1_Amount",
-      editTopic.LRESR1_Amount || editTopic.Amount || editTopic.amount || ""
+      editTopic.LRESR1_Amount || editTopic.Amount || editTopic.amount || "",
     );
 
     setValueOnly(
@@ -1527,7 +1526,7 @@ export const useSubTopicPrefill = ({
       editTopic.endOfServiceRewardAmount ||
         editTopic.Amount ||
         editTopic.amount ||
-        ""
+        "",
     );
   }, [isEditing, editTopic, setValueOnly]);
 
@@ -1547,7 +1546,7 @@ export const useSubTopicPrefill = ({
 
     if (travelingWayCode) {
       const matchingElement = lookupData.travelingWayData?.DataElements?.find(
-        (element: any) => element.ElementKey === travelingWayCode
+        (element: any) => element.ElementKey === travelingWayCode,
       );
 
       if (matchingElement) {
@@ -1565,7 +1564,7 @@ export const useSubTopicPrefill = ({
 
     if (!travelingWayOption && travelingWayLabel) {
       const matchingElement = lookupData.travelingWayData?.DataElements?.find(
-        (element: any) => element.ElementValue === travelingWayLabel
+        (element: any) => element.ElementValue === travelingWayLabel,
       );
       if (matchingElement) {
         travelingWayOption = {
@@ -1592,28 +1591,28 @@ export const useSubTopicPrefill = ({
 
     setValueOnly(
       "RFR1_Amount",
-      editTopic.RFR1_Amount || editTopic.Amount || editTopic.amount || ""
+      editTopic.RFR1_Amount || editTopic.Amount || editTopic.amount || "",
     );
     setValueOnly(
       "RFR1_Consideration",
       editTopic.RFR1_Consideration ||
         editTopic.Consideration ||
         editTopic.consideration ||
-        ""
+        "",
     );
     setValueOnly(
       "RFR1_dateHijri",
       editTopic.RFR1_dateHijri ||
         editTopic.date_hijri ||
         editTopic.pyTempDate ||
-        ""
+        "",
     );
     setValueOnly(
       "RFR1_dateGregorian",
       editTopic.RFR1_dateGregorian ||
         editTopic.date_gregorian ||
         editTopic.Date_New ||
-        ""
+        "",
     );
 
     setValueOnly(
@@ -1621,19 +1620,19 @@ export const useSubTopicPrefill = ({
       editTopic.rewardRequestAmount ||
         editTopic.Amount ||
         editTopic.amount ||
-        ""
+        "",
     );
     setValueOnly(
       "consideration",
-      editTopic.consideration || editTopic.Consideration || ""
+      editTopic.consideration || editTopic.Consideration || "",
     );
     setValueOnly(
       "date_hijri",
-      editTopic.date_hijri || editTopic.pyTempDate || ""
+      editTopic.date_hijri || editTopic.pyTempDate || "",
     );
     setValueOnly(
       "date_gregorian",
-      editTopic.date_gregorian || editTopic.Date_New || ""
+      editTopic.date_gregorian || editTopic.Date_New || "",
     );
   }, [isEditing, editTopic, setValueOnly]);
 
@@ -1664,12 +1663,12 @@ export const useSubTopicPrefill = ({
       editTopic.LCUT1_amountOfCompensation ||
         editTopic.amountOfCompensation ||
         editTopic.AmountOfCompensation ||
-        ""
+        "",
     );
 
     setValueOnly(
       "amountOfCompensation",
-      editTopic.amountOfCompensation || editTopic.AmountOfCompensation || ""
+      editTopic.amountOfCompensation || editTopic.AmountOfCompensation || "",
     );
   }, [isEditing, editTopic, setValueOnly]);
 
@@ -1690,11 +1689,11 @@ export const useSubTopicPrefill = ({
     if (typeOfCustodyCode) {
       typeOfCustodyOption = ensureOption(
         lookupData.typeOfCustodyData?.DataElements,
-        typeOfCustodyCode
+        typeOfCustodyCode,
       );
     } else if (typeOfCustodyLabel) {
       const matchingElement = lookupData.typeOfCustodyData?.DataElements?.find(
-        (element: any) => element.ElementValue === typeOfCustodyLabel
+        (element: any) => element.ElementValue === typeOfCustodyLabel,
       );
       if (matchingElement) {
         typeOfCustodyOption = {

@@ -1,4 +1,4 @@
-import { useCookies } from 'react-cookie';
+import { useCookies } from "react-cookie";
 
 type CookieOptions = {
   path?: string;
@@ -7,20 +7,23 @@ type CookieOptions = {
   domain?: string;
   secure?: boolean;
   httpOnly?: boolean;
-  sameSite?: 'strict' | 'lax' | 'none';
+  sameSite?: "strict" | "lax" | "none";
 };
 
 export const useCookieService = () => {
   const [cookies, setCookie, removeCookie] = useCookies();
 
-  const isLocalEnvironment = process.env.NODE_ENV === 'development' || window.location.hostname === 'localhost';
+  const isLocalEnvironment =
+    process.env.NODE_ENV === "development" ||
+    window.location.hostname === "localhost";
 
   const set = <T>(key: string, value: T, options?: CookieOptions): void => {
-    const stringValue = typeof value === 'string' ? value : JSON.stringify(value);
+    const stringValue =
+      typeof value === "string" ? value : JSON.stringify(value);
 
     const cookieOptions = isLocalEnvironment
       ? options
-      : { ...options, secure: true, httpOnly:true };
+      : { ...options, secure: true, httpOnly: true };
 
     setCookie(key, stringValue, cookieOptions);
   };

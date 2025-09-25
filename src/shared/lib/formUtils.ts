@@ -4,7 +4,7 @@
  * @returns true if the value is empty or contains only numbers, false otherwise
  */
 export const validateNumbersOnly = (value: string): boolean => {
-  if (!value || value.trim() === '') return true;
+  if (!value || value.trim() === "") return true;
   return /^\d+$/.test(value.trim());
 };
 
@@ -14,7 +14,7 @@ export const validateNumbersOnly = (value: string): boolean => {
  * @returns The formatted value with only digits
  */
 export const formatNumberInput = (value: string): string => {
-  return value.replace(/[^\d]/g, '');
+  return value.replace(/[^\d]/g, "");
 };
 
 /**
@@ -23,18 +23,21 @@ export const formatNumberInput = (value: string): string => {
  * @param errorMessage - Custom error message
  * @returns Validation object
  */
-export const createNumberOnlyValidation = (required: boolean = true, errorMessage: string = 'Only numbers are allowed') => {
+export const createNumberOnlyValidation = (
+  required: boolean = true,
+  errorMessage: string = "Only numbers are allowed",
+) => {
   return {
     required: required ? errorMessage : false,
     validate: (value: string) => {
-      if (required && (!value || value.trim() === '')) {
+      if (required && (!value || value.trim() === "")) {
         return errorMessage;
       }
       if (value && !validateNumbersOnly(value)) {
         return errorMessage;
       }
       return true;
-    }
+    },
   };
 };
 
@@ -45,8 +48,12 @@ export const createNumberOnlyValidation = (required: boolean = true, errorMessag
  * @param fieldName - The field name
  * @returns The formatted value
  */
-export const handleNumberOnlyChange = (value: string, setValue: (field: string, value: any) => void, fieldName: string): string => {
+export const handleNumberOnlyChange = (
+  value: string,
+  setValue: (field: string, value: any) => void,
+  fieldName: string,
+): string => {
   const formattedValue = formatNumberInput(value);
   setValue(fieldName, formattedValue);
   return formattedValue;
-}; 
+};

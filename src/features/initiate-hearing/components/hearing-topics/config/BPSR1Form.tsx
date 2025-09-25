@@ -15,7 +15,11 @@ interface BPSR1FormProps {
   watch: (name: string) => any;
   editTopic: any;
   control: any;
-  handleHijriDateChange: (date: any, onChange: any, gregorianFieldName: string) => void;
+  handleHijriDateChange: (
+    date: any,
+    onChange: any,
+    gregorianFieldName: string,
+  ) => void;
   trigger: (fields: string | string[]) => void;
   dateValidationError: string;
 }
@@ -34,10 +38,10 @@ export const getBPSR1FormFields = ({
   dateValidationError,
 }: BPSR1FormProps): FormElement[] => {
   const commissionTypeValue = watch("BPSR1_commissionType");
-  const isOtherCommissionType = commissionTypeValue && (
-    ["CT4", "OTHER", "3"].includes(String(commissionTypeValue.value)) ||
-    (commissionTypeValue.label ?? "").toLowerCase().includes("other")
-  );
+  const isOtherCommissionType =
+    commissionTypeValue &&
+    (["CT4", "OTHER", "3"].includes(String(commissionTypeValue.value)) ||
+      (commissionTypeValue.label ?? "").toLowerCase().includes("other"));
 
   const baseFields: FormElement[] = [
     {
@@ -45,12 +49,19 @@ export const getBPSR1FormFields = ({
       name: "BPSR1_bonusProfitShareAmount",
       label: t("bonusProfitShareAmount"),
       inputType: "text",
-      numericType: 'decimal',
+      numericType: "decimal",
       maxFractionDigits: 2,
-      decimalSeparators: ['.', ','],
-      value: isEditing ? editTopic?.BPSR1_bonusProfitShareAmount : watch("BPSR1_bonusProfitShareAmount"),
-      onChange: (value: string) => setValue("BPSR1_bonusProfitShareAmount", value),
-      validation: createDecimalValidation({ required: t("fieldRequired"), maxFractionDigits: 2, min: 0 }),
+      decimalSeparators: [".", ","],
+      value: isEditing
+        ? editTopic?.BPSR1_bonusProfitShareAmount
+        : watch("BPSR1_bonusProfitShareAmount"),
+      onChange: (value: string) =>
+        setValue("BPSR1_bonusProfitShareAmount", value),
+      validation: createDecimalValidation({
+        required: t("fieldRequired"),
+        maxFractionDigits: 2,
+        min: 0,
+      }),
       notRequired: false,
       maxLength: 10,
     },
@@ -59,13 +70,21 @@ export const getBPSR1FormFields = ({
       name: "BPSR1_amountRatio",
       label: t("amountRatio"),
       inputType: "text",
-      numericType: 'decimal',
+      numericType: "decimal",
       maxFractionDigits: 2,
-      decimalSeparators: ['.', ','],
+      decimalSeparators: [".", ","],
       allowPercent: true,
-      value: isEditing ? editTopic?.BPSR1_amountRatio : watch("BPSR1_amountRatio"),
+      value: isEditing
+        ? editTopic?.BPSR1_amountRatio
+        : watch("BPSR1_amountRatio"),
       onChange: (value: string) => setValue("BPSR1_amountRatio", value),
-      validation: createDecimalValidation({ required: t("fieldRequired"), maxFractionDigits: 2, min: 0, max: 10, allowPercent: true }),
+      validation: createDecimalValidation({
+        required: t("fieldRequired"),
+        maxFractionDigits: 2,
+        min: 0,
+        max: 10,
+        allowPercent: true,
+      }),
       notRequired: false,
       maxLength: 10,
     },
@@ -74,12 +93,15 @@ export const getBPSR1FormFields = ({
       name: "BPSR1_commissionType",
       label: t("commissionType"),
       options: CommissionTypeLookUpOptions,
-      value: isEditing ? editTopic?.BPSR1_commissionType : watch("BPSR1_commissionType"),
+      value: isEditing
+        ? editTopic?.BPSR1_commissionType
+        : watch("BPSR1_commissionType"),
       onChange: (option: any) => setValue("BPSR1_commissionType", option),
       validation: {
         required: true,
         validate: (val: any) =>
-          (val && typeof val === "object" && !!val.value) || "Field is required",
+          (val && typeof val === "object" && !!val.value) ||
+          "Field is required",
       },
       notRequired: false,
     },
@@ -88,12 +110,15 @@ export const getBPSR1FormFields = ({
       name: "BPSR1_accordingToAgreement",
       label: t("accordingToAgreement"),
       options: AccordingToAgreementLookupLookUpOptions,
-      value: isEditing ? editTopic?.BPSR1_accordingToAgreement : watch("BPSR1_accordingToAgreement"),
+      value: isEditing
+        ? editTopic?.BPSR1_accordingToAgreement
+        : watch("BPSR1_accordingToAgreement"),
       onChange: (option: any) => setValue("BPSR1_accordingToAgreement", option),
       validation: {
         required: true,
         validate: (val: any) =>
-          (val && typeof val === "object" && !!val.value) || "Field is required",
+          (val && typeof val === "object" && !!val.value) ||
+          "Field is required",
       },
       notRequired: false,
     },
@@ -105,7 +130,9 @@ export const getBPSR1FormFields = ({
       name: "BPSR1_otherCommission",
       label: t("otherCommission"),
       inputType: "text",
-      value: isEditing ? editTopic?.BPSR1_otherCommission : watch("BPSR1_otherCommission"),
+      value: isEditing
+        ? editTopic?.BPSR1_otherCommission
+        : watch("BPSR1_otherCommission"),
       onChange: (value: string) => setValue("BPSR1_otherCommission", value),
       validation: { required: t("fieldRequired") },
       notRequired: false,
@@ -126,7 +153,7 @@ export const getBPSR1FormFields = ({
             onChangeHandler={(date, onChange) => {
               handleHijriDateChange(date, onChange, "BPSR1_fromDateGregorian");
               const toDateValue = watch("BPSR1_toDateHijri");
-              if (toDateValue && typeof trigger === 'function') {
+              if (toDateValue && typeof trigger === "function") {
                 setTimeout(() => trigger("BPSR1_toDateHijri"), 100);
               }
             }}
@@ -155,23 +182,24 @@ export const getBPSR1FormFields = ({
                   const toDate = value;
 
                   if (fromDate && toDate) {
-                    const result = validateDateRange(fromDate, toDate, 'hijri', 'hijri');
+                    const result = validateDateRange(
+                      fromDate,
+                      toDate,
+                      "hijri",
+                      "hijri",
+                    );
                     if (result !== true) {
                       return dateValidationError;
                     }
                     return true;
                   }
                   return true;
-                }
-              }
+                },
+              },
             }}
             notRequired={false}
             onChangeHandler={(date, onChange) =>
-              handleHijriDateChange(
-                date,
-                onChange,
-                "BPSR1_toDateGregorian"
-              )
+              handleHijriDateChange(date, onChange, "BPSR1_toDateGregorian")
             }
             isDateOfBirth={false}
           />
@@ -182,7 +210,7 @@ export const getBPSR1FormFields = ({
           />
         </div>
       ),
-    }
+    },
   );
 
   return baseFields;

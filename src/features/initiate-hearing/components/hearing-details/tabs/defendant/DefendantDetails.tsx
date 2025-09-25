@@ -17,7 +17,7 @@ import { useLegelDefendantFormLayout } from "../../establishment-tabs/legal-repr
 import useDefendantDetailsPrefill from "@/features/initiate-hearing/hooks/useDefendantDetailsPrefill";
 
 const DefendantDetailsContainer: React.FC<any> = ({ setIsPhoneVerify }) => {
-  const {  i18n } = useTranslation("hearingdetails");
+  const { i18n } = useTranslation("hearingdetails");
   const [getCookie, setCookie] = useCookieState();
 
   const userType = getCookie("userType") || "";
@@ -36,36 +36,29 @@ const DefendantDetailsContainer: React.FC<any> = ({ setIsPhoneVerify }) => {
     }
   })();
 
-  const { data: extractedEstData } =
-    useGetExtractedEstablishmentDataQuery(
-      {
-        WorkerId: plaintiffId,
-        AcceptedLanguage: lang,
-        SourceSystem: "E-Services",
-        UserType: userType,
-        CaseID: caseId,
-      },
-      {
-        skip:
-          userType?.toLocaleLowerCase() === "legal representative" ||
-          userType?.toLocaleLowerCase() === "establishment" ||
-          !plaintiffId ||
-          !caseId ||
-          !userType,
-      }
-    );
+  const { data: extractedEstData } = useGetExtractedEstablishmentDataQuery(
+    {
+      WorkerId: plaintiffId,
+      AcceptedLanguage: lang,
+      SourceSystem: "E-Services",
+      UserType: userType,
+      CaseID: caseId,
+    },
+    {
+      skip:
+        userType?.toLocaleLowerCase() === "legal representative" ||
+        userType?.toLocaleLowerCase() === "establishment" ||
+        !plaintiffId ||
+        !caseId ||
+        !userType,
+    },
+  );
 
   useEffect(() => {}, [extractedEstData]);
 
-  const {
-    register,
-    setValue,
-    watch,
-    control,
-    formState,
-    trigger,
-  } = useAPIFormsData();
-  const {  errors } = formState;
+  const { register, setValue, watch, control, formState, trigger } =
+    useAPIFormsData();
+  const { errors } = formState;
   const {
     isFeatched: caseDetailsLoading,
     defendantData,
@@ -83,7 +76,7 @@ const DefendantDetailsContainer: React.FC<any> = ({ setIsPhoneVerify }) => {
     const prefilledCity = watch("defendantCity");
     const selectedEstObj = watch("Defendant_Establishment_data");
     const selectedEstObjNon = watch(
-      "Defendant_Establishment_data_NON_SELECTED"
+      "Defendant_Establishment_data_NON_SELECTED",
     );
     if (
       currentDefendantStatus === "Establishment" &&
@@ -116,7 +109,7 @@ const DefendantDetailsContainer: React.FC<any> = ({ setIsPhoneVerify }) => {
     const selected = watch("Defendant_Establishment_data");
     const details = watch("defendantDetails");
     try {
-    } catch { }
+    } catch {}
     if (typeof setIsPhoneVerify === "function") {
       if (selected && details !== "Others") {
         setIsPhoneVerify(true);
@@ -146,7 +139,7 @@ const DefendantDetailsContainer: React.FC<any> = ({ setIsPhoneVerify }) => {
         skip:
           userType?.toLocaleLowerCase() === "legal representative" ||
           userType?.toLocaleLowerCase() === "establishment",
-      }
+      },
     );
 
   const { data: subGovernmentData, isLoading: isSubGovernmentLoading } =
@@ -157,7 +150,7 @@ const DefendantDetailsContainer: React.FC<any> = ({ setIsPhoneVerify }) => {
             SourceSystem: "E-Services",
             mainGovernmentSelected: mainCategory,
           }
-        : skipToken
+        : skipToken,
     );
 
   const getFormLayout = (getUserType: string) => {
@@ -183,7 +176,7 @@ const DefendantDetailsContainer: React.FC<any> = ({ setIsPhoneVerify }) => {
           subGovernmentData,
           caseDetailsLoading,
           defendantData,
-          hasDefendantPrefill
+          hasDefendantPrefill,
         );
     }
   };
@@ -215,9 +208,8 @@ const DefendantDetailsContainer: React.FC<any> = ({ setIsPhoneVerify }) => {
   const formLayout =
     "layout" in formLayoutResult ? formLayoutResult.layout : formLayoutResult;
 
-
   const showBlockingLoader = Boolean(
-    (formLayoutResult as any)?.showBlockingLoader || false
+    (formLayoutResult as any)?.showBlockingLoader || false,
   );
 
   return (

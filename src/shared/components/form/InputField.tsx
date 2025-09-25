@@ -12,7 +12,7 @@ export type InputFieldProps = InputOrTextareaProps & {
   name?: string;
   value?: string;
   onChange?: (
-    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => void;
   onChangeHandler?: (value: string) => void;
   onBlur?: () => void;
@@ -58,7 +58,7 @@ export const InputField = forwardRef<
       onChangeHandler,
       ...inputProps
     },
-    ref
+    ref,
   ) => {
     const { i18n } = useTranslation();
     const uniqueId = useId();
@@ -85,7 +85,7 @@ export const InputField = forwardRef<
         hasError
           ? "border-red-500 focus:ring-red-200 focus:border-red-500"
           : "border-gray-400 focus:ring-blue-200 focus:border-blue-500",
-        className
+        className,
       ),
       "aria-invalid": hasError ? "true" : "false",
       style: placeholderStyle,
@@ -93,7 +93,7 @@ export const InputField = forwardRef<
     };
 
     const handleChange = (
-      e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+      e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
     ) => {
       setInputValue(e.target.value);
       onChange?.(e);
@@ -105,7 +105,7 @@ export const InputField = forwardRef<
     };
 
     const handleKeyDown = (
-      e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>
+      e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>,
     ) => {
       if (preventEnterSubmit && e.key === "Enter") {
         e.preventDefault();
@@ -123,7 +123,7 @@ export const InputField = forwardRef<
         onChange?.(event);
       },
       [onChange],
-      500
+      500,
     );
 
     const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -134,7 +134,7 @@ export const InputField = forwardRef<
     const renderInput = (field?: {
       value?: string;
       onChange?: (
-        e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+        e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
       ) => void;
     }) => {
       const valueToUse = field?.value ?? inputValue;
@@ -207,7 +207,7 @@ export const InputField = forwardRef<
               {renderInput({
                 ...field,
                 onChange: (
-                  e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+                  e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
                 ) => {
                   field.onChange(e);
 
@@ -230,7 +230,7 @@ export const InputField = forwardRef<
         {renderInput()}
       </FieldWrapper>
     );
-  }
+  },
 );
 
 InputField.displayName = "InputField";

@@ -11,10 +11,9 @@ import { formatDateString } from "./helpers";
 export const validateDateRange = (
   fromDate: string | undefined,
   toDate: string | undefined,
-  fromDateType: 'hijri' | 'gregorian' = 'hijri',
-  toDateType: 'hijri' | 'gregorian' = 'hijri'
+  fromDateType: "hijri" | "gregorian" = "hijri",
+  toDateType: "hijri" | "gregorian" = "hijri",
 ): true | string => {
-  
   if (!fromDate || !toDate) {
     return true;
   }
@@ -23,35 +22,32 @@ export const validateDateRange = (
     let fromDateObj: Date;
     let toDateObj: Date;
 
-    if (fromDateType === 'hijri') {
-      
+    if (fromDateType === "hijri") {
       const gregorianFrom = formatDateString(fromDate);
-      fromDateObj = gregorianFrom ? new Date(gregorianFrom) : new Date(fromDate);
+      fromDateObj = gregorianFrom
+        ? new Date(gregorianFrom)
+        : new Date(fromDate);
     } else {
       fromDateObj = new Date(fromDate);
     }
 
-    if (toDateType === 'hijri') {
-      
+    if (toDateType === "hijri") {
       const gregorianTo = formatDateString(toDate);
       toDateObj = gregorianTo ? new Date(gregorianTo) : new Date(toDate);
     } else {
       toDateObj = new Date(toDate);
     }
 
-    
     if (isNaN(fromDateObj.getTime()) || isNaN(toDateObj.getTime())) {
-      return true; 
+      return true;
     }
 
-    
     if (toDateObj < fromDateObj) {
-      return 'common.date_validation.to_date_before_from';
+      return "common.date_validation.to_date_before_from";
     }
 
     return true;
   } catch (error) {
-    
     return true;
   }
 };
@@ -67,15 +63,15 @@ export const validateDateRange = (
 export const createDateRangeValidation = (
   fromDateName: string,
   toDateName: string,
-  fromDateType: 'hijri' | 'gregorian' = 'hijri',
-  toDateType: 'hijri' | 'gregorian' = 'hijri'
+  fromDateType: "hijri" | "gregorian" = "hijri",
+  toDateType: "hijri" | "gregorian" = "hijri",
 ) => ({
   validate: (formValues: any) => {
     const fromDate = formValues[fromDateName];
     const toDate = formValues[toDateName];
-    
+
     return validateDateRange(fromDate, toDate, fromDateType, toDateType);
-  }
+  },
 });
 
 /**
@@ -89,23 +85,35 @@ export const validateMultipleDateRanges = (
   dateRangePairs: Array<{
     fromDateName: string;
     toDateName: string;
-    fromDateType?: 'hijri' | 'gregorian';
-    toDateType?: 'hijri' | 'gregorian';
-  }>
+    fromDateType?: "hijri" | "gregorian";
+    toDateType?: "hijri" | "gregorian";
+  }>,
 ) => {
   const errors: Record<string, string> = {};
 
-  dateRangePairs.forEach(({ fromDateName, toDateName, fromDateType = 'hijri', toDateType = 'hijri' }) => {
-    const fromDate = formValues[fromDateName];
-    const toDate = formValues[toDateName];
+  dateRangePairs.forEach(
+    ({
+      fromDateName,
+      toDateName,
+      fromDateType = "hijri",
+      toDateType = "hijri",
+    }) => {
+      const fromDate = formValues[fromDateName];
+      const toDate = formValues[toDateName];
 
-    if (fromDate && toDate) {
-      const validationResult = validateDateRange(fromDate, toDate, fromDateType, toDateType);
-      if (validationResult !== true) {
-        errors[toDateName] = validationResult;
+      if (fromDate && toDate) {
+        const validationResult = validateDateRange(
+          fromDate,
+          toDate,
+          fromDateType,
+          toDateType,
+        );
+        if (validationResult !== true) {
+          errors[toDateName] = validationResult;
+        }
       }
-    }
-  });
+    },
+  );
 
   return errors;
 };
@@ -116,40 +124,144 @@ export const validateMultipleDateRanges = (
 export const COMMON_DATE_RANGE_PAIRS: Array<{
   fromDateName: string;
   toDateName: string;
-  fromDateType: 'hijri' | 'gregorian';
-  toDateType: 'hijri' | 'gregorian';
+  fromDateType: "hijri" | "gregorian";
+  toDateType: "hijri" | "gregorian";
 }> = [
-  
-  { fromDateName: 'from_date_hijri', toDateName: 'to_date_hijri', fromDateType: 'hijri', toDateType: 'hijri' },
-  { fromDateName: 'from_date_gregorian', toDateName: 'to_date_gregorian', fromDateType: 'gregorian', toDateType: 'gregorian' },
-  
-  
-  { fromDateName: 'WR1_fromDateHijri', toDateName: 'WR1_toDateHijri', fromDateType: 'hijri', toDateType: 'hijri' },
-  { fromDateName: 'WR1_fromDateGregorian', toDateName: 'WR1_toDateGregorian', fromDateType: 'gregorian', toDateType: 'gregorian' },
-  { fromDateName: 'WR2_fromDateHijri', toDateName: 'WR2_toDateHijri', fromDateType: 'hijri', toDateType: 'hijri' },
-  { fromDateName: 'WR2_fromDateGregorian', toDateName: 'WR2_toDateGregorian', fromDateType: 'gregorian', toDateType: 'gregorian' },
-  
-  
-  { fromDateName: 'BPSR1_fromDateHijri', toDateName: 'BPSR1_toDateHijri', fromDateType: 'hijri', toDateType: 'hijri' },
-  { fromDateName: 'BPSR1_fromDateGregorian', toDateName: 'BPSR1_toDateGregorian', fromDateType: 'gregorian', toDateType: 'gregorian' },
-  
-  
-  { fromDateName: 'CMR6_fromDateHijri', toDateName: 'CMR6_toDateHijri', fromDateType: 'hijri', toDateType: 'hijri' },
-  { fromDateName: 'CMR6_fromDateGregorian', toDateName: 'CMR6_toDateGregorian', fromDateType: 'gregorian', toDateType: 'gregorian' },
-  { fromDateName: 'CMR7_fromDateHijri', toDateName: 'CMR7_toDateHijri', fromDateType: 'hijri', toDateType: 'hijri' },
-  { fromDateName: 'CMR7_fromDateGregorian', toDateName: 'CMR7_toDateGregorian', fromDateType: 'gregorian', toDateType: 'gregorian' },
-  { fromDateName: 'CMR8_fromDateHijri', toDateName: 'CMR8_toDateHijri', fromDateType: 'hijri', toDateType: 'hijri' },
-  { fromDateName: 'CMR8_fromDateGregorian', toDateName: 'CMR8_toDateGregorian', fromDateType: 'gregorian', toDateType: 'gregorian' },
-  
-  
-  { fromDateName: 'Plaintiff_ContractStartDate', toDateName: 'Plaintiff_ContractEndDate', fromDateType: 'gregorian', toDateType: 'gregorian' },
-  { fromDateName: 'Plaintiff_ContractStartDateHijri', toDateName: 'Plaintiff_ContractEndDateHijri', fromDateType: 'hijri', toDateType: 'hijri' },
-  { fromDateName: 'Defendant_ContractStartDate', toDateName: 'Defendant_ContractEndDate', fromDateType: 'gregorian', toDateType: 'gregorian' },
-  { fromDateName: 'Defendant_ContractStartDateHijri', toDateName: 'Defendant_ContractEndDateHijri', fromDateType: 'hijri', toDateType: 'hijri' },
-  
-  
-  { fromDateName: 'Plaintiff_JobStartDate', toDateName: 'Plaintiff_JobEndDate', fromDateType: 'gregorian', toDateType: 'gregorian' },
-  { fromDateName: 'Plaintiff_JobStartDateHijri', toDateName: 'Plaintiff_JobEndDateHijri', fromDateType: 'hijri', toDateType: 'hijri' },
-  { fromDateName: 'Defendant_JobStartDate', toDateName: 'Defendant_JobEndDate', fromDateType: 'gregorian', toDateType: 'gregorian' },
-  { fromDateName: 'Defendant_JobStartDateHijri', toDateName: 'Defendant_JobEndDateHijri', fromDateType: 'hijri', toDateType: 'hijri' },
+  {
+    fromDateName: "from_date_hijri",
+    toDateName: "to_date_hijri",
+    fromDateType: "hijri",
+    toDateType: "hijri",
+  },
+  {
+    fromDateName: "from_date_gregorian",
+    toDateName: "to_date_gregorian",
+    fromDateType: "gregorian",
+    toDateType: "gregorian",
+  },
+
+  {
+    fromDateName: "WR1_fromDateHijri",
+    toDateName: "WR1_toDateHijri",
+    fromDateType: "hijri",
+    toDateType: "hijri",
+  },
+  {
+    fromDateName: "WR1_fromDateGregorian",
+    toDateName: "WR1_toDateGregorian",
+    fromDateType: "gregorian",
+    toDateType: "gregorian",
+  },
+  {
+    fromDateName: "WR2_fromDateHijri",
+    toDateName: "WR2_toDateHijri",
+    fromDateType: "hijri",
+    toDateType: "hijri",
+  },
+  {
+    fromDateName: "WR2_fromDateGregorian",
+    toDateName: "WR2_toDateGregorian",
+    fromDateType: "gregorian",
+    toDateType: "gregorian",
+  },
+
+  {
+    fromDateName: "BPSR1_fromDateHijri",
+    toDateName: "BPSR1_toDateHijri",
+    fromDateType: "hijri",
+    toDateType: "hijri",
+  },
+  {
+    fromDateName: "BPSR1_fromDateGregorian",
+    toDateName: "BPSR1_toDateGregorian",
+    fromDateType: "gregorian",
+    toDateType: "gregorian",
+  },
+
+  {
+    fromDateName: "CMR6_fromDateHijri",
+    toDateName: "CMR6_toDateHijri",
+    fromDateType: "hijri",
+    toDateType: "hijri",
+  },
+  {
+    fromDateName: "CMR6_fromDateGregorian",
+    toDateName: "CMR6_toDateGregorian",
+    fromDateType: "gregorian",
+    toDateType: "gregorian",
+  },
+  {
+    fromDateName: "CMR7_fromDateHijri",
+    toDateName: "CMR7_toDateHijri",
+    fromDateType: "hijri",
+    toDateType: "hijri",
+  },
+  {
+    fromDateName: "CMR7_fromDateGregorian",
+    toDateName: "CMR7_toDateGregorian",
+    fromDateType: "gregorian",
+    toDateType: "gregorian",
+  },
+  {
+    fromDateName: "CMR8_fromDateHijri",
+    toDateName: "CMR8_toDateHijri",
+    fromDateType: "hijri",
+    toDateType: "hijri",
+  },
+  {
+    fromDateName: "CMR8_fromDateGregorian",
+    toDateName: "CMR8_toDateGregorian",
+    fromDateType: "gregorian",
+    toDateType: "gregorian",
+  },
+
+  {
+    fromDateName: "Plaintiff_ContractStartDate",
+    toDateName: "Plaintiff_ContractEndDate",
+    fromDateType: "gregorian",
+    toDateType: "gregorian",
+  },
+  {
+    fromDateName: "Plaintiff_ContractStartDateHijri",
+    toDateName: "Plaintiff_ContractEndDateHijri",
+    fromDateType: "hijri",
+    toDateType: "hijri",
+  },
+  {
+    fromDateName: "Defendant_ContractStartDate",
+    toDateName: "Defendant_ContractEndDate",
+    fromDateType: "gregorian",
+    toDateType: "gregorian",
+  },
+  {
+    fromDateName: "Defendant_ContractStartDateHijri",
+    toDateName: "Defendant_ContractEndDateHijri",
+    fromDateType: "hijri",
+    toDateType: "hijri",
+  },
+
+  {
+    fromDateName: "Plaintiff_JobStartDate",
+    toDateName: "Plaintiff_JobEndDate",
+    fromDateType: "gregorian",
+    toDateType: "gregorian",
+  },
+  {
+    fromDateName: "Plaintiff_JobStartDateHijri",
+    toDateName: "Plaintiff_JobEndDateHijri",
+    fromDateType: "hijri",
+    toDateType: "hijri",
+  },
+  {
+    fromDateName: "Defendant_JobStartDate",
+    toDateName: "Defendant_JobEndDate",
+    fromDateType: "gregorian",
+    toDateType: "gregorian",
+  },
+  {
+    fromDateName: "Defendant_JobStartDateHijri",
+    toDateName: "Defendant_JobEndDateHijri",
+    fromDateType: "hijri",
+    toDateType: "hijri",
+  },
 ];

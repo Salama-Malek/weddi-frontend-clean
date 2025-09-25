@@ -57,12 +57,12 @@ const Modal = lazy(() => import("@/shared/components/modal/Modal"));
 const ReusableTable = lazy(() =>
   import("@/shared/components/table/ReusableTable").then((m) => ({
     default: m.ReusableTable,
-  }))
+  })),
 );
 const DynamicForm = lazy(() =>
   import("@/shared/components/form/DynamicForm").then((m) => ({
     default: m.DynamicForm,
-  }))
+  })),
 );
 
 const HearingCta = lazy(() => import("./components/HearingCta"));
@@ -70,30 +70,34 @@ const HearingCta = lazy(() => import("./components/HearingCta"));
 const DateValidationWrapper: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-
   return <>{children}</>;
 };
 
 function resolveOption(
   list: { ElementKey: string; ElementValue: string }[] | undefined,
   code?: string,
-  fallbackLabel?: string
+  fallbackLabel?: string,
 ) {
   if (!code) return null;
   const hit = list?.find((i) => String(i.ElementKey) === String(code));
-  return { value: code, label: hit ? hit.ElementValue : fallbackLabel ?? code };
+  return {
+    value: code,
+    label: hit ? hit.ElementValue : (fallbackLabel ?? code),
+  };
 }
 
 export const ensureOption = (
   opts: { ElementKey: string; ElementValue: string }[] | Option[] | undefined,
   code?: any,
-  fallbackLabel?: string
+  fallbackLabel?: string,
 ): Option | null => {
   if (!code) return null;
   const val = String(code);
   const hit =
     (opts as any[])?.find((o) =>
-      "ElementKey" in o ? String(o.ElementKey) === val : String(o.value) === val
+      "ElementKey" in o
+        ? String(o.ElementKey) === val
+        : String(o.value) === val,
     ) ?? null;
 
   if (!hit) return { value: val, label: fallbackLabel ?? val };
@@ -101,8 +105,6 @@ export const ensureOption = (
     ? { value: hit.ElementKey, label: hit.ElementValue }
     : hit;
 };
-
-
 
 export const useHearingTopics = () => {
   const { i18n } = useTranslation();
@@ -140,13 +142,8 @@ function HearingTopicsDetails({
     getValues,
     trigger,
     formState,
-    formState: {
-      errors,
-      isValid,
-      isSubmitting,
-    },
+    formState: { errors, isValid, isSubmitting },
     unregister,
-
   } = methods;
 
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -180,7 +177,6 @@ function HearingTopicsDetails({
 
   const { i18n } = useTranslation();
   const currentLanguage = i18n.language.toUpperCase();
-
 
   const onSubmit = async (_data: TopicFormValues) => {
     if (lastAction === "Next" || isSubmitting) {
@@ -378,15 +374,21 @@ function HearingTopicsDetails({
   const [triggerCaseDetailsQuery, { data: caseDetailsData }] =
     useLazyGetCaseDetailsQuery();
 
-  const defendantStatus = (caseDetailsData as any)?.CaseDetails?.DefendantType_Code;
+  const defendantStatus = (caseDetailsData as any)?.CaseDetails
+    ?.DefendantType_Code;
 
   useEffect(() => {
     if (caseDetailsData?.CaseDetails?.CaseTopics) {
-      const formattedTopics = caseDetailsData.CaseDetails.CaseTopics.map((topic: any) => ({
-        ...topic,
-        mainCategory: { value: topic.MainTopicID, label: topic.CaseTopicName },
-        subCategory: { value: topic.SubTopicID, label: topic.SubTopicName },
-      }));
+      const formattedTopics = caseDetailsData.CaseDetails.CaseTopics.map(
+        (topic: any) => ({
+          ...topic,
+          mainCategory: {
+            value: topic.MainTopicID,
+            label: topic.CaseTopicName,
+          },
+          subCategory: { value: topic.SubTopicID, label: topic.SubTopicName },
+        }),
+      );
 
       setCaseTopics(formattedTopics);
     }
@@ -394,16 +396,15 @@ function HearingTopicsDetails({
 
   useEffect(() => {
     if (caseDetailsData?.CaseDetails?.OtherAttachments) {
-      const formattedAttachments = caseDetailsData.CaseDetails.OtherAttachments.map(
-        (attachment: any) => ({
+      const formattedAttachments =
+        caseDetailsData.CaseDetails.OtherAttachments.map((attachment: any) => ({
           fileKey: attachment.FileKey,
           fileType: attachment.FileType,
           fileName: ensureFileNameWithExtension(
             attachment.FileName,
-            attachment.FileType
+            attachment.FileType,
           ),
-        })
-      );
+        }));
 
       setAttachments(formattedAttachments);
     } else {
@@ -419,27 +420,27 @@ function HearingTopicsDetails({
   } = lookup.mainCategory(isOpen);
 
   const { data: amountPaidData } = lookup.amountPaidCategory(
-    subCategory?.value
+    subCategory?.value,
   );
   const { data: travelingWayData } = lookup.travelingWayCategory(
-    subCategory?.value
+    subCategory?.value,
   );
   const { data: leaveTypeData } = lookup.leaveTypeCategory(subCategory?.value);
   const { data: forAllowanceData } = lookup.forAllowance(subCategory?.value);
   const { data: typeOfRequestLookupData } = lookup.typeOfRequest(
-    subCategory?.value
+    subCategory?.value,
   );
   const { data: commissionTypeLookupData } = lookup.commissionType(
-    subCategory?.value
+    subCategory?.value,
   );
   const { data: accordingToAgreementLookupData } = lookup.accordingToAgreement(
-    subCategory?.value
+    subCategory?.value,
   );
   const { data: typesOfPenaltiesData } = lookup.typesOfPenalties(
-    subCategory?.value
+    subCategory?.value,
   );
   const { data: payIncreaseTypeData } = lookup.payIncreaseType(
-    subCategory?.value
+    subCategory?.value,
   );
 
   const typeOfCustodyData = undefined;
@@ -450,7 +451,7 @@ function HearingTopicsDetails({
         value: item.ElementKey,
         label: item.ElementValue,
       })) || [],
-    [payIncreaseTypeData]
+    [payIncreaseTypeData],
   );
 
   const toOption = (list: any[] | undefined, code?: string) => {
@@ -487,11 +488,10 @@ function HearingTopicsDetails({
     setValue,
   ]);
 
-  const { data: regionData } =
-    useGetRegionLookupDataQuery({
-      AcceptedLanguage: currentLanguage,
-      context: "worker",
-    });
+  const { data: regionData } = useGetRegionLookupDataQuery({
+    AcceptedLanguage: currentLanguage,
+    context: "worker",
+  });
 
   const subTopicsLookupParams = useMemo(() => {
     const base: any = {
@@ -525,8 +525,6 @@ function HearingTopicsDetails({
   } = useAttachments({ triggerFileDetails, fileBase64 });
   const [topicData, _setTopicData] = useState<any>(null);
   const [legalSection, _setLegalSection] = useState<any>(null);
-
-
 
   useEffect(() => {
     if (!caseId) return;
@@ -647,9 +645,9 @@ function HearingTopicsDetails({
 
         accordingToAgreement: topic.AccordingToAgreement
           ? {
-            value: topic.AccordingToAgreement,
-            label: topic.AccordingToAgreement,
-          }
+              value: topic.AccordingToAgreement,
+              label: topic.AccordingToAgreement,
+            }
           : null,
         travelingWay: topic.TravelingWay
           ? { value: topic.TravelingWay, label: topic.TravelingWay }
@@ -657,25 +655,25 @@ function HearingTopicsDetails({
 
         ...(topic.SubTopicID === "HIR-1"
           ? {
-            IsBylawsIncludeAddingAccommodation:
-              topic.IsBylawsIncludeAddingAccommodation ??
-              topic.IsBylawsIncludeAddingAccommodiation,
-            IsContractIncludeAddingAccommodation:
-              topic.IsContractIncludeAddingAccommodation ??
-              topic.IsContractIncludeAddingAccommodiation,
-            HousingSpecificationsInContract:
-              topic.HousingSpecificationsInContract ?? "",
-            HousingSpecificationsInBylaws:
-              topic.HousingSpecificationsInBylaws ?? "",
-            HousingSpecifications: topic.HousingSpecifications ?? "",
-          }
+              IsBylawsIncludeAddingAccommodation:
+                topic.IsBylawsIncludeAddingAccommodation ??
+                topic.IsBylawsIncludeAddingAccommodiation,
+              IsContractIncludeAddingAccommodation:
+                topic.IsContractIncludeAddingAccommodation ??
+                topic.IsContractIncludeAddingAccommodiation,
+              HousingSpecificationsInContract:
+                topic.HousingSpecificationsInContract ?? "",
+              HousingSpecificationsInBylaws:
+                topic.HousingSpecificationsInBylaws ?? "",
+              HousingSpecifications: topic.HousingSpecifications ?? "",
+            }
           : {}),
         typeOfRequest:
           topic.RequestType || topic.RequestType_Code
             ? {
-              value: topic.RequestType_Code || topic.RequestType,
-              label: topic.RequestType || topic.RequestType_Code,
-            }
+                value: topic.RequestType_Code || topic.RequestType,
+                label: topic.RequestType || topic.RequestType_Code,
+              }
             : null,
         kindOfHoliday: topic.KindOfHoliday
           ? { value: topic.KindOfHoliday, label: topic.KindOfHoliday }
@@ -683,87 +681,87 @@ function HearingTopicsDetails({
         fromLocation:
           topic.FromLocation || topic.FromLocation_Code
             ? {
-              value: topic.FromLocation_Code || topic.FromLocation,
-              label: topic.FromLocation || topic.FromLocation_Code,
-            }
+                value: topic.FromLocation_Code || topic.FromLocation,
+                label: topic.FromLocation || topic.FromLocation_Code,
+              }
             : null,
         toLocation:
           topic.ToLocation || topic.ToLocation_Code
             ? {
-              value: topic.ToLocation_Code || topic.ToLocation,
-              label: topic.ToLocation || topic.ToLocation_Code,
-            }
+                value: topic.ToLocation_Code || topic.ToLocation,
+                label: topic.ToLocation || topic.ToLocation_Code,
+              }
             : null,
         typesOfPenalties:
           topic.PenalityType ||
-            topic.PenalityType_Code ||
-            topic.TypesOfPenalties
+          topic.PenalityType_Code ||
+          topic.TypesOfPenalties
             ? {
-              value:
-                topic.PenalityType_Code ||
-                topic.PenalityType ||
-                topic.TypesOfPenalties,
-              label:
-                topic.PenalityTypeLabel ||
-                topic.TypesOfPenaltiesLabel ||
-                topic.PenalityType ||
-                topic.TypesOfPenalties,
-            }
+                value:
+                  topic.PenalityType_Code ||
+                  topic.PenalityType ||
+                  topic.TypesOfPenalties,
+                label:
+                  topic.PenalityTypeLabel ||
+                  topic.TypesOfPenaltiesLabel ||
+                  topic.PenalityType ||
+                  topic.TypesOfPenalties,
+              }
             : null,
 
         ...(topic.SubTopicID === "CMR-5"
           ? {
-            kindOfHoliday: (() => {
-              if (topic.LeaveType_Code) {
-                return {
-                  value: topic.LeaveType_Code,
-                  label: topic.LeaveType,
-                };
-              }
-              if (
-                topic.kindOfHoliday &&
-                typeof topic.kindOfHoliday === "object"
-              ) {
-                return topic.kindOfHoliday;
-              }
-              if (
-                typeof topic.kindOfHoliday === "string" &&
-                leaveTypeData?.DataElements
-              ) {
-                const found = leaveTypeData.DataElements.find(
-                  (item: any) => item.ElementKey === topic.kindOfHoliday
-                );
-                return found
-                  ? { value: found.ElementKey, label: found.ElementValue }
-                  : {
-                    value: topic.kindOfHoliday,
-                    label: topic.kindOfHoliday,
+              kindOfHoliday: (() => {
+                if (topic.LeaveType_Code) {
+                  return {
+                    value: topic.LeaveType_Code,
+                    label: topic.LeaveType,
                   };
-              }
-              return null;
-            })(),
-            totalAmount: topic.TotalAmountRequired || "",
-            workingHours: topic.WorkingHoursCount || "",
-            additionalDetails: topic.AdditionalDetails || "",
-          }
+                }
+                if (
+                  topic.kindOfHoliday &&
+                  typeof topic.kindOfHoliday === "object"
+                ) {
+                  return topic.kindOfHoliday;
+                }
+                if (
+                  typeof topic.kindOfHoliday === "string" &&
+                  leaveTypeData?.DataElements
+                ) {
+                  const found = leaveTypeData.DataElements.find(
+                    (item: any) => item.ElementKey === topic.kindOfHoliday,
+                  );
+                  return found
+                    ? { value: found.ElementKey, label: found.ElementValue }
+                    : {
+                        value: topic.kindOfHoliday,
+                        label: topic.kindOfHoliday,
+                      };
+                }
+                return null;
+              })(),
+              totalAmount: topic.TotalAmountRequired || "",
+              workingHours: topic.WorkingHoursCount || "",
+              additionalDetails: topic.AdditionalDetails || "",
+            }
           : {}),
 
         ...(topic.SubTopicID === "JAR-3"
           ? {
-            doesTheInternalRegulationIncludePromotionMechanism:
-              topic.PromotionMechanism === "Yes",
-            doesContractIncludeAdditionalUpgrade:
-              topic.AdditionalUpgrade === "Yes",
-          }
+              doesTheInternalRegulationIncludePromotionMechanism:
+                topic.PromotionMechanism === "Yes",
+              doesContractIncludeAdditionalUpgrade:
+                topic.AdditionalUpgrade === "Yes",
+            }
           : {}),
 
         ...(topic.SubTopicID === "BPSR-1"
           ? {
-            from_date_hijri: topic.pyTempDate || "",
-            from_date_gregorian: topic.FromDate_New || "",
-            to_date_hijri: topic.Date_New || "",
-            to_date_gregorian: topic.ToDate_New || "",
-          }
+              from_date_hijri: topic.pyTempDate || "",
+              from_date_gregorian: topic.FromDate_New || "",
+              to_date_hijri: topic.Date_New || "",
+              to_date_gregorian: topic.ToDate_New || "",
+            }
           : {}),
 
         ...(topic.SubTopicID === "RFR-1" && {
@@ -780,12 +778,12 @@ function HearingTopicsDetails({
 
         ...(topic.SubTopicID === "EDO-3"
           ? {
-            amountOfReduction: topic.AmountOfReduction || "",
-            managerial_decision_date_hijri: topic.pyTempDate || "",
-            managerial_decision_date_gregorian:
-              topic.ManagerialDecisionDate_New || "",
-            managerialDecisionNumber: topic.ManagerialDecisionNumber || "",
-          }
+              amountOfReduction: topic.AmountOfReduction || "",
+              managerial_decision_date_hijri: topic.pyTempDate || "",
+              managerial_decision_date_gregorian:
+                topic.ManagerialDecisionDate_New || "",
+              managerialDecisionNumber: topic.ManagerialDecisionNumber || "",
+            }
           : {}),
 
         ...(topic.SubTopicID === "EDO-1" && {
@@ -827,113 +825,113 @@ function HearingTopicsDetails({
 
         ...(topic.SubTopicID === "WR-1"
           ? {
-            WR1_wageAmount:
-              topic.Amount || topic.wageAmount || topic.amount || "",
-            WR1_forAllowance: topic.ForAllowance_Code
-              ? { value: topic.ForAllowance_Code, label: topic.ForAllowance }
-              : null,
-            WR1_otherAllowance: topic.OtherAllowance || "",
-            WR1_fromDateHijri: topic.pyTempDate || "",
-            WR1_fromDateGregorian: topic.FromDate_New || "",
-            WR1_toDateHijri: topic.Date_New || "",
-            WR1_toDateGregorian: topic.ToDate_New || "",
+              WR1_wageAmount:
+                topic.Amount || topic.wageAmount || topic.amount || "",
+              WR1_forAllowance: topic.ForAllowance_Code
+                ? { value: topic.ForAllowance_Code, label: topic.ForAllowance }
+                : null,
+              WR1_otherAllowance: topic.OtherAllowance || "",
+              WR1_fromDateHijri: topic.pyTempDate || "",
+              WR1_fromDateGregorian: topic.FromDate_New || "",
+              WR1_toDateHijri: topic.Date_New || "",
+              WR1_toDateGregorian: topic.ToDate_New || "",
 
-            wageAmount:
-              topic.Amount || topic.wageAmount || topic.amount || "",
-            forAllowance: topic.ForAllowance_Code
-              ? { value: topic.ForAllowance_Code, label: topic.ForAllowance }
-              : null,
-            otherAllowance: topic.OtherAllowance || "",
-            from_date_hijri: topic.pyTempDate || "",
-            from_date_gregorian: topic.FromDate_New || "",
-            to_date_hijri: topic.Date_New || "",
-            to_date_gregorian: topic.ToDate_New || "",
-          }
+              wageAmount:
+                topic.Amount || topic.wageAmount || topic.amount || "",
+              forAllowance: topic.ForAllowance_Code
+                ? { value: topic.ForAllowance_Code, label: topic.ForAllowance }
+                : null,
+              otherAllowance: topic.OtherAllowance || "",
+              from_date_hijri: topic.pyTempDate || "",
+              from_date_gregorian: topic.FromDate_New || "",
+              to_date_hijri: topic.Date_New || "",
+              to_date_gregorian: topic.ToDate_New || "",
+            }
           : {}),
 
         ...(topic.SubTopicID === "WR-2"
           ? {
-            WR2_wageAmount: topic.OverdueWagesAmount || topic.Amount || "",
-            WR2_fromDateHijri: topic.pyTempDate || "",
-            WR2_fromDateGregorian: topic.FromDate_New || "",
-            WR2_toDateHijri: topic.Date_New || "",
-            WR2_toDateGregorian: topic.ToDate_New || "",
+              WR2_wageAmount: topic.OverdueWagesAmount || topic.Amount || "",
+              WR2_fromDateHijri: topic.pyTempDate || "",
+              WR2_fromDateGregorian: topic.FromDate_New || "",
+              WR2_toDateHijri: topic.Date_New || "",
+              WR2_toDateGregorian: topic.ToDate_New || "",
 
-            amount: topic.OverdueWagesAmount || topic.Amount || "",
-            from_date_hijri: topic.pyTempDate || "",
-            from_date_gregorian: topic.FromDate_New || "",
-            to_date_hijri: topic.Date_New || "",
-            to_date_gregorian: topic.ToDate_New || "",
-          }
+              amount: topic.OverdueWagesAmount || topic.Amount || "",
+              from_date_hijri: topic.pyTempDate || "",
+              from_date_gregorian: topic.FromDate_New || "",
+              to_date_hijri: topic.Date_New || "",
+              to_date_gregorian: topic.ToDate_New || "",
+            }
           : {}),
 
         ...(topic.SubTopicID === "HIR-1" &&
-          (topic.HIR1_AccommodationSource ||
-            topic.HIR1_HousingSpecificationsInContract ||
-            topic.HIR1_HousingSpecificationsInBylaws ||
-            topic.HIR1_HousingSpecifications)
+        (topic.HIR1_AccommodationSource ||
+          topic.HIR1_HousingSpecificationsInContract ||
+          topic.HIR1_HousingSpecificationsInBylaws ||
+          topic.HIR1_HousingSpecifications)
           ? {
-            IsBylawsIncludeAddingAccommodation:
-              topic.HIR1_AccommodationSource === "bylaws" ? "Yes" : "No",
-            IsContractIncludeAddingAccommodation:
-              topic.HIR1_AccommodationSource === "contract" ? "Yes" : "No",
-            HousingSpecificationsInContract:
-              topic.HIR1_HousingSpecificationsInContract || "",
-            HousingSpecificationsInBylaws:
-              topic.HIR1_HousingSpecificationsInBylaws || "",
-            HousingSpecifications: topic.HIR1_HousingSpecifications || "",
-          }
+              IsBylawsIncludeAddingAccommodation:
+                topic.HIR1_AccommodationSource === "bylaws" ? "Yes" : "No",
+              IsContractIncludeAddingAccommodation:
+                topic.HIR1_AccommodationSource === "contract" ? "Yes" : "No",
+              HousingSpecificationsInContract:
+                topic.HIR1_HousingSpecificationsInContract || "",
+              HousingSpecificationsInBylaws:
+                topic.HIR1_HousingSpecificationsInBylaws || "",
+              HousingSpecifications: topic.HIR1_HousingSpecifications || "",
+            }
           : {}),
 
         ...(topic.SubTopicID === "MIR-1"
           ? {
-            MIR1_typeOfRequest: topic.RequestType_Code
-              ? { value: topic.RequestType_Code, label: topic.RequestType }
-              : null,
-            MIR1_requiredDegreeOfInsurance:
-              topic.RequiredDegreeInsurance || "",
-            MIR1_theReason: topic.Reason || "",
-            MIR1_currentInsuranceLevel: topic.CurrentInsuranceLevel || "",
+              MIR1_typeOfRequest: topic.RequestType_Code
+                ? { value: topic.RequestType_Code, label: topic.RequestType }
+                : null,
+              MIR1_requiredDegreeOfInsurance:
+                topic.RequiredDegreeInsurance || "",
+              MIR1_theReason: topic.Reason || "",
+              MIR1_currentInsuranceLevel: topic.CurrentInsuranceLevel || "",
 
-            typeOfRequest: topic.RequestType_Code
-              ? { value: topic.RequestType_Code, label: topic.RequestType }
-              : null,
-            requiredDegreeOfInsurance: topic.RequiredDegreeInsurance || "",
-            theReason: topic.Reason || "",
-            currentInsuranceLevel: topic.CurrentInsuranceLevel || "",
-          }
+              typeOfRequest: topic.RequestType_Code
+                ? { value: topic.RequestType_Code, label: topic.RequestType }
+                : null,
+              requiredDegreeOfInsurance: topic.RequiredDegreeInsurance || "",
+              theReason: topic.Reason || "",
+              currentInsuranceLevel: topic.CurrentInsuranceLevel || "",
+            }
           : {}),
 
         ...(topic.SubTopicID === "TTR-1"
           ? {
-            TTR1_travelingWay: topic.TravelingWay_Code
-              ? {
-                value: topic.TravelingWay_Code,
-                label: topic.TravelingWay || topic.TravelingWay_Code,
-              }
-              : null,
+              TTR1_travelingWay: topic.TravelingWay_Code
+                ? {
+                    value: topic.TravelingWay_Code,
+                    label: topic.TravelingWay || topic.TravelingWay_Code,
+                  }
+                : null,
 
-            travelingWay: topic.TravelingWay_Code
-              ? {
-                value: topic.TravelingWay_Code,
-                label: topic.TravelingWay || topic.TravelingWay_Code,
-              }
-              : null,
-          }
+              travelingWay: topic.TravelingWay_Code
+                ? {
+                    value: topic.TravelingWay_Code,
+                    label: topic.TravelingWay || topic.TravelingWay_Code,
+                  }
+                : null,
+            }
           : {}),
 
         ...(topic.SubTopicID === "CMR-1" && {
           CMR1_amountsPaidFor:
             topic.AmountsPaidFor_Code && topic.AmountsPaidFor
               ? {
-                value: topic.AmountsPaidFor_Code,
-                label: topic.AmountsPaidFor,
-              }
+                  value: topic.AmountsPaidFor_Code,
+                  label: topic.AmountsPaidFor,
+                }
               : topic.AmountsPaidFor_Code
                 ? {
-                  value: topic.AmountsPaidFor_Code,
-                  label: topic.AmountsPaidFor_Code,
-                }
+                    value: topic.AmountsPaidFor_Code,
+                    label: topic.AmountsPaidFor_Code,
+                  }
                 : null,
           CMR1_theAmountRequired: topic.AmountRequired
             ? String(topic.AmountRequired)
@@ -942,14 +940,14 @@ function HearingTopicsDetails({
           amountsPaidFor:
             topic.AmountsPaidFor_Code && topic.AmountsPaidFor
               ? {
-                value: topic.AmountsPaidFor_Code,
-                label: topic.AmountsPaidFor,
-              }
+                  value: topic.AmountsPaidFor_Code,
+                  label: topic.AmountsPaidFor,
+                }
               : topic.AmountsPaidFor_Code
                 ? {
-                  value: topic.AmountsPaidFor_Code,
-                  label: topic.AmountsPaidFor_Code,
-                }
+                    value: topic.AmountsPaidFor_Code,
+                    label: topic.AmountsPaidFor_Code,
+                  }
                 : null,
           theAmountRequired: topic.AmountRequired
             ? String(topic.AmountRequired)
@@ -1005,9 +1003,9 @@ function HearingTopicsDetails({
             : "",
           CMR6_payIncreaseType: topic.PayIncreaseType_Code
             ? {
-              value: topic.PayIncreaseType_Code,
-              label: topic.PayIncreaseType,
-            }
+                value: topic.PayIncreaseType_Code,
+                label: topic.PayIncreaseType,
+              }
             : null,
           CMR6_wageDifference: topic.WageDifference
             ? String(topic.WageDifference)
@@ -1024,9 +1022,9 @@ function HearingTopicsDetails({
           newPayAmount: topic.NewPayAmount ? String(topic.NewPayAmount) : "",
           payIncreaseType: topic.PayIncreaseType_Code
             ? {
-              value: topic.PayIncreaseType_Code,
-              label: topic.PayIncreaseType,
-            }
+                value: topic.PayIncreaseType_Code,
+                label: topic.PayIncreaseType,
+              }
             : null,
           wageDifference: topic.WageDifference
             ? String(topic.WageDifference)
@@ -1074,7 +1072,7 @@ function HearingTopicsDetails({
             const accOpt = resolveOption(
               accordingToAgreementLookupData?.DataElements,
               code,
-              topic.AccordingToAgreement
+              topic.AccordingToAgreement,
             );
             const bonus = topic.Premium ?? topic.BonusAmount ?? "";
             const hijri = topic.pyTempDate || "";
@@ -1095,11 +1093,11 @@ function HearingTopicsDetails({
         ...(topic.SubTopicID === "BPSR-1" && {
           commissionType: ensureOption(
             commissionTypeLookupData?.DataElements,
-            topic.CommissionType_Code ?? topic.CommissionType
+            topic.CommissionType_Code ?? topic.CommissionType,
           ),
           accordingToAgreement: ensureOption(
             accordingToAgreementLookupData?.DataElements,
-            topic.AccordingToAgreement_Code ?? topic.AccordingToAgreement
+            topic.AccordingToAgreement_Code ?? topic.AccordingToAgreement,
           ),
           amount: String(topic.Amount ?? topic.amount ?? ""),
           amountRatio: String(topic.AmountRatio ?? topic.amountRatio ?? ""),
@@ -1121,7 +1119,7 @@ function HearingTopicsDetails({
             topic.to_date_gregorian ??
             "",
           otherCommission: String(
-            topic.OtherCommission ?? topic.otherCommission ?? ""
+            topic.OtherCommission ?? topic.otherCommission ?? "",
           ),
         }),
 
@@ -1146,16 +1144,16 @@ function HearingTopicsDetails({
 
         ...(topic.SubTopicID === "JAR-3"
           ? {
-            JAR3_promotionMechanism:
-              topic.PromotionMechanism || topic.promotionMechanism || "",
-            JAR3_additionalUpgrade:
-              topic.AdditionalUpgrade || topic.additionalUpgrade || "",
+              JAR3_promotionMechanism:
+                topic.PromotionMechanism || topic.promotionMechanism || "",
+              JAR3_additionalUpgrade:
+                topic.AdditionalUpgrade || topic.additionalUpgrade || "",
 
-            promotionMechanism:
-              topic.promotionMechanism || topic.PromotionMechanism || "",
-            additionalUpgrade:
-              topic.additionalUpgrade || topic.AdditionalUpgrade || "",
-          }
+              promotionMechanism:
+                topic.promotionMechanism || topic.PromotionMechanism || "",
+              additionalUpgrade:
+                topic.additionalUpgrade || topic.AdditionalUpgrade || "",
+            }
           : {}),
 
         ...(topic.SubTopicID === "JAR-4" && {
@@ -1207,9 +1205,9 @@ function HearingTopicsDetails({
               fileType: attachment.FileType,
               fileName: ensureFileNameWithExtension(
                 attachment.FileName,
-                attachment.FileType
+                attachment.FileType,
               ),
-            })
+            }),
           );
 
         setAttachments(formattedAttachments);
@@ -1218,7 +1216,7 @@ function HearingTopicsDetails({
   }, [caseDetailsData]);
 
   const matchedSubCategory = subCategoryData?.DataElements?.find(
-    (item: any) => item.ElementKey === subCategory?.value
+    (item: any) => item.ElementKey === subCategory?.value,
   );
 
   const acknowledged = watch("acknowledged");
@@ -1233,10 +1231,8 @@ function HearingTopicsDetails({
     const subscription = watch((_, info) => {
       try {
         const changedField = info?.name as string | undefined;
-        changedField
-          ? getValues(changedField as any)
-          : undefined;
-      } catch { }
+        changedField ? getValues(changedField as any) : undefined;
+      } catch {}
     });
     return () => subscription.unsubscribe();
   }, [watch, getValues, formState]);
@@ -1255,7 +1251,7 @@ function HearingTopicsDetails({
   useEffect(() => {
     const maxPageIndex = Math.max(
       0,
-      Math.ceil(caseTopics.length / pagination.pageSize) - 1
+      Math.ceil(caseTopics.length / pagination.pageSize) - 1,
     );
     if (pagination.pageIndex > maxPageIndex && maxPageIndex >= 0) {
       setPagination((prev) => ({
@@ -1273,19 +1269,19 @@ function HearingTopicsDetails({
     const mainCategoryOpt =
       typeof topic.mainCategory === "string"
         ? { value: topic.mainCategory, label: topic.mainCategory }
-        : topic.mainCategory ?? {
-          value: topic.MainTopicID,
-          label: topic.CaseTopicName,
-        };
+        : (topic.mainCategory ?? {
+            value: topic.MainTopicID,
+            label: topic.CaseTopicName,
+          });
     setValue("mainCategory", mainCategoryOpt);
 
     const subCategoryOpt =
       typeof topic.subCategory === "string"
         ? { value: topic.subCategory, label: topic.subCategory }
-        : topic.subCategory ?? {
-          value: topic.SubTopicID,
-          label: topic.SubTopicName,
-        };
+        : (topic.subCategory ?? {
+            value: topic.SubTopicID,
+            label: topic.SubTopicName,
+          });
     setValue("subCategory", subCategoryOpt);
 
     setEditTopic({ ...topic, index });
@@ -1308,7 +1304,7 @@ function HearingTopicsDetails({
         currentPageIndex: pagination.pageIndex,
         pageSize: pagination.pageSize,
       }),
-    [t, toggle, caseTopics, pagination.pageIndex, pagination.pageSize]
+    [t, toggle, caseTopics, pagination.pageIndex, pagination.pageSize],
   );
 
   const goToLegalStep = () => {
@@ -1900,7 +1896,7 @@ function HearingTopicsDetails({
         AmountOfReduction: EDO3_amountOfReduction ?? "",
         pyTempDate: formatDateForStorage(EDO3_managerialDecisionDateHijri),
         ManagerialDecisionDate_New: formatDateForStorage(
-          EDO3_managerialDecisionDateGregorian
+          EDO3_managerialDecisionDateGregorian,
         ),
         ManagerialDecisionNumber: EDO3_managerialDecisionNumber ?? "",
 
@@ -2016,6 +2012,7 @@ function HearingTopicsDetails({
         Amount: LRESR1_Amount ?? "",
 
         amount: LRESR1_Amount ?? "",
+        endOfServiceRewardAmount: LRESR1_Amount ?? "",
       });
     } else if (subCategoryValue === "TTR-1") {
       const { TTR1_travelingWay } = updatedValues;
@@ -2139,14 +2136,6 @@ function HearingTopicsDetails({
         damagedValue: effectiveDamagedValue,
         damagedType: effectiveDamagedType,
       });
-    } else if (subCategoryValue === "LRESR-1") {
-      const { LRESR1_Amount } = updatedValues;
-
-      Object.assign(updatedTopic, {
-        Amount: LRESR1_Amount ?? "",
-
-        endOfServiceRewardAmount: LRESR1_Amount ?? "",
-      });
     } else if (subCategoryValue === "AWRW-1") {
       const {
         amount,
@@ -2246,7 +2235,7 @@ function HearingTopicsDetails({
     });
 
     toast.success(
-      t("topic_updated_successfully") || "Topic updated successfully"
+      t("topic_updated_successfully") || "Topic updated successfully",
     );
 
     reset();
@@ -2282,18 +2271,16 @@ function HearingTopicsDetails({
   };
 
   const [lastAction, setLastAction] = useState<"Save" | "Next" | undefined>(
-    undefined
+    undefined,
   );
 
   const handleSaveApi = async (): Promise<ApiResponse> => {
     setLastAction("Save");
-    const payload = getPayloadBySubTopicID(
-      {
-        caseTopics,
-        lastAction: "Save",
-        caseId
-      }
-    );
+    const payload = getPayloadBySubTopicID({
+      caseTopics,
+      lastAction: "Save",
+      caseId,
+    });
 
     try {
       const response = onSaveApi
@@ -2309,7 +2296,7 @@ function HearingTopicsDetails({
           (error: any) =>
             error &&
             (error.ErrorCode || error.ErrorDesc) &&
-            !(error.ErrorCode === "" && error.ErrorDesc === "")
+            !(error.ErrorCode === "" && error.ErrorDesc === ""),
         );
 
       if (hasActualErrors) {
@@ -2323,7 +2310,6 @@ function HearingTopicsDetails({
       }
 
       if (isSuccessCode && isSuccessStatus) {
-
       } else {
       }
       return response;
@@ -2339,13 +2325,11 @@ function HearingTopicsDetails({
     setFormData(latestFormValues);
     try {
       setLastAction("Next");
-      const payload = getPayloadBySubTopicID(
-        {
-          caseTopics,
-          lastAction: "Next",
-          caseId
-        }
-      );
+      const payload = getPayloadBySubTopicID({
+        caseTopics,
+        lastAction: "Next",
+        caseId,
+      });
 
       const response = await saveHearingTopics(payload).unwrap();
 
@@ -2355,7 +2339,7 @@ function HearingTopicsDetails({
           (error: any) =>
             error &&
             (error.ErrorCode || error.ErrorDesc) &&
-            !(error.ErrorCode === "" && error.ErrorDesc === "")
+            !(error.ErrorCode === "" && error.ErrorDesc === ""),
         );
 
       if (hasActualErrors) {
@@ -2390,7 +2374,7 @@ function HearingTopicsDetails({
     } else {
       updateParams(
         currentStep === 0 ? 0 : currentStep - 1,
-        Math.max(currentTab - 1, 0)
+        Math.max(currentTab - 1, 0),
       );
     }
   }, [currentStep, currentTab, updateParams]);
@@ -2544,7 +2528,7 @@ function HearingTopicsDetails({
 
       if (
         ["CMR-6", "CMR-7", "CMR-8", "BR-1", "BPSR-1", "RLRAHI-1"].includes(
-          subTopicID
+          subTopicID,
         )
       ) {
         const requiredDateFields = [
@@ -2634,10 +2618,10 @@ function HearingTopicsDetails({
       LoanAmount: newTopic.loanAmount,
       ManagerialDecisionNumber: newTopic.managerialDecisionNumber,
       ManagerialDecisionDateHijri: formatDateForStorage(
-        newTopic.managerial_decision_date_hijri
+        newTopic.managerial_decision_date_hijri,
       ),
       ManagerialDecisionDateGregorian: formatDateForStorage(
-        newTopic.managerial_decision_date_gregorian
+        newTopic.managerial_decision_date_gregorian,
       ),
       TypesOfPenalties:
         newTopic.typesOfPenalties?.value || newTopic.typesOfPenalties || "",
@@ -2649,12 +2633,12 @@ function HearingTopicsDetails({
             ? newTopic.kindOfHoliday
             : newTopic.kindOfHoliday
               ? {
-                value: newTopic.kindOfHoliday,
-                label:
-                  (leaveTypeData?.DataElements || []).find(
-                    (item: any) => item.ElementKey === newTopic.kindOfHoliday
-                  )?.ElementValue || newTopic.kindOfHoliday,
-              }
+                  value: newTopic.kindOfHoliday,
+                  label:
+                    (leaveTypeData?.DataElements || []).find(
+                      (item: any) => item.ElementKey === newTopic.kindOfHoliday,
+                    )?.ElementValue || newTopic.kindOfHoliday,
+                }
               : null
           : newTopic.kindOfHoliday && typeof newTopic.kindOfHoliday === "object"
             ? newTopic.kindOfHoliday
@@ -2666,10 +2650,10 @@ function HearingTopicsDetails({
           ? typeof newTopic.kindOfHoliday === "object"
             ? newTopic.kindOfHoliday.label
             : (leaveTypeData?.DataElements || []).find(
-              (item: any) => item.ElementKey === newTopic.kindOfHoliday
-            )?.ElementValue ||
-            newTopic.kindOfHoliday ||
-            ""
+                (item: any) => item.ElementKey === newTopic.kindOfHoliday,
+              )?.ElementValue ||
+              newTopic.kindOfHoliday ||
+              ""
           : undefined,
       totalAmount:
         newTopic.SubTopicID === "CMR-5"
@@ -2688,7 +2672,7 @@ function HearingTopicsDetails({
       InjuryDateGregorian: formatDateForStorage(newTopic.injury_date_gregorian),
       RequestDateHijri: formatDateForStorage(newTopic.request_date_hijri),
       RequestDateGregorian: formatDateForStorage(
-        newTopic.request_date_gregorian
+        newTopic.request_date_gregorian,
       ),
       DateHijri: formatDateForStorage(newTopic.date_hijri),
       DateGregorian: formatDateForStorage(newTopic.date_gregorian),
@@ -2708,9 +2692,9 @@ function HearingTopicsDetails({
           newTopic.fromLocation ||
           (newTopic.FromLocation_Code
             ? {
-              value: newTopic.FromLocation_Code,
-              label: newTopic.FromLocation,
-            }
+                value: newTopic.FromLocation_Code,
+                label: newTopic.FromLocation,
+              }
             : null),
         EDO1_toLocation:
           newTopic.EDO1_toLocation ||
@@ -2737,9 +2721,9 @@ function HearingTopicsDetails({
           newTopic.fromLocation ||
           (newTopic.FromLocation_Code
             ? {
-              value: newTopic.FromLocation_Code,
-              label: newTopic.FromLocation,
-            }
+                value: newTopic.FromLocation_Code,
+                label: newTopic.FromLocation,
+              }
             : null),
         toLocation:
           newTopic.toLocation ||
@@ -2824,9 +2808,9 @@ function HearingTopicsDetails({
           newTopic.typesOfPenalties ||
           (newTopic.PenalityType_Code
             ? {
-              value: newTopic.PenalityType_Code,
-              label: newTopic.PenalityType,
-            }
+                value: newTopic.PenalityType_Code,
+                label: newTopic.PenalityType,
+              }
             : null),
         EDO4_managerialDecisionDateHijri:
           newTopic.EDO4_managerialDecisionDateHijri ||
@@ -2847,9 +2831,9 @@ function HearingTopicsDetails({
           newTopic.typesOfPenalties ||
           (newTopic.PenalityType_Code
             ? {
-              value: newTopic.PenalityType_Code,
-              label: newTopic.PenalityType,
-            }
+                value: newTopic.PenalityType_Code,
+                label: newTopic.PenalityType,
+              }
             : null),
         managerial_decision_date_hijri:
           newTopic.managerial_decision_date_hijri || newTopic.Date_New || "",
@@ -2862,103 +2846,103 @@ function HearingTopicsDetails({
 
       ...(newTopic.subCategory?.value === "WR-1"
         ? {
-          WR1_wageAmount:
-            newTopic.WR1_wageAmount || newTopic.wageAmount || "",
-          WR1_fromDateHijri:
-            newTopic.WR1_fromDateHijri || newTopic.from_date_hijri || "",
-          WR1_fromDateGregorian:
-            newTopic.WR1_fromDateGregorian ||
-            newTopic.from_date_gregorian ||
-            "",
-          WR1_toDateHijri:
-            newTopic.WR1_toDateHijri || newTopic.to_date_hijri || "",
-          WR1_toDateGregorian:
-            newTopic.WR1_toDateGregorian || newTopic.to_date_gregorian || "",
-          WR1_forAllowance:
-            newTopic.WR1_forAllowance || newTopic.forAllowance || null,
-          WR1_otherAllowance:
-            newTopic.WR1_otherAllowance || newTopic.otherAllowance || "",
+            WR1_wageAmount:
+              newTopic.WR1_wageAmount || newTopic.wageAmount || "",
+            WR1_fromDateHijri:
+              newTopic.WR1_fromDateHijri || newTopic.from_date_hijri || "",
+            WR1_fromDateGregorian:
+              newTopic.WR1_fromDateGregorian ||
+              newTopic.from_date_gregorian ||
+              "",
+            WR1_toDateHijri:
+              newTopic.WR1_toDateHijri || newTopic.to_date_hijri || "",
+            WR1_toDateGregorian:
+              newTopic.WR1_toDateGregorian || newTopic.to_date_gregorian || "",
+            WR1_forAllowance:
+              newTopic.WR1_forAllowance || newTopic.forAllowance || null,
+            WR1_otherAllowance:
+              newTopic.WR1_otherAllowance || newTopic.otherAllowance || "",
 
-          wageAmount: newTopic.wageAmount || "",
-          from_date_hijri: newTopic.from_date_hijri || "",
-          from_date_gregorian: newTopic.from_date_gregorian || "",
-          to_date_hijri: newTopic.to_date_hijri || "",
-          to_date_gregorian: newTopic.to_date_gregorian || "",
-          forAllowance: newTopic.forAllowance || null,
-          otherAllowance: newTopic.otherAllowance || "",
-        }
+            wageAmount: newTopic.wageAmount || "",
+            from_date_hijri: newTopic.from_date_hijri || "",
+            from_date_gregorian: newTopic.from_date_gregorian || "",
+            to_date_hijri: newTopic.to_date_hijri || "",
+            to_date_gregorian: newTopic.to_date_gregorian || "",
+            forAllowance: newTopic.forAllowance || null,
+            otherAllowance: newTopic.otherAllowance || "",
+          }
         : {}),
 
       ...(newTopic.subCategory?.value === "WR-2"
         ? {
-          WR2_wageAmount:
-            newTopic.WR2_wageAmount || newTopic.wageAmount || "",
-          WR2_fromDateHijri:
-            newTopic.WR2_fromDateHijri || newTopic.from_date_hijri || "",
-          WR2_fromDateGregorian:
-            newTopic.WR2_fromDateGregorian ||
-            newTopic.from_date_gregorian ||
-            "",
-          WR2_toDateHijri:
-            newTopic.WR2_toDateHijri || newTopic.to_date_hijri || "",
-          WR2_toDateGregorian:
-            newTopic.WR2_toDateGregorian || newTopic.to_date_gregorian || "",
+            WR2_wageAmount:
+              newTopic.WR2_wageAmount || newTopic.wageAmount || "",
+            WR2_fromDateHijri:
+              newTopic.WR2_fromDateHijri || newTopic.from_date_hijri || "",
+            WR2_fromDateGregorian:
+              newTopic.WR2_fromDateGregorian ||
+              newTopic.from_date_gregorian ||
+              "",
+            WR2_toDateHijri:
+              newTopic.WR2_toDateHijri || newTopic.to_date_hijri || "",
+            WR2_toDateGregorian:
+              newTopic.WR2_toDateGregorian || newTopic.to_date_gregorian || "",
 
-          wageAmount: newTopic.wageAmount || "",
-          from_date_hijri: newTopic.from_date_hijri || "",
-          from_date_gregorian: newTopic.from_date_gregorian || "",
-          to_date_hijri: newTopic.to_date_hijri || "",
-          to_date_gregorian: newTopic.to_date_gregorian || "",
-        }
+            wageAmount: newTopic.wageAmount || "",
+            from_date_hijri: newTopic.from_date_hijri || "",
+            from_date_gregorian: newTopic.from_date_gregorian || "",
+            to_date_hijri: newTopic.to_date_hijri || "",
+            to_date_gregorian: newTopic.to_date_gregorian || "",
+          }
         : {}),
 
       ...(newTopic.SubTopicID === "MIR-1"
         ? {
-          typeOfRequest: newTopic.typeOfRequest
-            ? {
-              value: newTopic.typeOfRequest.value,
-              label: newTopic.typeOfRequest.label,
-            }
-            : null,
-          requiredDegreeOfInsurance: newTopic.requiredDegreeOfInsurance || "",
-          theReason: newTopic.theReason || "",
-          currentInsuranceLevel: newTopic.currentInsuranceLevel || "",
-        }
+            typeOfRequest: newTopic.typeOfRequest
+              ? {
+                  value: newTopic.typeOfRequest.value,
+                  label: newTopic.typeOfRequest.label,
+                }
+              : null,
+            requiredDegreeOfInsurance: newTopic.requiredDegreeOfInsurance || "",
+            theReason: newTopic.theReason || "",
+            currentInsuranceLevel: newTopic.currentInsuranceLevel || "",
+          }
         : {}),
 
       ...(newTopic.subCategory?.value === "HIR-1"
         ? {
-          IsBylawsIncludeAddingAccommodation:
-            newTopic.HIR1_AccommodationSource === "bylaws" ? "Yes" : "No",
-          IsContractIncludeAddingAccommodation:
-            newTopic.HIR1_AccommodationSource === "contract" ? "Yes" : "No",
-          HousingSpecificationsInContract:
-            newTopic.HIR1_HousingSpecificationsInContract || "",
-          HousingSpecificationsInBylaws:
-            newTopic.HIR1_HousingSpecificationsInBylaws || "",
-          HousingSpecifications: newTopic.HIR1_HousingSpecifications || "",
-        }
+            IsBylawsIncludeAddingAccommodation:
+              newTopic.HIR1_AccommodationSource === "bylaws" ? "Yes" : "No",
+            IsContractIncludeAddingAccommodation:
+              newTopic.HIR1_AccommodationSource === "contract" ? "Yes" : "No",
+            HousingSpecificationsInContract:
+              newTopic.HIR1_HousingSpecificationsInContract || "",
+            HousingSpecificationsInBylaws:
+              newTopic.HIR1_HousingSpecificationsInBylaws || "",
+            HousingSpecifications: newTopic.HIR1_HousingSpecifications || "",
+          }
         : {}),
 
       ...(newTopic.SubTopicID === "TTR-1"
         ? {
-          TTR1_travelingWay:
-            newTopic.TTR1_travelingWay || newTopic.travelingWay || null,
+            TTR1_travelingWay:
+              newTopic.TTR1_travelingWay || newTopic.travelingWay || null,
 
-          travelingWay:
-            newTopic.TTR1_travelingWay || newTopic.travelingWay || null,
-        }
+            travelingWay:
+              newTopic.TTR1_travelingWay || newTopic.travelingWay || null,
+          }
         : {}),
 
       ...(newTopic.SubTopicID === "CMR-1" && {
         CMR1_amountsPaidFor:
           newTopic.CMR1_amountsPaidFor &&
-            typeof newTopic.CMR1_amountsPaidFor === "object"
+          typeof newTopic.CMR1_amountsPaidFor === "object"
             ? newTopic.CMR1_amountsPaidFor
             : null,
         CMR1_theAmountRequired:
           newTopic.CMR1_theAmountRequired !== undefined &&
-            newTopic.CMR1_theAmountRequired !== null
+          newTopic.CMR1_theAmountRequired !== null
             ? String(newTopic.CMR1_theAmountRequired)
             : "",
 
@@ -2968,7 +2952,7 @@ function HearingTopicsDetails({
             : null,
         theAmountRequired:
           newTopic.theAmountRequired !== undefined &&
-            newTopic.theAmountRequired !== null
+          newTopic.theAmountRequired !== null
             ? String(newTopic.theAmountRequired)
             : "",
       }),
@@ -2976,7 +2960,7 @@ function HearingTopicsDetails({
       ...(newTopic.SubTopicID === "CMR-3" && {
         CMR3_compensationAmount:
           newTopic.CMR3_compensationAmount !== undefined &&
-            newTopic.CMR3_compensationAmount !== null
+          newTopic.CMR3_compensationAmount !== null
             ? String(newTopic.CMR3_compensationAmount)
             : "",
         CMR3_injuryDateHijri: newTopic.CMR3_injuryDateHijri || "",
@@ -2985,7 +2969,7 @@ function HearingTopicsDetails({
 
         compensationAmount:
           newTopic.compensationAmount !== undefined &&
-            newTopic.compensationAmount !== null
+          newTopic.compensationAmount !== null
             ? String(newTopic.compensationAmount)
             : "",
         injury_date_hijri: newTopic.injury_date_hijri || "",
@@ -2996,13 +2980,13 @@ function HearingTopicsDetails({
       ...(newTopic.SubTopicID === "CMR-4" && {
         CMR4_compensationAmount:
           newTopic.CMR4_compensationAmount !== undefined &&
-            newTopic.CMR4_compensationAmount !== null
+          newTopic.CMR4_compensationAmount !== null
             ? String(newTopic.CMR4_compensationAmount)
             : "",
 
         amount:
           newTopic.noticeCompensationAmount !== undefined &&
-            newTopic.noticeCompensationAmount !== null
+          newTopic.noticeCompensationAmount !== null
             ? String(newTopic.noticeCompensationAmount)
             : "",
       }),
@@ -3010,17 +2994,17 @@ function HearingTopicsDetails({
       ...(newTopic.SubTopicID === "CMR-5" && {
         CMR5_kindOfHoliday:
           newTopic.CMR5_kindOfHoliday &&
-            typeof newTopic.CMR5_kindOfHoliday === "object"
+          typeof newTopic.CMR5_kindOfHoliday === "object"
             ? newTopic.CMR5_kindOfHoliday
             : null,
         CMR5_totalAmount:
           newTopic.CMR5_totalAmount !== undefined &&
-            newTopic.CMR5_totalAmount !== null
+          newTopic.CMR5_totalAmount !== null
             ? String(newTopic.CMR5_totalAmount)
             : "",
         CMR5_workingHours:
           newTopic.CMR5_workingHours !== undefined &&
-            newTopic.CMR5_workingHours !== null
+          newTopic.CMR5_workingHours !== null
             ? String(newTopic.CMR5_workingHours)
             : "",
         CMR5_additionalDetails: newTopic.CMR5_additionalDetails ?? "",
@@ -3043,12 +3027,12 @@ function HearingTopicsDetails({
       ...(newTopic.SubTopicID === "CMR-6" && {
         CMR6_newPayAmount:
           newTopic.CMR6_newPayAmount !== undefined &&
-            newTopic.CMR6_newPayAmount !== null
+          newTopic.CMR6_newPayAmount !== null
             ? String(newTopic.CMR6_newPayAmount)
             : "",
         CMR6_payIncreaseType:
           newTopic.CMR6_payIncreaseType &&
-            typeof newTopic.CMR6_payIncreaseType === "object"
+          typeof newTopic.CMR6_payIncreaseType === "object"
             ? newTopic.CMR6_payIncreaseType
             : null,
         CMR6_wageDifference: newTopic.CMR6_wageDifference ?? "",
@@ -3065,7 +3049,7 @@ function HearingTopicsDetails({
           newTopic.newPayAmount != null ? String(newTopic.newPayAmount) : "",
         payIncreaseType:
           newTopic.payIncreaseType &&
-            typeof newTopic.payIncreaseType === "object"
+          typeof newTopic.payIncreaseType === "object"
             ? newTopic.payIncreaseType
             : null,
         wageDifference:
@@ -3077,7 +3061,7 @@ function HearingTopicsDetails({
       ...(newTopic.SubTopicID === "CMR-7" && {
         CMR7_durationOfLeaveDue:
           newTopic.CMR7_durationOfLeaveDue !== undefined &&
-            newTopic.CMR7_durationOfLeaveDue !== null
+          newTopic.CMR7_durationOfLeaveDue !== null
             ? String(newTopic.CMR7_durationOfLeaveDue)
             : "",
         CMR7_payDue:
@@ -3095,7 +3079,7 @@ function HearingTopicsDetails({
         fromDate_gregorian: newTopic.fromDate_gregorian ?? "",
         durationOfLeaveDue:
           newTopic.durationOfLeaveDue !== undefined &&
-            newTopic.durationOfLeaveDue !== null
+          newTopic.durationOfLeaveDue !== null
             ? String(newTopic.durationOfLeaveDue)
             : "",
         payDue:
@@ -3107,7 +3091,7 @@ function HearingTopicsDetails({
       ...(newTopic.SubTopicID === "CMR-8" && {
         CMR8_wagesAmount:
           newTopic.CMR8_wagesAmount !== undefined &&
-            newTopic.CMR8_wagesAmount !== null
+          newTopic.CMR8_wagesAmount !== null
             ? String(newTopic.CMR8_wagesAmount)
             : "",
         CMR8_fromDateHijri: newTopic.CMR8_fromDateHijri ?? "",
@@ -3197,24 +3181,24 @@ function HearingTopicsDetails({
 
       ...(newTopic.SubTopicID === "JAR-3"
         ? {
-          doesTheInternalRegulationIncludePromotionMechanism:
-            (newTopic.JAR3_promotionMechanism ??
-              newTopic.promotionMechanism) === "Yes",
-          doesContractIncludeAdditionalUpgrade:
-            (newTopic.JAR3_additionalUpgrade ??
-              newTopic.additionalUpgrade) === "Yes",
+            doesTheInternalRegulationIncludePromotionMechanism:
+              (newTopic.JAR3_promotionMechanism ??
+                newTopic.promotionMechanism) === "Yes",
+            doesContractIncludeAdditionalUpgrade:
+              (newTopic.JAR3_additionalUpgrade ??
+                newTopic.additionalUpgrade) === "Yes",
 
-          PromotionMechanism:
-            newTopic.JAR3_promotionMechanism ??
-            (newTopic.JAR3_JobApplicationRequest === "promotionMechanism"
-              ? "Yes"
-              : "No"),
-          AdditionalUpgrade:
-            newTopic.JAR3_additionalUpgrade ??
-            (newTopic.JAR3_JobApplicationRequest === "contractUpgrade"
-              ? "Yes"
-              : "No"),
-        }
+            PromotionMechanism:
+              newTopic.JAR3_promotionMechanism ??
+              (newTopic.JAR3_JobApplicationRequest === "promotionMechanism"
+                ? "Yes"
+                : "No"),
+            AdditionalUpgrade:
+              newTopic.JAR3_additionalUpgrade ??
+              (newTopic.JAR3_JobApplicationRequest === "contractUpgrade"
+                ? "Yes"
+                : "No"),
+          }
         : {}),
 
       ...(newTopic.SubTopicID === "JAR-4" && {
@@ -3315,16 +3299,14 @@ function HearingTopicsDetails({
     if (details) {
       try {
         localStorage.setItem("CaseDetails", JSON.stringify(details));
-      } catch { }
+      } catch {}
     }
   }, [caseDetailsData?.CaseDetails]);
 
   useEffect(() => {
     if (!isEditing || editTopic?.SubTopicID !== "HIR-1") return;
 
-    setTimeout(() => {
-
-    }, 0);
+    setTimeout(() => {}, 0);
   }, [isEditing, editTopic, watch]);
 
   useCaseTopicsPrefill({
@@ -3372,7 +3354,6 @@ function HearingTopicsDetails({
     setValue,
   ]);
 
-
   useEffect(() => {
     if (isEditing && editTopic && isOpen) {
       setShowLegalSection(true);
@@ -3414,7 +3395,6 @@ function HearingTopicsDetails({
     subCategory?.value,
   ]);
 
-
   const bylawsValue = useWatch({
     control,
     name: "doesBylawsIncludeAddingAccommodations",
@@ -3428,9 +3408,6 @@ function HearingTopicsDetails({
     if (bylawsValue && contractValue) {
       setValue("doesContractIncludeAddingAccommodations", false);
       setValue("housingSpecificationsInContract", "");
-    } else if (contractValue && bylawsValue) {
-      setValue("doesBylawsIncludeAddingAccommodations", false);
-      setValue("housingSpecificationInByLaws", "");
     }
   }, [bylawsValue, contractValue]);
 
@@ -3494,7 +3471,7 @@ function HearingTopicsDetails({
               }
             }
           })
-          .catch((_error) => { });
+          .catch((_error) => {});
       }
     }
   }, [
@@ -3544,99 +3521,99 @@ function HearingTopicsDetails({
   const formLayout =
     userType === "Worker" || userType === "Embassy User"
       ? useFormLayoutWorker({
-        t,
-        MainTopicID: mainCategory,
-        SubTopicID: subCategory,
-        FromLocation: fromLocation,
-        ToLocation: toLocation,
-        AcknowledgementTerms: acknowledged,
-        showLegalSection,
-        showTopicData,
-        setValue,
-        regulatoryText,
-        handleAdd: goToLegalStep,
-        handleAcknowledgeChange: (val: boolean) => {
-          setValue("acknowledged", val);
-          if (val) setShowTopicData(true);
-        },
-        handleAddTopic,
-        handleSend,
-        decisionNumber: decisionNumber || "",
-        isEditing,
-        mainCategoryData,
-        subCategoryData,
-        watch,
-        forAllowanceData,
-        typeOfRequestLookupData,
-        commissionTypeLookupData,
-        accordingToAgreementLookupData,
-        typesOfPenaltiesData,
-        matchedSubCategory,
-        subTopicsLoading: isSubCategoryLoading,
-        amountPaidData,
-        leaveTypeData,
-        travelingWayData,
-        editTopic,
-        caseTopics,
-        setShowLegalSection,
-        setShowTopicData,
-        isValid,
-        isMainCategoryLoading: isFetching || isLoading,
-        isSubCategoryLoading,
-        control,
-        trigger,
-        lockAccommodationSource,
-        errors,
-        payIncreaseTypeData,
-        PayIncreaseTypeOptions,
-      })
+          t,
+          MainTopicID: mainCategory,
+          SubTopicID: subCategory,
+          FromLocation: fromLocation,
+          ToLocation: toLocation,
+          AcknowledgementTerms: acknowledged,
+          showLegalSection,
+          showTopicData,
+          setValue,
+          regulatoryText,
+          handleAdd: goToLegalStep,
+          handleAcknowledgeChange: (val: boolean) => {
+            setValue("acknowledged", val);
+            if (val) setShowTopicData(true);
+          },
+          handleAddTopic,
+          handleSend,
+          decisionNumber: decisionNumber || "",
+          isEditing,
+          mainCategoryData,
+          subCategoryData,
+          watch,
+          forAllowanceData,
+          typeOfRequestLookupData,
+          commissionTypeLookupData,
+          accordingToAgreementLookupData,
+          typesOfPenaltiesData,
+          matchedSubCategory,
+          subTopicsLoading: isSubCategoryLoading,
+          amountPaidData,
+          leaveTypeData,
+          travelingWayData,
+          editTopic,
+          caseTopics,
+          setShowLegalSection,
+          setShowTopicData,
+          isValid,
+          isMainCategoryLoading: isFetching || isLoading,
+          isSubCategoryLoading,
+          control,
+          trigger,
+          lockAccommodationSource,
+          errors,
+          payIncreaseTypeData,
+          PayIncreaseTypeOptions,
+        })
       : useFormLayoutEstablishment({
-        t,
-        MainTopicID: mainCategory,
-        SubTopicID: subCategory,
-        FromLocation: fromLocation,
-        ToLocation: toLocation,
-        AcknowledgementTerms: acknowledged,
-        showLegalSection,
-        showTopicData,
-        setValue,
-        regulatoryText,
-        handleAdd: goToLegalStep,
-        handleAcknowledgeChange: (val: boolean) => {
-          setValue("acknowledged", val);
-          if (val) setShowTopicData(true);
-        },
-        handleAddTopic,
-        handleSend,
-        decisionNumber: decisionNumber || "",
-        isEditing,
-        mainCategoryData,
-        subCategoryData,
-        watch,
-        forAllowanceData,
-        typeOfRequestLookupData,
-        commissionTypeLookupData,
-        accordingToAgreementLookupData,
-        typesOfPenaltiesData,
-        matchedSubCategory,
-        subTopicsLoading: isSubCategoryLoading,
-        amountPaidData,
-        leaveTypeData,
-        travelingWayData,
-        editTopic,
-        caseTopics,
-        setShowLegalSection,
-        setShowTopicData,
-        isValid,
-        isMainCategoryLoading: isFetching || isLoading,
-        isSubCategoryLoading,
-        lockAccommodationSource,
-        errors,
-        payIncreaseTypeData,
-        PayIncreaseTypeOptions,
-        control,
-        trigger,
-      });
+          t,
+          MainTopicID: mainCategory,
+          SubTopicID: subCategory,
+          FromLocation: fromLocation,
+          ToLocation: toLocation,
+          AcknowledgementTerms: acknowledged,
+          showLegalSection,
+          showTopicData,
+          setValue,
+          regulatoryText,
+          handleAdd: goToLegalStep,
+          handleAcknowledgeChange: (val: boolean) => {
+            setValue("acknowledged", val);
+            if (val) setShowTopicData(true);
+          },
+          handleAddTopic,
+          handleSend,
+          decisionNumber: decisionNumber || "",
+          isEditing,
+          mainCategoryData,
+          subCategoryData,
+          watch,
+          forAllowanceData,
+          typeOfRequestLookupData,
+          commissionTypeLookupData,
+          accordingToAgreementLookupData,
+          typesOfPenaltiesData,
+          matchedSubCategory,
+          subTopicsLoading: isSubCategoryLoading,
+          amountPaidData,
+          leaveTypeData,
+          travelingWayData,
+          editTopic,
+          caseTopics,
+          setShowLegalSection,
+          setShowTopicData,
+          isValid,
+          isMainCategoryLoading: isFetching || isLoading,
+          isSubCategoryLoading,
+          lockAccommodationSource,
+          errors,
+          payIncreaseTypeData,
+          PayIncreaseTypeOptions,
+          control,
+          trigger,
+        });
 
   interface FormData {
     mainCategory: any;
@@ -3647,11 +3624,9 @@ function HearingTopicsDetails({
     legalSection?: any;
   }
 
+  const fetchTopicData = useCallback(async () => {}, []);
 
-
-  const fetchTopicData = useCallback(async () => { }, []);
-
-  const fetchLegalSection = useCallback(async () => { }, []);
+  const fetchLegalSection = useCallback(async () => {}, []);
 
   useEffect(() => {
     if (showTopicData && topicData) {
@@ -3683,7 +3658,7 @@ function HearingTopicsDetails({
     if (!options) return null;
     return (
       options.find((opt: Option) =>
-        typeof opt === "object" ? opt.value === value : opt === value
+        typeof opt === "object" ? opt.value === value : opt === value,
       ) || null
     );
   }
@@ -3699,7 +3674,7 @@ function HearingTopicsDetails({
           value: item.ElementKey,
           label: item.ElementValue,
         })),
-        code
+        code,
       );
       if (matchedOption) setValue("typeOfRequest", matchedOption);
     }
@@ -3715,7 +3690,7 @@ function HearingTopicsDetails({
         const fromLocationOption = regionData.DataElements.find(
           (item: any) =>
             String(item.ElementKey) === String(fromLocationCode) ||
-            Number(item.ElementKey) === Number(fromLocationCode)
+            Number(item.ElementKey) === Number(fromLocationCode),
         );
         setValue("fromLocation", {
           value: String(fromLocationCode),
@@ -3733,7 +3708,7 @@ function HearingTopicsDetails({
         const toLocationOption = regionData.DataElements.find(
           (item: any) =>
             String(item.ElementKey) === String(toLocationCode) ||
-            Number(item.ElementKey) === Number(toLocationCode)
+            Number(item.ElementKey) === Number(toLocationCode),
         );
         setValue("toLocation", {
           value: String(toLocationCode),
@@ -3942,7 +3917,7 @@ function HearingTopicsDetails({
                       columns={columns}
                       page={pagination.pageIndex + 1}
                       totalPages={Math.ceil(
-                        caseTopics.length / pagination.pageSize
+                        caseTopics.length / pagination.pageSize,
                       )}
                       onPageChange={(newPage) => {
                         setPagination((prev) => ({
@@ -4124,7 +4099,7 @@ function HearingTopicsDetails({
                   type="button"
                   onClick={() => {
                     setCaseTopics((prev) =>
-                      prev.filter((_, i) => i !== delTopic?.index)
+                      prev.filter((_, i) => i !== delTopic?.index),
                     );
                     setShowDeleteConfirm(false);
                     setDelTopic(null);

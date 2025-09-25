@@ -12,7 +12,7 @@ import { useTimeout } from "./use-timeout";
 export const useThrottledCallback = <TCallback extends (...args: any[]) => any>(
   fn: TCallback,
   dependencies: DependencyList,
-  delay: number
+  delay: number,
 ): ((...args: Parameters<TCallback>) => void) => {
   const timeout = useTimeout();
   const lastCallTime = useRef<number | null>(null);
@@ -21,7 +21,10 @@ export const useThrottledCallback = <TCallback extends (...args: any[]) => any>(
     (...args: Parameters<TCallback>) => {
       const now = Date.now();
 
-      if (lastCallTime.current === null || now - lastCallTime.current >= delay) {
+      if (
+        lastCallTime.current === null ||
+        now - lastCallTime.current >= delay
+      ) {
         lastCallTime.current = now;
         fn(...args);
       } else {
@@ -30,10 +33,10 @@ export const useThrottledCallback = <TCallback extends (...args: any[]) => any>(
             lastCallTime.current = Date.now();
             fn(...args);
           },
-          delay - (now - lastCallTime.current)
+          delay - (now - lastCallTime.current),
         );
       }
     },
-    [fn, delay, ...dependencies] 
+    [fn, delay, ...dependencies],
   );
 };

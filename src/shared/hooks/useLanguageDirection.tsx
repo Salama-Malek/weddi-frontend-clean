@@ -5,4 +5,4 @@ export const useLanguageDirection = () => {
   const isRTL = i18n.language === "ar";
 
   return { isRTL };
-}; 
+};

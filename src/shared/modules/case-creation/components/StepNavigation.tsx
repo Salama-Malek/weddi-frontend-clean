@@ -109,7 +109,7 @@ const StepNavigation = <T extends FieldValues>({
       const hasNoErrors =
         !response?.ErrorCodeList ||
         response.ErrorCodeList.every(
-          (error) => !error.ErrorCode && !error.ErrorDesc
+          (error) => !error.ErrorCode && !error.ErrorDesc,
         );
       const isSuccessful = (hasSuccessStatus || hasSuccessCode) && hasNoErrors;
 
@@ -260,8 +260,8 @@ const StepNavigation = <T extends FieldValues>({
               {isFormSubmitting && lastAction === "Next"
                 ? tStepper("loading_next")
                 : isLastStep
-                ? tStepper("submit")
-                : tStepper("next")}
+                  ? tStepper("submit")
+                  : tStepper("next")}
             </Button>
           </div>
         </div>

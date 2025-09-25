@@ -155,7 +155,7 @@ export class CaseTopicsPrefillService {
         }
         if (topic.InjuryDate_New) {
           dateFields.injury_date_gregorian = formatDateString(
-            topic.InjuryDate_New
+            topic.InjuryDate_New,
           );
         } else if (topic.Date_New) {
           dateFields.injury_date_gregorian = formatDateString(topic.Date_New);
@@ -168,23 +168,23 @@ export class CaseTopicsPrefillService {
       case "EDO-4":
         if (topic.Date_New) {
           dateFields.managerial_decision_date_hijri = formatHijriDate(
-            topic.Date_New
+            topic.Date_New,
           );
         }
         if (topic.ManDecsDate) {
           dateFields.managerial_decision_date_gregorian = formatDateString(
-            topic.ManDecsDate
+            topic.ManDecsDate,
           );
         }
 
         if ((topic as any).ManagerialDecisionDateHijri) {
           dateFields.managerial_decision_date_hijri = formatHijriDate(
-            (topic as any).ManagerialDecisionDateHijri
+            (topic as any).ManagerialDecisionDateHijri,
           );
         }
         if ((topic as any).ManagerialDecisionDateGregorian) {
           dateFields.managerial_decision_date_gregorian = formatDateString(
-            (topic as any).ManagerialDecisionDateGregorian
+            (topic as any).ManagerialDecisionDateGregorian,
           );
         }
         break;
@@ -199,7 +199,7 @@ export class CaseTopicsPrefillService {
           }
           if (topic.RequestDate_New) {
             dateFields.request_date_gregorian = formatDateString(
-              topic.RequestDate_New
+              topic.RequestDate_New,
             );
           }
         } else {
@@ -286,13 +286,13 @@ export class CaseTopicsPrefillService {
         topic.doesBylawsIncludeAddingAccommodations !== undefined
           ? topic.doesBylawsIncludeAddingAccommodations
           : ["Yes", true].includes(
-              topic.IsBylawsIncludeAddingAccommodiation ?? ""
+              topic.IsBylawsIncludeAddingAccommodiation ?? "",
             ),
       doesContractIncludeAddingAccommodations:
         topic.doesContractIncludeAddingAccommodations !== undefined
           ? topic.doesContractIncludeAddingAccommodations
           : ["Yes", true].includes(
-              topic.IsContractIncludeAddingAccommodiation ?? ""
+              topic.IsContractIncludeAddingAccommodiation ?? "",
             ),
       housingSpecificationInByLaws:
         topic.housingSpecificationInByLaws !== undefined
@@ -402,7 +402,7 @@ export class CaseTopicsPrefillService {
   static prefillForm(
     setValue: (name: string, value: any) => void,
     caseTopics: CaseTopicData[],
-    isEditing: boolean = false
+    isEditing: boolean = false,
   ) {
     if (!isEditing || !caseTopics || caseTopics.length === 0) return;
 

@@ -12,7 +12,7 @@ export type AutoCompleteFieldProps = {
   className?: string;
   invalidFeedback?: any;
   onChange: (
-    selectedOption: { value: string; label: string } | null | string
+    selectedOption: { value: string; label: string } | null | string,
   ) => void;
   value: { value: string; label: string } | null | string;
   notRequired?: boolean;
@@ -79,10 +79,10 @@ export const AutoCompleteField: React.FC<AutoCompleteFieldProps> = memo(
       typeof invalidFeedback === "string"
         ? invalidFeedback
         : invalidFeedback &&
-          typeof invalidFeedback === "object" &&
-          invalidFeedback.message
-        ? invalidFeedback.message
-        : "";
+            typeof invalidFeedback === "object" &&
+            invalidFeedback.message
+          ? invalidFeedback.message
+          : "";
 
     const hasError = !!errorMessage;
 
@@ -119,21 +119,21 @@ export const AutoCompleteField: React.FC<AutoCompleteFieldProps> = memo(
           borderColor: hasError
             ? "#EF4444"
             : state.isFocused
-            ? "#3B82F6"
-            : "#9CA3AF",
+              ? "#3B82F6"
+              : "#9CA3AF",
         },
         transition: "all 0.2s ease",
       }),
       option: (
         provided: any,
-        state: { isSelected: boolean; isFocused: boolean }
+        state: { isSelected: boolean; isFocused: boolean },
       ) => ({
         ...provided,
         backgroundColor: state.isSelected
           ? "#2563EB"
           : state.isFocused
-          ? "#E5E7EB"
-          : "white",
+            ? "#E5E7EB"
+            : "white",
         color: state.isSelected ? "white" : "black",
         "&:active": {
           backgroundColor: "#2563EB",
@@ -244,5 +244,5 @@ export const AutoCompleteField: React.FC<AutoCompleteFieldProps> = memo(
     ) : (
       selectComponent
     );
-  }
+  },
 );

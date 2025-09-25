@@ -14,7 +14,7 @@ export const TabPanel = ({ id, children }: TabPanelProps) => {
   if (!isActive) return null;
 
   return (
-    <Suspense fallback={<Loader force /> }>
+    <Suspense fallback={<Loader force />}>
       <div>{children}</div>
     </Suspense>
   );

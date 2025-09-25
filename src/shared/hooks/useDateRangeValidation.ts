@@ -25,7 +25,7 @@ export const useDateRangeValidation = () => {
         fromDateName,
         toDateName,
       ]),
-    []
+    [],
   );
   const watchedValues = useWatch({ name: fieldNames });
 
@@ -61,18 +61,18 @@ export const useDateRangeValidation = () => {
       const hasCompletePairs = COMMON_DATE_RANGE_PAIRS.some(
         ({ fromDateName, toDateName }) => {
           return formValues[fromDateName] && formValues[toDateName];
-        }
+        },
       );
 
       if (hasCompletePairs && changedFields.length > 0) {
         const relevantPairs = COMMON_DATE_RANGE_PAIRS.filter(({ toDateName }) =>
-          changedFields.includes(toDateName)
+          changedFields.includes(toDateName),
         );
 
         if (relevantPairs.length > 0) {
           const dateRangeErrors = validateMultipleDateRanges(
             formValues,
-            relevantPairs
+            relevantPairs,
           );
 
           relevantPairs.forEach(({ toDateName }) => {
@@ -102,7 +102,6 @@ export const useDateRangeValidation = () => {
           });
 
           if (Object.keys(dateRangeErrors).length > 0) {
-
             setTimeout(async () => {
               try {
               } catch (error) {}
@@ -136,7 +135,7 @@ export const useDateRangeValidation = () => {
     fromDateName: string,
     toDateName: string,
     fromDateType: "hijri" | "gregorian" = "hijri",
-    toDateType: "hijri" | "gregorian" = "hijri"
+    toDateType: "hijri" | "gregorian" = "hijri",
   ) => {
     const fromDate = formValues[fromDateName];
     const toDate = formValues[toDateName];
@@ -147,7 +146,7 @@ export const useDateRangeValidation = () => {
         fromDate,
         toDate,
         fromDateType,
-        toDateType
+        toDateType,
       );
 
       if (validationResult !== true) {
@@ -178,7 +177,7 @@ export const useDateRangeValidation = () => {
     validateSpecificDateRange,
     clearDateRangeErrors,
     hasDateRangeErrors: Object.keys(errors).some((key) =>
-      COMMON_DATE_RANGE_PAIRS.some((pair) => pair.toDateName === key)
+      COMMON_DATE_RANGE_PAIRS.some((pair) => pair.toDateName === key),
     ),
   };
 };

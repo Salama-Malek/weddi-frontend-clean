@@ -33,7 +33,7 @@ export const useLookup = () => {
           SourceSystem: "E-Services",
           AcceptedLanguage: currentLanguage,
         },
-        { skip: !isOpen }
+        { skip: !isOpen },
       ),
 
     subCategory: (
@@ -42,7 +42,7 @@ export const useLookup = () => {
         PlaintiffID?: string;
         Number700?: string;
         DefendantType?: string;
-      }
+      },
     ) =>
       useSubLookupQuery(
         {
@@ -61,7 +61,7 @@ export const useLookup = () => {
             ? { DefendantType: extraParams.DefendantType }
             : {}),
         },
-        { skip: !mainCategoryValue }
+        { skip: !mainCategoryValue },
       ),
 
     amountPaidCategory: (subCategoryValue: string | undefined) =>
@@ -75,7 +75,7 @@ export const useLookup = () => {
         },
         {
           skip: !subCategoryValue || !["CMR-1"].includes(subCategoryValue),
-        }
+        },
       ),
 
     travelingWayCategory: (subCategoryValue: string | undefined) =>
@@ -89,7 +89,7 @@ export const useLookup = () => {
         },
         {
           skip: !subCategoryValue || !["TTR-1"].includes(subCategoryValue),
-        }
+        },
       ),
 
     leaveTypeCategory: (subCategoryValue: string | undefined) =>
@@ -103,7 +103,7 @@ export const useLookup = () => {
         },
         {
           skip: !subCategoryValue || !["CMR-5"].includes(subCategoryValue),
-        }
+        },
       ),
 
     forAllowance: (subCategoryValue: string | undefined) =>
@@ -118,7 +118,7 @@ export const useLookup = () => {
         {
           skip:
             !subCategoryValue || !["WR-1", "WR-2"].includes(subCategoryValue),
-        }
+        },
       ),
 
     typeOfRequest: (subCategoryValue: string | undefined) =>
@@ -134,7 +134,7 @@ export const useLookup = () => {
           skip:
             !subCategoryValue ||
             !["MIR-1", "RLRAHI-1"].includes(subCategoryValue),
-        }
+        },
       ),
 
     commissionType: (subCategoryValue: string | undefined) =>
@@ -148,7 +148,7 @@ export const useLookup = () => {
         },
         {
           skip: !subCategoryValue || !["BPSR-1"].includes(subCategoryValue),
-        }
+        },
       ),
 
     accordingToAgreement: (subCategoryValue: string | undefined) =>
@@ -163,7 +163,7 @@ export const useLookup = () => {
         {
           skip:
             !subCategoryValue || !["BR-1", "BPSR-1"].includes(subCategoryValue),
-        }
+        },
       ),
 
     typesOfPenalties: (subCategoryValue: string | undefined) =>
@@ -177,7 +177,7 @@ export const useLookup = () => {
         },
         {
           skip: !subCategoryValue || !["EDO-4"].includes(subCategoryValue),
-        }
+        },
       ),
 
     city: () =>
@@ -226,7 +226,7 @@ export const useLookup = () => {
         },
         {
           skip: !subCategoryValue || !["CMR-6"].includes(subCategoryValue),
-        }
+        },
       ),
   };
 };

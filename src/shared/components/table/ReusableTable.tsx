@@ -93,7 +93,7 @@ export function ReusableTable<TData extends object>({
                 {headerGroup.headers.map((header) => {
                   let headerContent = flexRender(
                     header.column.columnDef.header,
-                    header.getContext()
+                    header.getContext(),
                   );
                   if (typeof headerContent === "string") {
                     headerContent = t(headerContent);

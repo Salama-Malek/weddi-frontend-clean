@@ -44,7 +44,7 @@ export const usePlaintiffFormLayout = (): SectionLayout[] => {
     {
       IDNumber: plaintiffId,
       DateOfBirth: toWesternDigits(
-        formatDateToYYYYMMDD(plaintiffHijriDOB) || ""
+        formatDateToYYYYMMDD(plaintiffHijriDOB) || "",
       ),
       AcceptedLanguage: lang,
       SourceSystem: "E-Services",
@@ -54,7 +54,7 @@ export const usePlaintiffFormLayout = (): SectionLayout[] => {
         !plaintiffId ||
         !plaintiffHijriDOB ||
         isHijriDateInFuture(formatDateToYYYYMMDD(plaintiffHijriDOB) || ""),
-    }
+    },
   );
 
   if (applicantType === "Agent") {
@@ -145,8 +145,7 @@ export const usePlaintiffFormLayout = (): SectionLayout[] => {
               value: watch("plaintiffId"),
               onChange: (value: string) => setValue("plaintiffId", value),
               validation: {
-                validate: () =>
-                  validUnderAgency || t("error.idNotUnderAgency"),
+                validate: () => validUnderAgency || t("error.idNotUnderAgency"),
               },
             },
             {

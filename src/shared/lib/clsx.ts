@@ -2,8 +2,8 @@ import clsx, { ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
 /**
- * @param classes 
- * @returns 
+ * @param classes
+ * @returns
  */
 export function classes(...classes: ClassValue[]) {
   return twMerge(clsx(...classes));
@@ -11,8 +11,8 @@ export function classes(...classes: ClassValue[]) {
 
 /**
  * A utility function that combines clsx and tailwind-merge for conditional class names
- * @param classes 
- * @returns 
+ * @param classes
+ * @returns
  */
 export function cn(...classes: ClassValue[]) {
   return twMerge(clsx(...classes));

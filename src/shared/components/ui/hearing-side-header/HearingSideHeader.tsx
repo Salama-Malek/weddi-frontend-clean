@@ -8,7 +8,7 @@ import { GoDotFill } from "react-icons/go";
 const HearingSideHeader = () => {
   const { isRTL } = useLanguageDirection();
   const { t } = useTranslation("stepper");
-  const [getCookie, ] = useCookieState({ caseId: "" });
+  const [getCookie] = useCookieState({ caseId: "" });
   const [forceUpdate, setForceUpdate] = useState(0);
   const [displayCaseId, setDisplayCaseId] = useState<string | null>(null);
 

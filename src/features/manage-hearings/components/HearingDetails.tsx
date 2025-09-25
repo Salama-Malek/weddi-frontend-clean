@@ -209,7 +209,7 @@ const HearingDetails = () => {
   const userType = getCookie("userType");
   const handleDownload = async (
     actionType: "GenerateLawSuit" | "Download",
-    fileName: string
+    fileName: string,
   ) => {
     try {
       const response: any = await triggerDownloadPDF({
@@ -260,7 +260,7 @@ const HearingDetails = () => {
     ];
 
     const needsAcknowledgment = acknowledgmentStatuses.includes(
-      statusCode || ""
+      statusCode || "",
     );
 
     if (needsAcknowledgment) {

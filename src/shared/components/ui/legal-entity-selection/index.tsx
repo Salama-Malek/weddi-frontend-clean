@@ -55,13 +55,13 @@ const LegalEntitySelection = ({
         new Set(
           userTypeData.GovRepDetails.map((item: GovRepDetail) => ({
             name: item.GovernmentName,
-            id: item.GOVTID
-          }))
+            id: item.GOVTID,
+          })),
         ),
-        (item) => item.name
+        (item) => item.name,
       ).map((name) => {
         const matchingItem = userTypeData.GovRepDetails.find(
-          (item: GovRepDetail) => item.GovernmentName === name
+          (item: GovRepDetail) => item.GovernmentName === name,
         );
         return {
           value: matchingItem?.GOVTID ?? "",
@@ -72,14 +72,12 @@ const LegalEntitySelection = ({
 
   const subCategories =
     selectedMainCategory && userTypeData?.GovRepDetails
-      ? userTypeData.GovRepDetails
-          .filter(
-            (item: GovRepDetail) => item.GOVTID === selectedMainCategory.value
-          )
-          .map((item: GovRepDetail) => ({
-            value: item.SubGOVTID,
-            label: item.SubGovernmentName,
-          }))
+      ? userTypeData.GovRepDetails.filter(
+          (item: GovRepDetail) => item.GOVTID === selectedMainCategory.value,
+        ).map((item: GovRepDetail) => ({
+          value: item.SubGOVTID,
+          label: item.SubGovernmentName,
+        }))
       : [];
 
   const handleMainCategoryChange = (option: any | null) => {

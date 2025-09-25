@@ -5,14 +5,13 @@ import TableLoader from "@/shared/components/loader/TableLoader";
 import FileAttachment from "@/shared/components/ui/file-attachment/FileAttachment";
 import Modal from "@/shared/components/modal/Modal";
 
-
 import { useLazyGetFileDetailsQuery } from "@/features/initiate-hearing/api/create-case/apis";
 import { ensureFileNameWithExtension } from "@/shared/lib/utils/fileUtils";
 
 const ReusableTable = React.lazy(() =>
   import("@/shared/components/table/ReusableTable").then((m) => ({
     default: m.ReusableTable,
-  }))
+  })),
 );
 
 interface TopicsDetailsProps {
@@ -99,7 +98,7 @@ const TopicsDetails: React.FC<TopicsDetailsProps> = ({ hearing }) => {
           {attachments.map((file: any, idx: number) => {
             const displayFileName = ensureFileNameWithExtension(
               file.FileName,
-              file.FileType
+              file.FileType,
             );
             return (
               <FileAttachment
@@ -117,7 +116,7 @@ const TopicsDetails: React.FC<TopicsDetailsProps> = ({ hearing }) => {
           <Modal
             header={ensureFileNameWithExtension(
               fileName,
-              fileBase64?.pyFileName?.split(".").pop()
+              fileBase64?.pyFileName?.split(".").pop(),
             )}
             close={() => {
               setPreviewFile(false);

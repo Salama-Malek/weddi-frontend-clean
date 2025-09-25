@@ -39,7 +39,7 @@ export const CheckboxField = forwardRef<HTMLInputElement, CheckboxFieldProps>(
       onChange: propOnChange,
       ...rest
     },
-    ref
+    ref,
   ) => {
     const context = useFormContext();
     const control = propControl || context?.control;
@@ -106,7 +106,7 @@ export const CheckboxField = forwardRef<HTMLInputElement, CheckboxFieldProps>(
                       checked
                         ? "bg-primary-600 border-primary-600"
                         : "bg-white border-gray-400",
-                      disabled && "opacity-50 cursor-not-allowed"
+                      disabled && "opacity-50 cursor-not-allowed",
                     )}
                     onClick={() =>
                       !disabled &&
@@ -137,5 +137,5 @@ export const CheckboxField = forwardRef<HTMLInputElement, CheckboxFieldProps>(
         }}
       />
     );
-  }
+  },
 );

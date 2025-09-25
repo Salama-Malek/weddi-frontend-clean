@@ -10,10 +10,7 @@ import {
   getCommonElements,
   initFormConfig,
 } from "@/config/formConfig";
-import {
-  mapToOptions,
-  formatDateToYYYYMMDD,
-} from "@/shared/lib/helpers";
+import { mapToOptions, formatDateToYYYYMMDD } from "@/shared/lib/helpers";
 import { getMIR1FormFields } from "./MIR1Form";
 import { getBPSR1FormFields } from "./BPSR1Form";
 import { getBR1FormFields } from "./BR1Form";
@@ -39,7 +36,7 @@ export const useFormLayout = ({
   t: t,
   MainTopicID: mainCategory,
   SubTopicID: subCategory,
- 
+
   AcknowledgementTerms: acknowledged,
   showLegalSection: showLegalSection,
   showTopicData: showTopicData,
@@ -47,7 +44,7 @@ export const useFormLayout = ({
   handleAdd: handleAdd,
   handleAcknowledgeChange: handleAcknowledgeChange,
   handleAddTopic: handleAddTopic,
- 
+
   isEditing: isEditing,
   mainCategoryData: mainCategoryData,
   subCategoryData: subCategoryData,
@@ -62,7 +59,7 @@ export const useFormLayout = ({
   leaveTypeData: leaveTypeData,
   travelingWayData: travelingWayData,
   editTopic: editTopic,
-  
+
   typesOfPenaltiesData: typesOfPenaltiesData,
   setShowLegalSection: setShowLegalSection,
   setShowTopicData: setShowTopicData,
@@ -70,7 +67,7 @@ export const useFormLayout = ({
   isValid: isValid,
   control: control,
   trigger,
-  
+
   errors,
 }: UseFormLayoutParams & {
   trigger: (fields: string | string[]) => void;
@@ -107,11 +104,10 @@ export const useFormLayout = ({
   const BPSR1_commissionType = watch("BPSR1_commissionType");
   const BPSR1_accordingToAgreement = watch("BPSR1_accordingToAgreement");
 
- 
   const handleHijriDateChange = (
     date: DateObject | DateObject[] | null,
     setHijriValue: (value: string) => void,
-    gregorianFieldName: string
+    gregorianFieldName: string,
   ) => {
     if (!date || Array.isArray(date)) {
       setHijriValue("");
@@ -149,13 +145,13 @@ export const useFormLayout = ({
       data: forAllowanceData?.DataElements,
     });
   }, [forAllowanceData]);
-  
+
   const AccordingToAgreementLookupLookUpOptions = React.useMemo(() => {
     return mapToOptions({
       data: accordingToAgreementLookupData?.DataElements,
     });
   }, [accordingToAgreementLookupData]);
- 
+
   const TypesOfPenaltiesOptions = React.useMemo(() => {
     return mapToOptions({
       data: typesOfPenaltiesData?.DataElements,
@@ -210,7 +206,7 @@ export const useFormLayout = ({
   type FormElementType = any;
   function addNoSpacesValidationToTextInputs(
     fields: FormElementType[],
-    _t: any
+    _t: any,
   ): FormElementType[] {
     return fields.map((field) => {
       if (field && field.notRequired === true) {
@@ -275,7 +271,7 @@ export const useFormLayout = ({
         value: item.ElementKey,
         label: item.ElementValue,
       })) || [];
-   
+
     const TypeOfRequestLookUpOptions =
       typeOfRequestLookupData?.DataElements?.map((item: any) => ({
         value: item.ElementKey,
@@ -286,7 +282,7 @@ export const useFormLayout = ({
         value: item.ElementKey,
         label: item.ElementValue,
       })) || [];
-   
+
     switch (currentSubCategory) {
       case "WR-2":
         const wr2BaseFields = [
@@ -324,7 +320,7 @@ export const useFormLayout = ({
                     handleHijriDateChange(
                       date,
                       onChange,
-                      "WR2_fromDateGregorian"
+                      "WR2_fromDateGregorian",
                     );
                     const toDateValue = watch("WR2_toDateHijri");
                     if (toDateValue && typeof trigger === "function") {
@@ -361,11 +357,11 @@ export const useFormLayout = ({
                             fromDate,
                             toDate,
                             "hijri",
-                            "hijri"
+                            "hijri",
                           );
                           if (result !== true) {
                             return tCommon(
-                              "date_validation.to_date_before_from"
+                              "date_validation.to_date_before_from",
                             );
                           }
                           return true;
@@ -427,7 +423,7 @@ export const useFormLayout = ({
                     handleHijriDateChange(
                       date,
                       onChange,
-                      "WR1_fromDateGregorian"
+                      "WR1_fromDateGregorian",
                     );
                     const toDateValue = watch("WR1_toDateHijri");
                     if (toDateValue && typeof trigger === "function") {
@@ -464,11 +460,11 @@ export const useFormLayout = ({
                             fromDate,
                             toDate,
                             "hijri",
-                            "hijri"
+                            "hijri",
                           );
                           if (result !== true) {
                             return tCommon(
-                              "date_validation.to_date_before_from"
+                              "date_validation.to_date_before_from",
                             );
                           }
                           return true;
@@ -539,8 +535,8 @@ export const useFormLayout = ({
         return buildForm(
           addNoSpacesValidationToTextInputs(
             [...wr1BaseFields, ...wr1AllowanceFields],
-            t
-          )
+            t,
+          ),
         );
       case "MIR-1":
         return buildForm(
@@ -555,8 +551,8 @@ export const useFormLayout = ({
               editTopic,
               trigger,
             }),
-            tHearingTopics
-          )
+            tHearingTopics,
+          ),
         );
       case "BPSR-1":
         return buildForm(
@@ -576,11 +572,11 @@ export const useFormLayout = ({
               handleHijriDateChange,
               trigger,
               dateValidationError: tCommon(
-                "date_validation.to_date_before_from"
+                "date_validation.to_date_before_from",
               ),
             }),
-            tHearingTopics
-          )
+            tHearingTopics,
+          ),
         );
       case "BR-1":
         return buildForm(
@@ -596,8 +592,8 @@ export const useFormLayout = ({
               control,
               handleHijriDateChange,
             }),
-            tHearingTopics
-          )
+            tHearingTopics,
+          ),
         );
       case "CMR-1":
         return buildForm(
@@ -647,8 +643,8 @@ export const useFormLayout = ({
                 control,
               },
             ],
-            t
-          )
+            t,
+          ),
         );
       case "CMR-3":
         return buildForm(
@@ -691,7 +687,7 @@ export const useFormLayout = ({
                         handleHijriDateChange(
                           date,
                           onChange,
-                          "CMR3_injuryDateGregorian"
+                          "CMR3_injuryDateGregorian",
                         )
                       }
                       isDateOfBirth={true}
@@ -721,8 +717,8 @@ export const useFormLayout = ({
                 control,
               },
             ],
-            t
-          )
+            t,
+          ),
         );
       case "CMR-4":
         return buildForm(
@@ -752,8 +748,8 @@ export const useFormLayout = ({
                 control,
               },
             ],
-            t
-          )
+            t,
+          ),
         );
       case "CMR-5":
         return buildForm(
@@ -835,8 +831,8 @@ export const useFormLayout = ({
                 colSpan: 1,
               },
             ],
-            t
-          )
+            t,
+          ),
         );
       case "CMR-8":
         return buildForm(
@@ -879,7 +875,7 @@ export const useFormLayout = ({
                         handleHijriDateChange(
                           date,
                           onChange,
-                          "CMR8_fromDateGregorian"
+                          "CMR8_fromDateGregorian",
                         );
                         const toDateValue = watch("CMR8_toDateHijri");
                         if (toDateValue && typeof trigger === "function") {
@@ -916,11 +912,11 @@ export const useFormLayout = ({
                                 fromDate,
                                 toDate,
                                 "hijri",
-                                "hijri"
+                                "hijri",
                               );
                               if (result !== true) {
                                 return tCommon(
-                                  "date_validation.to_date_before_from"
+                                  "date_validation.to_date_before_from",
                                 );
                               }
                               return true;
@@ -934,7 +930,7 @@ export const useFormLayout = ({
                         handleHijriDateChange(
                           date,
                           onChange,
-                          "CMR8_toDateGregorian"
+                          "CMR8_toDateGregorian",
                         )
                       }
                       isDateOfBirth={true}
@@ -949,8 +945,8 @@ export const useFormLayout = ({
                 ),
               },
             ],
-            t
-          )
+            t,
+          ),
         );
       case "CMR-6":
         return buildForm(
@@ -1012,7 +1008,7 @@ export const useFormLayout = ({
                         handleHijriDateChange(
                           date,
                           onChange,
-                          "CMR6_fromDateGregorian"
+                          "CMR6_fromDateGregorian",
                         );
                         const toDateValue = watch("CMR6_toDateHijri");
                         if (toDateValue && typeof trigger === "function") {
@@ -1048,11 +1044,11 @@ export const useFormLayout = ({
                                 fromDate,
                                 toDate,
                                 "hijri",
-                                "hijri"
+                                "hijri",
                               );
                               if (result !== true) {
                                 return tCommon(
-                                  "date_validation.to_date_before_from"
+                                  "date_validation.to_date_before_from",
                                 );
                               }
                               return true;
@@ -1066,7 +1062,7 @@ export const useFormLayout = ({
                         handleHijriDateChange(
                           date,
                           onChange,
-                          "CMR6_toDateGregorian"
+                          "CMR6_toDateGregorian",
                         )
                       }
                     />
@@ -1095,8 +1091,8 @@ export const useFormLayout = ({
                 control,
               },
             ],
-            t
-          )
+            t,
+          ),
         );
       case "CMR-7":
         return buildForm(
@@ -1116,7 +1112,7 @@ export const useFormLayout = ({
                         handleHijriDateChange(
                           date,
                           onChange,
-                          "CMR7_fromDateGregorian"
+                          "CMR7_fromDateGregorian",
                         );
                         const toDateValue = watch("CMR7_toDateHijri");
                         if (toDateValue && typeof trigger === "function") {
@@ -1153,11 +1149,11 @@ export const useFormLayout = ({
                                 fromDate,
                                 toDate,
                                 "hijri",
-                                "hijri"
+                                "hijri",
                               );
                               if (result !== true) {
                                 return tCommon(
-                                  "date_validation.to_date_before_from"
+                                  "date_validation.to_date_before_from",
                                 );
                               }
                               return true;
@@ -1171,7 +1167,7 @@ export const useFormLayout = ({
                         handleHijriDateChange(
                           date,
                           onChange,
-                          "CMR7_toDateGregorian"
+                          "CMR7_toDateGregorian",
                         )
                       }
                       isDateOfBirth={true}
@@ -1226,8 +1222,8 @@ export const useFormLayout = ({
                 control,
               },
             ],
-            t
-          )
+            t,
+          ),
         );
       case "LCUT-1":
         return buildForm(
@@ -1254,8 +1250,8 @@ export const useFormLayout = ({
                 }),
               },
             ],
-            t
-          )
+            t,
+          ),
         );
       case "EDO-1":
         return buildForm(
@@ -1307,7 +1303,7 @@ export const useFormLayout = ({
                         handleHijriDateChange(
                           date,
                           onChange,
-                          "EDO1_managerialDecisionDateGregorian"
+                          "EDO1_managerialDecisionDateGregorian",
                         )
                       }
                     />
@@ -1333,11 +1329,11 @@ export const useFormLayout = ({
                   handleNumberOnlyChange(
                     value,
                     setValue,
-                    "EDO1_managerialDecisionNumber"
+                    "EDO1_managerialDecisionNumber",
                   ),
                 validation: createNumberOnlyValidation(
                   false,
-                  tHearingTopics("fieldRequired")
+                  tHearingTopics("fieldRequired"),
                 ),
                 notRequired: true,
                 numberOnly: true,
@@ -1345,8 +1341,8 @@ export const useFormLayout = ({
                 numericType: "decimal",
               },
             ],
-            t
-          )
+            t,
+          ),
         );
       case "EDO-2":
         return buildForm(
@@ -1388,7 +1384,7 @@ export const useFormLayout = ({
                         handleHijriDateChange(
                           date,
                           onChange,
-                          "EDO2_managerialDecisionDateGregorian"
+                          "EDO2_managerialDecisionDateGregorian",
                         )
                       }
                     />
@@ -1414,11 +1410,11 @@ export const useFormLayout = ({
                   handleNumberOnlyChange(
                     value,
                     setValue,
-                    "EDO2_managerialDecisionNumber"
+                    "EDO2_managerialDecisionNumber",
                   ),
                 validation: createNumberOnlyValidation(
                   false,
-                  tHearingTopics("fieldRequired")
+                  tHearingTopics("fieldRequired"),
                 ),
                 notRequired: true,
                 numberOnly: true,
@@ -1426,8 +1422,8 @@ export const useFormLayout = ({
                 numericType: "decimal",
               },
             ],
-            t
-          )
+            t,
+          ),
         );
       case "EDO-4":
         return buildForm(
@@ -1460,7 +1456,7 @@ export const useFormLayout = ({
                         handleHijriDateChange(
                           date,
                           onChange,
-                          "EDO4_managerialDecisionDateGregorian"
+                          "EDO4_managerialDecisionDateGregorian",
                         )
                       }
                     />
@@ -1486,11 +1482,11 @@ export const useFormLayout = ({
                   handleNumberOnlyChange(
                     value,
                     setValue,
-                    "EDO4_managerialDecisionNumber"
+                    "EDO4_managerialDecisionNumber",
                   ),
                 validation: createNumberOnlyValidation(
                   false,
-                  tHearingTopics("fieldRequired")
+                  tHearingTopics("fieldRequired"),
                 ),
                 notRequired: true,
                 numberOnly: true,
@@ -1498,8 +1494,8 @@ export const useFormLayout = ({
                 numericType: "decimal",
               },
             ],
-            t
-          )
+            t,
+          ),
         );
       case "EDO-3":
         return buildForm(
@@ -1518,11 +1514,11 @@ export const useFormLayout = ({
                   handleNumberOnlyChange(
                     value,
                     setValue,
-                    "EDO3_amountOfReduction"
+                    "EDO3_amountOfReduction",
                   ),
                 validation: createNumberOnlyValidation(
                   true,
-                  tHearingTopics("fieldRequired")
+                  tHearingTopics("fieldRequired"),
                 ),
                 notRequired: false,
                 numberOnly: true,
@@ -1543,7 +1539,7 @@ export const useFormLayout = ({
                         handleHijriDateChange(
                           date,
                           onChange,
-                          "EDO3_managerialDecisionDateGregorian"
+                          "EDO3_managerialDecisionDateGregorian",
                         )
                       }
                     />
@@ -1569,11 +1565,11 @@ export const useFormLayout = ({
                   handleNumberOnlyChange(
                     value,
                     setValue,
-                    "EDO3_managerialDecisionNumber"
+                    "EDO3_managerialDecisionNumber",
                   ),
                 validation: createNumberOnlyValidation(
                   false,
-                  tHearingTopics("fieldRequired")
+                  tHearingTopics("fieldRequired"),
                 ),
                 notRequired: true,
                 numberOnly: true,
@@ -1581,8 +1577,8 @@ export const useFormLayout = ({
                 numericType: "decimal",
               },
             ],
-            t
-          )
+            t,
+          ),
         );
       case "HIR-1": {
         return buildForm(
@@ -1614,7 +1610,7 @@ export const useFormLayout = ({
                     setValue("HIR1_IsBylawsIncludeAddingAccommodation", "No");
                     setValue(
                       "HIR1_IsContractIncludeAddingAccommodation",
-                      "Yes"
+                      "Yes",
                     );
                     setValue("HIR1_HousingSpecificationsInBylaws", "");
                   }
@@ -1663,116 +1659,8 @@ export const useFormLayout = ({
                 maxLength: 100,
               },
             ],
-            t
-          )
-        );
-      }
-      case "LCUT-1":
-        return buildForm(
-          addNoSpacesValidationToTextInputs(
-            [
-              {
-                type: "input",
-                name: "LCUT1_amountOfCompensation",
-                label: t("amountOfCompensation"),
-                inputType: "text",
-                value: watch("LCUT1_amountOfCompensation") || "",
-
-                notRequired: false,
-                maxLength: 10,
-                numericType: "decimal",
-                maxFractionDigits: 2,
-                decimalSeparators: [".", ","],
-                onChange: (value: string) =>
-                  setValue("LCUT1_amountOfCompensation", value),
-                validation: createDecimalValidation({
-                  required: tHearingTopics("fieldRequired"),
-                  maxFractionDigits: 2,
-                  min: 0,
-                }),
-              },
-            ],
-            t
-          )
-        );
-      case "HIR-1": {
-        return buildForm(
-          addNoSpacesValidationToTextInputs(
-            [
-              {
-                type: "radio",
-                name: "HIR1_AccommodationSource",
-                label: t("accommodationSource"),
-                options: [
-                  {
-                    label: t("doesBylawsIncludeAddingAccommodations"),
-                    value: "bylaws",
-                  },
-                  {
-                    label: t("doesContractIncludeAddingAccommodations"),
-                    value: "contract",
-                  },
-                ],
-                value: watch("HIR1_AccommodationSource") || "",
-                onChange: (value: string) => {
-                  setValue("HIR1_AccommodationSource", value);
-                  if (value === "bylaws") {
-                    setValue("HIR1_IsBylawsIncludeAddingAccommodation", "Yes");
-                    setValue("HIR1_IsContractIncludeAddingAccommodation", "No");
-                    setValue("HIR1_HousingSpecificationsInContract", "");
-                    setValue("HIR1_HousingSpecifications", "");
-                  } else if (value === "contract") {
-                    setValue("HIR1_IsBylawsIncludeAddingAccommodation", "No");
-                    setValue(
-                      "HIR1_IsContractIncludeAddingAccommodation",
-                      "Yes"
-                    );
-                    setValue("HIR1_HousingSpecificationsInBylaws", "");
-                  }
-                },
-                validation: { required: tHearingTopics("fieldRequired") },
-                notRequired: false,
-                colSpan: 1,
-              },
-              watch("HIR1_AccommodationSource") === "bylaws" && {
-                type: "input",
-                name: "HIR1_HousingSpecificationsInBylaws",
-                label: t("housingSpecificationInByLaws"),
-                inputType: "text",
-                value: watch("HIR1_HousingSpecificationsInBylaws") || "",
-                onChange: (value: string) =>
-                  setValue("HIR1_HousingSpecificationsInBylaws", value),
-                validation: { required: tHearingTopics("fieldRequired") },
-                notRequired: false,
-                colSpan: 1,
-              },
-              watch("HIR1_AccommodationSource") === "contract" && {
-                type: "input",
-                name: "HIR1_HousingSpecificationsInContract",
-                label: t("housingSpecificationsInContract"),
-                inputType: "text",
-                value: watch("HIR1_HousingSpecificationsInContract") || "",
-                onChange: (value: string) =>
-                  setValue("HIR1_HousingSpecificationsInContract", value),
-                validation: { required: tHearingTopics("fieldRequired") },
-                notRequired: false,
-                colSpan: 1,
-              },
-              watch("HIR1_AccommodationSource") === "contract" && {
-                type: "input",
-                name: "HIR1_HousingSpecifications",
-                label: t("actualHousingSpecifications"),
-                inputType: "text",
-                value: watch("HIR1_HousingSpecifications") || "",
-                onChange: (value: string) =>
-                  setValue("HIR1_HousingSpecifications", value),
-                validation: { required: tHearingTopics("fieldRequired") },
-                notRequired: false,
-                colSpan: 1,
-              },
-            ],
-            t
-          )
+            t,
+          ),
         );
       }
       case "JAR-2":
@@ -1808,8 +1696,8 @@ export const useFormLayout = ({
                 control,
               },
             ],
-            t
-          )
+            t,
+          ),
         );
       case "JAR-3": {
         return buildForm(
@@ -1821,7 +1709,7 @@ export const useFormLayout = ({
                 options: [
                   {
                     label: t(
-                      "doesTheInternalRegulationIncludePromotionMechanism"
+                      "doesTheInternalRegulationIncludePromotionMechanism",
                     ),
                     value: "promotionMechanism",
                   },
@@ -1852,8 +1740,8 @@ export const useFormLayout = ({
                 control,
               },
             ],
-            t
-          )
+            t,
+          ),
         );
       }
       case "JAR-4":
@@ -1888,8 +1776,8 @@ export const useFormLayout = ({
                 control,
               },
             ],
-            t
-          )
+            t,
+          ),
         );
       case "LRESR-1":
         return buildForm(
@@ -1915,8 +1803,8 @@ export const useFormLayout = ({
                 }),
               },
             ],
-            t
-          )
+            t,
+          ),
         );
       case "TTR-1":
         return buildForm(
@@ -1938,8 +1826,8 @@ export const useFormLayout = ({
                 control,
               },
             ],
-            t
-          )
+            t,
+          ),
         );
       case "RFR-1":
         return buildForm(
@@ -1991,7 +1879,7 @@ export const useFormLayout = ({
                         handleHijriDateChange(
                           date,
                           onChange,
-                          "RFR1_dateGregorian"
+                          "RFR1_dateGregorian",
                         )
                       }
                       isDateOfBirth={true}
@@ -2005,8 +1893,8 @@ export const useFormLayout = ({
                 ),
               },
             ],
-            t
-          )
+            t,
+          ),
         );
       case "RR-1":
         return buildForm(
@@ -2042,8 +1930,8 @@ export const useFormLayout = ({
                 maxLength: 50,
               },
             ],
-            t
-          )
+            t,
+          ),
         );
       default:
         return [];

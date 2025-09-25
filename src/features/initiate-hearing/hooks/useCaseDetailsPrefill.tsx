@@ -34,7 +34,7 @@ const useCaseDetailsPrefill = ({
   prefillType = "all",
   userType: overrideUserType,
 }: PrefillOptions) => {
-  const [getCookie, ] = useCookieState();
+  const [getCookie] = useCookieState();
   const [triggerCaseDetailsQuery, { isLoading }] = useLazyGetCaseDetailsQuery();
   const [isFetched, setIsFetched] = useState<boolean>(false);
   const [caseData, setCaseData] = useState<any | null>(null);
@@ -125,8 +125,6 @@ const useCaseDetailsPrefill = ({
   const extractDefendantData = (caseDetails: any) => {
     const isEstablishment = caseDetails?.DefendantType_Code === "Establishment";
 
-   
-
     const isWorker = caseDetails?.ApplicantType_Code === "Worker";
 
     const hasDefendantData = !!(
@@ -148,8 +146,8 @@ const useCaseDetailsPrefill = ({
         caseDetails?.DefendantType_Code === "Government"
           ? "Government"
           : caseDetails?.DefendantType_Code === "Establishment"
-          ? "Establishment"
-          : undefined,
+            ? "Establishment"
+            : undefined,
 
       defendantDetails: "Others",
 
@@ -171,14 +169,14 @@ const useCaseDetailsPrefill = ({
       defendantRegion: nullifyIfEmpty(
         createValueLabel(
           caseDetails?.Defendant_Region_Code,
-          caseDetails?.Defendant_Region
-        )
+          caseDetails?.Defendant_Region,
+        ),
       ),
       defendantCity: nullifyIfEmpty(
         createValueLabel(
           caseDetails?.Defendant_City_Code,
-          caseDetails?.Defendant_City
-        )
+          caseDetails?.Defendant_City,
+        ),
       ),
 
       ...(isEstablishment
@@ -187,20 +185,20 @@ const useCaseDetailsPrefill = ({
             occupation: nullifyIfEmpty(
               createValueLabel(
                 caseDetails?.Defendant_Occupation_Code,
-                caseDetails?.Defendant_Occupation
-              )
+                caseDetails?.Defendant_Occupation,
+              ),
             ),
             gender: nullifyIfEmpty(
               createValueLabel(
                 caseDetails?.Defendant_Gender_Code,
-                caseDetails?.Defendant_Gender
-              )
+                caseDetails?.Defendant_Gender,
+              ),
             ),
             nationality: nullifyIfEmpty(
               createValueLabel(
                 caseDetails?.Defendant_Nationality_Code,
-                caseDetails?.Defendant_Nationality
-              )
+                caseDetails?.Defendant_Nationality,
+              ),
             ),
           }),
 
@@ -244,26 +242,26 @@ const useCaseDetailsPrefill = ({
       Defendant_MainGovtDefend: nullifyIfEmpty(
         createValueLabel(
           caseDetails?.Defendant_MainGovtDefend_Code,
-          caseDetails?.Defendant_MainGovtDefend
-        )
+          caseDetails?.Defendant_MainGovtDefend,
+        ),
       ),
       DefendantSubGovtDefend: nullifyIfEmpty(
         createValueLabel(
           caseDetails?.DefendantSubGovtDefend_Code,
-          caseDetails?.DefendantSubGovtDefend
-        )
+          caseDetails?.DefendantSubGovtDefend,
+        ),
       ),
       main_category_of_the_government_entity: nullifyIfEmpty(
         createValueLabel(
           caseDetails?.Defendant_MainGovtDefend_Code,
-          caseDetails?.Defendant_MainGovtDefend
-        )
+          caseDetails?.Defendant_MainGovtDefend,
+        ),
       ),
       subcategory_of_the_government_entity: nullifyIfEmpty(
         createValueLabel(
           caseDetails?.DefendantSubGovtDefend_Code,
-          caseDetails?.DefendantSubGovtDefend
-        )
+          caseDetails?.DefendantSubGovtDefend,
+        ),
       ),
 
       ...(isWorker
@@ -338,7 +336,7 @@ const useCaseDetailsPrefill = ({
 
     const regionValue = createValueLabel(
       details.Plaintiff_Region_Code,
-      details.Plaintiff_Region
+      details.Plaintiff_Region,
     );
     if (regionValue) {
       setValue("plaintiffRegion", regionValue);
@@ -346,7 +344,7 @@ const useCaseDetailsPrefill = ({
 
     const cityValue = createValueLabel(
       details.Plaintiff_City_Code,
-      details.Plaintiff_City
+      details.Plaintiff_City,
     );
     if (cityValue) {
       setValue("plaintiffCity", cityValue);
@@ -354,7 +352,7 @@ const useCaseDetailsPrefill = ({
 
     const occupationValue = createValueLabel(
       details.Plaintiff_Occupation_Code,
-      details.Plaintiff_Occupation
+      details.Plaintiff_Occupation,
     );
     if (occupationValue) {
       setValue("occupation", occupationValue);
@@ -362,7 +360,7 @@ const useCaseDetailsPrefill = ({
 
     const genderValue = createValueLabel(
       details.Plaintiff_Gender_Code,
-      details.Plaintiff_Gender
+      details.Plaintiff_Gender,
     );
     if (genderValue) {
       setValue("gender", genderValue);
@@ -370,7 +368,7 @@ const useCaseDetailsPrefill = ({
 
     const nationalityValue = createValueLabel(
       details.Plaintiff_Nationality_Code,
-      details.Plaintiff_Nationality
+      details.Plaintiff_Nationality,
     );
     if (nationalityValue) {
       setValue("nationality", nationalityValue);

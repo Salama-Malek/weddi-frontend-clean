@@ -19,24 +19,22 @@ export type CaseRecord = {
   RejectReasonDetails?: string;
 };
 
+export type PaginationInfo = {
+  PageSize: string;
+  CurrentPageResultCount: string;
+  TotalPagesCount: string;
+  CurrentPageNumber: string;
+  TotalResultCount: string;
+};
 
-  export type PaginationInfo = {
-    PageSize: string;
-    CurrentPageResultCount: string;
-    TotalPagesCount: string;
-    CurrentPageNumber: string;
-    TotalResultCount: string;
-  };
-  
-  export interface PlaintiffCasesResponse {
-    PaginationInfo: PaginationInfo;
-    PlaintiffCases: CaseRecord[];
-    SourceSystem: string;
-  }
-  
-  export interface DefendantCasesResponse {
-    PaginationInfo: PaginationInfo;
-    DefendantCases: CaseRecord[];
-    SourceSystem: string;
-  }
-  
+export interface PlaintiffCasesResponse {
+  PaginationInfo: PaginationInfo;
+  PlaintiffCases: CaseRecord[];
+  SourceSystem: string;
+}
+
+export interface DefendantCasesResponse {
+  PaginationInfo: PaginationInfo;
+  DefendantCases: CaseRecord[];
+  SourceSystem: string;
+}

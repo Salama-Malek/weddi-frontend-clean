@@ -1,5 +1,5 @@
-import React, { createContext, useContext } from 'react';
-import { useFormReset } from '@/shared/hooks/useFormReset';
+import React, { createContext, useContext } from "react";
+import { useFormReset } from "@/shared/hooks/useFormReset";
 
 interface FormResetContextType {
   resetField: (fieldName: string) => void;
@@ -16,10 +16,10 @@ interface FormResetProviderProps {
   clearErrors?: any;
 }
 
-export const FormResetProvider: React.FC<FormResetProviderProps> = ({ 
-  children, 
-  setValue, 
-  clearErrors 
+export const FormResetProvider: React.FC<FormResetProviderProps> = ({
+  children,
+  setValue,
+  clearErrors,
 }) => {
   const resetUtils = useFormReset(setValue, clearErrors);
 
@@ -33,7 +33,9 @@ export const FormResetProvider: React.FC<FormResetProviderProps> = ({
 export const useFormResetContext = () => {
   const context = useContext(FormResetContext);
   if (!context) {
-    throw new Error('useFormResetContext must be used within a FormResetProvider');
+    throw new Error(
+      "useFormResetContext must be used within a FormResetProvider",
+    );
   }
   return context;
-}; 
+};

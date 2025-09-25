@@ -135,9 +135,7 @@ function nullifyIfEmpty(obj: any) {
   return obj;
 }
 
-const useWorkDetailsPrefill = ({
-
-}) => {
+const useWorkDetailsPrefill = ({}) => {
   const [getCookie] = useCookieState();
   const [triggerCaseDetailsQuery] = useLazyGetCaseDetailsQuery();
   const [isFeatched, setIsfetched] = useState<boolean>(false);

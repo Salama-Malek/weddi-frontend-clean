@@ -1,8 +1,5 @@
 import { UseFormSetValue, UseFormWatch, UseFormTrigger } from "react-hook-form";
-import {
-  SectionLayout,
-  FormData,
-} from "@/shared/components/form/form.types";
+import { SectionLayout, FormData } from "@/shared/components/form/form.types";
 import { useFormOptions } from "./defendant.forms.formOptions";
 import { useTranslation } from "react-i18next";
 import React, { useEffect, useState, useCallback, useRef } from "react";
@@ -35,7 +32,7 @@ export const useFormLayout = (
   subGovernmentData?: any,
   caseDetailsLoading?: boolean,
   defendantData?: any,
-  hasDefendantPrefill?: boolean
+  hasDefendantPrefill?: boolean,
 ): { layout: SectionLayout[]; isOnlyFileNumberFilled: () => boolean } => {
   const { IsGovernmentRadioOptions } = useFormOptions([]);
   const [getCookie, setCookie] = useCookieState({ caseId: "" });
@@ -43,10 +40,10 @@ export const useFormLayout = (
   const defendantStatus = watch("defendantStatus");
   const defendantDetails = watch("defendantDetails");
   const mainCategory = watch(
-    "main_category_of_the_government_entity" as keyof FormData
+    "main_category_of_the_government_entity" as keyof FormData,
   );
   const subCategoryValue = watch(
-    "subcategory_of_the_government_entity" as keyof FormData
+    "subcategory_of_the_government_entity" as keyof FormData,
   );
   const establishmentValue = watch("EstablishmentData" as keyof FormData);
   const [prevMainCategory, setPrevMainCategory] = useState(mainCategory);
@@ -89,8 +86,6 @@ export const useFormLayout = (
 
   const { formState, setError, clearErrors } = useAPIFormsData();
 
-  
-
   const isValidFileNumber = useCallback((value: string): boolean => {
     if (!value) return false;
 
@@ -100,8 +95,6 @@ export const useFormLayout = (
     const [left, right] = value.split("-");
     return Boolean(left && right && /\d+/.test(left) && /\d+/.test(right));
   }, []);
-
-
 
   const isValidCRNumber = useCallback((value: string): boolean => {
     return /^\d{10}$/.test(value || "");
@@ -115,7 +108,7 @@ export const useFormLayout = (
         lastRequestId: updates.lastRequestId || prev.lastRequestId,
       }));
     },
-    []
+    [],
   );
 
   const clearAllEstablishmentFields = useCallback(
@@ -137,7 +130,7 @@ export const useFormLayout = (
           {
             shouldValidate: false,
             shouldDirty: true,
-          }
+          },
         );
       });
 
@@ -155,7 +148,7 @@ export const useFormLayout = (
             ? "تم مسح جميع بيانات المنشأة."
             : "All establishment fields have been cleared.";
         toast.info(
-          t("establishmentFieldsCleared", { defaultValue: clearedMsg })
+          t("establishmentFieldsCleared", { defaultValue: clearedMsg }),
         );
       }
     },
@@ -165,9 +158,8 @@ export const useFormLayout = (
       updateEstablishmentState,
       t,
       i18n.language,
-    ]
+    ],
   );
-
 
   const userType = getCookie("userType");
   const [wrorkedEstablishmetUsers, setWrorkedEstablishmetUsers] = useState<
@@ -209,7 +201,7 @@ export const useFormLayout = (
       },
       {
         skip: shouldSkipEstablishmentAPI,
-      }
+      },
     );
 
   useEffect(() => {
@@ -222,7 +214,7 @@ export const useFormLayout = (
         (est: any) => ({
           label: est.EstablishmentName,
           value: est.EstablishmentName,
-        })
+        }),
       ).concat({
         label: t("others"),
         value: "Others",
@@ -245,10 +237,8 @@ export const useFormLayout = (
     watch,
   ]);
 
-  const [
-    triggerGetEstablishmentData,
-    { data: establishmentData },
-  ] = useLazyGetEstablishmentDetailsQuery();
+  const [triggerGetEstablishmentData, { data: establishmentData }] =
+    useLazyGetEstablishmentDetailsQuery();
 
   const [hasUserInteracted, setHasUserInteracted] = useState(false);
 
@@ -362,7 +352,7 @@ export const useFormLayout = (
         setCookie("defendantDetails", establishmentInfo);
         setValue(
           "Defendant_Establishment_data_NON_SELECTED",
-          establishmentInfo
+          establishmentInfo,
         );
         if (
           lastEditedNumberRef.current !== "file" &&
@@ -401,7 +391,7 @@ export const useFormLayout = (
         if (establishmentInfo.Number700) {
           setValue(
             "Defendant_Establishment_data_NON_SELECTED.Number700",
-            establishmentInfo.Number700
+            establishmentInfo.Number700,
           );
         }
       } else {
@@ -558,31 +548,31 @@ export const useFormLayout = (
           setValue(
             "defendantRegion",
             { label: info.Region, value: info.Region_Code },
-            { shouldValidate: true }
+            { shouldValidate: true },
           );
           setValue(
             "Defendant_Establishment_data_NON_SELECTED.region",
             { label: info.Region, value: info.Region_Code },
-            { shouldValidate: false }
+            { shouldValidate: false },
           );
         }
         if (info.City && info.City_Code) {
           setValue(
             "defendantCity",
             { label: info.City, value: info.City_Code },
-            { shouldValidate: true }
+            { shouldValidate: true },
           );
           setValue(
             "Defendant_Establishment_data_NON_SELECTED.city",
             { label: info.City, value: info.City_Code },
-            { shouldValidate: false }
+            { shouldValidate: false },
           );
         }
         if (info.Number700)
           setValue(
             "Defendant_Establishment_data_NON_SELECTED.Number700",
             info.Number700,
-            { shouldValidate: false }
+            { shouldValidate: false },
           );
         clearErrors(["DefendantFileNumber", "DefendantCRNumber"] as any);
         setIsManuallyChangingNumbers(false);
@@ -713,10 +703,8 @@ export const useFormLayout = (
     clearAllEstablishmentFields,
   ]);
 
-  const [
-    triggerMyEstablishmentData,
-    { data: myEstablishment },
-  ] = useLazyGetEstablishmentDetailsQuery();
+  const [triggerMyEstablishmentData, { data: myEstablishment }] =
+    useLazyGetEstablishmentDetailsQuery();
 
   useEffect(() => {
     if (isManuallyChangingNumbers) {
@@ -764,7 +752,7 @@ export const useFormLayout = (
         setValue(
           "Defendant_Establishment_data",
           { region: null, city: null },
-          { shouldValidate: false }
+          { shouldValidate: false },
         );
       }
 
@@ -853,7 +841,7 @@ export const useFormLayout = (
             value: info.Region_Code,
             label: info.Region,
           },
-          { shouldValidate: false }
+          { shouldValidate: false },
         );
       }
 
@@ -864,7 +852,7 @@ export const useFormLayout = (
             value: info.City_Code,
             label: info.City,
           },
-          { shouldValidate: false }
+          { shouldValidate: false },
         );
       }
 
@@ -897,7 +885,7 @@ export const useFormLayout = (
   const extracFileNumberFromWorkingEstData = (estName: string) => {
     const establishment: any =
       getEstablismentWorkingData?.EstablishmentData.find(
-        (val: any) => val.EstablishmentName === estName
+        (val: any) => val.EstablishmentName === estName,
       );
     return establishment
       ? {
@@ -969,25 +957,23 @@ export const useFormLayout = (
     ModuleKey: "EstablishmentRegion",
     ModuleName: "EstablishmentRegion",
   });
-  const {
-    data: cityData,
-    isError: isCityError,
-  } = useGetWorkerCityLookupDataQuery(
-    {
-      AcceptedLanguage: i18n.language.toUpperCase(),
-      SourceSystem: "E-Services",
-      selectedWorkerRegion:
-        typeof defendantRegion === "object"
+  const { data: cityData, isError: isCityError } =
+    useGetWorkerCityLookupDataQuery(
+      {
+        AcceptedLanguage: i18n.language.toUpperCase(),
+        SourceSystem: "E-Services",
+        selectedWorkerRegion:
+          typeof defendantRegion === "object"
+            ? defendantRegion?.value
+            : defendantRegion || "",
+        ModuleName: "EstablishmentCity",
+      },
+      {
+        skip: !(typeof defendantRegion === "object"
           ? defendantRegion?.value
-          : defendantRegion || "",
-      ModuleName: "EstablishmentCity",
-    },
-    {
-      skip: !(typeof defendantRegion === "object"
-        ? defendantRegion?.value
-        : defendantRegion),
-    }
-  );
+          : defendantRegion),
+      },
+    );
 
   useEffect(() => {
     if (cityData && isCityError) {
@@ -1048,7 +1034,7 @@ export const useFormLayout = (
             value: data.Region_Code,
             label: data.Region,
           },
-          { shouldValidate: true }
+          { shouldValidate: true },
         );
       }
       if (data.City && data.City_Code) {
@@ -1058,7 +1044,7 @@ export const useFormLayout = (
             value: data.City_Code,
             label: data.City,
           },
-          { shouldValidate: true }
+          { shouldValidate: true },
         );
       }
 
@@ -1078,8 +1064,8 @@ export const useFormLayout = (
       const completedKey = data?.FileNumber
         ? `file:${data.FileNumber}`
         : data?.CRNumber
-        ? `cr:${data.CRNumber}`
-        : null;
+          ? `cr:${data.CRNumber}`
+          : null;
       if (completedKey) {
         lastCompletedKeyRef.current = completedKey;
       }
@@ -1103,7 +1089,7 @@ export const useFormLayout = (
 
   const selectedEstablishmentObj = watch("Defendant_Establishment_data");
   const selectedEstablishmentObjNonSelected = watch(
-    "Defendant_Establishment_data_NON_SELECTED"
+    "Defendant_Establishment_data_NON_SELECTED",
   );
   const prefillName = watch("DefendantEstablishmentName");
   const prefillRegion = watch("defendantRegion");
@@ -1150,7 +1136,7 @@ export const useFormLayout = (
       (item: { ElementKey: string; ElementValue: string }) => ({
         value: item.ElementKey,
         label: item.ElementValue,
-      })
+      }),
     );
   }, [governmentData]);
 
@@ -1160,7 +1146,7 @@ export const useFormLayout = (
       (item: { ElementKey: string; ElementValue: string }) => ({
         value: item.ElementKey,
         label: item.ElementValue,
-      })
+      }),
     );
   }, [subGovernmentData]);
 
@@ -1259,7 +1245,7 @@ export const useFormLayout = (
       setValue(
         "main_category_of_the_government_entity" as keyof FormData,
         null,
-        { shouldValidate: false }
+        { shouldValidate: false },
       );
       setValue("subcategory_of_the_government_entity" as keyof FormData, null, {
         shouldValidate: false,
@@ -1325,7 +1311,8 @@ export const useFormLayout = (
       defendantData;
     if (hasPrefillAndHaveEstData) {
       const isWorker: any = wrorkedEstablishmetUsers.find(
-        (val) => val.value === defendantData.DefendantsEstablishmentPrisonerName
+        (val) =>
+          val.value === defendantData.DefendantsEstablishmentPrisonerName,
       );
       if (isWorker) {
         setValue("defendantDetails", isWorker.value);
@@ -1366,7 +1353,7 @@ export const useFormLayout = (
         setValue(
           "Defendant_Establishment_data_NON_SELECTED",
           establishmentData as any,
-          { shouldValidate: true }
+          { shouldValidate: true },
         );
         if (defendantData.DefendantFileNumber) {
           setValue("DefendantFileNumber", defendantData.DefendantFileNumber, {
@@ -1387,14 +1374,14 @@ export const useFormLayout = (
           setValue(
             "DefendantEstablishmentName",
             defendantData.DefendantsEstablishmentPrisonerName,
-            { shouldValidate: true }
+            { shouldValidate: true },
           );
         }
         if (defendantData.establishment_phoneNumber) {
           setValue(
             "establishment_phoneNumber",
             defendantData.establishment_phoneNumber,
-            { shouldValidate: true }
+            { shouldValidate: true },
           );
         }
 
@@ -1408,7 +1395,7 @@ export const useFormLayout = (
               value: defendantData.Defendant_Region_Code,
               label: defendantData.Defendant_Region,
             },
-            { shouldValidate: true }
+            { shouldValidate: true },
           );
         }
         if (defendantData.Defendant_City_Code && defendantData.Defendant_City) {
@@ -1418,7 +1405,7 @@ export const useFormLayout = (
               value: defendantData.Defendant_City_Code,
               label: defendantData.Defendant_City,
             },
-            { shouldValidate: true }
+            { shouldValidate: true },
           );
         }
 
@@ -1450,40 +1437,40 @@ export const useFormLayout = (
           },
         ]
       : wrorkedEstablishmetUsers && wrorkedEstablishmetUsers.length > 1
-      ? [
-          {
-            title: t("tab2_title"),
-            isRadio: true,
-            gridCols: 1,
-            children: [
-              {
-                type: "radio",
-                name: "defendantDetails",
-                label: t("estab_name"),
-                options: wrorkedEstablishmetUsers,
-                value: defendantDetails,
-                hasIcon: true,
-                onChange: (value: string) => {
-                  getSelectedEstablishmentData(value);
-                  setValue("defendantDetails", value);
+        ? [
+            {
+              title: t("tab2_title"),
+              isRadio: true,
+              gridCols: 1,
+              children: [
+                {
+                  type: "radio",
+                  name: "defendantDetails",
+                  label: t("estab_name"),
+                  options: wrorkedEstablishmetUsers,
+                  value: defendantDetails,
+                  hasIcon: true,
+                  onChange: (value: string) => {
+                    getSelectedEstablishmentData(value);
+                    setValue("defendantDetails", value);
 
-                  try {
-                    setCookie("defendantDetails", value);
-                    if (value === "Others") {
-                      setCookie("getDefendEstablishmentData", null as any);
-                      setCookie("defendantStatus", "Establishment");
+                    try {
+                      setCookie("defendantDetails", value);
+                      if (value === "Others") {
+                        setCookie("getDefendEstablishmentData", null as any);
+                        setCookie("defendantStatus", "Establishment");
 
-                      setCookie("isEstablishment", false as any);
-                    }
-                  } catch {}
+                        setCookie("isEstablishment", false as any);
+                      }
+                    } catch {}
 
-                  setValue("defendantStatus", "Establishment");
+                    setValue("defendantStatus", "Establishment");
+                  },
                 },
-              },
-            ],
-          },
-        ]
-      : []),
+              ],
+            },
+          ]
+        : []),
 
     ...(showGovNonGovRadios
       ? [
@@ -1524,14 +1511,14 @@ export const useFormLayout = (
                   handleUserInteraction();
                   setValue(
                     "main_category_of_the_government_entity" as keyof FormData,
-                    value
+                    value,
                   );
 
                   if (!hasSubCategoryFromCaseDetails) {
                     setValue(
                       "subcategory_of_the_government_entity" as keyof FormData,
                       null,
-                      { shouldValidate: false }
+                      { shouldValidate: false },
                     );
                     setHasInteractedWithSubCategory(false);
                     setHasManuallySelectedSubCategory(false);
@@ -1542,12 +1529,12 @@ export const useFormLayout = (
                   setValue(
                     "main_category_of_the_government_entity" as keyof FormData,
                     null,
-                    { shouldValidate: false }
+                    { shouldValidate: false },
                   );
                   setValue(
                     "subcategory_of_the_government_entity" as keyof FormData,
                     null,
-                    { shouldValidate: false }
+                    { shouldValidate: false },
                   );
                   setHasInteractedWithSubCategory(false);
                   setHasManuallySelectedSubCategory(false);
@@ -1574,7 +1561,7 @@ export const useFormLayout = (
                   setValue(
                     "subcategory_of_the_government_entity" as keyof FormData,
                     value,
-                    { shouldValidate: true }
+                    { shouldValidate: true },
                   );
                   setHasInteractedWithSubCategory(true);
                   setHasManuallySelectedSubCategory(true);
@@ -1586,7 +1573,7 @@ export const useFormLayout = (
                   setValue(
                     "subcategory_of_the_government_entity" as keyof FormData,
                     null,
-                    { shouldValidate: false }
+                    { shouldValidate: false },
                   );
                   setHasInteractedWithSubCategory(false);
                   setHasManuallySelectedSubCategory(false);

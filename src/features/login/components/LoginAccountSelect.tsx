@@ -8,10 +8,8 @@ import { useCookieState } from "@/features/initiate-hearing/hooks/useCookieState
 import { useUserType } from "@/providers/UserTypeContext";
 import { useUser } from "@/shared/context/userTypeContext";
 
-
-
 const LegalEntitySelection = lazy(
-  () => import("@/shared/components/ui/legal-entity-selection")
+  () => import("@/shared/components/ui/legal-entity-selection"),
 );
 
 interface CaseRecordsModalProps {
@@ -20,7 +18,7 @@ interface CaseRecordsModalProps {
   setSelected: (value: string | null) => void;
   selectedOption?: { value: string; label: string } | null | string;
   handleChange?: (
-    option: { value: string; label: string } | null | string
+    option: { value: string; label: string } | null | string,
   ) => void;
   handleCloseModal: () => void;
   isLegalRep?: boolean;
@@ -51,10 +49,10 @@ const CaseRecordsModal = ({
   const hasSeenLegalRepModal = getCookie("hasSeenLegalRepModal");
 
   const [selectedMainCategory, setSelectedMainCategory] = useState<any | null>(
-    getCookie("mainCategory")
+    getCookie("mainCategory"),
   );
   const [selectedSubCategory, setSelectedSubCategory] = useState<any | null>(
-    getCookie("subCategory")
+    getCookie("subCategory"),
   );
 
   useEffect(() => {
@@ -63,7 +61,7 @@ const CaseRecordsModal = ({
   }, [selectedMainCategory, selectedSubCategory]);
 
   const [localSelected, setLocalSelected] = useState<string | null>(
-    propSelected
+    propSelected,
   );
 
   useEffect(() => {
@@ -107,7 +105,7 @@ const CaseRecordsModal = ({
     const storedUserTypeData = getCookie("storeAllUserTypeData");
 
     const hasLegalRepCapability = storedUserTypeData?.UserTypeList?.some(
-      (userType: any) => userType.UserType === "Legal representative"
+      (userType: any) => userType.UserType === "Legal representative",
     );
 
     if (!originalUserType && hasLegalRepCapability) {
@@ -149,10 +147,11 @@ const CaseRecordsModal = ({
         {loginOptions.map((option) => (
           <div
             key={option.type}
-            className={`border rounded-sl px-2 cursor-pointer pb-8 ${localSelected === option.type
-              ? "border-primary-600 bg-primary-50"
-              : "border-gray-400"
-              }`}
+            className={`border rounded-sl px-2 cursor-pointer pb-8 ${
+              localSelected === option.type
+                ? "border-primary-600 bg-primary-50"
+                : "border-gray-400"
+            }`}
             onClick={() => handleSelection(option.type)}
           >
             <div className="flex flex-col items-center">
@@ -182,8 +181,8 @@ const CaseRecordsModal = ({
         <Button
           typeVariant={
             !localSelected ||
-              (localSelected === "Legal representative" &&
-                !selectedSubCategory?.value)
+            (localSelected === "Legal representative" &&
+              !selectedSubCategory?.value)
               ? "freeze"
               : "solid"
           }
@@ -191,8 +190,8 @@ const CaseRecordsModal = ({
           onClick={handleContinue}
           variant={
             !localSelected ||
-              (localSelected === "Legal representative" &&
-                !selectedSubCategory?.value)
+            (localSelected === "Legal representative" &&
+              !selectedSubCategory?.value)
               ? "freeze"
               : "solid"
           }

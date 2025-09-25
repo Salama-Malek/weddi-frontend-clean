@@ -6,7 +6,6 @@ import { useNavigate } from "react-router-dom";
 import { useCookieState } from "@/features/initiate-hearing/hooks/useCookieState";
 import { useClearCaseData } from "@/shared/hooks/useClearCaseData";
 
-
 interface IncompleteCaseModalProps {
   isOpen: boolean;
   onClose: () => void;

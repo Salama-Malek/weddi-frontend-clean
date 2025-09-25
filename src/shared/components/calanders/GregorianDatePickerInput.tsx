@@ -11,12 +11,17 @@ interface GregorianDatePickerInputProps {
   name: keyof FormData;
   label: string;
   rules: any;
-  onChangeHandler: (date: DateObject | DateObject[] | null, onChange: (value: string) => void) => void;
+  onChangeHandler: (
+    date: DateObject | DateObject[] | null,
+    onChange: (value: string) => void,
+  ) => void;
   notRequired?: boolean;
   isDateOfBirth?: boolean;
 }
 
-export const GregorianDatePickerInput: React.FC<GregorianDatePickerInputProps> = ({
+export const GregorianDatePickerInput: React.FC<
+  GregorianDatePickerInputProps
+> = ({
   control,
   name,
   label,
@@ -25,21 +30,24 @@ export const GregorianDatePickerInput: React.FC<GregorianDatePickerInputProps> =
   notRequired,
   isDateOfBirth,
 }) => {
-  const { i18n } = useTranslation('hearingdetails');
+  const { i18n } = useTranslation("hearingdetails");
 
   const formatDateForDisplay = (date: string) => {
     if (!date || date.length !== 8) return date;
     return `${date.slice(0, 4)}/${date.slice(4, 6)}/${date.slice(6)}`;
   };
 
-  const handleDateChange = (date: DateObject | DateObject[] | null, onChange: (value: string) => void) => {
+  const handleDateChange = (
+    date: DateObject | DateObject[] | null,
+    onChange: (value: string) => void,
+  ) => {
     if (!date || Array.isArray(date)) {
       onChange("");
       return;
     }
 
     const gregorian = date.format("YYYY/MM/DD");
-    
+
     const gregorianStorage = gregorian.replace(/\//g, "");
 
     onChange(gregorianStorage);
@@ -48,7 +56,6 @@ export const GregorianDatePickerInput: React.FC<GregorianDatePickerInputProps> =
     }
   };
 
-  
   const maxDate = isDateOfBirth ? new DateObject() : undefined;
 
   return (
@@ -58,7 +65,11 @@ export const GregorianDatePickerInput: React.FC<GregorianDatePickerInputProps> =
       control={control}
       rules={rules}
       render={({ field: { onChange, value }, fieldState: { error } }) => (
-        <FieldWrapper label={label} invalidFeedback={error?.message} notRequired={notRequired}>
+        <FieldWrapper
+          label={label}
+          invalidFeedback={error?.message}
+          notRequired={notRequired}
+        >
           <div className="relative">
             <DatePicker
               placeholder="YYYY/MM/DD"
@@ -66,20 +77,23 @@ export const GregorianDatePickerInput: React.FC<GregorianDatePickerInputProps> =
               value={
                 value
                   ? new DateObject({
-                    date: formatDateForDisplay(value),
-                    format: "YYYY/MM/DD",
-                  })
+                      date: formatDateForDisplay(value),
+                      format: "YYYY/MM/DD",
+                    })
                   : undefined
               }
               onChange={(date) => handleDateChange(date, onChange)}
-              inputClass={`w-full p-2 border rounded text-sm focus:ring-1 focus:outline-none pr-8 ${error
-                ? "border-red-500 focus:ring-red-500"
-                : "border-gray-400 focus:ring-blue-500"
-                }`}
+              inputClass={`w-full p-2 border rounded text-sm focus:ring-1 focus:outline-none pr-8 ${
+                error
+                  ? "border-red-500 focus:ring-red-500"
+                  : "border-gray-400 focus:ring-blue-500"
+              }`}
               calendarPosition="bottom-right"
               maxDate={isDateOfBirth ? maxDate : undefined}
             />
-            <div className={`absolute ${i18n.dir() === "rtl" ? "left-2" : "right-2"} top-1/2 transform -translate-y-1/2 pointer-events-none`}>
+            <div
+              className={`absolute ${i18n.dir() === "rtl" ? "left-2" : "right-2"} top-1/2 transform -translate-y-1/2 pointer-events-none`}
+            >
               <Calculator01Icon className="text-gray-500" />
             </div>
           </div>
@@ -87,4 +101,4 @@ export const GregorianDatePickerInput: React.FC<GregorianDatePickerInputProps> =
       )}
     />
   );
-}; 
+};

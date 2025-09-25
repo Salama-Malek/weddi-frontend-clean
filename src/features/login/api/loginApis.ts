@@ -69,7 +69,7 @@ export const caseApi = api.injectEndpoints({
     GetUserTypeLegalRep: builder.query<ApiResponse, any>({
       query: (params) => ({
         url: `/WeddiServices/V1/GetUserType`,
-        params
+        params,
       }),
     }),
     getUserToken: builder.query<TokenResponse, void>({
@@ -77,7 +77,7 @@ export const caseApi = api.injectEndpoints({
         url: `/WeddiOauth2/v1/token`,
         method: "POST",
       }),
-    })
+    }),
   }),
 });
 

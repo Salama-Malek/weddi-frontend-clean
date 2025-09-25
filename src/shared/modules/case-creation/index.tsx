@@ -6,7 +6,7 @@ import StepperSkeleton from "@/shared/components/loader/StepperSkeleton";
 import useCasesLogic from "@/features/initiate-hearing/hooks/useCasesLogic";
 import { useCookieState } from "@/features/initiate-hearing/hooks/useCookieState";
 const ContentRenderer = React.lazy(
-  () => import("./components/ContentRenderer")
+  () => import("./components/ContentRenderer"),
 );
 
 export interface Step {
@@ -29,9 +29,7 @@ const CaseCreation: React.FC = () => {
     { title: t("step3.title"), description: t("step3.description") },
   ];
 
-  const { currentStep, currentTab } = useCasesLogic({ enableNICCalls: false }); 
-
-
+  const { currentStep, currentTab } = useCasesLogic({ enableNICCalls: false });
 
   useEffect(() => {
     const savedStep = localStorage.getItem("step");

@@ -23,9 +23,8 @@ const Breadcrumbs: React.FC<BreadcrumbsProps> = ({
 }) => {
   const breadcrumbClass = classes(
     "flex justify-start items-center py-md container",
-    additionalClassNames
+    additionalClassNames,
   );
-
 
   return (
     <BreadcrumbsProvider separator={separator}>

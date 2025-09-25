@@ -3,9 +3,7 @@ import { SectionLayout } from "@/shared/components/form/form.types";
 import { KeyboardEvent, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { PHONE_PATTERNS } from "@/config/general";
-import {
-  useGetCountryCodeLookupDataQuery,
-} from "@/features/initiate-hearing/api/create-case/plaintiffDetailsApis";
+import { useGetCountryCodeLookupDataQuery } from "@/features/initiate-hearing/api/create-case/plaintiffDetailsApis";
 import { useOtpVerification } from "@/features/initiate-hearing/hooks/useOtpVerification";
 import { TokenClaims } from "@/features/login/components/AuthProvider";
 import { useCookieState } from "@/features/initiate-hearing/hooks/useCookieState";
@@ -46,7 +44,7 @@ const OTPFormLayout = ({
   const [timeLeft, setTimeLeft] = useState(60);
   const [showResend, setShowResend] = useState(false);
   const [showVerifyBtn, setSHowVerifyBtn] = useState<boolean>(false);
-  const [getCookie,] = useCookieState();
+  const [getCookie] = useCookieState();
   const userClaims: TokenClaims = getCookie("userClaims");
 
   const claimantStatus = watch("claimantStatus");
@@ -93,7 +91,7 @@ const OTPFormLayout = ({
           label: item.ElementValue,
         }))) ||
       [],
-    [countryData]
+    [countryData],
   );
 
   const getPhoneConfig = (code: string) =>
@@ -112,7 +110,7 @@ const OTPFormLayout = ({
   })();
 
   const isSendOtpDisabled = !phoneCode || !phoneNumber || !isPhoneValid;
- 
+
   const progress = ((60 - timeLeft) / 60) * 100;
 
   useEffect(() => {
@@ -205,23 +203,23 @@ const OTPFormLayout = ({
           onChange: (value: string) => setValue("phoneCode", value),
           ...(isPhone
             ? {
-              validation: {
-                required: (value: any) => {
-                  const hasInternationalNumber = watch("interPhoneNumber");
-                  return hasInternationalNumber && (!value || !value.value)
-                    ? optTraslations("OTP.codeValidation")
-                    : true;
-                },
-                validate: (value: any) => {
-                  const hasInternationalNumber = watch("interPhoneNumber");
+                validation: {
+                  required: (value: any) => {
+                    const hasInternationalNumber = watch("interPhoneNumber");
+                    return hasInternationalNumber && (!value || !value.value)
+                      ? optTraslations("OTP.codeValidation")
+                      : true;
+                  },
+                  validate: (value: any) => {
+                    const hasInternationalNumber = watch("interPhoneNumber");
 
-                  if (hasInternationalNumber && (!value || !value.value)) {
-                    return t("countryCodeRequired");
-                  }
-                  return true;
+                    if (hasInternationalNumber && (!value || !value.value)) {
+                      return t("countryCodeRequired");
+                    }
+                    return true;
+                  },
                 },
-              },
-            }
+              }
             : {}),
         },
         {
@@ -235,24 +233,24 @@ const OTPFormLayout = ({
           placeholder: optTraslations("OTP.international_phone"),
           ...(isPhone
             ? {
-              validation: {
-                required: t("interPhoneNumberValidation"),
-                validate: (value: string) => {
-                  if (!value) return t("interPhoneNumberValidation");
+                validation: {
+                  required: t("interPhoneNumberValidation"),
+                  validate: (value: string) => {
+                    if (!value) return t("interPhoneNumberValidation");
 
-                  if (phoneCode && phoneCode.value) {
-                    const pattern = getPhoneConfig(phoneCode.value).pattern;
-                    return pattern.test(value) || t("phoneNumberValidation");
-                  }
+                    if (phoneCode && phoneCode.value) {
+                      const pattern = getPhoneConfig(phoneCode.value).pattern;
+                      return pattern.test(value) || t("phoneNumberValidation");
+                    }
 
-                  const generalPattern = /^[0-9]{5,15}$/;
-                  return (
-                    generalPattern.test(value) ||
-                    t("internationalNumberFormat")
-                  );
+                    const generalPattern = /^[0-9]{5,15}$/;
+                    return (
+                      generalPattern.test(value) ||
+                      t("internationalNumberFormat")
+                    );
+                  },
                 },
-              },
-            }
+              }
             : {}),
         },
         {
@@ -296,8 +294,9 @@ const OTPFormLayout = ({
                     type="text"
                     inputMode="numeric"
                     maxLength={1}
-                    className={`w-12 h-12 border rounded text-center text-xl focus:outline-none focus:ring-2 focus:ring-blue-500 ${isNotVerified && "border-2 border-red-300 shadow-lg"
-                      }`}
+                    className={`w-12 h-12 border rounded text-center text-xl focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      isNotVerified && "border-2 border-red-300 shadow-lg"
+                    }`}
                     value={digit}
                     onChange={(e) => handleOtpChange(index, e.target.value)}
                     onKeyDown={(e) => handleKeyDown(index, e, otp)}
@@ -396,11 +395,11 @@ const OTPFormLayout = ({
 const handleKeyDown = (
   index: number,
   e: KeyboardEvent<HTMLInputElement>,
-  otp: string[]
+  otp: string[],
 ): void => {
   if (e.key === "Backspace" && !otp[index] && index > 0) {
     const prev = document.getElementById(
-      `otp-input-${index - 1}`
+      `otp-input-${index - 1}`,
     ) as HTMLInputElement;
     prev?.focus();
   }

@@ -2,7 +2,10 @@ import React, { useEffect, useReducer } from "react";
 import useOnlineStatus from "../hooks/useOnlineStatus";
 import { Cancel01Icon } from "hugeicons-react";
 
-type ActionType = { type: "OFFLINE" } | { type: "ONLINE" } | { type: "HIDE_MESSAGES" };
+type ActionType =
+  | { type: "OFFLINE" }
+  | { type: "ONLINE" }
+  | { type: "HIDE_MESSAGES" };
 
 type StateType = {
   showOfflineMessage: boolean;
@@ -23,7 +26,9 @@ const reducer = (state: StateType, action: ActionType): StateType => {
   }
 };
 
-export const OfflineLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const OfflineLayout: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const isOnline = useOnlineStatus();
 
   const [state, dispatch] = useReducer(reducer, {

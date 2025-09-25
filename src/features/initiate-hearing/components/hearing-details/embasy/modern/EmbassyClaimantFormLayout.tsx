@@ -141,8 +141,7 @@ export function EmbassyClaimantFormLayout({
               }
             });
           }
-        } catch (error) {
-        }
+        } catch (error) {}
       }
     }
   }, [claimType, watch]);
@@ -276,18 +275,16 @@ export function EmbassyClaimantFormLayout({
                         rules={{ required: t("dateValidation") }}
                         notRequired={false}
                         isDateOfBirth={true}
-                        onChangeHandler={(
-                          date: any
-                        ) => {
+                        onChangeHandler={(date: any) => {
                           if (date && !Array.isArray(date)) {
                             const gregorianDate = date.convert(
                               gregorianCalendar,
-                              gregorianLocaleEn
+                              gregorianLocaleEn,
                             );
                             const gregorian = gregorianDate.format("YYYYMMDD");
                             setValue(
                               "embassyPrincipal_gregorianDate",
-                              gregorian
+                              gregorian,
                             );
                           }
                         }}
@@ -443,7 +440,7 @@ export function EmbassyClaimantFormLayout({
     },
     {
       skip: claimType !== "principal" || !principalId || !principalDob,
-    }
+    },
   );
 
   useEffect(() => {

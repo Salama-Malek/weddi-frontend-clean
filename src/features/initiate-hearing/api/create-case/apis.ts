@@ -6,8 +6,9 @@ export const caseApi = api.injectEndpoints({
   endpoints: (builder) => ({
     saveClaimantDetails: builder.mutation<ApiResponse, any>({
       query: ({ data, isCaseCreated }) => ({
-        url: `/WeddiCreateCaseServices/V1/${isCaseCreated ? "Update" : "Create"
-          }`,
+        url: `/WeddiCreateCaseServices/V1/${
+          isCaseCreated ? "Update" : "Create"
+        }`,
         method: "POST",
         body: data,
       }),

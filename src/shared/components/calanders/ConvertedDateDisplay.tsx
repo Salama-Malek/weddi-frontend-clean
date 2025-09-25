@@ -2,10 +2,10 @@ import { FieldWrapper } from "../form";
 import { trim } from "lodash";
 
 interface ConvertedDateDisplayProps {
-  gregorianDate?: string | null;  
+  gregorianDate?: string | null;
   notRequired?: boolean;
   label?: string;
-  showDateGregorian?:any
+  showDateGregorian?: any;
 }
 
 export const ConvertedDateDisplay = ({
@@ -19,20 +19,24 @@ export const ConvertedDateDisplay = ({
     }
 
     const trimmed = trim(dateStr);
-    if (trimmed.length !== 8) return trimmed; 
+    if (trimmed.length !== 8) return trimmed;
 
     try {
       return `${trimmed.substr(6, 2)}-${trimmed.substr(4, 2)}-${trimmed.substr(0, 4)}`;
     } catch {
-      return trimmed; 
+      return trimmed;
     }
   };
-  
+
   const displayDate = formatDate(gregorianDate);
-  
+
   return (
     <div className="w-full rounded-md">
-      <FieldWrapper notRequired={notRequired} labelFor="gregorianDate" label={label}>
+      <FieldWrapper
+        notRequired={notRequired}
+        labelFor="gregorianDate"
+        label={label}
+      >
         <div id="gregorianDate" className="w-full">
           <span className="medium text-sm8">{displayDate}</span>
         </div>

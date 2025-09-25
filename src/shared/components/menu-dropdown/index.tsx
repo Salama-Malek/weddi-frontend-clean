@@ -6,10 +6,10 @@ export const MyDropdownItems: React.FC<
   MyDropdownItemsProps & { onChange?: (item: any) => void }
 > = ({
   items,
- 
+
   onSelect,
   onChange,
- 
+
   customItems,
   header,
 }) => {

@@ -31,7 +31,7 @@ export const DateRangeValidationExample: React.FC = () => {
   const handleHijriDateChange = (
     date: any,
     onChange: (value: string) => void,
-    gregorianFieldName: string
+    gregorianFieldName: string,
   ) => {
     if (date) {
       const hijri = date.format("YYYY/MM/DD");
@@ -95,7 +95,7 @@ export const DateRangeValidationExample: React.FC = () => {
                     "from_date_hijri",
                     "to_date_hijri",
                     "hijri",
-                    "hijri"
+                    "hijri",
                   ),
                 }}
                 onChangeHandler={(date, onChange) =>
@@ -164,7 +164,7 @@ export const DateRangeValidationExample: React.FC = () => {
                     "WR1_fromDateHijri",
                     "WR1_toDateHijri",
                     "hijri",
-                    "hijri"
+                    "hijri",
                   ),
                 }}
                 onChangeHandler={(date, onChange) =>
@@ -249,7 +249,7 @@ export const DateRangeValidationExample: React.FC = () => {
                 isValid: methods.formState.isValid,
               },
               null,
-              2
+              2,
             )}
           </pre>
         </div>

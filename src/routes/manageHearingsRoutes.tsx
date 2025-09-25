@@ -7,13 +7,13 @@ const LazyLoader = ({ children }: { children: React.ReactNode }) => {
 };
 
 const ManageHearings = lazy(
-  () => import("@/features/manage-hearings/components/ManageHearings")
+  () => import("@/features/manage-hearings/components/ManageHearings"),
 );
 const HearingDetails = lazy(
-  () => import("@/features/manage-hearings/components/HearingDetails")
+  () => import("@/features/manage-hearings/components/HearingDetails"),
 );
 const UpdateTopicComponent = lazy(
-  () => import("@/features/manage-hearings/components/UpdateTopic")
+  () => import("@/features/manage-hearings/components/UpdateTopic"),
 );
 
 export const manageHearingsRoutes: RouteObject = {

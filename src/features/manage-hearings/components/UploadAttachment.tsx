@@ -39,14 +39,14 @@ const UploadAttachment: React.FC<{ onUploaded: () => void }> = ({
   const [getCookie] = useCookieState({ caseId: "" });
   const { t } = useTranslation();
 
-  const userClaims : TokenClaims = getCookie("userClaims");
+  const userClaims: TokenClaims = getCookie("userClaims");
   const { i18n } = useTranslation();
   const currentLanguage = i18n.language.toUpperCase();
 
   const [uploadAttachment] = useUploadAttachmentMutation();
   const { data: categories } = useWorkerAttachmentCategoriesQuery(
     { AcceptedLanguage: currentLanguage, SourceSystem: "E-Services" },
-    { skip: !caseId }
+    { skip: !caseId },
   );
 
   const classificationOptions =
@@ -57,7 +57,7 @@ const UploadAttachment: React.FC<{ onUploaded: () => void }> = ({
 
   const validateFile = (file: File): boolean => {
     if (file.size > MAX_FILE_SIZE) {
-      setError(t('attachments.errors.file_size', { name: file.name }));
+      setError(t("attachments.errors.file_size", { name: file.name }));
       return false;
     }
 
@@ -66,10 +66,12 @@ const UploadAttachment: React.FC<{ onUploaded: () => void }> = ({
       !ALLOWED_FILE_TYPES.includes(file.type) &&
       !ALLOWED_EXTENSIONS.includes(ext)
     ) {
-      setError(t('attachments.errors.file_type', { 
-        name: file.name,
-        types: ALLOWED_EXTENSIONS.join(', ')
-      }));
+      setError(
+        t("attachments.errors.file_type", {
+          name: file.name,
+          types: ALLOWED_EXTENSIONS.join(", "),
+        }),
+      );
       return false;
     }
 
@@ -89,13 +91,13 @@ const UploadAttachment: React.FC<{ onUploaded: () => void }> = ({
   }, []);
 
   const handleFileSelect = async (
-    event: React.ChangeEvent<HTMLInputElement>
+    event: React.ChangeEvent<HTMLInputElement>,
   ) => {
     setError(null);
     const selectedFiles = Array.from(event.target.files || []);
 
     if (!classification) {
-      setError(t('attachments.errors.select_classification'));
+      setError(t("attachments.errors.select_classification"));
       return;
     }
 
@@ -111,13 +113,13 @@ const UploadAttachment: React.FC<{ onUploaded: () => void }> = ({
           fileType: file.type,
           fileName: file.name,
           base64: await fileToBase64(file),
-        }))
+        })),
       );
 
       setFiles((prev) => [...prev, ...newAttachments]);
       setClassification(null);
     } catch {
-      setError(t('attachments.errors.process_failed'));
+      setError(t("attachments.errors.process_failed"));
     } finally {
       if (event.target) event.target.value = "";
     }
@@ -129,7 +131,7 @@ const UploadAttachment: React.FC<{ onUploaded: () => void }> = ({
 
   const handleUpload = async () => {
     if (!files.length || !caseId) {
-      setError(t('attachments.errors.add_file'));
+      setError(t("attachments.errors.add_file"));
       return;
     }
 
@@ -138,18 +140,21 @@ const UploadAttachment: React.FC<{ onUploaded: () => void }> = ({
       SourceSystem: "E-Services",
       CaseID: caseId,
       IDNumber: userClaims.UserID,
-      FileNumber:userClaims.File_Number,
+      FileNumber: userClaims.File_Number,
       CaseAttachments: files
         .filter((file) => file.file !== null)
         .map((file) => ({
-          FileType: file.file!.type.split("/").pop() || file.file!.name.split(".").pop() || '',
+          FileType:
+            file.file!.type.split("/").pop() ||
+            file.file!.name.split(".").pop() ||
+            "",
           FileName: file.file!.name,
           FileData: file.base64 || "",
           AttachmentRequired: "true",
           AttachmentType: "CaseTopic",
           Attachmentdescription: file.classificationLabel || "",
           AttachmentCode: file.classificationCode || "",
-        }))
+        })),
     };
 
     try {
@@ -159,7 +164,7 @@ const UploadAttachment: React.FC<{ onUploaded: () => void }> = ({
       setClassification(null);
       onUploaded();
     } catch {
-      setError(t('attachments.errors.upload_failed'));
+      setError(t("attachments.errors.upload_failed"));
     } finally {
       setUploading(false);
     }
@@ -167,27 +172,23 @@ const UploadAttachment: React.FC<{ onUploaded: () => void }> = ({
 
   return (
     <>
-      <Button 
-        type="button"
-        variant="primary" 
-        onClick={() => setFiles([])}
-      >
-        {t('attachments.title')}
+      <Button type="button" variant="primary" onClick={() => setFiles([])}>
+        {t("attachments.title")}
       </Button>
       <Modal
-        header={t('attachments.title')}
+        header={t("attachments.title")}
         modalWidth={600}
         close={() => setFiles([])}
       >
         <div className="space-y-6 w-full">
           <div className="text-sm text-gray-500 mb-4">
-            {t('attachments.allowed_files')}
+            {t("attachments.allowed_files")}
           </div>
 
           <div className="grid grid-cols-3 gap-4 items-end">
             <div className="col-span-2">
               <AutoCompleteField
-                label={t('attachments.classification')}
+                label={t("attachments.classification")}
                 name="classification"
                 options={classificationOptions}
                 value={classification}
@@ -206,13 +207,13 @@ const UploadAttachment: React.FC<{ onUploaded: () => void }> = ({
                 onClick={() => fileInputRef.current?.click()}
                 disabled={!classification}
               >
-                {t('attachments.add_files')}
+                {t("attachments.add_files")}
               </Button>
               <input
                 ref={fileInputRef}
                 type="file"
                 className="hidden"
-                multiple ={false}
+                multiple={false}
                 accept={ALLOWED_FILE_TYPES.join(",")}
                 onChange={handleFileSelect}
               />
@@ -226,16 +227,17 @@ const UploadAttachment: React.FC<{ onUploaded: () => void }> = ({
                   file.file && (
                     <FileAttachment
                       key={`${file.fileName}-${index}`}
-                      fileName={`${file.classificationLabel || "No Label"} - ${
-                        ensureFileNameWithExtension(file.file.name, file.fileType)
-                      }`}
+                      fileName={`${file.classificationLabel || "No Label"} - ${ensureFileNameWithExtension(
+                        file.file.name,
+                        file.fileType,
+                      )}`}
                       fileSize={`${(file.file.size / (1024 * 1024)).toFixed(
-                        2
+                        2,
                       )} MB`}
                       onView={() => setPreviewFile(file.file)}
                       onRemove={() => handleRemove(index)}
                     />
-                  )
+                  ),
               )}
             </div>
           )}
@@ -250,7 +252,7 @@ const UploadAttachment: React.FC<{ onUploaded: () => void }> = ({
               size="sm"
               onClick={() => setFiles([])}
             >
-              {t('attachments.cancel')}
+              {t("attachments.cancel")}
             </Button>
             <Button
               type="button"
@@ -262,10 +264,10 @@ const UploadAttachment: React.FC<{ onUploaded: () => void }> = ({
             >
               {uploading ? (
                 <>
-                  <span>{t('attachments.uploading')}</span> <TableLoader />
+                  <span>{t("attachments.uploading")}</span> <TableLoader />
                 </>
               ) : (
-                t('attachments.save')
+                t("attachments.save")
               )}
             </Button>
           </div>

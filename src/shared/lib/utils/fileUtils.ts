@@ -8,24 +8,25 @@
  * @param fileType - The file type/extension from the API response
  * @returns The file name with proper extension
  */
-export const ensureFileNameWithExtension = (fileName: string, fileType?: string): string => {
+export const ensureFileNameWithExtension = (
+  fileName: string,
+  fileType?: string,
+): string => {
   if (!fileName || fileName === "Unnamed File") {
     return "Unnamed File";
   }
 
-  
-  if (fileName.includes('.')) {
+  if (fileName.includes(".")) {
     return fileName;
   }
 
-  
   if (fileType) {
-    
-    const cleanFileType = fileType.startsWith('.') ? fileType.slice(1) : fileType;
+    const cleanFileType = fileType.startsWith(".")
+      ? fileType.slice(1)
+      : fileType;
     return `${fileName}.${cleanFileType}`;
   }
 
-  
   return fileName;
 };
 
@@ -35,18 +36,21 @@ export const ensureFileNameWithExtension = (fileName: string, fileType?: string)
  * @param fileType - The file type (optional)
  * @returns The file extension without the dot
  */
-export const getFileExtension = (fileName: string, fileType?: string): string => {
-  
-  if (fileName.includes('.')) {
-    return fileName.split('.').pop()?.toLowerCase() || '';
+export const getFileExtension = (
+  fileName: string,
+  fileType?: string,
+): string => {
+  if (fileName.includes(".")) {
+    return fileName.split(".").pop()?.toLowerCase() || "";
   }
-  
-  
+
   if (fileType) {
-    return fileType.startsWith('.') ? fileType.slice(1).toLowerCase() : fileType.toLowerCase();
+    return fileType.startsWith(".")
+      ? fileType.slice(1).toLowerCase()
+      : fileType.toLowerCase();
   }
-  
-  return '';
+
+  return "";
 };
 
 /**
@@ -56,9 +60,13 @@ export const getFileExtension = (fileName: string, fileType?: string): string =>
  * @param targetExtension - The target extension to check for
  * @returns True if the file has the target extension
  */
-export const hasFileExtension = (fileName: string, fileType?: string, targetExtension?: string): boolean => {
+export const hasFileExtension = (
+  fileName: string,
+  fileType?: string,
+  targetExtension?: string,
+): boolean => {
   if (!targetExtension) return false;
-  
+
   const extension = getFileExtension(fileName, fileType);
   return extension === targetExtension.toLowerCase();
 };

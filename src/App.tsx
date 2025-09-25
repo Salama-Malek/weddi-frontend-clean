@@ -21,13 +21,13 @@ const CaseCreation = lazy(() => import("./shared/modules/case-creation"));
 const InitiateHearing = lazy(() => import("./views/initiate-hearing/page"));
 const Main = lazy(() => import("@/features/dashboard"));
 const ManageHearings = lazy(
-  () => import("./features/manage-hearings/components/ManageHearings")
+  () => import("./features/manage-hearings/components/ManageHearings"),
 );
 const HearingDetails = lazy(
-  () => import("./features/manage-hearings/components/HearingDetails")
+  () => import("./features/manage-hearings/components/HearingDetails"),
 );
 const UpdateTopic = lazy(
-  () => import("./features/manage-hearings/components/UpdateTopic")
+  () => import("./features/manage-hearings/components/UpdateTopic"),
 );
 
 const LazyLoader = ({ children }: { children: React.ReactNode }) => (
@@ -101,7 +101,7 @@ const routesConfig: RouteObject[] = [
         <LoginLazy />
       </LazyLoader>
     ),
-    errorElement: <MainErrorFallback />
+    errorElement: <MainErrorFallback />,
   },
   {
     path: "/logout",

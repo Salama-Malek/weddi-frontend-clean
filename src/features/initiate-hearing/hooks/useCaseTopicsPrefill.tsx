@@ -59,7 +59,7 @@ const useCaseTopicsPrefill = ({
       if (editTopic.Formal || editTopic.RegulatoryText) {
         setValue(
           "regulatoryText",
-          editTopic.Formal || editTopic.RegulatoryText
+          editTopic.Formal || editTopic.RegulatoryText,
         );
       }
 

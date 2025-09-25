@@ -54,7 +54,7 @@ const refreshToken = async (): Promise<string | null> => {
         endpoint: "refreshToken",
         abort: () => {},
       },
-      {}
+      {},
     );
 
     if (
@@ -90,7 +90,7 @@ const refreshToken = async (): Promise<string | null> => {
 const handleApiResponseLegacy = (
   result: any,
   args: string | FetchArgs,
-  suppressInvalidToken = false
+  suppressInvalidToken = false,
 ) => {
   const url = typeof args === "string" ? args : args.url;
 
@@ -147,7 +147,6 @@ const customBaseQuery: BaseQueryFn<
       (result.error.status === 401 || result.error.status === 403);
 
     if (isJsonInvalidToken || isHttpUnauthorized) {
-    
       const newToken = await refreshToken();
 
       if (newToken) {
@@ -373,7 +372,7 @@ export const api = createApi({
       return tokenQuery(args, api, extraOptions);
     }
     const transformedArgs = transformRequest(
-      typeof args === "string" ? { url: args } : args
+      typeof args === "string" ? { url: args } : args,
     );
     return customBaseQuery(transformedArgs, api, extraOptions);
   },

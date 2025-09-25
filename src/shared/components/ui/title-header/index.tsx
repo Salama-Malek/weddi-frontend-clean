@@ -7,14 +7,13 @@ interface HeadingProps {
   children: React.ReactNode;
 }
 
-const Heading: React.FC<HeadingProps> = ({ as: Tag = "h2", className, children }) => {
+const Heading: React.FC<HeadingProps> = ({
+  as: Tag = "h2",
+  className,
+  children,
+}) => {
   return (
-    <Tag
-      className={classes(
-        "text-lg semibold text-primary-600",
-        className 
-      )}
-    >
+    <Tag className={classes("text-lg semibold text-primary-600", className)}>
       {children}
     </Tag>
   );

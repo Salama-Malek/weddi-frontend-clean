@@ -4,7 +4,7 @@ import Button from "@/shared/components/button";
 import { useTranslation } from "react-i18next";
 import { useCookieState } from "@/features/initiate-hearing/hooks/useCookieState";
 const InfoBanner = lazy(
-  () => import("@/shared/components/ui/account-warning-header")
+  () => import("@/shared/components/ui/account-warning-header"),
 );
 import TableLoader from "@/shared/components/loader/TableLoader";
 import { useLazyGetMySchedulesQuery } from "../api/api";
@@ -19,10 +19,7 @@ interface BannerProps {
   onCloseInfoBanner?: () => void;
 }
 
-const Banner: React.FC<BannerProps> = ({
-  isEstablishment,
-  isLegalRep,
-}) => {
+const Banner: React.FC<BannerProps> = ({ isEstablishment, isLegalRep }) => {
   const { t, i18n } = useTranslation();
   const isRTL = i18n.language === "ar";
   const [getCookie, setCookie] = useCookieState({});
@@ -31,7 +28,6 @@ const Banner: React.FC<BannerProps> = ({
   const [isInfoBannerVisible, setIsInfoBannerVisible] = useState(true);
   const { selected: selectedUser, isMenueCahngeFlag } = useUser();
 
-  
   const { data: establishmentDetails } = useGetEstablishmentDetailsQuery(
     {
       AcceptedLanguage: i18n.language.toUpperCase(),
@@ -40,15 +36,14 @@ const Banner: React.FC<BannerProps> = ({
     },
     {
       skip: !isEstablishment || !userClaims?.File_Number,
-    }
+    },
   );
 
-  
   useEffect(() => {
     if (establishmentDetails?.EstablishmentInfo?.[0]?.CRNumber) {
       setCookie(
         "establishmentCRNumber",
-        establishmentDetails.EstablishmentInfo[0].CRNumber
+        establishmentDetails.EstablishmentInfo[0].CRNumber,
       );
     }
   }, [establishmentDetails, setCookie]);
@@ -57,9 +52,7 @@ const Banner: React.FC<BannerProps> = ({
     minutesRemaining: number;
     webexLink: string;
   }>(null);
-  const [
-    triggerGetMySchedules,
-  ] = useLazyGetMySchedulesQuery();
+  const [triggerGetMySchedules] = useLazyGetMySchedulesQuery();
   const [timeLeft, setTimeLeft] = useState<number>(-1);
 
   const getMySchedualDataFun = async () => {
@@ -82,7 +75,6 @@ const Banner: React.FC<BannerProps> = ({
         return;
       }
 
-      
       if (selectedUserType === "Worker") {
         const result = await triggerGetMySchedules({
           UserType: "Worker",
@@ -126,7 +118,6 @@ const Banner: React.FC<BannerProps> = ({
     handleApiResponse(result);
   };
 
-
   const handleApiResponse = (result: any) => {
     const data = result?.data;
     if (data?.PlaintiffCases?.length > 0) {
@@ -148,9 +139,6 @@ const Banner: React.FC<BannerProps> = ({
     }
   };
 
-
-
-
   useEffect(() => {
     let timer: NodeJS.Timeout | null = null;
 
@@ -168,7 +156,7 @@ const Banner: React.FC<BannerProps> = ({
       getMySchedualDataFun();
       return;
     }
-    
+
     return () => {
       if (timer) clearInterval(timer);
     };
@@ -241,7 +229,9 @@ const Banner: React.FC<BannerProps> = ({
                 </p>
               ) : (
                 <>
-                  <p className="text-xs sm:text-1822">{t("session_expired_or_ended")}</p>
+                  <p className="text-xs sm:text-1822">
+                    {t("session_expired_or_ended")}
+                  </p>
                 </>
               )}
               <Button
@@ -262,8 +252,9 @@ const Banner: React.FC<BannerProps> = ({
               {isEstablishment && (
                 <div className="flex">
                   <p
-                    className={`text-md text-gray-500 ${isRTL ? "ml-1" : "mr-1"
-                      }`}
+                    className={`text-md text-gray-500 ${
+                      isRTL ? "ml-1" : "mr-1"
+                    }`}
                   >
                     {t("registration_text")}
                   </p>

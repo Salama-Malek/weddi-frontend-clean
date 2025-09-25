@@ -36,7 +36,7 @@ const withStepNavigation = <P extends object>(
     acknowledgements?: any;
     selectedLanguage?: any;
     isOnlyFileNumberFilled?: () => boolean;
-  }
+  },
 ) => {
   const ComponentWithStepNavigation = (props: P & any) => {
     const {
@@ -59,7 +59,7 @@ const withStepNavigation = <P extends object>(
     const navigate = useNavigate();
 
     const [acknowledgementsState, setAcknowledgementsState] = useState<any[]>(
-      []
+      [],
     );
     const [selectedLanguageState, setSelectedLanguageState] =
       useState<string>(language);
@@ -138,7 +138,7 @@ const withStepNavigation = <P extends object>(
               return;
             } else {
               throw new Error(
-                response?.ErrorDescription || "Submission failed"
+                response?.ErrorDescription || "Submission failed",
               );
             }
           }
@@ -211,7 +211,7 @@ const withStepNavigation = <P extends object>(
 
                 if (
                   ["Legal representative", "Establishment"].includes(
-                    userTypeFromCookie
+                    userTypeFromCookie,
                   )
                 ) {
                   const hasNationalId =

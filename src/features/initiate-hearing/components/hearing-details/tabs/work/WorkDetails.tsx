@@ -27,7 +27,9 @@ const WorkDetails = ({
 }: WorkDetailsProps) => {
   const { handleRemoveValidation } = useAPIFormsData();
 
-  const { isFeatched: caseDetailsLoading, workData } = useWorkDetailsPrefill({});
+  const { isFeatched: caseDetailsLoading, workData } = useWorkDetailsPrefill(
+    {},
+  );
   useEffect(() => {
     [
       "typeOfWage",
@@ -56,7 +58,7 @@ const WorkDetails = ({
       watch,
       trigger,
       caseDetailsLoading,
-      workData
+      workData,
     );
   };
 

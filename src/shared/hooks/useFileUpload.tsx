@@ -15,7 +15,7 @@ export const useFileUpload = ({ onFileUpload }: UseFileUploadProps) => {
         onFileUpload([...uploadedFiles, ...acceptedFiles]);
       }
     },
-    [onFileUpload, uploadedFiles]
+    [onFileUpload, uploadedFiles],
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({

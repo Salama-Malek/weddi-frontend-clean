@@ -10,7 +10,7 @@ export const useLanguageClass = (rtlClass: string, ltrClass: string) => {
   useLayoutEffect(() => {
     const newClass = currentLanguage === "ar" ? rtlClass : ltrClass;
     setLanguageClass(newClass);
-  }, [currentLanguage]); 
+  }, [currentLanguage]);
 
   return languageClass;
 };

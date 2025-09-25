@@ -38,9 +38,7 @@ const useDefendantDetailsPrefill = ({
   const [hasDefendantPrefill, setHasDefendantPrefill] =
     useState<boolean>(false);
 
-  useEffect(() => { }, [
-    trigger, prefillType
-  ])
+  useEffect(() => {}, [trigger, prefillType]);
   useEffect(() => {
     const caseId = getCookie("caseId");
     const userClaims = getCookie("userClaims");
@@ -115,12 +113,12 @@ const useDefendantDetailsPrefill = ({
       ...(isEstablishment
         ? {}
         : {
-          nationalIdNumber: caseDetails?.DefendantId || "",
-          def_date_hijri: caseDetails?.DefendantHijiriDOB || "",
-          def_date_gregorian: caseDetails?.Defendant_ApplicantBirthDate || "",
-          DefendantsEstablishmentPrisonerName:
-            caseDetails?.DefendantName || "",
-        }),
+            nationalIdNumber: caseDetails?.DefendantId || "",
+            def_date_hijri: caseDetails?.DefendantHijiriDOB || "",
+            def_date_gregorian: caseDetails?.Defendant_ApplicantBirthDate || "",
+            DefendantsEstablishmentPrisonerName:
+              caseDetails?.DefendantName || "",
+          }),
 
       mobileNumber: finalPhoneNumber,
       establishment_phoneNumber: finalPhoneNumber,
@@ -128,38 +126,38 @@ const useDefendantDetailsPrefill = ({
       defendantRegion: nullifyIfEmpty(
         createValueLabel(
           caseDetails?.Defendant_Region_Code,
-          caseDetails?.Defendant_Region
-        )
+          caseDetails?.Defendant_Region,
+        ),
       ),
       defendantCity: nullifyIfEmpty(
         createValueLabel(
           caseDetails?.Defendant_City_Code,
-          caseDetails?.Defendant_City
-        )
+          caseDetails?.Defendant_City,
+        ),
       ),
 
       ...(isEstablishment
         ? {}
         : {
-          occupation: nullifyIfEmpty(
-            createValueLabel(
-              caseDetails?.Defendant_Occupation_Code,
-              caseDetails?.Defendant_Occupation
-            )
-          ),
-          gender: nullifyIfEmpty(
-            createValueLabel(
-              caseDetails?.Defendant_Gender_Code,
-              caseDetails?.Defendant_Gender
-            )
-          ),
-          nationality: nullifyIfEmpty(
-            createValueLabel(
-              caseDetails?.Defendant_Nationality_Code,
-              caseDetails?.Defendant_Nationality
-            )
-          ),
-        }),
+            occupation: nullifyIfEmpty(
+              createValueLabel(
+                caseDetails?.Defendant_Occupation_Code,
+                caseDetails?.Defendant_Occupation,
+              ),
+            ),
+            gender: nullifyIfEmpty(
+              createValueLabel(
+                caseDetails?.Defendant_Gender_Code,
+                caseDetails?.Defendant_Gender,
+              ),
+            ),
+            nationality: nullifyIfEmpty(
+              createValueLabel(
+                caseDetails?.Defendant_Nationality_Code,
+                caseDetails?.Defendant_Nationality,
+              ),
+            ),
+          }),
 
       DefendantFileNumber: caseDetails?.DefendantEstFileNumber || "",
       DefendantCRNumber: caseDetails?.Defendant_CRNumber || "",
@@ -169,61 +167,61 @@ const useDefendantDetailsPrefill = ({
 
       ...(isEstablishment
         ? {
-          DefendantsEstablishmentPrisonerName:
-            caseDetails?.EstablishmentFullName ||
-            caseDetails?.DefendantName ||
-            "",
-        }
+            DefendantsEstablishmentPrisonerName:
+              caseDetails?.EstablishmentFullName ||
+              caseDetails?.DefendantName ||
+              "",
+          }
         : {}),
 
       ...(isEstablishment
         ? {
-          Defendant_Establishment_data_NON_SELECTED: {
-            EstablishmentName:
-              caseDetails?.EstablishmentFullName ||
-              caseDetails?.DefendantName ||
-              "",
-            FileNumber: caseDetails?.DefendantEstFileNumber || "",
-            CRNumber: caseDetails?.Defendant_CRNumber || "",
-            Number700: caseDetails?.Defendant_Number700 || "",
-            Region: caseDetails?.Defendant_Region || "",
-            Region_Code: caseDetails?.Defendant_Region_Code || "",
-            City: caseDetails?.Defendant_City || "",
-            City_Code: caseDetails?.Defendant_City_Code || "",
-            ContactNumber: finalPhoneNumber,
-          },
-        }
+            Defendant_Establishment_data_NON_SELECTED: {
+              EstablishmentName:
+                caseDetails?.EstablishmentFullName ||
+                caseDetails?.DefendantName ||
+                "",
+              FileNumber: caseDetails?.DefendantEstFileNumber || "",
+              CRNumber: caseDetails?.Defendant_CRNumber || "",
+              Number700: caseDetails?.Defendant_Number700 || "",
+              Region: caseDetails?.Defendant_Region || "",
+              Region_Code: caseDetails?.Defendant_Region_Code || "",
+              City: caseDetails?.Defendant_City || "",
+              City_Code: caseDetails?.Defendant_City_Code || "",
+              ContactNumber: finalPhoneNumber,
+            },
+          }
         : {}),
 
       Defendant_MainGovtDefend: nullifyIfEmpty(
         createValueLabel(
           caseDetails?.Defendant_MainGovtDefend_Code,
-          caseDetails?.Defendant_MainGovtDefend
-        )
+          caseDetails?.Defendant_MainGovtDefend,
+        ),
       ),
       DefendantSubGovtDefend: nullifyIfEmpty(
         createValueLabel(
           caseDetails?.DefendantSubGovtDefend_Code,
-          caseDetails?.DefendantSubGovtDefend
-        )
+          caseDetails?.DefendantSubGovtDefend,
+        ),
       ),
       main_category_of_the_government_entity: nullifyIfEmpty(
         createValueLabel(
           caseDetails?.Defendant_MainGovtDefend_Code,
-          caseDetails?.Defendant_MainGovtDefend
-        )
+          caseDetails?.Defendant_MainGovtDefend,
+        ),
       ),
       subcategory_of_the_government_entity: nullifyIfEmpty(
         createValueLabel(
           caseDetails?.DefendantSubGovtDefend_Code,
-          caseDetails?.DefendantSubGovtDefend
-        )
+          caseDetails?.DefendantSubGovtDefend,
+        ),
       ),
 
       ...(isWorker
         ? {
-          PlaintiffId: caseDetails.PlaintiffId,
-        }
+            PlaintiffId: caseDetails.PlaintiffId,
+          }
         : {}),
     };
 
@@ -241,7 +239,6 @@ const useDefendantDetailsPrefill = ({
   };
 
   const EXtractDefendantDetailsData = (caseDetails: any) => {
-
     return {
       defendantStatus: caseDetails?.DefendantType,
       defendantDetails:

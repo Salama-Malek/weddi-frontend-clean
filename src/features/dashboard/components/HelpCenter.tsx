@@ -12,23 +12,18 @@ interface HelpCenterProps {
   setSelectedOption: (option: { value: string; label: string }) => void;
   fileData: {
     [category: string]: {
-      
       [langCode: string]: {
-        
         name: string;
         size: string;
         date: string;
         url: string;
-        lang: string; 
+        lang: string;
       };
     };
   };
 }
 
-const HelpCenter = ({
-  hasActivityAlerts,
-  fileData,
-}: HelpCenterProps) => {
+const HelpCenter = ({ hasActivityAlerts, fileData }: HelpCenterProps) => {
   const { t, i18n } = useTranslation();
   const currentLanguage = i18n.language;
 
@@ -38,23 +33,25 @@ const HelpCenter = ({
 
   const updateLang = (
     category: string,
-    option: { label: string; value: string }
+    option: { label: string; value: string },
   ) => {
     setSelectedOptions((prev) => ({ ...prev, [category]: option }));
   };
 
   useEffect(() => {
-    
-    const initialOptions = Object.keys(fileData).reduce((acc, category) => {
-      const langs = fileData[category];
-      
-      const defaultLang = langs[currentLanguage] ? currentLanguage : "en";
-      acc[category] = {
-        value: defaultLang,
-        label: langs[defaultLang]?.lang || "English",
-      };
-      return acc;
-    }, {} as { [category: string]: { value: string; label: string } });
+    const initialOptions = Object.keys(fileData).reduce(
+      (acc, category) => {
+        const langs = fileData[category];
+
+        const defaultLang = langs[currentLanguage] ? currentLanguage : "en";
+        acc[category] = {
+          value: defaultLang,
+          label: langs[defaultLang]?.lang || "English",
+        };
+        return acc;
+      },
+      {} as { [category: string]: { value: string; label: string } },
+    );
 
     setSelectedOptions(initialOptions);
   }, [fileData, currentLanguage]);
@@ -86,7 +83,7 @@ const HelpCenter = ({
             <div className="mt-6 space-y-6">
               {Object.entries(fileData).map(([category, langs]) => {
                 const selected = selectedOptions[category] || {
-                  value: currentLanguage, 
+                  value: currentLanguage,
                   label:
                     langs[currentLanguage]?.lang ||
                     langs["en"]?.lang ||

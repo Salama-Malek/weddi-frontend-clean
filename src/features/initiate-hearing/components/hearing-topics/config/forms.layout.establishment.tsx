@@ -38,7 +38,7 @@ export const useFormLayout = ({
   t: t,
   MainTopicID: mainCategory,
   SubTopicID: subCategory,
-  
+
   AcknowledgementTerms: acknowledged,
   showLegalSection: showLegalSection,
   showTopicData: showTopicData,
@@ -46,7 +46,6 @@ export const useFormLayout = ({
   handleAdd: handleAdd,
   handleAcknowledgeChange: handleAcknowledgeChange,
   handleAddTopic: handleAddTopic,
- 
 
   isEditing: isEditing,
   mainCategoryData: mainCategoryData,
@@ -56,7 +55,7 @@ export const useFormLayout = ({
 
   matchedSubCategory: matchedSubCategory,
   subTopicsLoading: subTopicsLoading,
- 
+
   editTopic: editTopic,
 
   setShowLegalSection: setShowLegalSection,
@@ -83,7 +82,7 @@ export const useFormLayout = ({
   const RLRAHI1_typeOfRequest = watch("RLRAHI1_typeOfRequest");
   const subCategoryValue = watch("subCategory");
   const typeOfRequest = watch("typeOfRequest");
- 
+
   initFormConfig({
     isEditing,
     handleAddTopic,
@@ -107,11 +106,10 @@ export const useFormLayout = ({
     });
   }, [subCategoryData]);
 
-
   const handleHijriDateChange = (
     date: DateObject | DateObject[] | null,
     setHijriValue: (value: string) => void,
-    gregorianFieldName: string
+    gregorianFieldName: string,
   ) => {
     if (!date || Array.isArray(date)) {
       setHijriValue("");
@@ -134,7 +132,7 @@ export const useFormLayout = ({
   type FormElementType = any;
   function addNoSpacesValidationToTextInputs(
     fields: FormElementType[],
-    t: any
+    t: any,
   ): FormElementType[] {
     return fields.map((field) => {
       if (
@@ -228,15 +226,11 @@ export const useFormLayout = ({
       return [];
     }
 
-    
-
     const TypeOfRequestLookUpOptions =
       typeOfRequestLookupData?.DataElements?.map((item: any) => ({
         value: item.ElementKey,
         label: item.ElementValue,
       })) || [];
-
-  
 
     switch (currentSubCategory) {
       case "AWRW-1":
@@ -265,8 +259,8 @@ export const useFormLayout = ({
                 maxLength: 10,
               },
             ],
-            tHearingTopics
-          )
+            tHearingTopics,
+          ),
         );
       case "CR-1":
         return buildForm([
@@ -330,8 +324,8 @@ export const useFormLayout = ({
                 colSpan: 1,
               },
             ],
-            tHearingTopics
-          )
+            tHearingTopics,
+          ),
         );
       case "RLRAHI-1":
         const fields: any = [
@@ -365,8 +359,6 @@ export const useFormLayout = ({
               }
             : null);
 
-      
-
         if (effectiveTypeOfRequest?.value === "RLRAHI1") {
           fields.push(
             {
@@ -382,7 +374,7 @@ export const useFormLayout = ({
                       handleHijriDateChange(
                         date,
                         onChange,
-                        "RLRAHI1_request_date_gregorian"
+                        "RLRAHI1_request_date_gregorian",
                       )
                     }
                     notRequired={false}
@@ -417,10 +409,9 @@ export const useFormLayout = ({
               validation: { required: tHearingTopics("typeOfCustody") },
               maxLength: 50,
               showWhen: "RLRAHI1",
-            }
+            },
           );
         } else if (effectiveTypeOfRequest?.value === "RLRAHI2") {
-         
           fields.push({
             type: "input",
             name: "RLRAHI1_loanAmount",
@@ -445,10 +436,9 @@ export const useFormLayout = ({
         }
 
         return buildForm(
-          addNoSpacesValidationToTextInputs(fields, tHearingTopics)
+          addNoSpacesValidationToTextInputs(fields, tHearingTopics),
         );
       case "RUF-1":
-       
         return buildForm(
           addNoSpacesValidationToTextInputs(
             [
@@ -491,8 +481,8 @@ export const useFormLayout = ({
                 maxLength: 10,
               },
             ],
-            tHearingTopics
-          )
+            tHearingTopics,
+          ),
         );
       case "EDO-1":
         return buildForm([
@@ -539,7 +529,7 @@ export const useFormLayout = ({
                   handleHijriDateChange(
                     date,
                     onChange,
-                    "EDO1_managerialDecisionDateGregorian"
+                    "EDO1_managerialDecisionDateGregorian",
                   )
                 }
                 notRequired={false}
@@ -572,7 +562,7 @@ export const useFormLayout = ({
               handleNumberOnlyChange(
                 value,
                 setValue,
-                "EDO1_managerialDecisionNumber"
+                "EDO1_managerialDecisionNumber",
               ),
             validation: createNumberOnlyValidation(false, t("fieldRequired")),
             notRequired: true,

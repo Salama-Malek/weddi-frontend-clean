@@ -14,11 +14,10 @@ import { useCookieState } from "@/features/initiate-hearing/hooks/useCookieState
 const ReusableTable = lazy(() =>
   import("@/shared/components/table/ReusableTable").then((mod) => ({
     default: mod.ReusableTable,
-  }))
+  })),
 );
 
 type StatusOption = { label: string; value: string };
-
 
 interface HearingTabContentProps {
   role: "claimant" | "defendant";
@@ -30,7 +29,7 @@ const HearingTabContent = ({ role }: HearingTabContentProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [selectedStatus, setSelectedStatus] = useState<StatusOption | null>(
-    null
+    null,
   );
   const [page, setPage] = useState(1);
   const [getCookie, setCookie] = useCookieState();
@@ -124,7 +123,7 @@ const HearingTabContent = ({ role }: HearingTabContentProps) => {
         item.Number700,
       ]
         .filter(Boolean)
-        .some((val) => String(val).toLowerCase().includes(term))
+        .some((val) => String(val).toLowerCase().includes(term)),
     );
   }, [data, debouncedSearchTerm]);
 

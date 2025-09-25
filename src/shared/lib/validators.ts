@@ -20,7 +20,10 @@ const DEFAULT_DECIMAL_SEPARATORS: Array<"." | ","> = [".", ","];
  */
 export function normalizeDecimal(
   value: string,
-  options?: Pick<DecimalValidationOptions, "decimalSeparators" | "allowPercent">
+  options?: Pick<
+    DecimalValidationOptions,
+    "decimalSeparators" | "allowPercent"
+  >,
 ): string {
   const separators = options?.decimalSeparators ?? DEFAULT_DECIMAL_SEPARATORS;
   if (!value) return "";
@@ -57,7 +60,7 @@ export function validateNonNegativeDecimal(
   options?: Pick<
     DecimalValidationOptions,
     "maxFractionDigits" | "decimalSeparators" | "allowPercent"
-  >
+  >,
 ): boolean {
   if (value == null || String(value).trim() === "") return true;
   const normalized = normalizeDecimal(String(value), {
@@ -77,7 +80,7 @@ export function validateRange(
   options?: Pick<
     DecimalValidationOptions,
     "min" | "max" | "decimalSeparators" | "allowPercent"
-  >
+  >,
 ): boolean {
   if (value == null || String(value).trim() === "") return true;
   const normalized = normalizeDecimal(String(value), {

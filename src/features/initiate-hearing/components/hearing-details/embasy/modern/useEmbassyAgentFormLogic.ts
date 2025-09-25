@@ -32,7 +32,7 @@ export function useEmbassyAgentFormLogic({
     (name: string, value: any) => {
       setValue(name, value);
     },
-    [setValue]
+    [setValue],
   );
   const memoizedSetError = useCallback(setError, [setError]);
   const memoizedClearErrors = useCallback(clearErrors, [clearErrors]);
@@ -51,7 +51,7 @@ export function useEmbassyAgentFormLogic({
         }
       }, delay);
     },
-    [isEmbassyPrefillProcessing, isEmbassyPrefillFetched]
+    [isEmbassyPrefillProcessing, isEmbassyPrefillFetched],
   );
 
   const embassyInfo = useMemo(() => {
@@ -93,34 +93,34 @@ export function useEmbassyAgentFormLogic({
       if (currentValues.embassyName !== embassyInfo.EmbassyName)
         memoizedSetValue(
           "embassyAgent_Agent_EmbassyName",
-          embassyInfo.EmbassyName
+          embassyInfo.EmbassyName,
         );
       if (currentValues.embassyNationality !== embassyInfo.EmbassyNationality)
         memoizedSetValue(
           "embassyAgent_Agent_EmbassyNationality",
-          embassyInfo.EmbassyNationality
+          embassyInfo.EmbassyNationality,
         );
       if (currentValues.embassyPhone !== embassyInfo.EmbassyPhone)
         memoizedSetValue(
           "embassyAgent_Agent_EmbassyPhone",
-          embassyInfo.EmbassyPhone
+          embassyInfo.EmbassyPhone,
         );
       if (
         currentValues.embassyFirstLanguage !== embassyInfo.EmbassyFirstLanguage
       )
         memoizedSetValue(
           "embassyAgent_Agent_EmbassyFirstLanguage",
-          embassyInfo.EmbassyFirstLanguage
+          embassyInfo.EmbassyFirstLanguage,
         );
       if (currentValues.embassyEmail !== embassyInfo.EmabassyEmail)
         memoizedSetValue(
           "embassyAgent_Agent_EmbassyEmailAddress",
-          embassyInfo.EmabassyEmail
+          embassyInfo.EmabassyEmail,
         );
       if (currentValues.nationalityCode !== embassyInfo.Nationality_Code)
         memoizedSetValue(
           "embassyAgent_Nationality_Code",
-          embassyInfo.Nationality_Code
+          embassyInfo.Nationality_Code,
         );
     } else if (claimType === "representative" && !embassyInfo) {
       const storedCaseDetails = localStorage.getItem("EmbassyCaseDetails");
@@ -342,7 +342,7 @@ export function useEmbassyAgentFormLogic({
         Array.isArray(nicAgent.ErrorDetails)
       ) {
         const errorDetail = nicAgent.ErrorDetails.find(
-          (detail: any) => detail.ErrorDesc
+          (detail: any) => detail.ErrorDesc,
         );
         if (errorDetail && errorDetail.ErrorDesc) {
           errorMessage = errorDetail.ErrorDesc;
@@ -546,7 +546,7 @@ export function useEmbassyAgentFormLogic({
 
   const embassyCode = useMemo(
     () => embassyInfo?.Nationality_Code,
-    [embassyInfo]
+    [embassyInfo],
   );
 
   const handleNationalityChange = useCallback(
@@ -571,7 +571,7 @@ export function useEmbassyAgentFormLogic({
       memoizedSetError,
       memoizedClearErrors,
       t,
-    ]
+    ],
   );
 
   useEffect(() => {
@@ -638,7 +638,7 @@ export function useEmbassyAgentFormLogic({
       if (agentData.PlaintiffName) {
         memoizedSetValue(
           "embassyAgent_userName",
-          agentData.PlaintiffName || ""
+          agentData.PlaintiffName || "",
         );
       }
 
@@ -684,7 +684,7 @@ export function useEmbassyAgentFormLogic({
       if (agentData.PhoneNumber) {
         memoizedSetValue(
           "embassyAgent_phoneNumber",
-          agentData.PhoneNumber.toString()
+          agentData.PhoneNumber.toString(),
         );
       } else {
       }
@@ -727,7 +727,6 @@ export function useEmbassyAgentFormLogic({
       }
 
       debouncedClearFields(() => {
-       
         const fieldsToConditionallyClear = [
           "embassyAgent_region",
           "embassyAgent_city",
