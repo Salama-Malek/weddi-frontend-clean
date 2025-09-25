@@ -6,7 +6,7 @@ import { useGetCaseAuditQuery } from "../api/api";
 import { ICaseStatusAudit } from "../types/caseRecord.model";
 import CaseRecordsSkeleton from "@/shared/components/loader/CaseRecordsSkeleton";
 import { useNavigate } from "react-router-dom";
-import { useCookieState } from "@/features/initiate-hearing/hooks/useCookieState";
+import { useCookieState } from "@/features/hearings/initiate/hooks/useCookieState";
 
 interface CaseRecordsProps {
   isLegalRep?: boolean;

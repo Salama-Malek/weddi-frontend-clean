@@ -1,9 +1,9 @@
 import { forwardRef, useEffect, useId, useState } from "react";
 import { FieldWrapper } from "./FieldWrapper";
 import { Controller } from "react-hook-form";
-import { classes } from "@/shared/lib/clsx";
+import { classes } from "@/utils/clsx";
 import { useTranslation } from "react-i18next";
-import { normalizeDecimal } from "@/shared/lib/validators";
+import { normalizeDecimal } from "@/utils/validators";
 
 type DecimalNumberInputProps = {
   name?: string;

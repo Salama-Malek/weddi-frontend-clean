@@ -1,5 +1,5 @@
 import { MainErrorFallback } from "@/shared/components/errors/ErrorFallback";
-import { store } from "@/redux/store";
+import { store } from "@/app/store";
 import React, { Suspense } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 import { Provider } from "react-redux";

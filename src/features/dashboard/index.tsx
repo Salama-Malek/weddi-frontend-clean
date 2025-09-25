@@ -1,10 +1,10 @@
 import BannerSkeleton from "@/shared/components/loader/BannerSkeleton";
 import { lazy, Suspense, useState, useEffect } from "react";
 import TableLoader from "@/shared/components/loader/TableLoader";
-import AuthProvider from "../login/components/AuthProvider";
-import { useCookieState } from "@/features/initiate-hearing/hooks/useCookieState";
+import AuthProvider from "@/features/auth/components/AuthProvider";
+import { useCookieState } from "@/features/hearings/initiate/hooks/useCookieState";
 import { useClearCaseData } from "@/shared/hooks/useClearCaseData";
-import { useUser } from "@/shared/context/userTypeContext";
+import { useUser } from "@/providers/context/userTypeContext";
 import { AuthTokenProvider } from "@/providers/AuthTokenProvider";
 
 const Banner = lazy(() => import("./components/HearingBanner"));

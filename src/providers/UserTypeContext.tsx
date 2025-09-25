@@ -1,4 +1,4 @@
-import { useCookieState } from "@/features/initiate-hearing/hooks/useCookieState";
+import { useCookieState } from "@/features/hearings/initiate/hooks/useCookieState";
 import { createContext, useContext, useEffect, useState } from "react";
 
 type UserTypeContextType = {

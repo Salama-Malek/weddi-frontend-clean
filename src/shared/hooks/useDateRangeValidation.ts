@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import {
   validateMultipleDateRanges,
   COMMON_DATE_RANGE_PAIRS,
-} from "@/shared/lib/dateValidationUtils";
+} from "@/utils/dateValidationUtils";
 
 export const useDateRangeValidation = () => {
   const {
@@ -141,7 +141,7 @@ export const useDateRangeValidation = () => {
     const toDate = formValues[toDateName];
 
     if (fromDate && toDate) {
-      const { validateDateRange } = require("@/shared/lib/dateValidationUtils");
+      const { validateDateRange } = require("@/utils/dateValidationUtils");
       const validationResult = validateDateRange(
         fromDate,
         toDate,

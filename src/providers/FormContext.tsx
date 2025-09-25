@@ -13,8 +13,8 @@ import {
 } from "react-hook-form";
 import { FormData } from "@/shared/components/form/form.types";
 import { useSelector } from "react-redux";
-import { RootState } from "@/redux/store";
-import { Topic } from "@/features/initiate-hearing/components/hearing-topics/hearing.topics.types";
+import { RootState } from "@/app/store";
+import { Topic } from "@/features/hearings/initiate/components/hearing-topics/hearing.topics.types";
 import { FormResetProvider } from "./FormResetProvider";
 
 interface FormContextType extends UseFormReturn<FormData> {

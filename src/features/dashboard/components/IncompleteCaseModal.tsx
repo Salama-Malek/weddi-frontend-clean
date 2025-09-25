@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import Modal from "@/shared/components/modal/Modal";
 import Button from "@/shared/components/button";
 import { useNavigate } from "react-router-dom";
-import { useCookieState } from "@/features/initiate-hearing/hooks/useCookieState";
+import { useCookieState } from "@/features/hearings/initiate/hooks/useCookieState";
 import { useClearCaseData } from "@/shared/hooks/useClearCaseData";
 
 interface IncompleteCaseModalProps {

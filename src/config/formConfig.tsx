@@ -1,7 +1,7 @@
 import { FormElement } from "@/shared/components/form/form.types";
 import { HijriDatePickerInput } from "@/shared/components/calanders/HijriDatePickerInput";
 import { GregorianDateDisplayInput } from "@/shared/components/calanders/GregorianDateDisplayInput";
-import { createDateRangeValidation } from "@/shared/lib/dateValidationUtils";
+import { createDateRangeValidation } from "@/utils/dateValidationUtils";
 
 type FormConfig = {
   isEditing: boolean;

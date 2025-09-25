@@ -1,4 +1,4 @@
-import { api } from "@/config/api";
+import { api } from "@/services/apiClient";
 import { ICaseRecord } from "../types/caseRecord.model";
 
 export const caseApi = api.injectEndpoints({

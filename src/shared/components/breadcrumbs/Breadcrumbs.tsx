@@ -2,7 +2,7 @@ import React, { ReactElement } from "react";
 import BreadcrumbItem from "./BreadcrumbItem";
 import BreadcrumbSeparator from "./BreadcrumbSeparator";
 import { BreadcrumbsProvider } from "./BreadcrumbsContext";
-import { classes } from "@/shared/lib/clsx";
+import { classes } from "@/utils/clsx";
 
 export type BreadcrumbItemType = {
   label: string;

@@ -7,17 +7,18 @@ Application: Weddi Portal Frontend
 Primary directories and notable files:
 | Path | Description | Highlights |
 | --- | --- | --- |
-| src/main.tsx | SPA entry point that mounts React into #root with providers and global styles. | Imports AppProvider, global CSS, creates root via ReactDOM.createRoot. |
-| src/App.tsx | Configures routing, lazy-loaded feature modules, and top-level layout shell. | createBrowserRouter with Suspense loaders, wraps RouterProvider with TokenExpirationProvider and OfflineLayout. |
+| src/index.tsx | SPA entry point that mounts React into #root with providers and global styles. | Imports AppProvider, global CSS, creates root via ReactDOM.createRoot. |
+| src/app/App.tsx | Configures routing, lazy-loaded feature modules, and top-level layout shell. | createBrowserRouter with Suspense loaders, wraps RouterProvider with TokenExpirationProvider and OfflineLayout. |
 | src/providers/ | Cross-cutting providers for Redux, forms, tokens, cookies, and context state. | AppProvider.tsx, FormContext.tsx, AuthTokenProvider.tsx, TokenExpirationProvider.tsx, UserTypeContext.tsx. |
-| src/redux/ | Redux Toolkit store setup and feature slices. | store/index.ts, slices/loadingSlice.ts, formSlice.ts, formOptionsSlice.ts, defaultValues.ts. |
-| src/config/ | Shared configuration and API helpers. | api.ts for RTK Query base, formConfig.tsx for wizard builders, general.ts for phone patterns. |
-| src/features/login/ | Login screens, persona selectors, and token bootstrap APIs. | Index.tsx form, components/AuthProvider.tsx, api/loginApis.ts. |
+| src/app/store/ | Redux Toolkit store setup and feature slices. | index.ts, slices/loadingSlice.ts, formSlice.ts, formOptionsSlice.ts, defaultValues.ts. |
+| src/config/ | Shared configuration and constants. | app.config.ts for titles and phone patterns, formConfig.tsx for wizard builders. |
+| src/features/auth/ | Login screens, persona selectors, and token bootstrap APIs. | Index.tsx form, components/AuthProvider.tsx, api/loginApis.ts. |
 | src/features/dashboard/ | Dashboard widgets, cards, statistics, and supporting API hooks. | index.tsx orchestrator, components/HearingContent.tsx, api/api.ts. |
-| src/features/initiate-hearing/ | Case creation flows with hooks, services, and shared multi-step module. | components/hearing-* views, hooks/useCookieState.ts, api/create-case/*. |
-| src/features/manage-hearings/ | Manage hearings lists, detail views, modals, and data services. | components/ManageHearings.tsx, api/myCasesApis.ts, services/myCaseService.ts. |
-| src/shared/ | Reusable layouts, UI primitives, context, hooks, and libs consumed by features. | layouts/MainLayout.tsx, components/layouts/header, context/userTypeContext.tsx, lib/api/errorHandler.ts. |
-| src/views/ | Route-level wrappers that lazy load feature bundles for Vite routing. | dashboard/index.tsx, initiate-hearing/page.tsx, my-cases/*. |
+| src/features/hearings/initiate/ | Case creation flows with hooks, services, and shared multi-step module. | components/hearing-* views, hooks/useCookieState.ts, api/create-case/*. |
+| src/features/hearings/manage/ | Manage hearings lists, detail views, modals, and data services. | components/ManageHearings.tsx, api/myCasesApis.ts, services/myCaseService.ts. |
+| src/shared/ | Reusable layouts, UI primitives, and hooks consumed by features. | layouts/MainLayout.tsx, components/ui, hooks/useNavigationLoading.ts. |
+| src/services/ | API client configuration and shared service helpers. | apiClient.ts for RTK Query base. |
+| src/utils/ | Utility helpers for formatting, validation, and API error handling. | helpers.ts, api/errorHandler.ts, fileUtils.ts. |
 | src/assets/ | Brand assets, Tailwind and custom styles, fonts, and imagery. | assets/styles/*, assets/images/banner/*. |
 | src/utils/formatters.ts | Global formatting helpers. | formatDate, setFormatDate to swap between yyyymmdd and dd/mm/yyyy. |
 | public/ | Static public assets served directly by Vite. | favicon, manifest placeholders (if provided). |
@@ -25,8 +26,8 @@ Primary directories and notable files:
 ### 2.1 Entry points
 | Component | Location | Responsibilities | Key dependencies |
 | --- | --- | --- | --- |
-| Root render | src/main.tsx | Mounts <App /> within AppProvider and StrictMode; loads base styles once. | ReactDOM, AppProvider, global CSS bundles. |
-| App | src/App.tsx | Creates browser router with nested MainLayout, lazy feature routes, and attaches global providers (TokenExpirationProvider, OfflineLayout, ToastContainer). | react-router-dom createBrowserRouter, React Suspense, TokenExpirationProvider, ToastContainer. |
+| Root render | src/index.tsx | Mounts <App /> within AppProvider and StrictMode; loads base styles once. | ReactDOM, AppProvider, global CSS bundles. |
+| App | src/app/App.tsx | Creates browser router with nested MainLayout, lazy feature routes, and attaches global providers (TokenExpirationProvider, OfflineLayout, ToastContainer). | react-router-dom createBrowserRouter, React Suspense, TokenExpirationProvider, ToastContainer. |
 ### 2.2 Core providers
 | Provider | Location | Purpose | Notes |
 | --- | --- | --- | --- |
@@ -34,7 +35,7 @@ Primary directories and notable files:
 | TokenExpirationProvider | src/providers/TokenExpirationProvider.tsx | Monitors legacy token cookie, warns users via toast, forces redirect on expiry. | Decodes token payload, triggers login redirect based on VITE_LOGIN_SWITCH. |
 | AuthTokenProvider | src/providers/AuthTokenProvider.tsx | Refreshes OAuth oauth_token cookie ahead of expiry using loginApis triggers. | Decodes jwt with jwt-decode, uses useLazyGetUserTokenQuery to refresh every 30 seconds. |
 | FormProvider | src/providers/FormContext.tsx | Creates react-hook-form instance with defaults from Redux, exposes helpers via context. | Merges store defaults, handles reset on caseDataCleared event, stores editTopic state. |
-| UserProvider | src/shared/context/userTypeContext.tsx | Supplies persona flags, menu state, and setter functions to header and dashboard components. | State persisted via useCookieState inside MainLayout. |
+| UserProvider | src/providers/context/userTypeContext.tsx | Supplies persona flags, menu state, and setter functions to header and dashboard components. | State persisted via useCookieState inside MainLayout. |
 | UserTypeProvider | src/providers/UserTypeContext.tsx | Tracks currently selected persona label and syncs it to cookies. | Side effect writes legalRepType cookie on update. |
 | DateProvider | src/providers/DateContext.tsx | Stores active calendar type and selected Hijri/Gregorian dates for pickers. | Provides setDate callback merging partials. |
 | LanguageDirectionProvider | src/i18n/LanguageDirectionProvider.tsx | Keeps document direction in sync with i18n language and exposes isRTL flag. | Listens to i18n language changes via useTranslation. |

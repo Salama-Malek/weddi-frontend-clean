@@ -1,4 +1,4 @@
-import { useCookieState } from "@/features/initiate-hearing/hooks/useCookieState";
+import { useCookieState } from "@/features/hearings/initiate/hooks/useCookieState";
 import { useLanguageDirection } from "@/i18n/LanguageDirectionProvider";
 import { AuctionIcon } from "hugeicons-react";
 import React, { useEffect, useState } from "react";

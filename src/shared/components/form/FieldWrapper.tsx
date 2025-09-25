@@ -1,5 +1,5 @@
 import * as React from "react";
-import { classes } from "@/shared/lib/clsx";
+import { classes } from "@/utils/clsx";
 
 type FieldWrapperProps = {
   children: React.ReactNode;
