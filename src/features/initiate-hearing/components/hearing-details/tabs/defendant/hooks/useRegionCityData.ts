@@ -5,7 +5,10 @@ import {
   useGetWorkerRegionLookupDataQuery,
 } from "@/features/initiate-hearing/api/create-case/plaintiffDetailsApis";
 
-export const useRegionCityData = (i18n: { language: string }, defendantRegion: any) => {
+export const useRegionCityData = (
+  i18n: { language: string },
+  defendantRegion: any,
+) => {
   const { data: regionData } = useGetWorkerRegionLookupDataQuery({
     AcceptedLanguage: i18n.language.toUpperCase(),
     SourceSystem: "E-Services",
@@ -21,10 +24,17 @@ export const useRegionCityData = (i18n: { language: string }, defendantRegion: a
     {
       AcceptedLanguage: i18n.language.toUpperCase(),
       SourceSystem: "E-Services",
-      selectedWorkerRegion: typeof defendantRegion === 'object' ? defendantRegion?.value : defendantRegion || "",
+      selectedWorkerRegion:
+        typeof defendantRegion === "object"
+          ? defendantRegion?.value
+          : defendantRegion || "",
       ModuleName: "EstablishmentCity",
     },
-    { skip: !(typeof defendantRegion === 'object' ? defendantRegion?.value : defendantRegion) }
+    {
+      skip: !(typeof defendantRegion === "object"
+        ? defendantRegion?.value
+        : defendantRegion),
+    },
   );
 
   useEffect(() => {
@@ -33,15 +43,17 @@ export const useRegionCityData = (i18n: { language: string }, defendantRegion: a
     }
   }, [cityData, isCityError]);
 
-  const RegionOptions = regionData?.DataElements?.map((item: any) => ({
-    value: item.ElementKey,
-    label: item.ElementValue,
-  })) || [];
+  const RegionOptions =
+    regionData?.DataElements?.map((item: any) => ({
+      value: item.ElementKey,
+      label: item.ElementValue,
+    })) || [];
 
-  const CityOptions = cityData?.DataElements?.map((item: any) => ({
-    value: item.ElementKey,
-    label: item.ElementValue,
-  })) || [];
+  const CityOptions =
+    cityData?.DataElements?.map((item: any) => ({
+      value: item.ElementKey,
+      label: item.ElementValue,
+    })) || [];
 
   return { RegionOptions, CityOptions, isCityLoading };
 };

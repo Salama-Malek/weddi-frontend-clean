@@ -1,4 +1,3 @@
-
 import { SectionLayout } from "@/shared/components/form/form.types";
 
 import { useTranslation } from "react-i18next";
@@ -15,20 +14,19 @@ export const useEstablishmentPlaintiffFormLayout = ({
   setValue,
 }: any) => {
   const { i18n } = useTranslation();
-  const [getCookie, ] = useCookieState();
+  const [getCookie] = useCookieState();
   const userClaims: TokenClaims = getCookie("userClaims");
 
-  const { data: establishmentDetails2, } =
-    useGetEstablishmentDetailsQuery(
-      {
-        AcceptedLanguage: i18n.language === "ar" ? "AR" : "EN",
-        SourceSystem: "E-Services",
-        FileNumber: userClaims?.File_Number,
-      },
-      {
-        skip: !userClaims?.File_Number,
-      }
-    );
+  const { data: establishmentDetails2 } = useGetEstablishmentDetailsQuery(
+    {
+      AcceptedLanguage: i18n.language === "ar" ? "AR" : "EN",
+      SourceSystem: "E-Services",
+      FileNumber: userClaims?.File_Number,
+    },
+    {
+      skip: !userClaims?.File_Number,
+    },
+  );
 
   const RegionOptions = React.useMemo(() => {
     return (
@@ -110,7 +108,7 @@ export const useEstablishmentPlaintiffFormLayout = ({
       setValue(
         "establishment_name",
         caseEstablishmentDetails.EstablishmentName,
-        { shouldValidate: true }
+        { shouldValidate: true },
       );
       didSetAny = true;
     }
@@ -121,7 +119,7 @@ export const useEstablishmentPlaintiffFormLayout = ({
       setValue(
         "establishment_type",
         caseEstablishmentDetails.EstablishmentType,
-        { shouldValidate: true }
+        { shouldValidate: true },
       );
       didSetAny = true;
     }
@@ -129,7 +127,7 @@ export const useEstablishmentPlaintiffFormLayout = ({
       setValue(
         "establishment_fileNumber",
         caseEstablishmentDetails.FileNumber,
-        { shouldValidate: true }
+        { shouldValidate: true },
       );
       didSetAny = true;
     }
@@ -155,7 +153,7 @@ export const useEstablishmentPlaintiffFormLayout = ({
       setValue(
         "establishment_phoneNumber",
         caseEstablishmentDetails.ContactNumber,
-        { shouldValidate: true }
+        { shouldValidate: true },
       );
       didSetAny = true;
     }
@@ -210,7 +208,7 @@ export const useEstablishmentPlaintiffFormLayout = ({
     setValue(
       "establishment_region",
       { value: apiEstablishment.Region_Code, label: apiEstablishment.Region },
-      { shouldValidate: true }
+      { shouldValidate: true },
     );
     apiRegionAppliedRef.current = true;
   }, [apiEstablishment, setValue]);
@@ -231,12 +229,12 @@ export const useEstablishmentPlaintiffFormLayout = ({
     if (!Array.isArray(CityOptions)) return;
     const list: any[] = CityOptions || [];
     const byCode = list.find(
-      (opt: any) => String(opt.value) === String(desiredCityCode)
+      (opt: any) => String(opt.value) === String(desiredCityCode),
     );
     const byLabel = list.find(
       (opt: any) =>
         String(opt.label).toUpperCase() ===
-        String(desiredCityLabel).toUpperCase()
+        String(desiredCityLabel).toUpperCase(),
     );
     const selected = byCode || byLabel;
     if (!selected) return;

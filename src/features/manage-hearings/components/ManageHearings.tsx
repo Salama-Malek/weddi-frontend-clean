@@ -11,7 +11,7 @@ import { useCookieState } from "@/features/initiate-hearing/hooks/useCookieState
 const Tabs = lazy(() =>
   import("@/shared/components/tabs").then((module) => ({
     default: module.Tabs,
-  }))
+  })),
 );
 const HearingTabContent = lazy(() => import("./HearingTabContent"));
 
@@ -22,7 +22,7 @@ export default function ManageHearings() {
 
   const [getCookie] = useCookieState();
   const subCategory = getCookie("subCategory");
-  const userType = getCookie("userType")
+  const userType = getCookie("userType");
 
   useEffect(() => {
     const storedCaseRole = localStorage.getItem("caseRoleTab");
@@ -43,7 +43,11 @@ export default function ManageHearings() {
     >
       <Heading className="mb-6">
         {t("heading")}{" "}
-        {userType && userType.toLowerCase() === "legal representative" && subCategory && subCategory.label && "( " + subCategory.label + " )"}{" "}
+        {userType &&
+          userType.toLowerCase() === "legal representative" &&
+          subCategory &&
+          subCategory.label &&
+          "( " + subCategory.label + " )"}{" "}
       </Heading>
 
       <Suspense fallback={<TableLoader />}>

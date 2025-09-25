@@ -16,9 +16,9 @@ export const ReadOnlyField: FC<ReadOnlyFieldProps> = ({
   className,
   notRequired,
   isLoading,
-
 }) => {
-  const displayValue = typeof value === "string" && value.trim() !== "" ? value : "---"
+  const displayValue =
+    typeof value === "string" && value.trim() !== "" ? value : "---";
 
   return (
     <FieldWrapper notRequired={notRequired} label={label} labelFor="">

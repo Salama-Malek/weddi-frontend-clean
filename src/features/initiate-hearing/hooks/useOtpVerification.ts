@@ -115,7 +115,7 @@ export const useOtpVerification = ({
         setValue("interPhoneNumber", phoneNumber);
       }
     },
-    [lastSentOtp, setValue]
+    [lastSentOtp, setValue],
   );
 
   const resetOtpVerification = useCallback(() => {

@@ -8,7 +8,7 @@ import {
 
 export const useIncompleteCaseHandler = (
   setValue: (field: string, value: any) => void,
-  trigger?: (name?: string | string[]) => Promise<boolean>
+  trigger?: (name?: string | string[]) => Promise<boolean>,
 ) => {
   const [getCookie, setCookie] = useCookieState();
   const navigate = useNavigate();
@@ -84,12 +84,10 @@ export const useIncompleteCaseHandler = (
 
         localStorage.setItem(
           "EmploymentDetails",
-          JSON.stringify(employmentDetails)
+          JSON.stringify(employmentDetails),
         );
       } else {
       }
-
-     
 
       navigate("/initiate-hearing/case-creation");
 
@@ -138,7 +136,7 @@ export const useIncompleteCaseHandler = (
       if (details.PlaintiffType_Code === "Agent") {
         setValue(
           "agentType",
-          details.CertifiedBy === "CB1" ? "local_agency" : "external_agency"
+          details.CertifiedBy === "CB1" ? "local_agency" : "external_agency",
         );
         setValue("agencyNumber", details.Agent_MandateNumber || "");
         setValue("mobileNumber", details.Plaintiff_MobileNumber || "");
@@ -147,11 +145,11 @@ export const useIncompleteCaseHandler = (
         setValue("agencySource", details.Agent_MandateSource || "");
         setValue(
           "Agent_ResidencyAddress",
-          details.Agent_ResidencyAddress || ""
+          details.Agent_ResidencyAddress || "",
         );
         setValue(
           "Agent_CurrentPlaceOfWork",
-          details.Agent_CurrentPlaceOfWork || ""
+          details.Agent_CurrentPlaceOfWork || "",
         );
       }
 

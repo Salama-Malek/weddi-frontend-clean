@@ -23,7 +23,7 @@ export function useNICTrigger(
   hijriDob: string,
   onSuccess: (nicDetails: NICDetailsResponse["NICDetails"]) => void,
   onError: () => void,
-  language: string = "EN"
+  language: string = "EN",
 ): UseNICTriggerResult {
   const shouldSkip =
     !(id.length === 10 && hijriDob.length === 8) ||
@@ -36,7 +36,7 @@ export function useNICTrigger(
       AcceptedLanguage: language,
       SourceSystem: "E-Services",
     },
-    { skip: shouldSkip }
+    { skip: shouldSkip },
   );
 
   const handleTryAgain = () => {

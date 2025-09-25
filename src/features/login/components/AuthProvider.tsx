@@ -83,7 +83,7 @@ const AuthProvider: React.FC<AuthProviderProps> = ({
   const [searchParams] = useSearchParams();
   const [getCookie, setCookie, , removeAll] = useCookieState(
     {},
-    { path: "/", maxAge: 86400 }
+    { path: "/", maxAge: 86400 },
   );
   const [showNICError, setShowNICError] = useState(false);
   const [nicErrorMessage, setNicErrorMessage] = useState("");
@@ -109,28 +109,25 @@ const AuthProvider: React.FC<AuthProviderProps> = ({
       !parsedExpiresAt || Date.now() > parsedExpiresAt - 5 * 60 * 1000;
 
     if (shouldRefreshToken) {
-      try {
-        const tokenData = await triggerGetToken().unwrap();
-        setCookie("oauth_token", tokenData.access_token);
+      const tokenData = await triggerGetToken().unwrap();
+      setCookie("oauth_token", tokenData.access_token);
 
-        const customExpiresIn = 50 * 60;
-        const expiresAt = Date.now() + customExpiresIn * 1000;
+      const customExpiresIn = 50 * 60;
+      const expiresAt = Date.now() + customExpiresIn * 1000;
 
-        setCookie("oauth_token_expires_at", expiresAt.toString());
-      } catch (err) {
-        throw err;
-      }
+      setCookie("oauth_token_expires_at", expiresAt.toString());
     }
   }, [getCookie, setCookie, triggerGetToken]);
 
   useEffect(() => {
     const initialize = async () => {
-      try {
-        await checkAndFetchToken();
-        setIsTokenReady(true);
-      } catch { }
+      await checkAndFetchToken();
+      setIsTokenReady(true);
     };
-    initialize();
+    initialize().catch((error) => {
+      console.error("Failed to initialize token", error);
+      setIsTokenReady(false);
+    });
   }, [checkAndFetchToken]);
 
   useEffect(() => {
@@ -207,6 +204,7 @@ const AuthProvider: React.FC<AuthProviderProps> = ({
           }
         }
       } catch (error) {
+        console.error("Failed to initialize user session", error);
       } finally {
         setIsDataLoaded(true);
       }
@@ -228,50 +226,40 @@ const AuthProvider: React.FC<AuthProviderProps> = ({
   const { t, i18n } = useTranslation();
 
   const handleErrorResponse = (data: any) => {
-    try {
-      let errorMessage = "Failed to load user information";
-      if (data?.ErrorDetails && Array.isArray(data.ErrorDetails)) {
-        const errorDesc = data.ErrorDetails.find(
-          (detail: any) => detail.ErrorDesc
-        )?.ErrorDesc;
-        if (errorDesc) {
-          errorMessage = errorDesc;
-        }
+    let errorMessage = "Failed to load user information";
+    if (data?.ErrorDetails && Array.isArray(data.ErrorDetails)) {
+      const errorDesc = data.ErrorDetails.find(
+        (detail: any) => detail.ErrorDesc,
+      )?.ErrorDesc;
+      if (errorDesc) {
+        errorMessage = errorDesc;
       }
-      setNicErrorMessage(errorMessage);
-      setShowNICError(true);
-    } catch (error) { }
+    }
+    setNicErrorMessage(errorMessage);
+    setShowNICError(true);
   };
 
   const fetchUserType = async (claims: TokenClaims) => {
-    try {
-      if (!claims.UserID || !claims.UserType) {
-        return;
-      }
-      return await triggerGetUserType({
-        IDNumber: claims.UserID!,
-        UserRequestType: claims.UserType!,
-        SourceSystem: "E-Services",
-      }).unwrap();
-    } catch (error) {
-      throw error;
+    if (!claims.UserID || !claims.UserType) {
+      return;
     }
+    return await triggerGetUserType({
+      IDNumber: claims.UserID!,
+      UserRequestType: claims.UserType!,
+      SourceSystem: "E-Services",
+    }).unwrap();
   };
 
   const getNICData = async (IDNumber?: string, DateOfBirth?: string) => {
-    try {
-      if (!IDNumber || !DateOfBirth) {
-        return;
-      }
-      return await triggerGetNICDetailsQuery({
-        IDNumber: IDNumber,
-        DateOfBirth: DateOfBirth,
-        AcceptedLanguage: isRTL ? "AR" : "EN",
-        SourceSystem: "E-Services",
-      }).unwrap();
-    } catch (error) {
-      throw error;
+    if (!IDNumber || !DateOfBirth) {
+      return;
     }
+    return await triggerGetNICDetailsQuery({
+      IDNumber: IDNumber,
+      DateOfBirth: DateOfBirth,
+      AcceptedLanguage: isRTL ? "AR" : "EN",
+      SourceSystem: "E-Services",
+    }).unwrap();
   };
 
   useEffect(() => {
@@ -321,7 +309,7 @@ const AuthProvider: React.FC<AuthProviderProps> = ({
         const errorData = error.data as any;
         if (errorData?.ErrorDetails && Array.isArray(errorData.ErrorDetails)) {
           const errorDesc = errorData.ErrorDetails.find(
-            (detail: any) => detail.ErrorDesc
+            (detail: any) => detail.ErrorDesc,
           )?.ErrorDesc;
           if (errorDesc) {
             errorMessage = errorDesc;

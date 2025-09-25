@@ -1,9 +1,7 @@
-import CaseCreation from "@/shared/modules/case-creation"
+import CaseCreation from "@/shared/modules/case-creation";
 
 const CaseCreationPage = () => {
-  return (
-      <CaseCreation/>
-  )
-}
+  return <CaseCreation />;
+};
 
-export default CaseCreationPage
+export default CaseCreationPage;

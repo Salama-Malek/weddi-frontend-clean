@@ -107,7 +107,7 @@ export const NewDatePicker: React.FC<NewDatePickerProps> = ({
 
   const handleDateChange = (
     date: DateObject | DateObject[] | null,
-    onChange: (value: string) => void
+    onChange: (value: string) => void,
   ) => {
     if (!date || Array.isArray(date)) {
       onChange("");

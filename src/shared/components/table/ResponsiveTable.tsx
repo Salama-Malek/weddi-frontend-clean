@@ -111,7 +111,7 @@ export function ResponsiveTable<TData extends object>({
                   {headerGroup.headers.map((header) => {
                     let headerContent = flexRender(
                       header.column.columnDef.header,
-                      header.getContext()
+                      header.getContext(),
                     );
                     if (typeof headerContent === "string") {
                       headerContent = t(headerContent);
@@ -140,7 +140,7 @@ export function ResponsiveTable<TData extends object>({
                     <td key={cell.id} className="p-3">
                       {flexRender(
                         cell.column.columnDef.cell,
-                        cell.getContext()
+                        cell.getContext(),
                       )}
                     </td>
                   ))}
@@ -173,7 +173,7 @@ export function ResponsiveTable<TData extends object>({
                   <div className="flex-1">
                     {flexRender(
                       firstCell.column.columnDef.cell,
-                      firstCell.getContext()
+                      firstCell.getContext(),
                     )}
                   </div>
                   <div className="ml-3">
@@ -207,7 +207,7 @@ export function ResponsiveTable<TData extends object>({
                             <div className="text-sm text-gray-900">
                               {flexRender(
                                 cell.column.columnDef.cell,
-                                cell.getContext()
+                                cell.getContext(),
                               )}
                             </div>
                           </div>

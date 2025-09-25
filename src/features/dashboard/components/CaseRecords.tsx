@@ -33,7 +33,7 @@ const CaseRecords: React.FC<CaseRecordsProps> = ({}) => {
     },
     {
       skip: !userType,
-    }
+    },
   );
 
   const cases = data?.PlaintiffCases ?? [];
@@ -121,7 +121,7 @@ const CaseRecords: React.FC<CaseRecordsProps> = ({}) => {
       .trim()
       .replace(
         /^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})\.(\d{3})$/,
-        "$1-$2-$3T$4:$5:$6.$7Z"
+        "$1-$2-$3T$4:$5:$6.$7Z",
       );
 
     const date = new Date(cleanedDate);
@@ -300,7 +300,7 @@ const CaseRecords: React.FC<CaseRecordsProps> = ({}) => {
                           <p className="text-sm8 light text-gray-1000">
                             {entries[entries.length - 1]?.StatusChangeDate
                               ? formatStatusDate(
-                                  entries[entries.length - 1].StatusChangeDate
+                                  entries[entries.length - 1].StatusChangeDate,
                                 )
                               : "--:--"}
                           </p>
@@ -308,7 +308,7 @@ const CaseRecords: React.FC<CaseRecordsProps> = ({}) => {
                       </div>
                     </div>
                   );
-                }
+                },
               );
             })()}
 
@@ -335,8 +335,6 @@ const CaseRecords: React.FC<CaseRecordsProps> = ({}) => {
               </div>
             </div>
           </div>
-          
-          
         </aside>
       )}
     </>

@@ -1,4 +1,4 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 interface FormState<T> {
   values: any;
@@ -11,17 +11,18 @@ const initialState: FormState<any> = {
 };
 
 const defaultValuesSlice = createSlice({
-  name: 'DefaultValues',
+  name: "DefaultValues",
   initialState,
   reducers: {
-    setFormDefaultValues: <T>(state: FormState<T>, action: PayloadAction<Partial<T>>) => {
+    setFormDefaultValues: <T>(
+      state: FormState<T>,
+      action: PayloadAction<Partial<T>>,
+    ) => {
       state.DefaultValues = action.payload;
     },
   },
 });
 
-export const {
-  setFormDefaultValues,
-} = defaultValuesSlice.actions;
+export const { setFormDefaultValues } = defaultValuesSlice.actions;
 
 export default defaultValuesSlice.reducer;

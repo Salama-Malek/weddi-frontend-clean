@@ -10,7 +10,7 @@ import FilePreviewModal from "./FilePreviewModal";
 
 const Modal = lazy(() => import("@/shared/components/modal/Modal"));
 const FileAttachmentUI = lazy(
-  () => import("@/shared/components/ui/file-attachment/FileAttachment")
+  () => import("@/shared/components/ui/file-attachment/FileAttachment"),
 );
 const FileUpload = lazy(() => import("./FileUpload"));
 
@@ -73,9 +73,6 @@ const AddAttachment = ({ onFileSelect }: AddAttachmentProps) => {
       setPreviewFile(uploadedFiles[0]);
     }
   };
-
- 
-
 
   return (
     <div className="space-y-6">

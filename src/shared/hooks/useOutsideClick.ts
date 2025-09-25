@@ -1,6 +1,9 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback } from "react";
 
-const useOutsideClick = (ref: React.RefObject<HTMLElement>, callback: () => void) => {
+const useOutsideClick = (
+  ref: React.RefObject<HTMLElement>,
+  callback: () => void,
+) => {
   const memoizedCallback = useCallback(callback, [callback]);
 
   useEffect(() => {
@@ -10,12 +13,11 @@ const useOutsideClick = (ref: React.RefObject<HTMLElement>, callback: () => void
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [ref, memoizedCallback]);
-
 };
 
 export default useOutsideClick;

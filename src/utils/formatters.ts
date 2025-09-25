@@ -11,4 +11,3 @@ export function formatDate(yyyymmdd: string): string {
 
   return `${day}/${month}/${year}`;
 }
-

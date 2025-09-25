@@ -11,7 +11,7 @@ import { ensureFileNameWithExtension } from "@/shared/lib/utils/fileUtils";
 const ReusableTable = React.lazy(() =>
   import("@/shared/components/table/ReusableTable").then((m) => ({
     default: m.ReusableTable,
-  }))
+  })),
 );
 
 interface CaseTopicsReviewProps {
@@ -36,7 +36,7 @@ const CaseTopicsReview: React.FC<CaseTopicsReviewProps> = ({
         mainCategory: topic.CaseTopicName || topic.MainSectionHeader || "N/A",
         subCategory: topic.SubTopicName || topic.TopicSection || "N/A",
       })),
-    [hearing?.CaseTopics]
+    [hearing?.CaseTopics],
   );
 
   const attachments = useMemo(
@@ -49,7 +49,7 @@ const CaseTopicsReview: React.FC<CaseTopicsReviewProps> = ({
       hearing?.CaseTopicAttachments,
       hearing?.OtherAttachments,
       hearing?.RegionalAttachments,
-    ]
+    ],
   );
 
   const [previewFile, setPreviewFile] = useState(false);
@@ -96,7 +96,7 @@ const CaseTopicsReview: React.FC<CaseTopicsReviewProps> = ({
         {attachments.map((file: any, idx: number) => {
           const displayFileName = ensureFileNameWithExtension(
             file.FileName,
-            file.FileType
+            file.FileType,
           );
           return (
             <FileAttachment
@@ -116,7 +116,7 @@ const CaseTopicsReview: React.FC<CaseTopicsReviewProps> = ({
         <Modal
           header={ensureFileNameWithExtension(
             fileName,
-            fileBase64?.pyFileName?.split(".").pop()
+            fileBase64?.pyFileName?.split(".").pop(),
           )}
           close={() => setPreviewFile(false)}
           modalWidth={800}

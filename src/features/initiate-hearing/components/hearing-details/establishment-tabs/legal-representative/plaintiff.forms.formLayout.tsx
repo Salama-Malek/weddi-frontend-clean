@@ -5,7 +5,7 @@ import { useCookieState } from "@/features/initiate-hearing/hooks/useCookieState
 import { useGetUserTypeLegalRepQuery } from "@/features/login/api/loginApis";
 import { TokenClaims } from "@/features/login/components/AuthProvider";
 export const useLegalRepPlaintiffFormLayout = (
-  setValue?: any
+  setValue?: any,
 ): SectionLayout[] => {
   const { t: LegalRep, i18n } = useTranslation("legal_rep");
   const [getCookie, setCookie] = useCookieState({
@@ -14,12 +14,11 @@ export const useLegalRepPlaintiffFormLayout = (
   });
 
   const [selectedMainCategory, _setSelectedMainCategory] = useState<any | null>(
-    getCookie("mainCategory")
+    getCookie("mainCategory"),
   );
   const [selectedSubCategory, _setSelectedSubCategory] = useState<any | null>(
-    getCookie("subCategory")
+    getCookie("subCategory"),
   );
- 
 
   const userClaims: TokenClaims = getCookie("userClaims");
 
@@ -41,7 +40,7 @@ export const useLegalRepPlaintiffFormLayout = (
       const matchingEntity = userLegData.GovRepDetails?.find(
         (item: any) =>
           item.GOVTID === selectedMainCategory?.value &&
-          item.SubGOVTID === selectedSubCategory?.value
+          item.SubGOVTID === selectedSubCategory?.value,
       );
 
       if (matchingEntity) {
@@ -95,7 +94,6 @@ export const useLegalRepPlaintiffFormLayout = (
     }
   }, [userLegDataState, setValue]);
 
-
   const conditionalSection2 = [];
   conditionalSection2.push(
     {
@@ -145,7 +143,7 @@ export const useLegalRepPlaintiffFormLayout = (
           isLoading: isLoading,
         },
       ],
-    }
+    },
   );
 
   return [...conditionalSection2].filter(Boolean) as SectionLayout[];

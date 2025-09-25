@@ -47,7 +47,7 @@ function normalizeHijriString(str: string): string {
 
 export function toHijri_YYYYMMDD(
   dateString: string,
-  friendlyFormat: boolean = false
+  friendlyFormat: boolean = false,
 ): string {
   try {
     const raw = toAsciiDigits(dateString.trim());
@@ -91,7 +91,7 @@ export function toHijri_YYYYMMDD(
 
 export const getEnvVar = <T extends string | number | boolean>(
   key: string,
-  defaultValue?: T
+  defaultValue?: T,
 ): T => {
   const value = import.meta.env[key];
   if (value == null) {
@@ -104,7 +104,7 @@ export const getEnvVar = <T extends string | number | boolean>(
 };
 
 export function isObjectWithData(
-  value: unknown
+  value: unknown,
 ): value is Record<string, unknown> {
   return (
     typeof value === "object" &&
@@ -169,7 +169,7 @@ export const createInputField = ({
 }: InputFieldProps) => ({
   type: getFieldType(
     inputType === "dateOfBirth" ? "readonly" : "input",
-    readOnly
+    readOnly,
   ),
   name,
   label,
@@ -196,7 +196,7 @@ export const createAutocompleteField = ({
 });
 
 export function useLoadingStates<T extends Record<string, boolean>>(
-  states: T
+  states: T,
 ): T {
   return useMemo(() => states, Object.values(states));
 }
@@ -210,7 +210,7 @@ export function formatHijriDate(compact: string): string {
 }
 
 export function formatDateToYYYYMMDD(
-  dateString: string | undefined
+  dateString: string | undefined,
 ): string | undefined {
   if (!dateString) return undefined;
   return dateString.replace(/[\/\-]/g, "");
@@ -218,12 +218,12 @@ export function formatDateToYYYYMMDD(
 
 export function formatDateFromYYYYMMDD(
   dateString: string | undefined,
-  separator: string = "/"
+  separator: string = "/",
 ): string | undefined {
   if (!dateString || dateString.length !== 8) return undefined;
   return `${dateString.slice(0, 4)}${separator}${dateString.slice(
     4,
-    6
+    6,
   )}${separator}${dateString.slice(6)}`;
 }
 
@@ -303,7 +303,7 @@ export const isHijriDateInFuture = (hijriDate: string): boolean => {
     const date = new DateObject({
       date: `${hijriDate.slice(0, 4)}/${hijriDate.slice(
         4,
-        6
+        6,
       )}/${hijriDate.slice(6)}`,
       calendar: hijriCalendar,
       locale: hijriLocale,

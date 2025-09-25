@@ -1,6 +1,9 @@
 import { useEffect } from "react";
 import { UseFormSetValue, UseFormTrigger } from "react-hook-form";
-import { CaseTopicsPrefillService, CaseTopicData } from "../../../services/caseTopicsPrefillService";
+import {
+  CaseTopicsPrefillService,
+  CaseTopicData,
+} from "../../../services/caseTopicsPrefillService";
 
 interface UseCaseTopicsPrefillProps {
   setValue: UseFormSetValue<any>;
@@ -23,10 +26,9 @@ const useCaseTopicsPrefill = ({
   useEffect(() => {
     if (!isEditing || !editTopic) return;
 
-
     try {
       const formFields = CaseTopicsPrefillService.extractFormFields(editTopic);
-      
+
       Object.entries(formFields).forEach(([key, value]) => {
         if (value !== undefined && value !== null) {
           setValue(key, value);
@@ -40,7 +42,7 @@ const useCaseTopicsPrefill = ({
         };
         setValue("mainCategory", mainCategoryValue);
       }
-      
+
       if (editTopic.SubTopicID) {
         const subCategoryValue = {
           value: editTopic.SubTopicID,
@@ -54,7 +56,10 @@ const useCaseTopicsPrefill = ({
       }
 
       if (editTopic.Formal || editTopic.RegulatoryText) {
-        setValue("regulatoryText", editTopic.Formal || editTopic.RegulatoryText);
+        setValue(
+          "regulatoryText",
+          editTopic.Formal || editTopic.RegulatoryText,
+        );
       }
 
       if (trigger) {
@@ -62,9 +67,8 @@ const useCaseTopicsPrefill = ({
           trigger();
         }, 200);
       }
-    } catch (error) {
-    }
+    } catch (error) {}
   }, [editTopic, isEditing, setValue, trigger]);
 };
 
-export default useCaseTopicsPrefill; 
+export default useCaseTopicsPrefill;

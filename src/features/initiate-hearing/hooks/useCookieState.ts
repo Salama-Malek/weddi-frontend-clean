@@ -29,7 +29,7 @@ export const isCaseDataCleared = () => {
 
 export function useCookieState(
   defaults?: Record<string, any>,
-  options: CookieOptions = {}
+  options: CookieOptions = {},
 ) {
   const [_cookieState, setCookieState] = useState<Record<string, any>>(() => {
     const initial: Record<string, any> = {};
@@ -73,7 +73,7 @@ export function useCookieState(
       setCookieState((prev) => ({ ...prev, [key]: value }));
       cookieEventTarget.dispatchEvent(new Event(key));
     },
-    [options.path, options.maxAge, options.secure]
+    [options.path, options.maxAge, options.secure],
   );
 
   const removeCookie = useCallback(
@@ -86,7 +86,7 @@ export function useCookieState(
       });
       cookieEventTarget.dispatchEvent(new Event(key));
     },
-    [options.path]
+    [options.path],
   );
 
   const removeAll = useCallback((_path: string = "/") => {

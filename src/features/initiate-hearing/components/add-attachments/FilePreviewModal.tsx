@@ -38,7 +38,7 @@ const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
         (file as any).fileType ||
           ((file as any).pyFileName?.toLowerCase().endsWith(".pdf")
             ? "application/pdf"
-            : "image/*")
+            : "image/*"),
       );
       setError(null);
       return;

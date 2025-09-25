@@ -217,7 +217,7 @@ const HearingContent = ({
               SourceSystem: "E-Services",
               AcceptedLanguage: i18n.language.toUpperCase(),
             },
-            true
+            true,
           ).then(handleIncompleteCaseResponse);
           return;
         }

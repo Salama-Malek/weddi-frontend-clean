@@ -42,12 +42,12 @@ function formatHijriWithSlashes(date: string): string {
 }
 
 const FileAttachment = lazy(
-  () => import("@/shared/components/ui/file-attachment/FileAttachment")
+  () => import("@/shared/components/ui/file-attachment/FileAttachment"),
 );
 const ReusableTable = lazy(() =>
   import("@/shared/components/table/ReusableTable").then((module) => ({
     default: module.ReusableTable,
-  }))
+  })),
 );
 
 type ReadOnlyDetail = { label: string; value: string };
@@ -323,7 +323,7 @@ const ReviewDetails = ({
             id: index + 1,
             mainCategory: topic.CaseTopicName || "",
             subCategory: topic.SubTopicName || "",
-          })
+          }),
         ),
       },
     },
@@ -840,6 +840,7 @@ const ReviewDetails = ({
         if (claimantStatus === "agent") {
           return reviewSectionEmbasyAsAgent;
         }
+        return reviewSections;
       case "worker":
         if (defendantStatus == "Government") {
           return reviewSectionWorkerGov;
@@ -927,7 +928,7 @@ const ReviewDetails = ({
           onChange={(selectedOption) => {
             if (selectedOption) {
               setSelectedLang(
-                selectedOption as { label: string; value: string }
+                selectedOption as { label: string; value: string },
               );
             }
           }}

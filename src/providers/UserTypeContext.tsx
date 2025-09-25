@@ -6,24 +6,25 @@ type UserTypeContextType = {
   setUserType: (type: string | null) => void;
 };
 
-const UserTypeContext = createContext<UserTypeContextType | undefined>(undefined);
+const UserTypeContext = createContext<UserTypeContextType | undefined>(
+  undefined,
+);
 
 export function UserTypeProvider({ children }: { children: React.ReactNode }) {
   const [userType, setUserType] = useState<string | null>(null);
-  const [,setCookie] = useCookieState({ userType: "" });
+  const [, setCookie] = useCookieState({ userType: "" });
 
-useEffect(()=>{
-  if(userType){
-    setCookie("legalRepType",userType)
-  }
-},[userType])
+  useEffect(() => {
+    if (userType) {
+      setCookie("legalRepType", userType);
+    }
+  }, [userType]);
 
   return (
     <UserTypeContext.Provider
       value={{
         userType,
         setUserType,
-        
       }}
     >
       {children}

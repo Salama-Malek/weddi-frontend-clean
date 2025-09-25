@@ -29,18 +29,17 @@ export const useCasesLogic = (options: UseCasesLogicOptions = {}) => {
   const { enableNICCalls = false } = options;
 
   const {
-    
     getValues,
     setFormData,
     watch,
-    formState: { isValid,},
+    formState: { isValid },
   } = useAPIFormsData();
   const defendantStatus = watch("defendantStatus");
   const defendantDetails = watch("defendantDetails");
   const isDomestic = useSelector(
-    (state: RootState) => state.formOptions.titles
+    (state: RootState) => state.formOptions.titles,
   );
-  const {  i18n } = useTranslation("stepper");
+  const { i18n } = useTranslation("stepper");
   const [actionButtonName, setActionButtonName] = useState<string>("");
   const [lastSaved, setLastSaved] = useState(false);
   const { updateParams, currentStep, currentTab } = useNavigationService();
@@ -87,7 +86,7 @@ export const useCasesLogic = (options: UseCasesLogicOptions = {}) => {
   const principalDob = formatDateToYYYYMMDD(userClaims?.UserDOB);
   const representativeId = watch("workerAgentIdNumber") as string;
   const representativeDob = formatDateToYYYYMMDD(
-    watch("workerAgentDateOfBirthHijri")
+    watch("workerAgentDateOfBirthHijri"),
   );
   const claimantStatus = watch("claimantStatus") as
     | "principal"
@@ -114,7 +113,7 @@ export const useCasesLogic = (options: UseCasesLogicOptions = {}) => {
         isHijriDateInFuture(principalDob) ||
         userType === "Legal representative" ||
         userType === "Establishment",
-    }
+    },
   );
 
   const { data: representativeNICResponse } = useGetNICDetailsQuery(
@@ -135,7 +134,7 @@ export const useCasesLogic = (options: UseCasesLogicOptions = {}) => {
         isHijriDateInFuture(representativeDob) ||
         userType === "Legal representative" ||
         userType === "Establishment",
-    }
+    },
   );
 
   const { hasErrors } = useApiErrorHandler();
@@ -165,7 +164,7 @@ export const useCasesLogic = (options: UseCasesLogicOptions = {}) => {
       isRTL,
       getCaseId,
       attorneyData,
-      nicDetails
+      nicDetails,
     );
 
     if (latestFormValues && payload && Object.keys(payload).length > 0) {
@@ -177,7 +176,7 @@ export const useCasesLogic = (options: UseCasesLogicOptions = {}) => {
           latestFormValues,
           userClaims,
           userType,
-          isRTL
+          isRTL,
         );
 
         let nextStep = localStep;
@@ -244,7 +243,7 @@ export const useCasesLogic = (options: UseCasesLogicOptions = {}) => {
         isRTL,
         getCaseId,
         attorneyData,
-        nicDetails
+        nicDetails,
       );
 
       if (payload && Object.keys(payload).length > 0) {
@@ -255,7 +254,7 @@ export const useCasesLogic = (options: UseCasesLogicOptions = {}) => {
           latestFormValues,
           userClaims,
           userType,
-          isRTL
+          isRTL,
         );
 
         const isSuccessful =
@@ -308,8 +307,6 @@ export const useCasesLogic = (options: UseCasesLogicOptions = {}) => {
     setLocalStep(prevStep);
     setLocalTab(prevTab);
   }, [localStep, localTab, updateParams]);
-
-
 
   return {
     currentStep: localStep,

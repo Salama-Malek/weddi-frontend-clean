@@ -1,8 +1,6 @@
 import { Option } from "@/shared/components/form/form.types";
 import { useTranslation } from "react-i18next";
-import {
-  useGetRegionLookupDataQuery,
-} from "@/features/initiate-hearing/api/create-case/workDetailApis";
+import { useGetRegionLookupDataQuery } from "@/features/initiate-hearing/api/create-case/workDetailApis";
 
 interface FormOptionsProps {
   context?: "worker" | "establishment" | "default";

@@ -17,7 +17,7 @@ interface BR1FormProps {
   handleHijriDateChange: (
     date: DateObject | DateObject[] | null,
     setHijriValue: (value: string) => void,
-    gregorianFieldName: string
+    gregorianFieldName: string,
   ) => void;
 }
 
@@ -36,14 +36,19 @@ export const getBR1FormFields = ({
 
   const accordingVal = isEditing
     ? ensureOption(
-      AccordingToAgreementLookupLookUpOptions,
-      editTopic?.BR1_accordingToAgreement?.value ?? editTopic?.accordingToAgreement?.value ?? editTopic?.AccordingToAgreement
-    )
+        AccordingToAgreementLookupLookUpOptions,
+        editTopic?.BR1_accordingToAgreement?.value ??
+          editTopic?.accordingToAgreement?.value ??
+          editTopic?.AccordingToAgreement,
+      )
     : accordingToAgreement;
 
   const bonusVal = isEditing
-    ? editTopic?.BR1_bonusAmount ?? editTopic?.bonusAmount ?? editTopic?.Premium ?? ""
-    : bonusAmount ?? "";
+    ? (editTopic?.BR1_bonusAmount ??
+      editTopic?.bonusAmount ??
+      editTopic?.Premium ??
+      "")
+    : (bonusAmount ?? "");
 
   return [
     {
@@ -52,7 +57,8 @@ export const getBR1FormFields = ({
       label: t("accordingToTheAgreement"),
       options: AccordingToAgreementLookupLookUpOptions,
       value: accordingVal,
-      onChange: (opt: Option | null) => setValue("BR1_accordingToAgreement", opt),
+      onChange: (opt: Option | null) =>
+        setValue("BR1_accordingToAgreement", opt),
       validation: { required: t("fieldRequired") },
     },
     {

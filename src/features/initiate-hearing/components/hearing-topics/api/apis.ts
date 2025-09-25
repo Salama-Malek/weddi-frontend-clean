@@ -10,15 +10,15 @@ export const hearingTopicsApi = api.injectEndpoints({
       }),
     }),
     WorkerAttachmentCategories: builder.query<any, any>({
-      query: ({ModuleKey,ModuleName,AcceptedLanguage,SourceSystem}) => ({
+      query: ({ ModuleKey, ModuleName, AcceptedLanguage, SourceSystem }) => ({
         url: `/WeddiServices/V1/MainLookUp`,
         params: {
           LookupType: "CaseElements",
           ModuleKey: ModuleKey,
-          ModuleName:ModuleName,
-          AcceptedLanguage:AcceptedLanguage,
-          SourceSystem:SourceSystem
-        }
+          ModuleName: ModuleName,
+          AcceptedLanguage: AcceptedLanguage,
+          SourceSystem: SourceSystem,
+        },
       }),
     }),
     removeAttachment: builder.mutation({
@@ -31,4 +31,8 @@ export const hearingTopicsApi = api.injectEndpoints({
   }),
 });
 
-export const { useUploadAttachmentsMutation, useWorkerAttachmentCategoriesQuery, useRemoveAttachmentMutation } = hearingTopicsApi;
+export const {
+  useUploadAttachmentsMutation,
+  useWorkerAttachmentCategoriesQuery,
+  useRemoveAttachmentMutation,
+} = hearingTopicsApi;

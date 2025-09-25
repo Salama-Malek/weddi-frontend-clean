@@ -85,13 +85,13 @@ const Button: React.FC<ButtonProps> = ({
   const appliedVariant = disabled
     ? "disabled"
     : isLoading
-    ? "loading"
-    : variant;
+      ? "loading"
+      : variant;
   const appliedTypeVariant = disabled
     ? "freeze"
     : isLoading
-    ? "freeze"
-    : typeVariant;
+      ? "freeze"
+      : typeVariant;
 
   const variantStyles =
     buttonVariants[appliedVariant]?.[appliedTypeVariant] ||

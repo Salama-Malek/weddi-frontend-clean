@@ -9,7 +9,7 @@ import { formatDate } from "@/utils/formatters";
 
 export const useMyCasesColumns = (
   data: CaseRecord[],
-  role: "claimant" | "defendant"
+  role: "claimant" | "defendant",
 ): ColumnDef<CaseRecord>[] => {
   const { t } = useTranslation("managehearings");
   const isDefendantView = role === "defendant";
@@ -100,7 +100,7 @@ export const useMyCasesColumns = (
             />
           );
         },
-      }
+      },
     );
 
     return columns;

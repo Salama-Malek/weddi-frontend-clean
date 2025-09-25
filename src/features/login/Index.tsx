@@ -65,11 +65,7 @@ interface FormState {
   UserType: string;
 }
 
-
-
 const LoginForm: React.FC = () => {
-
-
   const userLoginlistData = [
     {
       lable: "embasy user",
@@ -208,14 +204,14 @@ const LoginForm: React.FC = () => {
   }, []);
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
   const handleUserSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedUser = userLoginlistData.find(
-      (user) => user.lable === e.target.value
+      (user) => user.lable === e.target.value,
     );
     if (selectedUser) {
       setForm(selectedUser.data);

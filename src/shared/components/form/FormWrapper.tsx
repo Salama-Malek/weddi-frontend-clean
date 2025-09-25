@@ -17,7 +17,6 @@ const FormWrapper = <T extends FieldValues>({
   preventEnterSubmit = true,
   showSubmitButton = true,
 }: FormWrapperProps<T>) => {
-
   const handleFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     if (preventEnterSubmit) {
       const target = e.target as HTMLFormElement;

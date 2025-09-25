@@ -1,13 +1,11 @@
-  export interface NICDetailsParams {
-    IDNumber: string;
-    DateOfBirth: string | Date;
-    AcceptedLanguage: string;
-    SourceSystem: string;
-  }
-  
-  export type ClaimantStatus = 'principal' | 'representative' | string; 
+export interface NICDetailsParams {
+  IDNumber: string;
+  DateOfBirth: string | Date;
+  AcceptedLanguage: string;
+  SourceSystem: string;
+}
 
-
+export type ClaimantStatus = "principal" | "representative" | string;
 
 export type PlaintiffType = "Self(Worker)" | "Agent";
 
@@ -16,7 +14,10 @@ export interface ClaimantTypeMapping {
   PlaintiffType: PlaintiffType;
 }
 
-export const CLAIMANT_TYPE_MAPPING: Record<ClaimantStatus, ClaimantTypeMapping> = {
+export const CLAIMANT_TYPE_MAPPING: Record<
+  ClaimantStatus,
+  ClaimantTypeMapping
+> = {
   principal: {
     ApplicantType: "Worker",
     PlaintiffType: "Self(Worker)",
@@ -26,5 +27,3 @@ export const CLAIMANT_TYPE_MAPPING: Record<ClaimantStatus, ClaimantTypeMapping> 
     PlaintiffType: "Agent",
   },
 };
-
-

@@ -15,7 +15,7 @@ if (!i18next.isInitialized) {
         } catch {
           return {};
         }
-      })
+      }),
     )
     .init(getOptions());
 }
@@ -23,7 +23,7 @@ if (!i18next.isInitialized) {
 export function useTranslation(
   lng: string,
   ns: string | string[],
-  options: Record<string, string> = {}
+  options: Record<string, string> = {},
 ) {
   i18next.changeLanguage(lng);
 
@@ -34,7 +34,7 @@ export function useTranslation(
       match(isArray)
         .with(true, () => ns[0])
         .otherwise(() => ns),
-      options.keyPrefix
+      options.keyPrefix,
     ),
     i18n: i18next,
   };

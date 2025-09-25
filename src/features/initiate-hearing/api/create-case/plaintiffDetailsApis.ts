@@ -88,7 +88,7 @@ export const caseApi = api.injectEndpoints({
           params: { IDNumber, DateOfBirth, AcceptedLanguage, SourceSystem },
         }),
         keepUnusedDataFor: 300,
-      }
+      },
     ),
 
     GetWorkerRegionLookupData: builder.query<

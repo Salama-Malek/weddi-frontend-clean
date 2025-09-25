@@ -34,7 +34,7 @@ const DataTable = <T,>({ data, columns, title }: DataTableProps<T>) => {
                 >
                   {flexRender(
                     header.column.columnDef.header,
-                    header.getContext()
+                    header.getContext(),
                   )}
                 </th>
               ))}

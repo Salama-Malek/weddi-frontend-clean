@@ -13,8 +13,8 @@ interface FormActionButtonsProps {
 const FormActionButtons: React.FC<FormActionButtonsProps> = ({
   onCancel,
   onSave,
-  cancelText ,
-  saveText ,
+  cancelText,
+  saveText,
   className = "",
 }) => {
   const { t } = useTranslation("stepper");
@@ -29,11 +29,11 @@ const FormActionButtons: React.FC<FormActionButtonsProps> = ({
       >
         {cancelText ?? t("cancel")}
       </Button>
-      <Button 
+      <Button
         type="button"
-        typeVariant="brand" 
-        variant="primary" 
-        size="xs" 
+        typeVariant="brand"
+        variant="primary"
+        size="xs"
         onClick={onSave}
       >
         {saveText ?? t("save")}

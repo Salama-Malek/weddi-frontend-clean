@@ -11,7 +11,7 @@ export const establishmentClaimantHearings: Hearing[] = [
     sessionTiming: "PM 02:00",
     hearingStatus: "Completed",
   },
-  
+
   {
     requestNumber: "ES-200",
     hearingNumber: "222221",
@@ -22,7 +22,7 @@ export const establishmentClaimantHearings: Hearing[] = [
     sessionTiming: "PM 02:00",
     hearingStatus: "Under review",
   },
-  
+
   {
     requestNumber: "ES-200",
     hearingNumber: "222221",
@@ -33,7 +33,7 @@ export const establishmentClaimantHearings: Hearing[] = [
     sessionTiming: "PM 02:00",
     hearingStatus: "Under negotiation",
   },
-  
+
   {
     requestNumber: "ES-200",
     hearingNumber: "222221",
@@ -44,7 +44,7 @@ export const establishmentClaimantHearings: Hearing[] = [
     sessionTiming: "PM 02:00",
     hearingStatus: "Under review",
   },
-  
+
   {
     requestNumber: "ES-200",
     hearingNumber: "222221",
@@ -55,7 +55,7 @@ export const establishmentClaimantHearings: Hearing[] = [
     sessionTiming: "PM 02:00",
     hearingStatus: "Rejected",
   },
-  
+
   {
     requestNumber: "ES-200",
     hearingNumber: "222221",
@@ -66,8 +66,6 @@ export const establishmentClaimantHearings: Hearing[] = [
     sessionTiming: "PM 02:00",
     hearingStatus: "Completed",
   },
-  
-    
 ];
 
 export const establishmentDefendantHearings: Hearing[] = [

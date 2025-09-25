@@ -15,7 +15,9 @@ export const Tab = ({ id, children, ...props }: TabProps) => {
       <button
         {...props}
         className={`py-3 transition text-sm medium ${
-          isActive ? "text-primary-600 bold" : "text-gray-400 hover:text-gray-600"
+          isActive
+            ? "text-primary-600 bold"
+            : "text-gray-400 hover:text-gray-600"
         }`}
         onClick={() => setActiveTab(id)}
       >

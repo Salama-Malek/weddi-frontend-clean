@@ -31,22 +31,21 @@ const Modal = ({
 
   useOutsideClick(modalRef, preventOutsideClick ? () => {} : close);
 
-  
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && preventOutsideClick) {
+      if (event.key === "Escape" && preventOutsideClick) {
         event.preventDefault();
         return;
       }
     };
 
     if (preventOutsideClick) {
-      document.addEventListener('keydown', handleKeyDown);
+      document.addEventListener("keydown", handleKeyDown);
     }
 
     return () => {
       if (preventOutsideClick) {
-        document.removeEventListener('keydown', handleKeyDown);
+        document.removeEventListener("keydown", handleKeyDown);
       }
     };
   }, [preventOutsideClick]);
@@ -59,7 +58,7 @@ const Modal = ({
           "flex flex-col items-center justify-start",
           "shadow-lg",
           "w-full max-w-[95vw] sm:max-w-[90vw] md:max-w-[80vw] lg:max-w-[70vw]",
-          className
+          className,
         )}
         style={modalWidth ? { maxWidth: `${modalWidth}px` } : {}}
       >

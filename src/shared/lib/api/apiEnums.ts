@@ -1,4 +1,3 @@
 enum ApiVersion {
-    V1 = "prweb/api/WeddiServices/V1",
-  }
-  
+  V1 = "prweb/api/WeddiServices/V1",
+}

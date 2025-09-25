@@ -40,7 +40,9 @@ export const Tab = ({ id, children, onClick }: TabProps) => {
   return (
     <button
       className={`py-2 px-4 border-b-2 transition-all font-medium text-sm ${
-        isActive ? "border-blue-500 text-blue-500" : "border-transparent text-gray-500"
+        isActive
+          ? "border-blue-500 text-blue-500"
+          : "border-transparent text-gray-500"
       }`}
       onClick={handleClick}
     >
@@ -53,7 +55,13 @@ export const TabPanels = ({ children }: { children: ReactNode }) => {
   return <div className="py-4">{children}</div>;
 };
 
-export const TabPanel = ({ id, children }: { id: string; children: ReactNode }) => {
+export const TabPanel = ({
+  id,
+  children,
+}: {
+  id: string;
+  children: ReactNode;
+}) => {
   const { activeTab } = useTabs();
   return activeTab === id ? <div>{children}</div> : null;
 };

@@ -15,7 +15,7 @@ interface HijriDatePickerInputProps {
   rules: any;
   onChangeHandler: (
     date: DateObject | DateObject[] | null,
-    onChange: (value: string) => void
+    onChange: (value: string) => void,
   ) => void;
   notRequired?: boolean;
   isDateOfBirth?: boolean;
@@ -114,7 +114,7 @@ export const HijriDatePickerInput: React.FC<HijriDatePickerInputProps> = ({
 
   const handleDateChange = (
     date: DateObject | DateObject[] | null,
-    onChange: (value: string) => void
+    onChange: (value: string) => void,
   ) => {
     if (!date || Array.isArray(date)) {
       onChange("");
@@ -137,7 +137,7 @@ export const HijriDatePickerInput: React.FC<HijriDatePickerInputProps> = ({
         calendar: hijriCalendar,
         locale: hijriLocale,
       }),
-    []
+    [],
   );
 
   return (

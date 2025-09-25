@@ -2,7 +2,7 @@ const { ParagraphSpacingIcon } = require("hugeicons-react");
 const plugin = require("tailwindcss/plugin");
 const generateScreens = (sizes) => {
   return Object.fromEntries(
-    sizes.map((size, index) => [`${index + 2}xl`, `${size}px`])
+    sizes.map((size, index) => [`${index + 2}xl`, `${size}px`]),
   );
 };
 module.exports = {
@@ -31,12 +31,12 @@ module.exports = {
         lg: "1024px",
         xl: "1280px",
         "2xl": "1536px",
-        "3xl": "1920px", 
-        "4xl": "2560px", 
-        "5xl": "3200px", 
-        "6xl": "3840px", 
-        "7xl": "5120px", 
-        "8xl": "7680px", 
+        "3xl": "1920px",
+        "4xl": "2560px",
+        "5xl": "3200px",
+        "6xl": "3840px",
+        "7xl": "5120px",
+        "8xl": "7680px",
       },
       container: {
         center: true,
@@ -175,39 +175,37 @@ module.exports = {
             lineHeight: "36px",
           },
         ],
-        "2436": [{
-          lineHeight: '24px',
-          letterSpacing: "36px",
-        }],
-        "1438": [{
-          lineHeight: '12px',
-          letterSpacing: "37px",
-        }],
-        "2lg": [
-          "18px",
+        2436: [
           {
-            lineHeight: "100%",
+            lineHeight: "24px",
+            letterSpacing: "36px",
+          },
+        ],
+        1438: [
+          {
+            lineHeight: "12px",
+            letterSpacing: "37px",
           },
         ],
         sm: [
           "14px",
           {
-            lineHeight: '16px',
+            lineHeight: "16px",
             letterSpacing: "0%",
-          }
+          },
         ],
         sm8: [
           "14px",
           {
-            lineHeight: '24px',
-          }
+            lineHeight: "24px",
+          },
         ],
         sm28: [
           "14px",
           {
-            lineHeight: '28px',
+            lineHeight: "28px",
             letterSpacing: "0%",
-          }
+          },
         ],
         sm20: [
           "14px",
@@ -229,10 +227,11 @@ module.exports = {
             lineHeight: "24px",
           },
         ],
-        "1822": [
-          "18px", {
+        1822: [
+          "18px",
+          {
             lineHeight: "22px",
-          }
+          },
         ],
         "2lg": [
           "18px",
@@ -240,7 +239,7 @@ module.exports = {
             lineHeight: "100%",
           },
         ],
-        "el": [
+        el: [
           "18px",
           {
             lineHeight: "28px",
@@ -299,7 +298,7 @@ module.exports = {
           970: "#717171",
           980: "#F3F4F699",
           990: "#6C737F",
-          1000: "#858585"
+          1000: "#858585",
         },
         primary: {
           25: "#F7FDF9",
@@ -405,7 +404,7 @@ module.exports = {
           800: "#085D3A",
           900: "#074D31",
           950: "#053321",
-          1000: "#ABEFC6"
+          1000: "#ABEFC6",
         },
         sa: {
           500: "#25935F",
@@ -496,7 +495,7 @@ module.exports = {
   },
   plugins: [
     plugin(function ({ addComponents, addUtilities }) {
-      addUtilities({
+      (addUtilities({
         ".b-radius": {
           border: ".25px solid #E5E7EB",
           borderRadius: "8px",
@@ -523,7 +522,7 @@ module.exports = {
           justifyContent: "flex-end",
           alignItems: "center",
         },
-        
+
         ".mobile-only": {
           display: "block",
         },
@@ -590,7 +589,7 @@ module.exports = {
             lineHeight: "22px",
             letterSpacing: "0%",
           },
-        });
+        }));
     }),
     require("tailwindcss-animate"),
   ],

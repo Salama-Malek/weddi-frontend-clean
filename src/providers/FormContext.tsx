@@ -76,7 +76,7 @@ export const FormProvider: React.FC<FormProviderProps> = ({
       request_date_gregorian: "",
       ...storeDefaults,
     }),
-    [storeDefaults]
+    [storeDefaults],
   );
 
   const formMethods = useForm<FormData>({

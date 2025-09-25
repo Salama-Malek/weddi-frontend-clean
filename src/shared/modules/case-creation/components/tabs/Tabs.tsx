@@ -7,7 +7,12 @@ interface TabsProps {
   isFormValid?: boolean;
 }
 
-const Tabs: React.FC<TabsProps> = ({ currentTab, tabs, onTabChange, isFormValid }) => {
+const Tabs: React.FC<TabsProps> = ({
+  currentTab,
+  tabs,
+  onTabChange,
+  isFormValid,
+}) => {
   return (
     <>
       <div className="flex flex-col gap-x-12 mb-6 md:flex-row lg:flex-row">
@@ -18,10 +23,10 @@ const Tabs: React.FC<TabsProps> = ({ currentTab, tabs, onTabChange, isFormValid 
               disabled={index > currentTab && !isFormValid}
               className={`py-3 transition text-sm font-medium ${
                 index === currentTab
-                  ? "bold" 
+                  ? "bold"
                   : index < currentTab
-                  ? "text-gray-700 " 
-                  : "text-gray-400 hover:text-gray-600" 
+                    ? "text-gray-700 "
+                    : "text-gray-400 hover:text-gray-600"
               }`}
             >
               {tab}
@@ -29,10 +34,10 @@ const Tabs: React.FC<TabsProps> = ({ currentTab, tabs, onTabChange, isFormValid 
             <div
               className={`h-[3px] w-full transition-all ${
                 index === currentTab
-                  ? "bg-primary-600 h-[3px] rounded-lg" 
+                  ? "bg-primary-600 h-[3px] rounded-lg"
                   : index < currentTab
-                  ? "h-[3px] rounded-lg" 
-                  : "bg-transparent" 
+                    ? "h-[3px] rounded-lg"
+                    : "bg-transparent"
               }`}
             ></div>
           </div>

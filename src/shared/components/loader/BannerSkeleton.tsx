@@ -1,9 +1,6 @@
-
 const BannerSkeleton = () => {
   return (
-    <section
-      className="relative w-full mt-4 overflow-hidden border border-gray-200 rounded-md h-[240px]"
-    >
+    <section className="relative w-full mt-4 overflow-hidden border border-gray-200 rounded-md h-[240px]">
       <div className="absolute inset-0 w-full h-full bg-gray-200 opacity-20"></div>
 
       <div className="absolute inset-0 bg-gradient-to-r from-gray-200 to-gray-200 opacity-50"></div>

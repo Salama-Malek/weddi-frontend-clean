@@ -62,7 +62,7 @@ const AttachmentModal: React.FC<AttachmentModalProps> = ({
         AcceptedLanguage: currentLanguage,
         SourceSystem: "E-Services",
       },
-      { skip: !isOpen }
+      { skip: !isOpen },
     );
 
   React.useEffect(() => {}, [i18n.language]);
@@ -75,7 +75,6 @@ const AttachmentModal: React.FC<AttachmentModalProps> = ({
       })) || []
     );
   }, [WorkerAttachmentCategories]);
-
 
   const validateFile = (file: File): boolean => {
     if (file.size > MAX_FILE_SIZE) {
@@ -91,7 +90,7 @@ const AttachmentModal: React.FC<AttachmentModalProps> = ({
           t("attachments.errors.file_type", {
             name: file.name,
             types: ALLOWED_EXTENSIONS.join(", "),
-          })
+          }),
         );
         return false;
       }
@@ -114,7 +113,7 @@ const AttachmentModal: React.FC<AttachmentModalProps> = ({
   const [uploadAttachments] = useUploadAttachmentsMutation();
 
   const handleFileSelect = async (
-    event: React.ChangeEvent<HTMLInputElement>
+    event: React.ChangeEvent<HTMLInputElement>,
   ) => {
     const selectedFile = event.target.files?.[0];
     if (!selectedFile) return;
@@ -159,7 +158,7 @@ const AttachmentModal: React.FC<AttachmentModalProps> = ({
       }
       if (res.ServiceStatus === "Success") {
         toast.success(
-          t("attachments.upload_success") || "Attachment uploaded successfully"
+          t("attachments.upload_success") || "Attachment uploaded successfully",
         );
       }
       onSave([
@@ -226,7 +225,7 @@ const AttachmentModal: React.FC<AttachmentModalProps> = ({
                 value={classification}
                 onChange={(selectedOption) => {
                   setClassification(
-                    typeof selectedOption === "string" ? null : selectedOption
+                    typeof selectedOption === "string" ? null : selectedOption,
                   );
                 }}
                 disabled={isUploading}

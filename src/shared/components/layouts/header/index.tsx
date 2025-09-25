@@ -16,7 +16,7 @@ import Modal from "@/shared/components/modal/Modal";
 import { useUser } from "@/shared/context/userTypeContext";
 
 const LoginAccountSelect = lazy(
-  () => import("@/features/login/components/LoginAccountSelect")
+  () => import("@/features/login/components/LoginAccountSelect"),
 );
 
 const Header = () => {
@@ -50,7 +50,7 @@ const Header = () => {
 
   const storedUserTypeData = getCookie("storeAllUserTypeData");
   const hasLegalRepCapability = storedUserTypeData?.UserTypeList?.some(
-    (userType: any) => userType.UserType === "Legal representative"
+    (userType: any) => userType.UserType === "Legal representative",
   );
 
   const shouldShowSwitchOption =
@@ -171,7 +171,7 @@ const Header = () => {
           (notif: any, _index: number) => ({
             label: notif.NotificationText,
             onClick: () => {},
-          })
+          }),
         )
       : [
           {

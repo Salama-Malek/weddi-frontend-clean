@@ -13,18 +13,18 @@ export type CaseAttachment = {
 
 export type CasePayload = {
   [key: string]:
-  | string
-  | number
-  | boolean
-  | string[]
-  | CaseAttachment[]
-  | undefined;
+    | string
+    | number
+    | boolean
+    | string[]
+    | CaseAttachment[]
+    | undefined;
 };
 
 const getBasePayload = (
   userClaims: TokenClaims,
   language: string,
-  userType?: string
+  userType?: string,
 ): CasePayload => {
   const basePayload: CasePayload = {
     CreatedBy: userClaims?.UserID,
@@ -74,14 +74,14 @@ export const claimantDetailsPayload = (
       userClaims?.UserName;
     payload.PlaintiffHijiriDOB = toWesternDigits(
       formData?.principal_hijriDate ||
-      nicDetailObj?.DateOfBirthHijri ||
-      userClaims?.UserDOB ||
-      ""
+        nicDetailObj?.DateOfBirthHijri ||
+        userClaims?.UserDOB ||
+        "",
     );
     payload.Plaintiff_ApplicantBirthDate = toWesternDigits(
       (formData?.principal_gregorianDate ||
         nicDetailObj?.DateOfBirthGregorian) ??
-      ""
+        "",
     );
     payload.Plaintiff_PhoneNumber = formData?.principal_phoneNumber || "";
     payload.Plaintiff_Region =
@@ -118,19 +118,18 @@ export const claimantDetailsPayload = (
   }
 
   if (isAgent) {
-
     if (agentType === "local_agency") {
       payload.PlaintiffName =
         formData?.localAgent_userName || nicDetailObj?.PlaintiffName || "";
       payload.PlaintiffHijiriDOB = toWesternDigits(
         formData?.localAgent_workerAgentDateOfBirthHijri ||
-        nicDetailObj?.DateOfBirthHijri ||
-        ""
+          nicDetailObj?.DateOfBirthHijri ||
+          "",
       );
       payload.Plaintiff_ApplicantBirthDate = toWesternDigits(
         (formData?.localAgent_gregorianDate ||
           nicDetailObj?.DateOfBirthGregorian) ??
-        ""
+          "",
       );
       payload.Plaintiff_PhoneNumber = formData?.localAgent_phoneNumber || "";
       payload.Plaintiff_Region =
@@ -180,13 +179,13 @@ export const claimantDetailsPayload = (
         formData?.externalAgent_userName || nicDetailObj?.PlaintiffName || "";
       payload.PlaintiffHijiriDOB = toWesternDigits(
         formData?.externalAgent_workerAgentDateOfBirthHijri ||
-        nicDetailObj?.DateOfBirthHijri ||
-        ""
+          nicDetailObj?.DateOfBirthHijri ||
+          "",
       );
       payload.Plaintiff_ApplicantBirthDate = toWesternDigits(
         (formData?.externalAgent_gregorianDate ||
           nicDetailObj?.DateOfBirthGregorian) ??
-        ""
+          "",
       );
       payload.Plaintiff_PhoneNumber = formData?.externalAgent_phoneNumber || "";
       payload.Plaintiff_Region =
@@ -273,48 +272,21 @@ export const claimantDetailsPayload = (
         CreatedBy: userClaims?.UserID,
         SourceSystem: "E-Services",
         ApplicantType: "Establishment",
-        Plaintiff_CRNumber:
-          formData?.establishment_crNumber ||
-
-          "",
+        Plaintiff_CRNumber: formData?.establishment_crNumber || "",
         Flow_CurrentScreen: "PlaintiffDetails",
         Language: language,
-        PlaintiffEstFileNumber:
-          formData?.establishment_fileNumber ||
+        PlaintiffEstFileNumber: formData?.establishment_fileNumber || "",
+        EstablishmentFullName: formData?.establishment_name || "",
+        Activity: formData?.Activity || "",
+        EstablishmentType: formData?.establishment_type || "",
+        EstId: formData?.establishment_id || "",
 
-          "",
-        EstablishmentFullName:
-          formData?.establishment_name ||
-
-          "",
-        Activity:
-          formData?.Activity || "",
-        EstablishmentType:
-          formData?.establishment_type ||
-
-          "",
-        EstId:
-          formData?.establishment_id ||
-
-          "",
-
-        EstablishmentName:
-          formData?.establishment_fileNumber ||
-
-          "",
-        Plaintiff_PhoneNumber:
-          formData?.establishment_phoneNumber ||
-
-          "",
-        Plaintiff_Region:
-          formData?.establishment_region?.value ||
-
-          "",
+        EstablishmentName: formData?.establishment_fileNumber || "",
+        Plaintiff_PhoneNumber: formData?.establishment_phoneNumber || "",
+        Plaintiff_Region: formData?.establishment_region?.value || "",
         Plaintiff_City:
           formData?.establishment_city?.value ||
-
           formData?.establishment_region?.value ||
-
           "",
       };
 
@@ -326,7 +298,7 @@ export const claimantDetailsPayload = (
         userClaims,
         language,
         userType,
-        nicDetailObj
+        nicDetailObj,
       );
 
     default:
@@ -353,10 +325,10 @@ export const defendantWorkerPayload = (
       "",
     DefendantName: formData?.DefendantsEstablishmentPrisonerName || "",
     Defendant_ApplicantBirthDate: toWesternDigits(
-      (formatDateToYYYYMMDD(formData?.def_date_gregorian) || "") ?? ""
+      (formatDateToYYYYMMDD(formData?.def_date_gregorian) || "") ?? "",
     ),
     Defendant_HijiriDOB: toWesternDigits(
-      (formatDateToYYYYMMDD(formData?.def_date_hijri) || "") ?? ""
+      (formatDateToYYYYMMDD(formData?.def_date_hijri) || "") ?? "",
     ),
     Defendant_PhoneNumber:
       formData?.mobileNumber || formData?.phoneNumber || "",
@@ -405,8 +377,6 @@ export const defendantDetailsPayload = (
 ): CasePayload => {
   const lowUserType = userType?.toLowerCase();
 
-
-
   switch (lowUserType) {
     case "legal representative":
       return {
@@ -416,18 +386,18 @@ export const defendantDetailsPayload = (
         Flow_CurrentScreen: "DefendantDetails",
         DefendantID: extractValue(formData?.DefendantsEstablishmentPrisonerId),
         Defendant_HijiriDOB: toWesternDigits(
-          extractValue(formatDateToYYYYMMDD(formData?.def_date_hijri)) ?? ""
+          extractValue(formatDateToYYYYMMDD(formData?.def_date_hijri)) ?? "",
         ),
         DefendantType: "",
         DefendantName: extractValue(
-          formData?.DefendantsEstablishmentPrisonerName
+          formData?.DefendantsEstablishmentPrisonerName,
         ),
         Defendant_PhoneNumber: extractValue(formData?.mobileNumber),
         Defendant_Region: extractValue(
-          formData?.defendantRegion?.value || formData?.region?.value
+          formData?.defendantRegion?.value || formData?.region?.value,
         ),
         Defendant_City: extractValue(
-          formData?.defendantCity?.value || formData?.city?.value
+          formData?.defendantCity?.value || formData?.city?.value,
         ),
         Defendant_MobileNumber: extractValue(formData?.mobileNumber),
       };
@@ -440,17 +410,17 @@ export const defendantDetailsPayload = (
         DefendantType: "",
         DefendantID: extractValue(formData?.DefendantsEstablishmentPrisonerId),
         Defendant_HijiriDOB: toWesternDigits(
-          extractValue(formatDateToYYYYMMDD(formData?.def_date_hijri)) ?? ""
+          extractValue(formatDateToYYYYMMDD(formData?.def_date_hijri)) ?? "",
         ),
         DefendantName: extractValue(
-          formData?.DefendantsEstablishmentPrisonerName
+          formData?.DefendantsEstablishmentPrisonerName,
         ),
         Defendant_PhoneNumber: extractValue(formData?.mobileNumber),
         Defendant_Region: extractValue(
-          formData?.defendantRegion?.value || formData?.region?.value
+          formData?.defendantRegion?.value || formData?.region?.value,
         ),
         Defendant_City: extractValue(
-          formData?.defendantCity?.value || formData?.city?.value
+          formData?.defendantCity?.value || formData?.city?.value,
         ),
         Worker_Nationality: extractValue(formData?.nationality?.value),
         Gender: extractValue(formData?.gender?.value),
@@ -459,9 +429,7 @@ export const defendantDetailsPayload = (
       };
 
     default:
-
       if (formData?.defendantStatus === "Government") {
-
         return {
           ...getBasePayload(userClaims, language, userType),
           Flow_ButtonName: buttonName,
@@ -545,7 +513,7 @@ export const workDetailsPayload = (
   caseId?: string,
   userClaims?: any,
   userType?: string,
-  language: string = "EN"
+  language: string = "EN",
 ): CasePayload => {
   const lowUserType = userType?.toLowerCase();
 
@@ -563,30 +531,30 @@ export const workDetailsPayload = (
         Defendant_ContractNumber: extractValue(formData?.contractNumber),
         Defendant_ContractStartDate: toWesternDigits(
           extractValue(
-            formatDateToYYYYMMDD(formData?.contractDateGregorian) || ""
-          )
+            formatDateToYYYYMMDD(formData?.contractDateGregorian) || "",
+          ),
         ),
         Defendant_ContractStartDateHijjari: toWesternDigits(
-          extractValue(formatDateToYYYYMMDD(formData?.contractDateHijri) || "")
+          extractValue(formatDateToYYYYMMDD(formData?.contractDateHijri) || ""),
         ),
         Defendant_ContractEndDate: toWesternDigits(
           extractValue(
-            formatDateToYYYYMMDD(formData?.contractExpiryDateGregorian) || ""
-          )
+            formatDateToYYYYMMDD(formData?.contractExpiryDateGregorian) || "",
+          ),
         ),
         Defendant_ContractEndDateHijjari: toWesternDigits(
           extractValue(
-            formatDateToYYYYMMDD(formData?.contractExpiryDateHijri) || ""
-          )
+            formatDateToYYYYMMDD(formData?.contractExpiryDateHijri) || "",
+          ),
         ),
         Defendant_JobLocation: extractValue(formData?.jobLocation?.value),
         DefendantJobCity: extractValue(formData?.jobLocationCity?.value),
         Defendant_JobStartDate: toWesternDigits(
-          formatDateToYYYYMMDD(formData?.dateOfFirstWorkingDayGregorian) || ""
+          formatDateToYYYYMMDD(formData?.dateOfFirstWorkingDayGregorian) || "",
         ),
 
         Defendant_JobEndDate: toWesternDigits(
-          formatDateToYYYYMMDD(formData?.dateOfLastWorkingDayGregorian) || ""
+          formatDateToYYYYMMDD(formData?.dateOfLastWorkingDayGregorian) || "",
         ),
 
         Defendant_ClosestLaborOffice: formData?.laborOffice?.value,
@@ -605,28 +573,28 @@ export const workDetailsPayload = (
         Defendant_ContractNumber: extractValue(formData?.contractNumber),
         Defendant_ContractStartDate: toWesternDigits(
           extractValue(
-            formatDateToYYYYMMDD(formData?.contractDateGregorian) || ""
-          )
+            formatDateToYYYYMMDD(formData?.contractDateGregorian) || "",
+          ),
         ),
         Defendant_ContractStartDateHijjari: toWesternDigits(
-          extractValue(formatDateToYYYYMMDD(formData?.contractDateHijri) || "")
+          extractValue(formatDateToYYYYMMDD(formData?.contractDateHijri) || ""),
         ),
         Defendant_ContractEndDate: toWesternDigits(
           extractValue(
-            formatDateToYYYYMMDD(formData?.contractExpiryDateGregorian) || ""
-          )
+            formatDateToYYYYMMDD(formData?.contractExpiryDateGregorian) || "",
+          ),
         ),
         Defendant_ContractEndDateHijjari: toWesternDigits(
           extractValue(
-            formatDateToYYYYMMDD(formData?.contractExpiryDateHijri) || ""
-          )
+            formatDateToYYYYMMDD(formData?.contractExpiryDateHijri) || "",
+          ),
         ),
         Defendant_JobStartDate: toWesternDigits(
-          formatDateToYYYYMMDD(formData?.dateOfFirstWorkingDayGregorian) || ""
+          formatDateToYYYYMMDD(formData?.dateOfFirstWorkingDayGregorian) || "",
         ),
 
         Defendant_JobEndDate: toWesternDigits(
-          formatDateToYYYYMMDD(formData?.dateOfLastWorkingDayGregorian) || ""
+          formatDateToYYYYMMDD(formData?.dateOfLastWorkingDayGregorian) || "",
         ),
 
         Defendant_ClosestLaborOffice: formData?.laborOffice?.value,
@@ -646,27 +614,27 @@ export const workDetailsPayload = (
         Plaintiff_ContractType: formData?.contractType?.value,
         Plaintiff_ContractNumber: formData?.contractNumber,
         Plaintiff_ContractStartDate: toWesternDigits(
-          formatDateToYYYYMMDD(formData?.contractDateGregorian) || ""
+          formatDateToYYYYMMDD(formData?.contractDateGregorian) || "",
         ),
         Plaintiff_ContractStartDateHijjari: toWesternDigits(
-          formatDateToYYYYMMDD(formData?.contractDateHijri) || ""
+          formatDateToYYYYMMDD(formData?.contractDateHijri) || "",
         ),
         Plaintiff_ContractEndDate: toWesternDigits(
-          formatDateToYYYYMMDD(formData?.contractExpiryDateGregorian) || ""
+          formatDateToYYYYMMDD(formData?.contractExpiryDateGregorian) || "",
         ),
         Plaintiff_ContractEndDateHijjari: toWesternDigits(
-          formatDateToYYYYMMDD(formData?.contractExpiryDateHijri) || ""
+          formatDateToYYYYMMDD(formData?.contractExpiryDateHijri) || "",
         ),
         Plaintiff_StillWorking: formData?.isStillEmployed ? "SW1" : "SW2",
         Plaintiff_JobLocation: formData?.jobLocation?.value,
         PlaintiffJobCity: formData?.jobLocationCity?.value,
         Plaintiff_ClosestLaborOffice: formData?.laborOffice?.value,
         Plaintiff_JobStartDate: toWesternDigits(
-          formatDateToYYYYMMDD(formData?.dateOfFirstWorkingDayGregorian) || ""
+          formatDateToYYYYMMDD(formData?.dateOfFirstWorkingDayGregorian) || "",
         ),
 
         Plaintiff_JobEndDate: toWesternDigits(
-          formatDateToYYYYMMDD(formData?.dateOfLastWorkingDayGregorian) || ""
+          formatDateToYYYYMMDD(formData?.dateOfLastWorkingDayGregorian) || "",
         ),
       };
   }
@@ -678,7 +646,7 @@ export const hearingTopicsPayload = (
   caseTopics?: any,
   userClaims?: any,
   language: string = "EN",
-  userType?: string
+  userType?: string,
 ): CasePayload => ({
   ...getBasePayload(userClaims, language, userType),
   Flow_ButtonName: buttonName,
@@ -693,7 +661,7 @@ export const reviewPayload = (
   caseId?: string,
   userClaims?: any,
   language: string = "EN",
-  userType?: string
+  userType?: string,
 ): CasePayload => ({
   ...getBasePayload(userClaims, language, userType),
   Flow_ButtonName: buttonName,
@@ -710,7 +678,7 @@ export const emabsyClaimantPayload = (
   userClaims?: any,
   language: string = "EN",
   userType?: string,
-  nicDetailObj?: any
+  nicDetailObj?: any,
 ): CasePayload => {
   if (formData?.claimantStatus === "principal") {
     return {
@@ -728,14 +696,14 @@ export const emabsyClaimantPayload = (
         "",
       PlaintiffHijiriDOB: toWesternDigits(
         formatDateToYYYYMMDD(formData?.embassyPrincipal_hijriDate) ??
-        nicDetailObj?.DateOfBirthHijri ??
-        userClaims?.UserDOB ??
-        ""
+          nicDetailObj?.DateOfBirthHijri ??
+          userClaims?.UserDOB ??
+          "",
       ),
       Plaintiff_ApplicantBirthDate: toWesternDigits(
         formatDateToYYYYMMDD(formData?.embassyPrincipal_gregorianDate) ??
-        nicDetailObj?.DateOfBirthGregorian ??
-        ""
+          nicDetailObj?.DateOfBirthGregorian ??
+          "",
       ),
       Plaintiff_PhoneNumber:
         formData?.embassyPrincipal_phoneNumber ||
@@ -793,15 +761,15 @@ export const emabsyClaimantPayload = (
       formData?.embassyAgent_userName || nicDetailObj?.PlaintiffName || "",
     PlaintiffHijiriDOB: toWesternDigits(
       formatDateToYYYYMMDD(
-        formData?.embassyAgent_workerAgentDateOfBirthHijri
+        formData?.embassyAgent_workerAgentDateOfBirthHijri,
       ) ??
-      nicDetailObj?.DateOfBirthHijri ??
-      ""
+        nicDetailObj?.DateOfBirthHijri ??
+        "",
     ),
     Plaintiff_ApplicantBirthDate: toWesternDigits(
       formatDateToYYYYMMDD(formData?.embassyAgent_gregorianDate) ??
-      nicDetailObj?.DateOfBirthGregorian ??
-      ""
+        nicDetailObj?.DateOfBirthGregorian ??
+        "",
     ),
     Plaintiff_PhoneNumber:
       formData?.embassyAgent_phoneNumber ||

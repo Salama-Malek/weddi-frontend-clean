@@ -15,7 +15,7 @@ export const FileNumberInput = React.forwardRef<
   FileNumberInputProps
 >(({ onFileNumberSubmit, onKeyDown, ...props }, ref) => {
   const handleKeyDown = (
-    e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     if (e.key === "Enter") {
       e.preventDefault();

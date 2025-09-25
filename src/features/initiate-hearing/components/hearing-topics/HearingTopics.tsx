@@ -8,7 +8,7 @@ interface HearingTopicsProps {
 }
 
 export const HearingTopics = ({}: HearingTopicsProps) => {
-  const {  setValue, clearErrors } = useFormContext();
+  const { setValue, clearErrors } = useFormContext();
 
   return (
     <FormResetProvider setValue={setValue} clearErrors={clearErrors}>

@@ -59,7 +59,7 @@ const useHearingDetail = () => {
       refetchOnMountOrArgChange: true,
       refetchOnFocus: true,
       refetchOnReconnect: true,
-    }
+    },
   );
 
   const hearing = data?.CaseDetails || {};

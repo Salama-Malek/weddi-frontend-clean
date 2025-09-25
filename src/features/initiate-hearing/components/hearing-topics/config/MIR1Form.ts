@@ -20,7 +20,6 @@ export const getMIR1FormFields = ({
   editTopic,
   trigger,
 }: any): FormElement[] => {
- 
   const effectiveTypeOfRequest =
     watch("MIR1_typeOfRequest") ||
     typeOfRequest ||
@@ -32,10 +31,10 @@ export const getMIR1FormFields = ({
       : null);
 
   const needsAdditionalFields = requiresAdditionalFields(
-    effectiveTypeOfRequest
+    effectiveTypeOfRequest,
   );
   const needsReasonAndCurrentLevel = requiresReasonAndCurrentLevel(
-    effectiveTypeOfRequest
+    effectiveTypeOfRequest,
   );
 
   const baseFields: FormElement[] = [
@@ -108,7 +107,7 @@ export const getMIR1FormFields = ({
         validation: { required: t("fieldRequired") },
         notRequired: false,
         maxLength: 50,
-      }
+      },
     );
   }
 

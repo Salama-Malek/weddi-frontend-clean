@@ -1,8 +1,6 @@
-import InitiateHearin from "@/features/initiate-hearing/index"
+import InitiateHearin from "@/features/initiate-hearing/index";
 const InitiateHearing = () => {
-  return (
-   <InitiateHearin/>
-  )
-}
+  return <InitiateHearin />;
+};
 
-export default InitiateHearing
+export default InitiateHearing;

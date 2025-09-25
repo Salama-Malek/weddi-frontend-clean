@@ -2,8 +2,15 @@ import { RadioOption } from "@/shared/components/form/RadioGroup";
 
 type ReadOnlyDetail = { label: string; value: string };
 type FileDetail = { fileName: string };
-type SectionData = 
-  | { type: "radio"; name: string; label: string; options: RadioOption[]; value: string; onChange: (value: string) => void }
+type SectionData =
+  | {
+      type: "radio";
+      name: string;
+      label: string;
+      options: RadioOption[];
+      value: string;
+      onChange: (value: string) => void;
+    }
   | { type: "readonly"; fields: ReadOnlyDetail[] }
   | { type: "file"; files: FileDetail[] };
 

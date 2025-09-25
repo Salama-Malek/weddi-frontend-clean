@@ -83,7 +83,7 @@ export const useLegelDefendantFormLayout = ({
         skip: !(typeof selectedWorkerRegion2 === "object"
           ? selectedWorkerRegion2?.value
           : selectedWorkerRegion2),
-      }
+      },
     );
 
   const { data: occupationData } = useGetOccupationLookupDataQuery({
@@ -106,15 +106,12 @@ export const useLegelDefendantFormLayout = ({
     { data: caseDetailsData, error: caseDetailsError },
   ] = useLazyGetCaseDetailsQuery();
 
-  const {
-    data: nicData,
-    isFetching: nicIsLoading,
-  } = useGetNICDetailsQuery(
+  const { data: nicData, isFetching: nicIsLoading } = useGetNICDetailsQuery(
     watchNationalId && watchDateOfBirth
       ? {
           IDNumber: watchNationalId,
           DateOfBirth: toWesternDigits(
-            formatDateToYYYYMMDD(watchDateOfBirth) || ""
+            formatDateToYYYYMMDD(watchDateOfBirth) || "",
           ),
           AcceptedLanguage: i18n.language === "ar" ? "AR" : "EN",
           SourceSystem: "E-Services",
@@ -125,10 +122,9 @@ export const useLegelDefendantFormLayout = ({
         !isValidCallNic ||
         !hasUserInteracted ||
         isHijriDateInFuture(formatDateToYYYYMMDD(watchDateOfBirth) || ""),
-    }
+    },
   );
 
- 
   const disableNicFields = !isValidCallNic || nicIsLoading;
 
   useEffect(() => {
@@ -201,7 +197,7 @@ export const useLegelDefendantFormLayout = ({
       ) {
         setValue(
           "DefendantsEstablishmentRegion",
-          details.Defendant_Region_Code
+          details.Defendant_Region_Code,
         );
       }
       if (
@@ -218,7 +214,7 @@ export const useLegelDefendantFormLayout = ({
       ) {
         setValue(
           "DefendantsEstablishOccupation",
-          details.Defendant_Occupation_Code
+          details.Defendant_Occupation_Code,
         );
       }
       if (
@@ -228,7 +224,7 @@ export const useLegelDefendantFormLayout = ({
       ) {
         setValue(
           "DefendantsEstablishmentGender",
-          details.Defendant_Gender_Code
+          details.Defendant_Gender_Code,
         );
       }
       if (
@@ -238,7 +234,7 @@ export const useLegelDefendantFormLayout = ({
       ) {
         setValue(
           "DefendantsEstablishmentNationality",
-          details.Defendant_Nationality_Code
+          details.Defendant_Nationality_Code,
         );
       }
       if (
@@ -253,9 +249,9 @@ export const useLegelDefendantFormLayout = ({
         details.Defendant_PhoneNumber && details.Defendant_PhoneNumber !== "0"
           ? details.Defendant_PhoneNumber
           : details.Defendant_MobileNumber &&
-            details.Defendant_MobileNumber !== "0"
-          ? details.Defendant_MobileNumber
-          : "";
+              details.Defendant_MobileNumber !== "0"
+            ? details.Defendant_MobileNumber
+            : "";
       if (preferredPhone) {
         setValue("mobileNumber", preferredPhone);
       }
@@ -365,7 +361,7 @@ export const useLegelDefendantFormLayout = ({
   useEffect(() => {
     const hasPrefilledIdAndDob = !!watchNationalId && !!watchDateOfBirth;
     const notFutureDob = !isHijriDateInFuture(
-      formatDateToYYYYMMDD(watchDateOfBirth) || ""
+      formatDateToYYYYMMDD(watchDateOfBirth) || "",
     );
     if (!hasUserInteracted && hasPrefilledIdAndDob && notFutureDob) {
       setHasUserInteracted(true);
@@ -391,7 +387,7 @@ export const useLegelDefendantFormLayout = ({
       ) {
         setValue(
           "DefendantsEstablishmentPrisonerName",
-          nicData?.NICDetails?.PlaintiffName
+          nicData?.NICDetails?.PlaintiffName,
         );
       }
       if (
@@ -400,7 +396,7 @@ export const useLegelDefendantFormLayout = ({
       ) {
         setValue(
           "DefendantsEstablishmentRegion",
-          nicData?.NICDetails?.Region_Code
+          nicData?.NICDetails?.Region_Code,
         );
         setValue("region", {
           value: nicData?.NICDetails?.Region_Code,
@@ -423,7 +419,7 @@ export const useLegelDefendantFormLayout = ({
       ) {
         setValue(
           "DefendantsEstablishOccupation",
-          nicData?.NICDetails?.Occupation_Code
+          nicData?.NICDetails?.Occupation_Code,
         );
         setValue("occupation", {
           value: nicData?.NICDetails?.Occupation_Code,
@@ -436,7 +432,7 @@ export const useLegelDefendantFormLayout = ({
       ) {
         setValue(
           "DefendantsEstablishmentGender",
-          nicData?.NICDetails?.Gender_Code
+          nicData?.NICDetails?.Gender_Code,
         );
         setValue("gender", {
           value: nicData?.NICDetails?.Gender_Code,
@@ -449,7 +445,7 @@ export const useLegelDefendantFormLayout = ({
       ) {
         setValue(
           "DefendantsEstablishmentNationality",
-          nicData?.NICDetails?.Nationality_Code
+          nicData?.NICDetails?.Nationality_Code,
         );
         setValue("nationality", {
           value: nicData?.NICDetails?.Nationality_Code,
@@ -534,7 +530,7 @@ export const useLegelDefendantFormLayout = ({
       (!watch("region") || !watch("region")?.value)
     ) {
       const match = RegionOptions.find(
-        (o: any) => `${o.value}` === `${details.Defendant_Region_Code}`
+        (o: any) => `${o.value}` === `${details.Defendant_Region_Code}`,
       );
       if (match) {
         setValue("region", match, { shouldValidate: true });
@@ -545,7 +541,7 @@ export const useLegelDefendantFormLayout = ({
             value: details.Defendant_Region_Code || "",
             label: details.Defendant_Region || "",
           },
-          { shouldValidate: true }
+          { shouldValidate: true },
         );
       }
     }
@@ -555,7 +551,7 @@ export const useLegelDefendantFormLayout = ({
       (!watch("city") || !watch("city")?.value)
     ) {
       const matchCity = CityOptions.find(
-        (o: any) => `${o.value}` === `${details.Defendant_City_Code}`
+        (o: any) => `${o.value}` === `${details.Defendant_City_Code}`,
       );
       if (matchCity) {
         setValue("city", matchCity, { shouldValidate: true });
@@ -566,7 +562,7 @@ export const useLegelDefendantFormLayout = ({
             value: details.Defendant_City_Code || "",
             label: details.Defendant_City || "",
           },
-          { shouldValidate: true }
+          { shouldValidate: true },
         );
       }
     }
@@ -593,7 +589,7 @@ export const useLegelDefendantFormLayout = ({
     if (!CityOptions || CityOptions.length === 0) return;
 
     const matchCity = CityOptions.find(
-      (o: any) => `${o.value}` === `${details.Defendant_City_Code}`
+      (o: any) => `${o.value}` === `${details.Defendant_City_Code}`,
     );
     if (matchCity) {
       setValue("city", matchCity, { shouldValidate: true });
@@ -604,7 +600,7 @@ export const useLegelDefendantFormLayout = ({
           value: details.Defendant_City_Code || "",
           label: details.Defendant_City || "",
         },
-        { shouldValidate: true }
+        { shouldValidate: true },
       );
     }
   }, [
@@ -637,8 +633,6 @@ export const useLegelDefendantFormLayout = ({
     }
 
     if (defendantCity !== previousDefendantCity && isFormInitialized) {
-    
-
       setValue("region", null, { shouldValidate: true });
     }
 
@@ -732,14 +726,12 @@ export const useLegelDefendantFormLayout = ({
                 }}
                 notRequired={false}
                 isDateOfBirth={true}
-                onChangeHandler={(
-                  date: any,
-                ) => {
+                onChangeHandler={(date: any) => {
                   setHasUserInteracted(true);
                   if (date && !Array.isArray(date)) {
                     const gregorianDate = date.convert(
                       gregorianCalendar,
-                      gregorianLocaleEn
+                      gregorianLocaleEn,
                     );
                     const gregorian = gregorianDate.format("YYYYMMDD");
                     setValue("def_date_gregorian" as any, gregorian);

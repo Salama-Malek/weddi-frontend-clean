@@ -10,7 +10,8 @@ interface Props {
 const HearingCta: React.FC<Props> = memo(({ auditIcon, toggle }) => {
   const { t } = useTranslation("hearingtopics");
 
-  const noHearingTopicsText = t("no_hearing_topics") || "No hearing topics associated with the hearing.";
+  const noHearingTopicsText =
+    t("no_hearing_topics") || "No hearing topics associated with the hearing.";
   const addTopicText = t("add_topic") || "Add Topic";
 
   const handleClick = useCallback(() => {
@@ -24,7 +25,7 @@ const HearingCta: React.FC<Props> = memo(({ auditIcon, toggle }) => {
           src={auditIcon}
           alt="No hearing topics"
           className="w-[171px] h-[171px]"
-          loading="lazy" 
+          loading="lazy"
         />
       </div>
       <p className="!leading-8 text-md font-semibold text-center mb-12">
@@ -44,6 +45,6 @@ const HearingCta: React.FC<Props> = memo(({ auditIcon, toggle }) => {
   );
 });
 
-HearingCta.displayName = "HearingCta"; 
+HearingCta.displayName = "HearingCta";
 
 export default React.memo(HearingCta);

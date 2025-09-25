@@ -48,7 +48,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
         setError(null);
       }
     },
-    [maxFileSize, onFileUpload, t]
+    [maxFileSize, onFileUpload, t],
   );
 
   const { getRootProps, getInputProps, isDragActive } = useFileUpload({

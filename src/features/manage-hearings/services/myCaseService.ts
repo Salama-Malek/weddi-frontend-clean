@@ -78,7 +78,7 @@ export const getCaseDetailsApi = async ({
   UserType,
 }: GetCaseDetailsRequest) => {
   const response = await fetch(
-    `WeddiServices/V1/GetCaseDetails?CaseID=${CaseID}&AcceptedLanguage=${AcceptedLanguage}&SourceSystem=${SourceSystem}&UserType=${UserType}`
+    `WeddiServices/V1/GetCaseDetails?CaseID=${CaseID}&AcceptedLanguage=${AcceptedLanguage}&SourceSystem=${SourceSystem}&UserType=${UserType}`,
   );
   if (!response.ok) {
     throw new Error("Failed to fetch case details");

@@ -3,7 +3,7 @@ import { useEffect, useMemo } from "react";
 import { useGetStatusWorkLookupQuery } from "./statusLookupApis";
 
 export const useStatusWorkLookup = () => {
- const { i18n } = useTranslation();
+  const { i18n } = useTranslation();
   const currentLanguage = i18n.language.toUpperCase();
   const { data, isLoading, refetch } = useGetStatusWorkLookupQuery({
     LookupType: "DataElements",
@@ -24,7 +24,6 @@ export const useStatusWorkLookup = () => {
       value: item.ElementKey,
     }));
   }, [data]);
-
 
   return {
     options,

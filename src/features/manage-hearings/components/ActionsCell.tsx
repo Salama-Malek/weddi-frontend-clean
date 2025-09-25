@@ -12,13 +12,9 @@ interface ActionsCellProps {
   ResendAppointment?: boolean;
   CancelCase?: boolean;
   UpdateCase?: boolean;
-  
 }
 
-export function ActionsCell({
-  caseId,
-  activeTab,
-}: ActionsCellProps) {
+export function ActionsCell({ caseId, activeTab }: ActionsCellProps) {
   const navigate = useNavigate();
   const { t } = useTranslation("managehearings");
 

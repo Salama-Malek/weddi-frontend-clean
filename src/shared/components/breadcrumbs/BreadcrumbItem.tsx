@@ -7,10 +7,14 @@ import { startLoading } from "@/redux/slices/loadingSlice";
 export interface BreadcrumbItemProps {
   href: string;
   children: React.ReactNode;
-  isLast?: boolean; 
+  isLast?: boolean;
 }
 
-const BreadcrumbItem: React.FC<BreadcrumbItemProps> = ({ href, children, isLast }) => {
+const BreadcrumbItem: React.FC<BreadcrumbItemProps> = ({
+  href,
+  children,
+  isLast,
+}) => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
@@ -29,7 +33,7 @@ const BreadcrumbItem: React.FC<BreadcrumbItemProps> = ({ href, children, isLast 
         onClick={handleClick}
         className={classes(
           "regular text-sm md:text-lg cursor-pointer",
-          isLast ? "text-primary-600" : "text-gray-400 hover:text-primary-600"
+          isLast ? "text-primary-600" : "text-gray-400 hover:text-primary-600",
         )}
       >
         {children}

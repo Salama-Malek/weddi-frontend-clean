@@ -1,6 +1,6 @@
-import React from 'react';
-import { useTranslation } from 'react-i18next';
-import { useCookieState } from '@/features/initiate-hearing/hooks/useCookieState';
+import React from "react";
+import { useTranslation } from "react-i18next";
+import { useCookieState } from "@/features/initiate-hearing/hooks/useCookieState";
 
 interface NICErrorModalProps {
   isOpen: boolean;
@@ -8,7 +8,10 @@ interface NICErrorModalProps {
   onClose?: () => void;
 }
 
-const NICErrorModal: React.FC<NICErrorModalProps> = ({ isOpen, errorMessage }) => {
+const NICErrorModal: React.FC<NICErrorModalProps> = ({
+  isOpen,
+  errorMessage,
+}) => {
   const { t } = useTranslation("common");
 
   const [, , , removeAll] = useCookieState({}, { path: "/" });
@@ -24,19 +27,21 @@ const NICErrorModal: React.FC<NICErrorModalProps> = ({ isOpen, errorMessage }) =
 
   if (!isOpen) return null;
 
-  
-  const isAuthError = errorMessage.toLowerCase().includes("unauthorized") || 
-                     errorMessage.toLowerCase().includes("sign in");
+  const isAuthError =
+    errorMessage.toLowerCase().includes("unauthorized") ||
+    errorMessage.toLowerCase().includes("sign in");
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
       <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4 relative">
         <div className="text-center mb-6">
-          <div className={`w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center ${
-            isAuthError ? 'bg-red-100' : 'bg-orange-100'
-          }`}>
+          <div
+            className={`w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center ${
+              isAuthError ? "bg-red-100" : "bg-orange-100"
+            }`}
+          >
             <svg
-              className={`w-8 h-8 ${isAuthError ? 'text-red-600' : 'text-orange-600'}`}
+              className={`w-8 h-8 ${isAuthError ? "text-red-600" : "text-orange-600"}`}
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -49,9 +54,11 @@ const NICErrorModal: React.FC<NICErrorModalProps> = ({ isOpen, errorMessage }) =
               />
             </svg>
           </div>
-          <h3 className={`text-lg font-semibold mb-2 ${
-            isAuthError ? 'text-red-700' : 'text-orange-700'
-          }`}>
+          <h3
+            className={`text-lg font-semibold mb-2 ${
+              isAuthError ? "text-red-700" : "text-orange-700"
+            }`}
+          >
             {t("nic_error.title")}
           </h3>
           <p className="text-gray-600 text-sm">{errorMessage}</p>
@@ -61,9 +68,9 @@ const NICErrorModal: React.FC<NICErrorModalProps> = ({ isOpen, errorMessage }) =
           <button
             onClick={handleSignOut}
             className={`w-full py-2 px-4 rounded-md text-white font-medium transition-colors ${
-              isAuthError 
-                ? 'bg-red-600 hover:bg-red-700' 
-                : 'bg-gray-600 hover:bg-gray-700'
+              isAuthError
+                ? "bg-red-600 hover:bg-red-700"
+                : "bg-gray-600 hover:bg-gray-700"
             }`}
           >
             {t("nic_error.sign_out")}
@@ -71,9 +78,9 @@ const NICErrorModal: React.FC<NICErrorModalProps> = ({ isOpen, errorMessage }) =
           <button
             onClick={handleTryAgain}
             className={`w-full py-2 px-4 rounded-md text-white font-medium transition-colors ${
-              isAuthError 
-                ? 'bg-gray-600 hover:bg-gray-700' 
-                : 'bg-primary-600 hover:bg-primary-700'
+              isAuthError
+                ? "bg-gray-600 hover:bg-gray-700"
+                : "bg-primary-600 hover:bg-primary-700"
             }`}
           >
             {t("nic_error.try_again")}
@@ -84,4 +91,4 @@ const NICErrorModal: React.FC<NICErrorModalProps> = ({ isOpen, errorMessage }) =
   );
 };
 
-export default NICErrorModal; 
+export default NICErrorModal;

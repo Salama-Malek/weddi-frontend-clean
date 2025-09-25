@@ -16,7 +16,7 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ steps, children }) => {
 
   const { currentStep, currentTab, updateParams } = useCasesLogic({
     enableNICCalls: false,
-  }); 
+  });
   const [step, setStep] = useState(currentStep);
   const [tab, setTab] = useState(currentTab);
 

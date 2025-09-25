@@ -49,12 +49,12 @@ const RadioOptionComponent = React.memo(
         "border-gray-400": !isSelected,
         "flex-row-reverse h-16": hasIcon,
         "bg-primary-50 h-16": hasIcon && isSelected,
-      }
+      },
     );
 
     const radioButtonClasses = classes(
       "w-5 h-5 flex items-center justify-center border rounded-full",
-      { "border-gray-400": true }
+      { "border-gray-400": true },
     );
 
     const inputValue =
@@ -105,7 +105,7 @@ const RadioOptionComponent = React.memo(
         </div>
       </label>
     );
-  }
+  },
 );
 
 export const RadioGroup = <T extends string | object = string>({
@@ -137,7 +137,7 @@ export const RadioGroup = <T extends string | object = string>({
         propOnChange(value);
       }
     },
-    [disabled, propOnChange]
+    [disabled, propOnChange],
   );
 
   const isOptionSelected = (option: RadioOption<T>, currentValue?: unknown) => {
@@ -149,7 +149,7 @@ export const RadioGroup = <T extends string | object = string>({
 
   const renderRadioOptions = (
     currentValue?: unknown,
-    onChangeHandler?: (value: T) => void
+    onChangeHandler?: (value: T) => void,
   ) => {
     const change = (v: unknown) => {
       const value = v as T;

@@ -10,7 +10,7 @@ export const MyDropdownContext = createContext<{
   toggle: () => void;
 }>({
   isOpen: false,
-  toggle: () => { },
+  toggle: () => {},
 });
 
 interface MyDropdownProps {
@@ -23,9 +23,9 @@ interface MyDropdownProps {
   onChange?: (option: { label: string; value: string }) => void;
   trigger?: ReactNode;
   isFetching?: boolean;
-  languageChange?: () => void
-  customItems?: { label: string; value: string, onClick?: () => void }[]
-  header?: string
+  languageChange?: () => void;
+  customItems?: { label: string; value: string; onClick?: () => void }[];
+  header?: string;
 }
 
 const MyDropdown: React.FC<MyDropdownProps> = ({
@@ -38,7 +38,7 @@ const MyDropdown: React.FC<MyDropdownProps> = ({
   trigger,
   languageChange,
   customItems,
-  header
+  header,
 }) => {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { isOpen, close, toggle } = useToggle();
@@ -76,11 +76,10 @@ const MyDropdown: React.FC<MyDropdownProps> = ({
 export default MyDropdown;
 
 export interface MyDropdownItemsProps {
-  items: { label: string; value: string, onClick?: () => void }[];
+  items: { label: string; value: string; onClick?: () => void }[];
   selected?: { label: string; value?: string };
   onSelect?: (item: { label: string; value: string }) => void;
-  languageChange?: () => void
-  customItems?: { label: string; value: string, onClick?: () => void }[]
-  header?: string
+  languageChange?: () => void;
+  customItems?: { label: string; value: string; onClick?: () => void }[];
+  header?: string;
 }
-

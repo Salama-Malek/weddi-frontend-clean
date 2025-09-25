@@ -21,7 +21,7 @@ const HearingCards = memo(({ cardData, handleRedirect }: CardSectionProps) => {
     (isHearing?: string, isHearingManage?: string) => {
       return () => handleRedirect(isHearing, isHearingManage);
     },
-    [handleRedirect]
+    [handleRedirect],
   );
 
   return (
@@ -71,7 +71,7 @@ const CardItem = memo(
         </div>
       </div>
     );
-  }
+  },
 );
 
 export default HearingCards;
