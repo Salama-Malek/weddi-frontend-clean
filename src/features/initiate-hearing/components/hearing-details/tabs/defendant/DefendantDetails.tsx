@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { skipToken } from "@reduxjs/toolkit/query";
 import { useTranslation } from "react-i18next";
-import withStepNavigation from "@/shared/HOC/withStepNavigation";
+import withStepNavigation from "@/features/initiate-hearing/hoc/with-step-navigation";
 import { DynamicForm } from "@/shared/components/form/DynamicForm";
 import Loader from "@/shared/components/loader";
 import {

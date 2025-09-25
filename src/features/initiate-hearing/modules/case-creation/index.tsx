@@ -1,6 +1,8 @@
 import React, { Suspense, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-const MultiStepForm = React.lazy(() => import("./MultiStepForm/MultiStepForm"));
+const MultiStepForm = React.lazy(
+  () => import("./multi-step-form/MultiStepForm"),
+);
 
 import StepperSkeleton from "@/shared/components/loader/StepperSkeleton";
 import useCasesLogic from "@/features/initiate-hearing/hooks/useCasesLogic";

@@ -1,5 +1,5 @@
 import { DynamicForm } from "@/shared/components/form/DynamicForm";
-import withStepNavigation from "@/shared/HOC/withStepNavigation";
+import withStepNavigation from "@/features/initiate-hearing/hoc/with-step-navigation";
 import { useEffect } from "react";
 
 import { useAPIFormsData } from "@/providers/FormContext";

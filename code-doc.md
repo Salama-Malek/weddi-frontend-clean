@@ -61,9 +61,9 @@ Components and hooks that authenticate users and hydrate persona context:
 ### 3.3 Initiate hearing (case creation)
 | Artifact | Type | Description | Props / returns |
 | --- | --- | --- | --- |
-| views/initiate-hearing/page.tsx | Route component | Renders InitiateHearing feature inside Suspense for nested case creation routes. | No props. |
+| features/initiate-hearing/pages/InitiateHearingPage.tsx | Route component | Renders InitiateHearing feature inside Suspense for nested case creation routes. | No props. |
 | features/initiate-hearing/index.tsx | Layout component | Wraps case-creation routes with HearingLayout and breadcrumbs from i18n. | No props; uses Outlet for nested steps. |
-| shared/modules/case-creation | Module | Reusable multi-step wizard with StepNavigation, Stepper UI, and review submission flows. | Exports StepNavigation (props: goToPrevStep, handleSave, canProceed, etc.). |
+| features/initiate-hearing/modules/case-creation | Module | Reusable multi-step wizard with StepNavigation, Stepper UI, and review submission flows. | Exports StepNavigation (props: goToPrevStep, handleSave, canProceed, etc.). |
 | providers/FormContext.tsx | Provider | Initialises form defaults from Redux, exposes setFormData, forceValidateForm, editTopic state. | Hook useAPIFormsData returns react-hook-form API with helpers. |
 | features/initiate-hearing/hooks/useCookieState.ts | Hook | Abstraction over react-cookies supporting defaults, event listeners, bulk removal (removeAll). | Returns tuple [getCookie, setCookie, removeCookie, removeAll]. |
 | features/initiate-hearing/api/create-case/apis.ts | RTK Query endpoints | Mutations for saveClaimantDetails, saveDefendantDetails, saveWorkDetails, saveHearingTopics, submitReview, submitFinalReview, validateMojContract, plus file download query. | Exports useSaveClaimantDetailsMutation, useSubmitFinalReviewMutation, useGetFileDetailsQuery, useValidateMojContractMutation. |
@@ -85,7 +85,7 @@ Components and hooks that authenticate users and hydrate persona context:
 - features/initiate-hearing/hooks/useCookieState.ts centralises cookie read/write/remove with JSON parsing and global change notifications.
 - providers/TokenExpirationProvider.tsx and providers/AuthTokenProvider.tsx emit context about session expiry for UI prompts.
 ### 4.2 Form ecosystem
-- shared/modules/case-creation/components/StepNavigation.tsx drives wizard footer actions, handles save vs next logic, cancellation modals, and navigation back to My Cases.
+- features/initiate-hearing/modules/case-creation/components/StepNavigation.tsx drives wizard footer actions, handles save vs next logic, cancellation modals, and navigation back to My Cases.
 - config/formConfig.tsx centralises builder helpers (Hijri/Gregorian field pairs, managerial decision configs, add topic buttons).
 - FormResetProvider (within FormContext) listens for resets triggered by window caseDataCleared events to keep UI consistent.
 - shared/lib/dateValidationUtils.ts and validators.ts provide schema-level checks used across forms.

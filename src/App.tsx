@@ -17,8 +17,12 @@ import Logout from "./features/login/LogOut";
 import { useTranslation } from "react-i18next";
 
 const LoginLazy = lazy(() => import("./features/login/Index"));
-const CaseCreation = lazy(() => import("./shared/modules/case-creation"));
-const InitiateHearing = lazy(() => import("./views/initiate-hearing/page"));
+const CaseCreation = lazy(
+  () => import("./features/initiate-hearing/modules/case-creation"),
+);
+const InitiateHearing = lazy(
+  () => import("./features/initiate-hearing/pages/InitiateHearingPage"),
+);
 const Main = lazy(() => import("@/features/dashboard"));
 const ManageHearings = lazy(
   () => import("./features/manage-hearings/components/ManageHearings"),

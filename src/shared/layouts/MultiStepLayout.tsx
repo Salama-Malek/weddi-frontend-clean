@@ -1,8 +1,8 @@
 import React, { Suspense, useMemo } from "react";
 import TableLoader from "@/shared/components/loader/TableLoader";
 import { useLanguageDirection } from "@/i18n/LanguageDirectionProvider";
-import Tabs from "../modules/case-creation/components/tabs/Tabs";
-import { useTabs } from "../modules/case-creation/components/tabs/tabsConfig";
+import Tabs from "@/features/initiate-hearing/modules/case-creation/components/tabs/Tabs";
+import { useTabs } from "@/features/initiate-hearing/modules/case-creation/components/tabs/tabsConfig";
 
 interface MultiStepLayoutProps {
   currentStep: number;

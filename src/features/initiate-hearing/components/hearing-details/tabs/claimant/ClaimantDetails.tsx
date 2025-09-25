@@ -3,7 +3,7 @@ import { skipToken } from "@reduxjs/toolkit/query";
 import { useTranslation } from "react-i18next";
 import withStepNavigation, {
   WithStepNavigationProps,
-} from "@/shared/HOC/withStepNavigation";
+} from "@/features/initiate-hearing/hoc/with-step-navigation";
 import { DynamicForm } from "@/shared/components/form/DynamicForm";
 import { useNavigationService } from "@/shared/hooks/useNavigationService";
 import { toast } from "react-toastify";
