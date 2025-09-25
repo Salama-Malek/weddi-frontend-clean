@@ -12,10 +12,3 @@ export function formatDate(yyyymmdd: string): string {
   return `${day}/${month}/${year}`;
 }
 
-
-export function setFormatDate(yyyymmdd: string): string {
-  if (!yyyymmdd) return yyyymmdd;
-  const data = yyyymmdd.split("/");
-
-  return `${data[0]}${data[1]}${data[2]}`;
-}
