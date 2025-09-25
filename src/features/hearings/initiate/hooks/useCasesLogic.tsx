@@ -10,10 +10,7 @@ import { useCookieState } from "./useCookieState";
 import { TokenClaims } from "@/features/auth/components/AuthProvider";
 import { useApiErrorHandler } from "@/shared/hooks/useApiErrorHandler";
 import { useGetNICDetailsQuery } from "@/features/hearings/initiate/api/create-case/plaintiffDetailsApis";
-import {
-  formatDateToYYYYMMDD,
-  isHijriDateInFuture,
-} from "@/utils/helpers";
+import { formatDateToYYYYMMDD, isHijriDateInFuture } from "@/utils/helpers";
 
 const tabs: string[] = [
   "1.Plaintiff's Details",
