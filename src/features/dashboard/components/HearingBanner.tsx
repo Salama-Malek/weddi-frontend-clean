@@ -2,15 +2,15 @@ import React, { lazy, Suspense, useEffect, useState } from "react";
 import BannerBg from "@/assets/images/banner/banner-bg.png";
 import Button from "@/shared/components/button";
 import { useTranslation } from "react-i18next";
-import { useCookieState } from "@/features/initiate-hearing/hooks/useCookieState";
+import { useCookieState } from "@/features/hearings/initiate/hooks/useCookieState";
 const InfoBanner = lazy(
   () => import("@/shared/components/ui/account-warning-header"),
 );
 import TableLoader from "@/shared/components/loader/TableLoader";
 import { useLazyGetMySchedulesQuery } from "../api/api";
-import { TokenClaims } from "@/features/login/components/AuthProvider";
-import { useUser } from "@/shared/context/userTypeContext";
-import { useGetEstablishmentDetailsQuery } from "@/features/initiate-hearing/api/create-case/defendantDetailsApis";
+import { TokenClaims } from "@/features/auth/components/AuthProvider";
+import { useUser } from "@/providers/context/userTypeContext";
+import { useGetEstablishmentDetailsQuery } from "@/features/hearings/initiate/api/create-case/defendantDetailsApis";
 
 interface BannerProps {
   isEstablishment?: boolean;

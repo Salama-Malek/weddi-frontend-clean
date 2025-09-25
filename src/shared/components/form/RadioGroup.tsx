@@ -1,7 +1,7 @@
 import React, { useCallback, useMemo } from "react";
 import { FieldWrapper } from "./FieldWrapper";
 import radioIcon from "@/assets/icon-radio.svg";
-import { classes } from "@/shared/lib/clsx";
+import { classes } from "@/utils/clsx";
 import { Controller } from "react-hook-form";
 
 export type RadioOption<T = string> = {

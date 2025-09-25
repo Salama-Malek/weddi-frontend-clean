@@ -1,7 +1,7 @@
-import { useCookieState } from "@/features/initiate-hearing/hooks/useCookieState";
+import { useCookieState } from "@/features/hearings/initiate/hooks/useCookieState";
 import { useDispatch } from "react-redux";
-import { setFormData } from "@/redux/slices/formSlice";
-import { setTitles } from "@/redux/slices/formOptionsSlice";
+import { setFormData } from "@/app/store/slices/formSlice";
+import { setTitles } from "@/app/store/slices/formOptionsSlice";
 
 export const useClearCaseData = () => {
   const [, setCookie, removeCookie] = useCookieState();

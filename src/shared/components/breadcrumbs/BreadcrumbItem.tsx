@@ -1,8 +1,8 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { classes } from "@/shared/lib/clsx";
+import { classes } from "@/utils/clsx";
 import { useDispatch } from "react-redux";
-import { startLoading } from "@/redux/slices/loadingSlice";
+import { startLoading } from "@/app/store/slices/loadingSlice";
 
 export interface BreadcrumbItemProps {
   href: string;

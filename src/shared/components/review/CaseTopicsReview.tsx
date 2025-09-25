@@ -4,9 +4,9 @@ import { Section } from "@/shared/layouts/Section";
 import TableLoader from "@/shared/components/loader/TableLoader";
 import FileAttachment from "@/shared/components/ui/file-attachment/FileAttachment";
 import Modal from "@/shared/components/modal/Modal";
-import { useLazyGetFileDetailsQuery } from "@/features/initiate-hearing/api/create-case/apis";
+import { useLazyGetFileDetailsQuery } from "@/features/hearings/initiate/api/create-case/apis";
 import { ColumnDef, Row } from "@tanstack/react-table";
-import { ensureFileNameWithExtension } from "@/shared/lib/utils/fileUtils";
+import { ensureFileNameWithExtension } from "@/utils/fileUtils";
 
 const ReusableTable = React.lazy(() =>
   import("@/shared/components/table/ReusableTable").then((m) => ({

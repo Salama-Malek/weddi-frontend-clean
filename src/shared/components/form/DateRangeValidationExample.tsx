@@ -2,7 +2,7 @@ import React from "react";
 import { useForm, FormProvider } from "react-hook-form";
 import { HijriDatePickerInput } from "@/shared/components/calanders/HijriDatePickerInput";
 import { GregorianDateDisplayInput } from "@/shared/components/calanders/GregorianDateDisplayInput";
-import { createDateRangeValidation } from "@/shared/lib/dateValidationUtils";
+import { createDateRangeValidation } from "@/utils/dateValidationUtils";
 import { useDateRangeValidation } from "@/shared/hooks/useDateRangeValidation";
 import gregorianCalendar from "react-date-object/calendars/gregorian";
 import gregorianLocale from "react-date-object/locales/gregorian_en";

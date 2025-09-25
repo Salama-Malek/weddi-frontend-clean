@@ -1,12 +1,12 @@
 import { Outlet } from "react-router-dom";
-import Header from "../components/layouts/header";
-import { UserProvider } from "../context/userTypeContext";
+import Header from "./header";
+import { UserProvider } from "@/providers/context/userTypeContext";
 import { useState, useEffect } from "react";
-import { useCookieState } from "@/features/initiate-hearing/hooks/useCookieState";
+import { useCookieState } from "@/features/hearings/initiate/hooks/useCookieState";
 import {
   NICServiceErrorProvider,
   useNICServiceErrorContext,
-} from "../context/NICServiceErrorContext";
+} from "@/providers/context/NICServiceErrorContext";
 import NICServiceErrorModal from "../components/modal/NICServiceErrorModal";
 import { useKeyboardPrevention } from "../hooks/useKeyboardPrevention";
 import { useNavigationLoading } from "../hooks/useNavigationLoading";

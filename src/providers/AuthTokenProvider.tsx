@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { jwtDecode } from "jwt-decode";
-import { useCookieState } from "@/features/initiate-hearing/hooks/useCookieState";
-import { useLazyGetUserTokenQuery } from "@/features/login/api/loginApis";
+import { useCookieState } from "@/features/hearings/initiate/hooks/useCookieState";
+import { useLazyGetUserTokenQuery } from "@/features/auth/api/loginApis";
 
 interface AuthTokenContextType {
   isTokenExpired: boolean;

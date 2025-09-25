@@ -7,7 +7,7 @@ import {
   createErrorResponse,
   ApiResponseWithErrors,
   ErrorHandlerConfig,
-} from "@/shared/lib/api/errorHandler";
+} from "@/utils/api/errorHandler";
 
 export const useApiErrorHandler = () => {
   const { t } = useTranslation();

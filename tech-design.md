@@ -7,22 +7,22 @@ Application: Weddi Portal Frontend
 The Weddi portal frontend is a single-page application delivered through Vite. React Router drives routing, Redux Toolkit powers predictable state, and RTK Query handles all server communication. Feature-driven directories keep domain logic isolated while shared providers inject cross-cutting concerns such as localization, tokens, tabs, and form orchestration.
 | Layer | Description | Key technologies / assets |
 | --- | --- | --- |
-| Client UI | React SPA rendered inside the root element with Suspense fallbacks and layout composition. | src/main.tsx, src/App.tsx, src/shared/layouts/MainLayout.tsx |
-| State & data orchestration | Redux store combines local slices with RTK Query's API cache; React Hook Form and cookie-backed contexts keep form and persona state synchronized. | src/redux/store/index.ts, src/config/api.ts, src/providers/FormContext.tsx, src/features/initiate-hearing/hooks/useCookieState.ts |
+| Client UI | React SPA rendered inside the root element with Suspense fallbacks and layout composition. | src/index.tsx, src/app/App.tsx, src/shared/layouts/MainLayout.tsx |
+| State & data orchestration | Redux store combines local slices with RTK Query's API cache; React Hook Form and cookie-backed contexts keep form and persona state synchronized. | src/app/store/index.ts, src/services/apiClient.ts, src/providers/FormContext.tsx, src/features/hearings/initiate/hooks/useCookieState.ts |
 | Backend integrations | REST services for cases, schedules, lookups, and OAuth tokens served by WeddiServices and WeddiCreateCaseServices. | WeddiServices/V1/*, WeddiCreateCaseServices/V1/*, WeddiOauth2/v1/token |
 | Cross-cutting concerns | Providers handle error boundaries, token refresh, date/calendar switching, tab coordination, and language direction. | src/providers/AppProvider.tsx, src/providers/TokenExpirationProvider.tsx, src/i18n/LanguageDirectionProvider.tsx, src/shared/components/tabs/TabsContext.tsx |
 ## 2. Major modules and responsibilities
 | Module | Responsibilities | Representative assets |
 | --- | --- | --- |
-| Login & session bootstrap | Persona selection, JWT generation for impersonation, OAuth token acquisition, NIC lookups, cookie hydration. | src/features/login/Index.tsx, src/features/login/components/AuthProvider.tsx, src/providers/AuthTokenProvider.tsx |
+| Login & session bootstrap | Persona selection, JWT generation for impersonation, OAuth token acquisition, NIC lookups, cookie hydration. | src/features/auth/Index.tsx, src/features/auth/components/AuthProvider.tsx, src/providers/AuthTokenProvider.tsx |
 | Dashboard | Authenticated landing page with banners, schedules, statistics, notifications, and case shortcuts. | src/features/dashboard/index.tsx, src/features/dashboard/components/HearingContent.tsx, src/features/dashboard/api/api.ts |
-| Initiate hearing (case creation) | Multi-step wizard for claimants/defendants, form persistence, topic management, OTP verification, acknowledgement downloads. | src/features/initiate-hearing/pages/InitiateHearingPage.tsx, src/features/initiate-hearing/modules/case-creation, src/features/initiate-hearing/api/create-case |
-| Manage hearings | Tabular case lists, filters, role-based actions, case details, topic updates, attachment flows. | src/features/manage-hearings/components/ManageHearings.tsx, src/features/manage-hearings/api/myCasesApis.ts, src/features/manage-hearings/services |
-| Shared infrastructure | Global layouts, headers, tabs, modal/error handling, localization utilities, helpers, and reusable form inputs. | src/shared/layouts/MainLayout.tsx, src/shared/components, src/shared/lib |
+| Initiate hearing (case creation) | Multi-step wizard for claimants/defendants, form persistence, topic management, OTP verification, acknowledgement downloads. | src/features/hearings/initiate/pages/InitiateHearingPage.tsx, src/features/hearings/initiate/modules/case-creation, src/features/hearings/initiate/api/create-case |
+| Manage hearings | Tabular case lists, filters, role-based actions, case details, topic updates, attachment flows. | src/features/hearings/manage/components/ManageHearings.tsx, src/features/hearings/manage/api/myCasesApis.ts, src/features/hearings/manage/services |
+| Shared infrastructure | Global layouts, headers, tabs, modal/error handling, localization utilities, helpers, and reusable form inputs. | src/shared/layouts/MainLayout.tsx, src/shared/components, src/utils |
 ## 3. State management and data flow
 State is deliberately layered. Redux Toolkit stores global UI flags (loading counters, default form values, option selections). RTK Query extends the same store with data caches and exposes generated hooks. Context providers (UserProvider, UserTypeProvider, DateProvider, LanguageDirectionProvider, TabsProvider) bridge persona data, language, and calendar preferences across components. React Hook Form under FormProvider synchronizes wizard data, while useCookieState persists identity and case metadata for continuity across reloads.
-- Redux store (src/redux/store/index.ts) wires api.reducer with loading, form, formOptions, and DefaultValues slices for global flags.
-- RTK Query base API (src/config/api.ts) injects endpoints per feature and shares middleware to manage refresh, request transformation, and errors.
+- Redux store (src/app/store/index.ts) wires api.reducer with loading, form, formOptions, and DefaultValues slices for global flags.
+- RTK Query base API (src/services/apiClient.ts) injects endpoints per feature and shares middleware to manage refresh, request transformation, and errors.
 - AuthProvider, AuthTokenProvider, and TokenExpirationProvider coordinate JWT ingestion, OAuth refresh, and expiry notifications using cookies.
 - FormProvider couples react-hook-form with stored defaults and exposes force validation/reset helpers to multi-step modules.
 - useCookieState offers a typed wrapper over react-cookies with event notifications so cookie mutations propagate between tabs and components.
