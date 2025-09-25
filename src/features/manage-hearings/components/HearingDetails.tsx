@@ -25,6 +25,8 @@ import infoIcon from "@/assets/info-alert.svg";
 import auditIcon from "@/assets/audit-01.svg";
 import { TokenClaims } from "@/features/login/components/AuthProvider";
 import { useApiErrorHandler } from "@/shared/hooks/useApiErrorHandler";
+import { isApiResponseSuccessful } from "@/shared/lib/api/errorHandler";
+import { downloadBase64File } from "@/utils/file";
 
 const HearingAccordion = lazy(() => import("../components/HearingAccordion"));
 
@@ -70,39 +72,46 @@ const HearingDetails = () => {
   >(null);
   const [showCancelSuccess, setShowCancelSuccess] = useState(false);
   const [getCookie, setCookie] = useCookieState();
-  const lang = i18n.language;
-  const SourceSystem = "E-Services";
   const statusCode = hearing?.StatusWork_Code;
 
-  const { handleResponse, hasErrors } = useApiErrorHandler();
+  const { handleResponse } = useApiErrorHandler();
+
+  const acceptedLanguage = i18n.language === "ar" ? "AR" : "EN";
+  const sourceSystem = "E-Services";
+  const baseRequestPayload = {
+    CaseID: caseId || "",
+    AcceptedLanguage: acceptedLanguage,
+    SourceSystem: sourceSystem,
+  };
+
+  const getResolveStatus = (status?: string) => {
+    const inFlightStatuses = [
+      "Under-Investigation",
+      "Under-Negotiations",
+      "Under-NegotiationsCI",
+    ];
+
+    // In-flight cases require a waived resolve status, all others use the cancelled code.
+    return inFlightStatuses.includes(status || "")
+      ? "Resolved-Waived"
+      : "Resolved-Request Cancelled";
+  };
+
+  // The appointment resend target depends on which party tab the user last viewed.
+  const getPartyTypeFromLocation = () =>
+    location.state?.activeTab === "claimant" ? "Plaintiff" : "Defendant";
 
   const { clearCaseData } = useClearCaseData();
 
   const handleCancelCase = async () => {
     try {
       setLoadingAction("cancel");
-      const isInFlight = [
-        "Under-Investigation",
-        "Under-Negotiations",
-        "Under-NegotiationsCI",
-      ].includes(hearing?.StatusWork_Code || "");
-      const resolveStatus = isInFlight
-        ? "Resolved-Waived"
-        : "Resolved-Request Cancelled";
-
       const cancelCaseResponse: any = await resolveCase({
-        CaseID: caseId!,
-        AcceptedLanguage: lang === "ar" ? "AR" : "EN",
-        SourceSystem,
-        ResolveStatus: resolveStatus,
+        ...baseRequestPayload,
+        ResolveStatus: getResolveStatus(hearing?.StatusWork_Code),
       }).unwrap();
 
-      const isSuccessful =
-        !hasErrors(cancelCaseResponse) &&
-        (cancelCaseResponse?.SuccessCode === "200" ||
-          cancelCaseResponse?.ServiceStatus === "Success");
-
-      if (isSuccessful) {
+      if (isApiResponseSuccessful(cancelCaseResponse)) {
         clearCaseData();
 
         toast.success(t("cancel_success"));
@@ -122,18 +131,11 @@ const HearingDetails = () => {
     try {
       setLoadingAction("reopen");
       const reOpenCaseResponse: any = await reopenCase({
-        CaseID: caseId!,
-        AcceptedLanguage: lang === "ar" ? "AR" : "EN",
-        SourceSystem,
+        ...baseRequestPayload,
         ReopenComments: reason || "",
       }).unwrap();
 
-      const isSuccessful =
-        !hasErrors(reOpenCaseResponse) &&
-        (reOpenCaseResponse?.SuccessCode === "200" ||
-          reOpenCaseResponse?.ServiceStatus === "Success");
-
-      if (isSuccessful) {
+      if (isApiResponseSuccessful(reOpenCaseResponse)) {
         await refetch();
         toast.success(t("reopen_success"));
         setShowReopenModal(false);
@@ -146,6 +148,8 @@ const HearingDetails = () => {
         } else {
           navigate("");
         }
+      } else {
+        handleResponse(reOpenCaseResponse);
       }
     } catch {
       toast.error(t("reopen_error"));
@@ -158,21 +162,16 @@ const HearingDetails = () => {
     try {
       setLoadingAction("update");
       const updateCaseTopicsResponse: any = await updateCaseTopics({
-        CaseID: caseId!,
-        AcceptedLanguage: lang === "ar" ? "AR" : "EN",
-        SourceSystem,
+        ...baseRequestPayload,
         CaseTopics: hearing?.CaseTopics || [],
       }).unwrap();
 
-      const isSuccessful =
-        !hasErrors(updateCaseTopicsResponse) &&
-        (updateCaseTopicsResponse?.SuccessCode === "200" ||
-          updateCaseTopicsResponse?.ServiceStatus === "Success");
-
-      if (isSuccessful) {
+      if (isApiResponseSuccessful(updateCaseTopicsResponse)) {
         toast.success(t("update_success"));
         await refetch();
         navigate("");
+      } else {
+        handleResponse(updateCaseTopicsResponse);
       }
     } catch {
       toast.error(t("update_error"));
@@ -185,19 +184,15 @@ const HearingDetails = () => {
   const handleResend = async () => {
     try {
       setLoadingAction("resend");
-      const PartyType =
-        location.state?.activeTab === "claimant" ? "Plaintiff" : "Defendant";
       const resendAppointmentResponse: any = await resendAppointment({
-        CaseID: caseId!,
-        AcceptedLanguage: lang === "ar" ? "AR" : "EN",
-        SourceSystem,
-        PartyType,
+        ...baseRequestPayload,
+        PartyType: getPartyTypeFromLocation(),
       }).unwrap();
-      if (
-        resendAppointmentResponse.ServiceStatus === "Success" &&
-        resendAppointmentResponse.ErrorDetails.length === 0
-      ) {
+
+      if (isApiResponseSuccessful(resendAppointmentResponse)) {
         setShowResendSuccess(true);
+      } else {
+        handleResponse(resendAppointmentResponse);
       }
     } catch {
       toast.error(t("resend_error"));
@@ -213,36 +208,25 @@ const HearingDetails = () => {
   ) => {
     try {
       const response: any = await triggerDownloadPDF({
-        CaseID: caseId!,
-        AcceptedLanguage: lang === "ar" ? "AR" : "EN",
-        SourceSystem,
+        ...baseRequestPayload,
         PDFAction: actionType,
         UserType: userType || "",
         IDNumber: userClaims.UserID || "",
       });
 
       const base64Data = response?.data?.Base64FileData;
-      if (!base64Data) throw new Error("File data is missing");
-      const byteCharacters = atob(base64Data);
-      const byteNumbers = new Array(byteCharacters.length)
-        .fill(0)
-        .map((_, i) => byteCharacters.charCodeAt(i));
-      const byteArray = new Uint8Array(byteNumbers);
-      const blob = new Blob([byteArray], { type: "application/pdf" });
+      if (!base64Data) {
+        throw new Error("File data is missing");
+      }
 
-      const blobUrl = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = blobUrl;
-      link.download = fileName;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
+      downloadBase64File(base64Data, fileName, "application/pdf");
     } catch {
       toast.error(t("download_error"));
     }
   };
 
   const handleCompleteCase = () => {
+    // Store the case so the initiate flow can resume the incomplete submission.
     setCookie("caseId", caseId);
     setCookie("manage-incomplete", true);
     navigate("/initiate-hearing/case-creation");
@@ -259,6 +243,7 @@ const HearingDetails = () => {
       "Resolved-Save the case",
     ];
 
+    // Some resolutions require the user to provide an acknowledgement comment before reopening.
     const needsAcknowledgment = acknowledgmentStatuses.includes(
       statusCode || "",
     );
