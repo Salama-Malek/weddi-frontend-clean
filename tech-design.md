@@ -16,7 +16,7 @@ The Weddi portal frontend is a single-page application delivered through Vite. R
 | --- | --- | --- |
 | Login & session bootstrap | Persona selection, JWT generation for impersonation, OAuth token acquisition, NIC lookups, cookie hydration. | src/features/login/Index.tsx, src/features/login/components/AuthProvider.tsx, src/providers/AuthTokenProvider.tsx |
 | Dashboard | Authenticated landing page with banners, schedules, statistics, notifications, and case shortcuts. | src/features/dashboard/index.tsx, src/features/dashboard/components/HearingContent.tsx, src/features/dashboard/api/api.ts |
-| Initiate hearing (case creation) | Multi-step wizard for claimants/defendants, form persistence, topic management, OTP verification, acknowledgement downloads. | src/views/initiate-hearing/page.tsx, src/shared/modules/case-creation, src/features/initiate-hearing/api/create-case |
+| Initiate hearing (case creation) | Multi-step wizard for claimants/defendants, form persistence, topic management, OTP verification, acknowledgement downloads. | src/features/initiate-hearing/pages/InitiateHearingPage.tsx, src/features/initiate-hearing/modules/case-creation, src/features/initiate-hearing/api/create-case |
 | Manage hearings | Tabular case lists, filters, role-based actions, case details, topic updates, attachment flows. | src/features/manage-hearings/components/ManageHearings.tsx, src/features/manage-hearings/api/myCasesApis.ts, src/features/manage-hearings/services |
 | Shared infrastructure | Global layouts, headers, tabs, modal/error handling, localization utilities, helpers, and reusable form inputs. | src/shared/layouts/MainLayout.tsx, src/shared/components, src/shared/lib |
 ## 3. State management and data flow

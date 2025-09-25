@@ -1,4 +1,4 @@
-import CaseCreation from "@/shared/modules/case-creation";
+import CaseCreation from "@/features/initiate-hearing/modules/case-creation";
 
 const CaseCreationPage = () => {
   return <CaseCreation />;

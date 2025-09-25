@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { SubmitHandler, useWatch } from "react-hook-form";
-import StepNavigation from "@/shared/modules/case-creation/components/StepNavigation";
+import StepNavigation from "@/features/initiate-hearing/modules/case-creation/components/StepNavigation";
 import useCasesLogic from "@/features/initiate-hearing/hooks/useCasesLogic";
 import { FormData } from "@/shared/components/form/form.types";
 import { useAPIFormsData } from "@/providers/FormContext";

@@ -23,9 +23,9 @@ import { useLookup } from "../../api/hook/useLookup";
 import { useSubTopicsSubLookupQuery } from "../../api/create-case/addHearingApis";
 import { FormProvider as RHFFormProvider } from "react-hook-form";
 import { setFormData } from "@/redux/slices/formSlice";
-import StepNavigation from "@/shared/modules/case-creation/components/StepNavigation";
+import StepNavigation from "@/features/initiate-hearing/modules/case-creation/components/StepNavigation";
 import { useNavigationService } from "@/shared/hooks/useNavigationService";
-import { steps } from "@/shared/modules/case-creation/components/tabs/tabsConfig";
+import { steps } from "@/features/initiate-hearing/modules/case-creation/components/tabs/tabsConfig";
 import {
   useLazyGetFileDetailsQuery,
   useUpdateHearingTopicsMutation,
@@ -42,7 +42,7 @@ import { getPayloadBySubTopicID } from "./api/case.topics.payload";
 import { useLazyGetCaseDetailsQuery } from "@/features/manage-hearings/api/myCasesApis";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
-import { ApiResponse } from "@/shared/modules/case-creation/components/StepNavigation";
+import { ApiResponse } from "@/features/initiate-hearing/modules/case-creation/components/StepNavigation";
 import useCaseTopicsPrefill from "./hooks/useCaseTopicsPrefill";
 import { useGetRegionLookupDataQuery } from "@/features/initiate-hearing/api/create-case/workDetailApis";
 import { Option } from "@/shared/components/form/form.types";

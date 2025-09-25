@@ -1,6 +1,6 @@
 import React, { Suspense, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import Stepper from "../Stepper/Stepper";
+import Stepper from "../stepper/Stepper";
 import StepSkeleton from "@/shared/components/loader/StepSkeleton";
 import MultiStepLayout from "@/shared/layouts/MultiStepLayout";
 import useCasesLogic from "@/features/initiate-hearing/hooks/useCasesLogic";

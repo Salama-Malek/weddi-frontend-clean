@@ -11,7 +11,7 @@ import TableLoader from "@/shared/components/loader/TableLoader";
 import { useTranslation } from "react-i18next";
 import withStepNavigation, {
   WithStepNavigationProps,
-} from "@/shared/HOC/withStepNavigation";
+} from "@/features/initiate-hearing/hoc/with-step-navigation";
 import {
   useGetAcknowledgementQuery,
   useLazyGetFileDetailsQuery,

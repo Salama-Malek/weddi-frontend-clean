@@ -1,5 +1,5 @@
 import { api } from "@/config/api";
-import { ApiResponse } from "@/shared/modules/case-creation/components/StepNavigation";
+import { ApiResponse } from "@/features/initiate-hearing/modules/case-creation/components/StepNavigation";
 import { processAttachmentKey } from "@/shared/lib/helpers";
 
 export const caseApi = api.injectEndpoints({
