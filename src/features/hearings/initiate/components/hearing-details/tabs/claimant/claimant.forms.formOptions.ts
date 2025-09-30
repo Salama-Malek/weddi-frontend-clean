@@ -1,15 +1,9 @@
 import { Option } from "@/shared/components/form/form.types";
 import { RadioOption } from "@/shared/components/form/RadioGroup";
 import { useTranslation } from "react-i18next";
-import CountryCodes from "../../../../../../../public/CountryCode.json";
 
 export const useFormOptions = () => {
   const { t } = useTranslation("hearingdetails");
-
-  const CodeOptions: Option[] = CountryCodes.map((country: any) => ({
-    value: country.dial_code,
-    label: `${country.name} (${country.dial_code})`,
-  }));
 
   return {
     ClaimantStatusRadioOptions: [
@@ -38,8 +32,6 @@ export const useFormOptions = () => {
       { value: "M", label: "Male" },
       { value: "F", label: "Female" },
     ] as Option[],
-
-    CodeOptions,
 
     NationalityOptions: [
       { value: "saudi", label: "Saudi" },
