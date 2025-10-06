@@ -30,20 +30,27 @@ export const useMyCasesData = ({
   isLoading: boolean;
   totalPages: number;
 } => {
-  const { data, isLoading } = useGetMyCasesQuery({
-    UserType,
-    IDNumber,
-    PageNumber,
-    TableFor,
-    CaseStatus,
-    FileNumber,
-    MainGovernment,
-    SubGovernment,
-    SearchID,
-    Number700,
-    AcceptedLanguage,
-    SourceSystem,
-  });
+  const { data, isLoading } = useGetMyCasesQuery(
+    {
+      UserType,
+      IDNumber,
+      PageNumber,
+      TableFor,
+      CaseStatus,
+      FileNumber,
+      MainGovernment,
+      SubGovernment,
+      SearchID,
+      Number700,
+      AcceptedLanguage,
+      SourceSystem,
+    },
+    {
+      refetchOnMountOrArgChange: true,
+      refetchOnFocus: true,
+      refetchOnReconnect: true,
+    },
+  );
 
   let cases: CaseRecord[] = [];
   let totalPages = 1;
