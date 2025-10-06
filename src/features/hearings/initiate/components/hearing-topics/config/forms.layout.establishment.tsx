@@ -109,7 +109,7 @@ export const useFormLayout = ({
   const handleHijriDateChange = (
     date: DateObject | DateObject[] | null,
     setHijriValue: (value: string) => void,
-    gregorianFieldName: string,
+    gregorianFieldName: string
   ) => {
     if (!date || Array.isArray(date)) {
       setHijriValue("");
@@ -132,7 +132,7 @@ export const useFormLayout = ({
   type FormElementType = any;
   function addNoSpacesValidationToTextInputs(
     fields: FormElementType[],
-    t: any,
+    t: any
   ): FormElementType[] {
     return fields.map((field) => {
       if (
@@ -253,14 +253,14 @@ export const useFormLayout = ({
                 onChange: (value: string) =>
                   setValue("LCUTE1_amountOfCompensation", value),
                 validation: {
-                  required: tHearingTopics("amountOfCompensation"),
+                  required: tHearingTopics("fieldRequired"),
                 },
                 notRequired: false,
                 maxLength: 10,
               },
             ],
-            tHearingTopics,
-          ),
+            tHearingTopics
+          )
         );
       case "CR-1":
         return buildForm([
@@ -284,7 +284,7 @@ export const useFormLayout = ({
                   ""
                 : ""),
             onChange: (value) => setValue("CR1_compensationAmount", value),
-            validation: { required: tHearingTopics("amount") },
+            validation: { required: tHearingTopics("fieldRequired") },
             notRequired: false,
             maxLength: 10,
           },
@@ -301,7 +301,7 @@ export const useFormLayout = ({
                 value: watch("DPVR1_damagedType") || "",
                 onChange: (value: string) =>
                   setValue("DPVR1_damagedType", value),
-                validation: { required: tHearingTopics("damagedType") },
+                validation: { required: tHearingTopics("fieldRequired") },
                 notRequired: false,
                 maxLength: 100,
                 colSpan: 1,
@@ -318,14 +318,14 @@ export const useFormLayout = ({
                 value: watch("DPVR1_damagedValue") || "",
                 onChange: (value: string) =>
                   setValue("DPVR1_damagedValue", value),
-                validation: { required: tHearingTopics("damagedValue") },
+                validation: { required: tHearingTopics("fieldRequired") },
                 notRequired: false,
                 maxLength: 10,
                 colSpan: 1,
               },
             ],
-            tHearingTopics,
-          ),
+            tHearingTopics
+          )
         );
       case "RLRAHI-1":
         const fields: any = [
@@ -345,7 +345,7 @@ export const useFormLayout = ({
                 : null),
             onChange: (option: Option | null) =>
               setValue("RLRAHI1_typeOfRequest", option),
-            validation: { required: tHearingTopics("typeOfRequest") },
+            validation: { required: tHearingTopics("fieldRequired") },
             notRequired: false,
           },
         ];
@@ -369,12 +369,12 @@ export const useFormLayout = ({
                     control={control as any}
                     name={"RLRAHI1_request_date_hijri" as any}
                     label={tHearingTopics("requestDateHijri")}
-                    rules={{ required: tHearingTopics("requestDateHijri") }}
+                    rules={{ required: tHearingTopics("fieldRequired") }}
                     onChangeHandler={(date, onChange) =>
                       handleHijriDateChange(
                         date,
                         onChange,
-                        "RLRAHI1_request_date_gregorian",
+                        "RLRAHI1_request_date_gregorian"
                       )
                     }
                     notRequired={false}
@@ -406,10 +406,10 @@ export const useFormLayout = ({
                   : ""),
               onChange: (value: string) =>
                 setValue("RLRAHI1_typeOfCustody", value),
-              validation: { required: tHearingTopics("typeOfCustody") },
+              validation: { required: tHearingTopics("fieldRequired") },
               maxLength: 50,
               showWhen: "RLRAHI1",
-            },
+            }
           );
         } else if (effectiveTypeOfRequest?.value === "RLRAHI2") {
           fields.push({
@@ -429,14 +429,14 @@ export const useFormLayout = ({
                   ""
                 : ""),
             onChange: (value: string) => setValue("RLRAHI1_loanAmount", value),
-            validation: { required: tHearingTopics("loanAmount") },
+            validation: { required: tHearingTopics("fieldRequired") },
             notRequired: false,
             maxLength: 6,
           });
         }
 
         return buildForm(
-          addNoSpacesValidationToTextInputs(fields, tHearingTopics),
+          addNoSpacesValidationToTextInputs(fields, tHearingTopics)
         );
       case "RUF-1":
         return buildForm(
@@ -453,7 +453,7 @@ export const useFormLayout = ({
                     ? editTopic?.RUF1_refundType || editTopic?.RefundType || ""
                     : ""),
                 onChange: (value: string) => setValue("RUF1_refundType", value),
-                validation: { required: tHearingTopics("refundType") },
+                validation: { required: tHearingTopics("fieldRequired") },
                 notRequired: false,
                 maxLength: 50,
               },
@@ -476,13 +476,13 @@ export const useFormLayout = ({
                     : ""),
                 onChange: (value: string) =>
                   setValue("RUF1_refundAmount", value),
-                validation: { required: tHearingTopics("amount") },
+                validation: { required: tHearingTopics("fieldRequired") },
                 notRequired: false,
                 maxLength: 10,
               },
             ],
-            tHearingTopics,
-          ),
+            tHearingTopics
+          )
         );
       case "EDO-1":
         return buildForm([
@@ -497,7 +497,7 @@ export const useFormLayout = ({
               (editTopic?.EDO1_fromLocation ?? editTopic?.fromLocation ?? null),
             onChange: (option: Option | null) =>
               setValue("EDO1_fromLocation", option),
-            validation: { required: tHearingTopics("fromLocation") },
+            validation: { required: tHearingTopics("fieldRequired") },
             notRequired: false,
           },
           {
@@ -511,7 +511,7 @@ export const useFormLayout = ({
               (editTopic?.EDO1_toLocation ?? editTopic?.toLocation ?? null),
             onChange: (option: Option | null) =>
               setValue("EDO1_toLocation", option),
-            validation: { required: tHearingTopics("toLocation") },
+            validation: { required: tHearingTopics("fieldRequired") },
             notRequired: false,
           },
           {
@@ -523,13 +523,13 @@ export const useFormLayout = ({
                 name="EDO1_managerialDecisionDateHijri"
                 label={tHearingTopics("managerialDecisionDateHijri")}
                 rules={{
-                  required: tHearingTopics("managerialDecisionDateHijri"),
+                  required: tHearingTopics("fieldRequired"),
                 }}
                 onChangeHandler={(date, onChange) =>
                   handleHijriDateChange(
                     date,
                     onChange,
-                    "EDO1_managerialDecisionDateGregorian",
+                    "EDO1_managerialDecisionDateGregorian"
                   )
                 }
                 notRequired={false}
@@ -562,7 +562,7 @@ export const useFormLayout = ({
               handleNumberOnlyChange(
                 value,
                 setValue,
-                "EDO1_managerialDecisionNumber",
+                "EDO1_managerialDecisionNumber"
               ),
             validation: createNumberOnlyValidation(false, t("fieldRequired")),
             notRequired: true,
