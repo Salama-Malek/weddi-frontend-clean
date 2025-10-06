@@ -6,6 +6,10 @@ import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const projectRoot = path.resolve(__dirname);
+const srcDir = path.resolve(projectRoot, "src");
+const publicDir = path.resolve(projectRoot, "public");
+const allowedFsRoots = [projectRoot, srcDir, publicDir];
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd());
@@ -25,6 +29,44 @@ export default defineConfig(({ mode }) => {
           },
         ],
       }),
+      {
+        name: "enforce-html-fs-allowlist",
+        enforce: "pre",
+        configureServer(server) {
+          server.middlewares.use((req, res, next) => {
+            if (!req.url || req.method !== "GET") {
+              return next();
+            }
+
+            let pathname: string;
+            try {
+              const url = new URL(req.url, `http://${req.headers.host ?? "localhost"}`);
+              pathname = decodeURIComponent(url.pathname);
+            } catch {
+              res.statusCode = 400;
+              res.end("Bad Request");
+              return;
+            }
+
+            if (!pathname.endsWith(".html")) {
+              return next();
+            }
+
+            const candidatePath = path.resolve(server.config.root, `.${pathname}`);
+            const isAllowed = allowedFsRoots.some((allowed) =>
+              candidatePath === allowed || candidatePath.startsWith(`${allowed}${path.sep}`),
+            );
+
+            if (!isAllowed) {
+              res.statusCode = 403;
+              res.end("Forbidden");
+              return;
+            }
+
+            next();
+          });
+        },
+      },
     ],
     build: {
       outDir: "dist",
@@ -46,6 +88,19 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: {
         "@": path.resolve(__dirname, "src"),
+      },
+    },
+    server: {
+      fs: {
+        strict: true,
+        allow: allowedFsRoots,
+        deny: [path.resolve(projectRoot, "..")],
+      },
+    },
+    preview: {
+      fs: {
+        strict: true,
+        allow: allowedFsRoots,
       },
     },
   };

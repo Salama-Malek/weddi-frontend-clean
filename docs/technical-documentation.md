@@ -79,7 +79,7 @@ flowchart TD
   - Redux Toolkit/RTK Query: Global store, caching, generated hooks for Weddi APIs.
   - React Hook Form/Zod (via resolvers): Form validation and schema enforcement.
   - jose/jwt-decode: Signing demo JWTs and decoding MyClients tokens.【F:src/features/auth/Index.tsx†L200-L239】
-  - react-cookies/react-cookie: Cookie persistence inside hooks and providers.【F:src/features/hearings/initiate/hooks/useCookieState.ts†L30-L124】
+  - universal-cookie/react-cookie: Cookie persistence inside hooks and providers.【F:src/features/hearings/initiate/hooks/useCookieState.ts†L30-L124】
 
 ## 6. Environment & System Requirements
 | Requirement | Details |
