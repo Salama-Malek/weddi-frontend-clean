@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import cookie from "react-cookies";
+import Cookies from "universal-cookie";
 
 type CookieOptions = {
   path?: string;
@@ -8,6 +8,7 @@ type CookieOptions = {
 };
 
 const cookieEventTarget = new EventTarget();
+const cookies = new Cookies();
 
 function tryParseJSON(value: any) {
   if (
@@ -24,7 +25,8 @@ function tryParseJSON(value: any) {
 }
 
 export const isCaseDataCleared = () => {
-  return cookie.load("caseDataCleared") === true;
+  const value = cookies.get("caseDataCleared");
+  return tryParseJSON(value) === true;
 };
 
 export function useCookieState(
@@ -35,7 +37,7 @@ export function useCookieState(
     const initial: Record<string, any> = {};
     if (defaults) {
       for (const key in defaults) {
-        const value = cookie.load(key);
+        const value = cookies.get(key);
         initial[key] =
           value !== undefined ? tryParseJSON(value) : defaults[key];
       }
@@ -44,7 +46,7 @@ export function useCookieState(
   });
 
   const getCookie = useCallback((key: string) => {
-    const value = cookie.load(key);
+    const value = cookies.get(key);
     return tryParseJSON(value);
   }, []);
 
@@ -64,7 +66,7 @@ export function useCookieState(
         }
       }
 
-      cookie.save(key, cookieValue, {
+      cookies.set(key, cookieValue, {
         path: options.path || "/",
         maxAge: options.maxAge || 31536000,
         secure: options.secure,
@@ -78,7 +80,7 @@ export function useCookieState(
 
   const removeCookie = useCallback(
     (key: string) => {
-      cookie.remove(key, { path: options.path || "/" });
+      cookies.remove(key, { path: options.path || "/" });
       setCookieState((prev) => {
         const newState = { ...prev };
         delete newState[key];
@@ -90,11 +92,11 @@ export function useCookieState(
   );
 
   const removeAll = useCallback((_path: string = "/") => {
-    const all = cookie.loadAll();
-    for (const obj in all) {
-      removeCookie(obj);
+    const all = cookies.getAll();
+    for (const name of Object.keys(all)) {
+      removeCookie(name);
     }
-  }, []);
+  }, [removeCookie]);
 
   useEffect(() => {
     const handlers: { [key: string]: () => void } = {};
@@ -102,7 +104,7 @@ export function useCookieState(
     if (defaults) {
       Object.keys(defaults).forEach((key) => {
         const handler = () => {
-          const latest = cookie.load(key);
+          const latest = cookies.get(key);
           setCookieState((prev) => ({
             ...prev,
             [key]: tryParseJSON(latest),

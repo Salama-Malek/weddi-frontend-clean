@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { toast } from "react-toastify";
-import cookie from "react-cookies";
+import Cookies from "universal-cookie";
 
 interface TokenExpirationContextType {
   isTokenExpired: boolean;
@@ -11,6 +11,8 @@ const TokenExpirationContext = createContext<TokenExpirationContextType | null>(
   null,
 );
 
+const cookies = new Cookies();
+
 export const TokenExpirationProvider: React.FC<{
   children: React.ReactNode;
 }> = ({ children }) => {
@@ -19,7 +21,7 @@ export const TokenExpirationProvider: React.FC<{
 
   useEffect(() => {
     const checkTokenExpiration = () => {
-      const token = cookie.load("token");
+      const token = cookies.get("token");
       if (!token) {
         return;
       }
@@ -35,7 +37,7 @@ export const TokenExpirationProvider: React.FC<{
         if (timeLeft < 1) {
           setIsTokenExpired(true);
           toast.error("Your session has expired. Please log in again.");
-          cookie.remove("token");
+          cookies.remove("token", { path: "/" });
 
           if (process.env.VITE_LOGIN_SWITCH === "true") {
             window.location.href = `${process.env.VITE_REDIRECT_URL_LOCAL}`;

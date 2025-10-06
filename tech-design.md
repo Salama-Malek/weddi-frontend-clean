@@ -34,7 +34,7 @@ State is deliberately layered. Redux Toolkit stores global UI flags (loading cou
 - RTK Query base API (src/services/apiClient.ts) injects endpoints per feature and shares middleware to manage refresh, request transformation, and errors.
 - AuthProvider, AuthTokenProvider, and TokenExpirationProvider coordinate JWT ingestion, OAuth refresh, and expiry notifications using cookies.
 - FormProvider couples react-hook-form with stored defaults and exposes force validation/reset helpers to multi-step modules.
-- useCookieState offers a typed wrapper over react-cookies with event notifications so cookie mutations propagate between tabs and components.
+- useCookieState offers a typed wrapper over universal-cookie with event notifications so cookie mutations propagate between tabs and components.
   Data flow overview:
 
 ```mermaid

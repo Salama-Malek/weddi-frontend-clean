@@ -8,7 +8,7 @@ import {
   FetchBaseQueryError,
   FetchBaseQueryMeta,
 } from "@reduxjs/toolkit/query/react";
-import cookie from "react-cookies";
+import Cookies from "universal-cookie";
 import { startLoading, stopLoading } from "@/app/store/slices/loadingSlice";
 import {
   handleApiResponse,
@@ -16,6 +16,8 @@ import {
   ErrorHandlerConfig,
   hasInvalidTokenError,
 } from "@/utils/api/errorHandler";
+
+const cookies = new Cookies();
 
 const refreshToken = async (): Promise<string | null> => {
   try {
@@ -67,14 +69,14 @@ const refreshToken = async (): Promise<string | null> => {
         expires_in: number;
       };
 
-      cookie.save("oauth_token", tokenData.access_token, {
+      cookies.set("oauth_token", tokenData.access_token, {
         path: "/",
         maxAge: 86400,
       });
 
       const customExpiresIn = 50 * 60;
       const expiresAt = Date.now() + customExpiresIn * 1000;
-      cookie.save("oauth_token_expires_at", expiresAt.toString(), {
+      cookies.set("oauth_token_expires_at", expiresAt.toString(), {
         path: "/",
         maxAge: 86400,
       });
@@ -127,11 +129,11 @@ const customBaseQuery: BaseQueryFn<
       prepareHeaders: (headers) => {
         headers.set("Content-Type", "application/json");
 
-        const token = cookie.load("token");
+        const token = cookies.get("token");
         if (token) {
           headers.set("accesstoken", `${token}`);
         }
-        const oauthToken = cookie.load("oauth_token");
+        const oauthToken = cookies.get("oauth_token");
         if (oauthToken) {
           headers.set("Authorization", `Bearer ${oauthToken}`);
         }
@@ -154,7 +156,7 @@ const customBaseQuery: BaseQueryFn<
           baseUrl: process.env.VITE_API_URL,
           prepareHeaders: (headers) => {
             headers.set("Content-Type", "application/json");
-            const token = cookie.load("token");
+            const token = cookies.get("token");
             if (token) {
               headers.set("accesstoken", `${token}`);
             }
@@ -194,16 +196,20 @@ const customBaseQuery: BaseQueryFn<
 };
 
 const transformRequest = (args: FetchArgs): FetchArgs => {
-  const userClaims = cookie.load("userClaims") as TokenClaims;
+  const userClaims = cookies.get<TokenClaims | undefined>("userClaims");
   const isNICDetailsRequest = args.url?.includes("GetNICDetails");
   const isIncompleteCaseRequest = args.url?.includes("GetIncompleteCase");
   const userType = userClaims?.UserType?.toLowerCase();
-  const userTypeOrdinary = cookie.load("userType");
-  const mainCategory = cookie.load("mainCategory")?.value;
-  const subCategory = cookie.load("subCategory")?.value;
-  const fileNumber = cookie.load("userClaims")?.File_Number;
+  const userTypeOrdinary = cookies.get<string | undefined>("userType");
+  const mainCategory = cookies.get<{ value?: string } | undefined>(
+    "mainCategory",
+  )?.value;
+  const subCategory = cookies.get<{ value?: string } | undefined>(
+    "subCategory",
+  )?.value;
+  const fileNumber = userClaims?.File_Number;
 
-  const language = userClaims.AcceptedLanguage?.toUpperCase() || "EN";
+  const language = userClaims?.AcceptedLanguage?.toUpperCase() || "EN";
 
   if (isIncompleteCaseRequest && !userClaims?.UserID) {
     throw new Error("User claims not available");
